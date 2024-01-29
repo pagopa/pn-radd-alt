@@ -4,64 +4,57 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
     dynamodb create-table \
     --table-name RaddTransactionDynamoTable \
     --attribute-definitions \
-        AttributeName=operationId,AttributeType=S \
+        AttributeName=transactionId,AttributeType=S \
         AttributeName=operationType,AttributeType=S \
+        AttributeName=iun,AttributeType=S \
+        AttributeName=qrCode,AttributeType=S \
         AttributeName=recipientId,AttributeType=S \
         AttributeName=delegateId,AttributeType=S \
-        AttributeName=qrCode,AttributeType=S \
-        AttributeName=iun,AttributeType=S \
+        AttributeName=coverFileKey,AttributeType=S \
     --key-schema \
-        AttributeName=operationId,KeyType=HASH \
+        AttributeName=transactionId,KeyType=HASH \
         AttributeName=operationType,KeyType=RANGE \
-    --provisioned-throughput \
-        ReadCapacityUnits=10,WriteCapacityUnits=5 \
     --global-secondary-indexes \
-    "[
-        {
-            \"IndexName\": \"iun-transaction-index\",
-            \"KeySchema\": [{\"AttributeName\":\"iun\",\"KeyType\":\"HASH\"}],
-            \"Projection\":{
-                \"ProjectionType\":\"ALL\"
+        "[
+            {
+                \"IndexName\": \"iun-transaction-index\",
+                \"KeySchema\": [{\"AttributeName\":\"iun\",\"KeyType\":\"HASH\"}],
+                \"Projection\":{
+                    \"ProjectionType\":\"ALL\"
+                }
             },
-            \"ProvisionedThroughput\": {
-                \"ReadCapacityUnits\": 10,
-                \"WriteCapacityUnits\": 5
-            }
-        },
-        {
-            \"IndexName\": \"recipient-transaction-index\",
-            \"KeySchema\": [{\"AttributeName\":\"recipientId\",\"KeyType\":\"HASH\"}],
-            \"Projection\":{
-                \"ProjectionType\":\"ALL\"
+            {
+                \"IndexName\": \"recipient-transaction-index\",
+                \"KeySchema\": [{\"AttributeName\":\"recipientId\",\"KeyType\":\"HASH\"}],
+                \"Projection\":{
+                    \"ProjectionType\":\"ALL\"
+                }
             },
-            \"ProvisionedThroughput\": {
-                \"ReadCapacityUnits\": 10,
-                \"WriteCapacityUnits\": 5
-            }
-        },
-        {
-            \"IndexName\": \"delegate-transaction-index\",
-            \"KeySchema\": [{\"AttributeName\":\"delegateId\",\"KeyType\":\"HASH\"}],
-            \"Projection\":{
-                \"ProjectionType\":\"ALL\"
+            {
+                \"IndexName\": \"delegate-transaction-index\",
+                \"KeySchema\": [{\"AttributeName\":\"delegateId\",\"KeyType\":\"HASH\"}],
+                \"Projection\":{
+                    \"ProjectionType\":\"ALL\"
+                }
             },
-            \"ProvisionedThroughput\": {
-                \"ReadCapacityUnits\": 10,
-                \"WriteCapacityUnits\": 5
-            }
-        },
-        {
-            \"IndexName\": \"qrcode-transaction-index\",
-            \"KeySchema\": [{\"AttributeName\":\"qrCode\",\"KeyType\":\"HASH\"}],
-            \"Projection\":{
-                \"ProjectionType\":\"ALL\"
+            {
+                \"IndexName\": \"qrcode-transaction-index\",
+                \"KeySchema\": [{\"AttributeName\":\"qrCode\",\"KeyType\":\"HASH\"}],
+                \"Projection\":{
+                    \"ProjectionType\":\"ALL\"
+                }
             },
-            \"ProvisionedThroughput\": {
-                \"ReadCapacityUnits\": 10,
-                \"WriteCapacityUnits\": 5
+            {
+                \"IndexName\": \"coverFileKey-transaction-index\",
+                \"KeySchema\": [{\"AttributeName\":\"coverFileKey\",\"KeyType\":\"HASH\"}],
+                \"Projection\":{
+                    \"ProjectionType\":\"ALL\"
+                }
             }
-        }
-    ]"
+        ]" \
+    --billing-mode PAY_PER_REQUEST \
+    --stream-specification StreamEnabled=true,StreamViewType=NEW_IMAGE \
+    --point-in-time-recovery-specification PointInTimeRecoveryEnabled=true
 
 echo "### CREATE OPERATIONS AND IUNS TABLE ###"
 
@@ -80,7 +73,10 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
     "[
         {
             \"IndexName\": \"iun-and-operation-index\",
-            \"KeySchema\": [{\"AttributeName\":\"iun\",\"KeyType\":\"HASH\"}, {\"AttributeName\":\"operationId\",\"KeyType\":\"RANGE\"}],
+            \"KeySchema\": [
+                {\"AttributeName\":\"iun\",\"KeyType\":\"HASH\"},
+                {\"AttributeName\":\"operationId\",\"KeyType\":\"RANGE\"}
+            ],
             \"Projection\":{
                 \"ProjectionType\":\"ALL\"
             },
@@ -91,4 +87,13 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
         }
     ]"
 
+    echo "### CREATE QUEUES FOR RADD-ALT ###"
+    queues="pn-safestore_to_radd_alt"
+    for qn in $(echo $queues | tr " " "\n"); do
+      echo creating queue $qn ...
+      aws --profile default --region us-east-1 --endpoint-url http://localstack:4566 \
+        sqs create-queue \
+        --attributes '{"DelaySeconds":"2"}' \
+        --queue-name $qn
+    done
 echo "Initialization terminated"
