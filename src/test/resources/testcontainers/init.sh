@@ -1,8 +1,8 @@
-echo "### CREATE RADD TRANSACTION TABLE ###"
+echo "### CREATE RADD ALT TRANSACTION TABLE ###"
 
 aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
     dynamodb create-table \
-    --table-name RaddTransactionDynamoTable \
+    --table-name RaddTransactionAltDynamoTable \
     --attribute-definitions \
         AttributeName=transactionId,AttributeType=S \
         AttributeName=operationType,AttributeType=S \
@@ -44,16 +44,13 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
                     \"ProjectionType\":\"ALL\"
                 }
             }
-        ]" \
-    --billing-mode PAY_PER_REQUEST \
-    --stream-specification StreamEnabled=true,StreamViewType=NEW_IMAGE \
-    --point-in-time-recovery-specification PointInTimeRecoveryEnabled=true
+        ]"
 
 echo "### CREATE OPERATIONS AND IUNS TABLE ###"
 
 aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
     dynamodb create-table \
-    --table-name OperationsAndIunsDynamoTable \
+    --table-name OperationsAndIunsAltDynamoTable \
     --attribute-definitions \
         AttributeName=id,AttributeType=S \
         AttributeName=operationId,AttributeType=S \
