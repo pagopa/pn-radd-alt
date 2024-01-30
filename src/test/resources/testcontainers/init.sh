@@ -38,13 +38,6 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
                 }
             },
             {
-                \"IndexName\": \"qrcode-transaction-index\",
-                \"KeySchema\": [{\"AttributeName\":\"qrCode\",\"KeyType\":\"HASH\"}],
-                \"Projection\":{
-                    \"ProjectionType\":\"ALL\"
-                }
-            },
-            {
                 \"IndexName\": \"coverFileKey-transaction-index\",
                 \"KeySchema\": [{\"AttributeName\":\"coverFileKey\",\"KeyType\":\"HASH\"}],
                 \"Projection\":{
