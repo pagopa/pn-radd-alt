@@ -2,7 +2,7 @@ echo "### CREATE RADD ALT TRANSACTION TABLE ###"
 
 aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
     dynamodb create-table \
-    --table-name RaddTransactionAltDynamoTable \
+    --table-name pn-radd-transaction-alt  \
     --attribute-definitions \
         AttributeName=transactionId,AttributeType=S \
         AttributeName=operationType,AttributeType=S \
@@ -50,7 +50,7 @@ echo "### CREATE OPERATIONS AND IUNS TABLE ###"
 
 aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
     dynamodb create-table \
-    --table-name OperationsAndIunsAltDynamoTable \
+    --table-name pn-operations-iuns-alt \
     --attribute-definitions \
         AttributeName=id,AttributeType=S \
         AttributeName=operationId,AttributeType=S \
