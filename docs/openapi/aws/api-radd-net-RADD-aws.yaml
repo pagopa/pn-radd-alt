@@ -733,9 +733,9 @@ components:
       schema:
         type: string
         enum:
-          - aor
-          - act
-      example: aor
+          - AOR
+          - ACT
+      example: AOR
   schemas:
     DocumentUploadRequest:
       description: >-
