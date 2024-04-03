@@ -16,6 +16,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -65,6 +66,25 @@ class RegistryServiceTest {
 
         StepVerifier.create(registryService.uploadRegistryRequests("cxId", Mono.just(request)))
                         .expectNextMatches(registryUploadResponse1 -> registryUploadResponse1.getFileKey().equals("key")).verifyComplete();
+    }
+    @Test
+    void testVerifyRegistryRequests_ValidCase() {
+        PnRaddRegistryImportEntity pnRaddRegistryImportEntity = new PnRaddRegistryImportEntity();
+        pnRaddRegistryImportEntity.setStatus("TO_PROCESS");
+        when(registryImportDAO.getRegistryImportByCxIdAndRequestId(any(), any())).thenReturn(Mono.just(pnRaddRegistryImportEntity));
+
+        StepVerifier.create(registryService.verifyRegistriesImportRequest("cxId", "requestId"))
+                .expectNextMatches(response -> response.getStatus().equals("TO_PROCESS"))
+                .verifyComplete();
+    }
+
+    @Test
+    void testVerifyRegistryRequests_ExceptionCase() {
+        when(registryImportDAO.getRegistryImportByCxIdAndRequestId(any(), any())).thenReturn(Mono.empty());
+
+        StepVerifier.create(registryService.verifyRegistriesImportRequest("cxId", "requestId"))
+                .expectError(ResponseStatusException.class)
+                .verify();
     }
 }
 

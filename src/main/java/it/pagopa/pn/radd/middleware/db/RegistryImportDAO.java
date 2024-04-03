@@ -6,5 +6,6 @@ import reactor.core.publisher.Mono;
 
 public interface RegistryImportDAO {
     Flux<PnRaddRegistryImportEntity> getRegistryImportByCxId(String xPagopaPnCxId);
+    Mono<PnRaddRegistryImportEntity> getRegistryImportByCxIdAndRequestId(String xPagopaPnCxId, String requestId);
     Mono<PnRaddRegistryImportEntity> putRaddRegistryImportEntity(PnRaddRegistryImportEntity pnRaddRegistryImportEntity);
 }

@@ -32,6 +32,14 @@ public class RegistryImportDAOImpl extends BaseDao<PnRaddRegistryImportEntity> i
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
         return getByFilter(conditional, null, null, null, null);
     }
+    @Override
+    public Mono<PnRaddRegistryImportEntity> getRegistryImportByCxIdAndRequestId(String xPagopaPnCxId, String requestId) {
+        Key key = Key.builder()
+                .partitionValue(xPagopaPnCxId)
+                .sortValue(requestId)
+                .build();
+        return findFromKey(key);
+    }
 
     @Override
     public Mono<PnRaddRegistryImportEntity> putRaddRegistryImportEntity(PnRaddRegistryImportEntity pnRaddRegistryImportEntity) {
