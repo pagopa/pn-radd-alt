@@ -4,7 +4,6 @@ import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.Fil
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistryUploadRequest;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistryUploadResponse;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.VerifyRequestResponse;
-import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
@@ -156,12 +155,12 @@ public class RegistryService {
     }
     public Mono<VerifyRequestResponse> verifyRegistriesImportRequest(String xPagopaPnCxId, String requestId) {
         log.info("start verifyRegistriesImportRequest for cxId: {} and requestId: {}", xPagopaPnCxId, requestId);
-        return registryImportDAO.getRegistryImportByCxIdAndRequestId(xPagopaPnCxId, requestId)
+        return raddRegistryImportDAO.getRegistryImportByCxIdAndRequestId(xPagopaPnCxId, requestId)
                 .switchIfEmpty(Mono.error(new RaddGenericException(String.format("No import request found for cxId: [%s] and requestId: [%s] ", xPagopaPnCxId, requestId))))
                 .map(this::createVerifyRequestResponse)
                 .doOnError(throwable -> log.error("Error during verify registries import request: {}", throwable.getMessage(), throwable));
     }
-    private VerifyRequestResponse createVerifyRequestResponse(PnRaddRegistryImportEntity entity) {
+    private VerifyRequestResponse createVerifyRequestResponse(RaddRegistryImportEntity entity) {
         VerifyRequestResponse response = new VerifyRequestResponse();
         response.setRequestId(entity.getRequestId());
         response.setStatus(entity.getStatus());
