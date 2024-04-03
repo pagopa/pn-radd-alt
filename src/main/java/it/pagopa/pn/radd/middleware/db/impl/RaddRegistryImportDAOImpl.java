@@ -14,6 +14,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,5 +61,23 @@ public class RaddRegistryImportDAOImpl extends BaseDao<RaddRegistryImportEntity>
         String filterExpression = RaddRegistryImportEntity.COL_STATUS + " = :status";
 
         return getByFilter(conditional, null, map, filterExpression, null);
+    }
+
+    @Override
+    public Mono<RaddRegistryImportEntity> updateEntityToDone(RaddRegistryImportEntity entity) {
+        if (entity == null)
+            throw new IllegalArgumentException("Missing PnRaddRegistryImportEntity to update.");
+
+        entity.setStatus(ImportStatus.DONE.name());
+        entity.setUpdatedAt(Instant.now());
+
+        return putItem(entity);
+    }
+
+    @Override
+    public Flux<RaddRegistryImportEntity> findWithStatusPending() {
+        Key key = Key.builder().partitionValue(ImportStatus.PENDING.name()).build();
+        QueryConditional conditional = QueryConditional.keyEqualTo(key);
+        return getByFilter(conditional, RaddRegistryImportEntity.STATUS_INDEX, null, null, null);
     }
 }

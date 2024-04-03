@@ -112,7 +112,6 @@ Parameters:
     Type: String
     Description: 'ARN of dynamodb table containing anagrafiche'
 
-
   RaddRegistryDynamoTableName:
     Type: String
     Description: 'Name of dynamodb table containing radd registries'
@@ -136,6 +135,14 @@ Parameters:
   RaddInternalCapCheckerDLQARN:
     Type: String
     Description: 'DLQ ARN for RaddInternalCapChecker'
+
+  ShedLockTableName:
+    Type: String
+    Description: Name of DynamoDB table used for implementing distributed locks.
+
+  ShedLockTableArn:
+    Type: String
+    Description: ARN of DynamoDB table for distributed locks.
 
   RegistryDefaultEndValidity:
     Type: String
@@ -359,17 +366,18 @@ Resources:
         ContainerEnvEntry18: !Sub 'PN_RADD_DAO_RADDREGISTRYREQUESTTABLE=${RaddRegistryRequestDynamoTableName}'
         ContainerEnvEntry19: !Sub 'PN_RADD_DAO_RADDREGISTRYIMPORTTABLE=${RaddRegistryImportDynamoTableName}'
         ContainerEnvEntry20: !Sub 'PN_RADD_DAO_RADDREGISTRYTABLE=${RaddRegistryDynamoTableName}'
-        ContainerEnvEntry21: !Sub 'PN_RADD_SQS_INTERNALCAPCHECKERQUEUENAME=${RaddInternalCapCheckerQueueName}'
-        ContainerEnvEntry22: !Sub 'PN_RADD_SQS_INPUTQUEUENAME=${PnRaddAltInputQueueName}'
-        ContainerEnvEntry23: !Sub 'PN_RADD_REGISTRYSAFESTORAGEDOCTYPE=${RegistrySafeStorageDocType}'
-        ContainerEnvEntry24: !Sub 'PN_RADD_REGISTRYDEFAULTENDVALIDITY=${RegistryDefaultEndValidity}'
-        ContainerEnvEntry25: !Sub 'PN_RADD_REGISTRYDEFAULTDELETERULE=${RegistryDefaultDeleteRule}'
-        ContainerEnvEntry26: !Sub 'PN-RADD-REGISTRYIMPORTUPLOADFILETTL=${RegitryImportUploadFileTtl}'
-        ContainerEnvEntry27: !Sub 'PN_RADD_SQS_SAFESTORAGEQUEUENAME=${SafeStorageToRaddAltQueueName}'
-        ContainerEnvEntry28: !Sub 'PN_RADD_SQS_ADDRESSMANAGERQUEUENAME=${AddressManagerToRaddAltQueueName}'
-        ContainerEnvEntry29: !Sub 'SPRING_CLOUD_FUNCTIONROUTER_QUEUES_LIST=${RaddInternalCapCheckerQueueName},${PnRaddAltInputQueueName},${SafeStorageToRaddAltQueueName},${AddressManagerToRaddAltQueueName}'
-        ContainerEnvEntry30: !Sub 'PN_RADD_ADDRESSMANAGERBASEURL=${AddressManagerBaseUrl}'
-        ContainerEnvEntry31: !Sub 'PN_RADD_ADDRESSMANAGERAPIKEYSECRET=${AddressManagerApiKeySecret}'
+        ContainerEnvEntry21: !Sub 'PN_RAAD_DAO_SHEDLOCKTABLENAME=${ShedLockTableName}'
+        ContainerEnvEntry22: !Sub 'PN_RADD_SQS_INTERNALCAPCHECKERQUEUENAME=${RaddInternalCapCheckerQueueName}'
+        ContainerEnvEntry23: !Sub 'PN_RADD_SQS_INPUTQUEUENAME=${PnRaddAltInputQueueName}'
+        ContainerEnvEntry24: !Sub 'PN_RADD_REGISTRYSAFESTORAGEDOCTYPE=${RegistrySafeStorageDocType}'
+        ContainerEnvEntry25: !Sub 'PN_RADD_REGISTRYDEFAULTENDVALIDITY=${RegistryDefaultEndValidity}'
+        ContainerEnvEntry26: !Sub 'PN_RADD_REGISTRYDEFAULTDELETERULE=${RegistryDefaultDeleteRule}'
+        ContainerEnvEntry27: !Sub 'PN-RADD-REGISTRYIMPORTUPLOADFILETTL=${RegitryImportUploadFileTtl}'
+        ContainerEnvEntry28: !Sub 'PN_RADD_SQS_SAFESTORAGEQUEUENAME=${SafeStorageToRaddAltQueueName}'
+        ContainerEnvEntry29: !Sub 'PN_RADD_SQS_ADDRESSMANAGERQUEUENAME=${AddressManagerToRaddAltQueueName}'
+        ContainerEnvEntry30: !Sub 'SPRING_CLOUD_FUNCTIONROUTER_QUEUES_LIST=${RaddInternalCapCheckerQueueName},${PnRaddAltInputQueueName},${SafeStorageToRaddAltQueueName},${AddressManagerToRaddAltQueueName}'
+        ContainerEnvEntry31: !Sub 'PN_RADD_ADDRESSMANAGERBASEURL=${AddressManagerBaseUrl}'
+        ContainerEnvEntry32: !Sub 'PN_RADD_ADDRESSMANAGERAPIKEYSECRET=${AddressManagerApiKeySecret}'
 
         MappedPaths: '/radd-net/*,/radd-net-private/*'
         ECSClusterName: !Ref ECSClusterName
@@ -431,6 +439,8 @@ Resources:
               - !Sub "${RaddRegistryImportDynamoTableArn}/*"
               - !Sub "${RaddRegistryDynamoTableArn}"
               - !Sub "${RaddRegistryDynamoTableArn}/*"
+              - !Sub "${ShedLockTableArn}"
+              - !Sub "${ShedLockTableArn}/*"
 
   # Expose PN-Radd-Alt microservice public API with API-GW for RADD usage
   RaddAltMicroservicePublicAPI:
