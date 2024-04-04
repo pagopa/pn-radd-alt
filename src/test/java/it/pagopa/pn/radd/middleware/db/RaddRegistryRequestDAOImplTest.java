@@ -1,7 +1,6 @@
 package it.pagopa.pn.radd.middleware.db;
 
 import it.pagopa.pn.radd.config.BaseTest;
-import it.pagopa.pn.radd.middleware.db.entities.OperationsIunsEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.pojo.ImportStatus;
 import it.pagopa.pn.radd.pojo.RegistryRequestStatus;
