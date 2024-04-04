@@ -14,6 +14,8 @@ import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.msclient.PnAddressManagerClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
+import it.pagopa.pn.radd.middleware.queue.RaddAltCapCheckerProducer;
+import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.PnAddressManagerEvent;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.PnRaddAltNormalizeRequestEvent;
 import it.pagopa.pn.radd.pojo.AddressManagerRequest;
@@ -26,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
@@ -33,6 +36,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static it.pagopa.pn.radd.constant.ProcessStatus.PROCESS_SERVICE_IMPORT_COMPLETE;
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.DUPLICATE_REQUEST;
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.PENDING_REQUEST;
 import static it.pagopa.pn.radd.utils.Const.ERROR_DUPLICATE;
@@ -47,6 +51,7 @@ public class RegistryService {
     private final PnSafeStorageClient pnSafeStorageClient;
     private final RaddRegistryUtils raddRegistryUtils;
     private final PnAddressManagerClient pnAddressManagerClient;
+    private final RaddAltCapCheckerProducer raddAltCapCheckerProducer;
 
     public Mono<RegistryUploadResponse> uploadRegistryRequests(String xPagopaPnCxId, Mono<RegistryUploadRequest> registryUploadRequest) {
         String requestId = UUID.randomUUID().toString();
@@ -183,5 +188,16 @@ public class RegistryService {
                     return pnAddressManagerClient.normalizeAddresses(request, addressManagerApiKey).thenReturn(tuple);
                 })
                 .flatMap(tuple -> raddRegistryRequestDAO.updateRecordsInPending(tuple.getT1()));
+    }
+
+    public Mono<Void> handleImportCompletedRequest(ImportCompletedRequestEvent.Payload payload) {
+        log.logStartingProcess(PROCESS_SERVICE_IMPORT_COMPLETE);
+        return Flux.merge(raddRegistryRequestDAO.getAllFromCxidAndRequestIdWithState(payload.getCxId(), payload.getRequestId(), RegistryRequestStatus.ACCEPTED.name())
+                                .map(RaddRegistryRequestEntity::getZipCode),
+                        //FIXME richiamare metodo su 02.11
+                        Flux.empty())
+                .distinct()
+                .flatMap(raddAltCapCheckerProducer::sendAsseverationEvent)
+                .then();
     }
 }

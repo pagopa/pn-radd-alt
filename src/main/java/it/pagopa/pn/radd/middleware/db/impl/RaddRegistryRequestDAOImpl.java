@@ -7,7 +7,7 @@ import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.pojo.ImportStatus;
 import it.pagopa.pn.radd.pojo.RegistryRequestStatus;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -24,7 +24,7 @@ import java.util.Map;
 
 
 @Repository
-@Slf4j
+@CustomLog
 public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntity> implements RaddRegistryRequestDAO {
 
     private static final String MISSING_STATUS = "Missing status param";
@@ -105,4 +105,22 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
         }
         return query;
     }
+
+    @Override
+    public Flux<RaddRegistryRequestEntity> getAllFromCxidAndRequestIdWithState(String cxId, String requestId, String state) {
+        Key key = Key.builder().partitionValue(cxId).sortValue(requestId).build();
+        QueryConditional conditional = QueryConditional.keyEqualTo(key);
+        String index = RaddRegistryRequestEntity.CXID_REQUESTID_INDEX;
+
+        Map<String, AttributeValue> map = new HashMap<>();
+        String query = "";
+
+        if (StringUtils.isNotEmpty(state)) {
+            map.put(":"+RaddRegistryRequestEntity.COL_STATUS, AttributeValue.builder().s(state).build());
+            query = RaddRegistryRequestEntity.COL_STATUS + " = :"+RaddRegistryRequestEntity.COL_STATUS ;
+        }
+
+        return this.getByFilter(conditional, index, map, query, null);
+    }
+
 }

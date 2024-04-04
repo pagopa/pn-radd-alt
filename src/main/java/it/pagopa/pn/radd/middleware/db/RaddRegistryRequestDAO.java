@@ -9,15 +9,19 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+import java.util.List;
+
 public interface RaddRegistryRequestDAO {
+
+    Flux<RaddRegistryRequestEntity> getAllFromCorrelationId(String correlationId, String state);
+
+    Flux<RaddRegistryRequestEntity> getAllFromCxidAndRequestIdWithState(String cxId, String requestId, String state);
 
     Flux<RaddRegistryRequestEntity> findByCorrelationIdWithStatus(String cxId, ImportStatus status) throws IllegalArgumentException;
 
     Mono<RaddRegistryRequestEntity> updateStatusAndError(RaddRegistryRequestEntity raddRegistryRequestEntity, ImportStatus importStatus, String error) throws IllegalArgumentException;
 
     Mono<RaddRegistryRequestEntity> updateRegistryRequestStatus(RaddRegistryRequestEntity id, RegistryRequestStatus importStatus);
-
-    Flux<RaddRegistryRequestEntity> getAllFromCorrelationId(String correlationId, String state);
 
     Mono<Void> updateRecordsInPending(List<RaddRegistryRequestEntity> addresses);
 
