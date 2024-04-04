@@ -300,8 +300,8 @@ class RegistryServiceTest {
     @Test
     void handleImportCompletedRequest() {
         ImportCompletedRequestEvent.Payload payload = ImportCompletedRequestEvent.Payload.builder().cxId("cxId").requestId("requestId").build();
-        when(raddRegistryRequestDAO.getAllFromCxidAndRequestIdWithState(any(), any(), RegistryRequestStatus.ACCEPTED.name())).thenReturn(Flux.just(any()));
-        when(raddAltCapCheckerProducer.sendAsseverationEvent(any())).thenReturn(Mono.empty());
+        when(raddRegistryRequestDAO.getAllFromCxidAndRequestIdWithState("cxId", "requestId", RegistryRequestStatus.ACCEPTED.name()))
+                .thenReturn(Flux.just(mock(RaddRegistryRequestEntity.class)));
         StepVerifier.create(registryService.handleImportCompletedRequest(payload)).expectComplete();
     }
 }

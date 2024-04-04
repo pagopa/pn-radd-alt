@@ -197,7 +197,7 @@ public class RegistryService {
                         //FIXME richiamare metodo su 02.11
                         Flux.empty())
                 .distinct()
-                .flatMap(raddAltCapCheckerProducer::sendAsseverationEvent)
+                .flatMap(raddAltCapCheckerProducer::sendCapCheckerEvent)
                 .then();
     }
 }
