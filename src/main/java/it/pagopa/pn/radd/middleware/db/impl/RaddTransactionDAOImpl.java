@@ -217,7 +217,7 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
         Key key = Key.builder().partitionValue(iun).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
         String index = RaddTransactionEntity.IUN_SECONDARY_INDEX;
-        return this.getByFilter(conditional, index, null, null, null);
+        return this.getByFilter(conditional, index, null, null, null,null);
     }
 
     @Override
@@ -244,8 +244,8 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
         String indexRecipient = RaddTransactionEntity.RECIPIENT_SECONDARY_INDEX;
         String indexDelegate = RaddTransactionEntity.DELEGATE_SECONDARY_INDEX;
 
-        return this.getByFilter(conditional, indexRecipient, map, query, null)
-                .concatWith(this.getByFilter(conditional, indexDelegate, map, query, null))
+        return this.getByFilter(conditional, indexRecipient, query,map, null,null)
+                .concatWith(this.getByFilter(conditional, indexDelegate, query,map, null,null))
                 .distinct(RaddTransactionEntity::getOperationId);
     }
     @Override

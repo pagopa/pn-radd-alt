@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.util.StringUtils;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.middleware.db.BaseDao;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.pojo.ImportStatus;
 import it.pagopa.pn.radd.pojo.RegistryRequestStatus;
@@ -46,14 +47,15 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
             throw new IllegalArgumentException("Missing correlationId param");
         if (status == null)
             throw new IllegalArgumentException(MISSING_STATUS);
-
         Key key = Key.builder().partitionValue(correlationId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
 
         Map<String, AttributeValue> map = new HashMap<>();
+        map.put(":status", AttributeValue.builder().s(status.name()).build());
         String query = getQueryAndPopulateMapForStatusFilter(status.name(), map);
-
-        return getByFilter(conditional, RaddRegistryRequestEntity.CORRELATIONID_INDEX, map, query, null);
+        Map<String,String> expressionName = new HashMap<>();
+        expressionName.put("#status", RaddRegistryImportEntity.COL_STATUS);
+        return getByFilter(conditional, RaddRegistryRequestEntity.CORRELATIONID_INDEX, query,map,expressionName, null);
     }
 
     @Override
@@ -86,9 +88,9 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
 
         Map<String, AttributeValue> map = new HashMap<>();
         String query = getQueryAndPopulateMapForStatusFilter(state, map);
-
-        return this.getByFilter(conditional, RaddRegistryRequestEntity.CORRELATIONID_INDEX, map, query, null);
-
+        Map<String,String> expressionName = new HashMap<>();
+        expressionName.put("#status", RaddRegistryImportEntity.COL_STATUS);
+        return getByFilter(conditional, RaddRegistryRequestEntity.CORRELATIONID_INDEX, query,map,expressionName, null);
     }
 
     @Override
@@ -101,7 +103,7 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
         String query = "";
         if (StringUtils.isNotEmpty(status)) {
             map.put(":status", AttributeValue.builder().s(status).build());
-            query = RaddRegistryRequestEntity.COL_STATUS + " = :status";
+            query = "#status = :status";
         }
         return query;
     }

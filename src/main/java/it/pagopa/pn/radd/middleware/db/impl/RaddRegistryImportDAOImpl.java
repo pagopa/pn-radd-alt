@@ -35,7 +35,7 @@ public class RaddRegistryImportDAOImpl extends BaseDao<RaddRegistryImportEntity>
     public Flux<RaddRegistryImportEntity> getRegistryImportByCxId(String xPagopaPnCxId) {
         Key key = Key.builder().partitionValue(xPagopaPnCxId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
-        return getByFilter(conditional, null, null, null, null);
+        return getByFilter(conditional, null, null, null,null,null);
     }
 
     @Override
@@ -57,8 +57,9 @@ public class RaddRegistryImportDAOImpl extends BaseDao<RaddRegistryImportEntity>
 
         Map<String, AttributeValue> map = new HashMap<>();
         map.put(":status", AttributeValue.builder().s(importStatus.name()).build());
-        String filterExpression = RaddRegistryImportEntity.COL_STATUS + " = :status";
-
-        return getByFilter(conditional, null, map, filterExpression, null);
+        String filterExpression = "#status = :status";
+        Map<String,String> expressionName = new HashMap<>();
+        expressionName.put("#status", RaddRegistryImportEntity.COL_STATUS);
+        return getByFilter(conditional, null, filterExpression,map,expressionName, null);
     }
 }

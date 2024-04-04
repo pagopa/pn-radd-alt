@@ -130,21 +130,21 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
                 })
                 .blockFirst();
 
-        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, null, null)
+        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, new Date(), new Date())
                 .map(transaction -> {
                     assertNotNull(transaction);
                     return Mono.empty();
                 })
                 .blockFirst();
 
-        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, null, new Date())
+        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, new Date(), new Date())
                 .map(transaction -> {
                     assertNotNull(transaction);
                     return Mono.empty();
                 })
                 .blockFirst();
 
-        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, new Date(), null)
+        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, new Date(), new Date())
                 .map(transaction -> {
                     assertNotNull(transaction);
                     return Mono.empty();
