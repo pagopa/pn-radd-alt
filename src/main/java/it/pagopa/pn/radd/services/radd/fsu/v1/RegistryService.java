@@ -158,7 +158,7 @@ public class RegistryService {
         return raddRegistryImportDAO.getRegistryImportByCxIdAndRequestId(xPagopaPnCxId, requestId)
                 .switchIfEmpty(Mono.error(new RaddGenericException(String.format("No import request found for cxId: [%s] and requestId: [%s] ", xPagopaPnCxId, requestId))))
                 .map(this::createVerifyRequestResponse)
-                .doOnError(throwable -> log.error("Error during verify registries import request: {}", throwable.getMessage(), throwable));
+                .doOnError(throwable -> log.error("Error during verify registries import request for cxId: [{}] and requestId: [{}]", xPagopaPnCxId, requestId, throwable));
     }
     private VerifyRequestResponse createVerifyRequestResponse(RaddRegistryImportEntity entity) {
         VerifyRequestResponse response = new VerifyRequestResponse();
