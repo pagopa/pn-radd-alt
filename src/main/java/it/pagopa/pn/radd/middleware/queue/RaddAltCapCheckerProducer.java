@@ -11,8 +11,7 @@ public interface RaddAltCapCheckerProducer extends MomProducer<RaddAltCapChecker
 
     default Mono<Void> sendCapCheckerEvent(String zipCode ) {
         RaddAltCapCheckerEvent capCheckerEvent = buildCapCheckerEvent(zipCode);
-        this.push( capCheckerEvent );
-        return Mono.empty();
+        return Mono.fromRunnable(() -> push(capCheckerEvent));
     }
 
     default RaddAltCapCheckerEvent buildCapCheckerEvent(String zipCode) {
