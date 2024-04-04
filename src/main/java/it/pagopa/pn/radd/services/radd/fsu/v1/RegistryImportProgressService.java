@@ -44,7 +44,7 @@ public class RegistryImportProgressService {
             lockAtMostFor = "${pn.radd.batch-csv.lock-at-most}",
             lockAtLeastFor = "${pn.radd.batch-csv.lock-at-least}"
     )
-    protected void csvImportBatch() {
+    protected void registryImportProgressLock() {
         try {
             LockAssert.assertLocked();
             log.info("batch registryImportProgress start on: {}", LocalDateTime.now());
@@ -54,7 +54,7 @@ public class RegistryImportProgressService {
         }
     }
 
-    private void registryImportProgress() {
+    public void registryImportProgress() {
         StopWatch watch = StopWatch.createStarted();
         retriveAndCheckImportRequest().subscribe();
         watch.stop();
