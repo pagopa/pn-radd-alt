@@ -1,6 +1,6 @@
-package it.pagopa.pn.radd.middleware.queue.producer.csvimport.sqs;
+package it.pagopa.pn.radd.middleware.queue.event;
 
-import it.pagopa.pn.api.dto.events.GenericFifoEvent;
+import it.pagopa.pn.api.dto.events.GenericEvent;
 import it.pagopa.pn.api.dto.events.StandardEventHeader;
 import lombok.*;
 
@@ -10,16 +10,11 @@ import lombok.*;
 @Builder(toBuilder = true)
 @EqualsAndHashCode
 @ToString
-public class RegistryImportProgressEvent
-        implements GenericFifoEvent<StandardEventHeader, RegistryImportProgressEvent.Payload> {
+public class RegistryImportProgressEvent implements GenericEvent<StandardEventHeader, RegistryImportProgressEvent.Payload> {
 
     private StandardEventHeader header;
 
     private RegistryImportProgressEvent.Payload payload;
-
-    private String messageDeduplicationId;
-
-    private String messageGroupId;
 
     @NoArgsConstructor
     @AllArgsConstructor

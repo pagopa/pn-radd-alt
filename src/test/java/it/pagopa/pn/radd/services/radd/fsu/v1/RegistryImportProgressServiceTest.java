@@ -1,24 +1,17 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
-import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryImportDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
-import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
-import it.pagopa.pn.radd.middleware.queue.producer.csvimport.sqs.RegistryImportProgressProducer;
-import it.pagopa.pn.radd.utils.ObjectMapperUtil;
-import it.pagopa.pn.radd.utils.RaddRegistryUtils;
-import org.junit.jupiter.api.Disabled;
+import it.pagopa.pn.radd.middleware.queue.producer.RegistryImportProgressProducer;
+import it.pagopa.pn.radd.pojo.RaddRegistryImportStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -47,7 +40,7 @@ class RegistryImportProgressServiceTest {
     }
 
     @Test
-    void testCsvImportBatchUpdateEntity() {
+    void testCsvImportBatchDoNotUpdateEntity() {
         String cxId = "cxId";
         String requestId = "requestId";
 
@@ -64,12 +57,12 @@ class RegistryImportProgressServiceTest {
         RegistryImportProgressService registryImportProgressService = new RegistryImportProgressService(raddRegistryImportDAO, raddRegistryRequestDAO, pnRaddFsuConfig, registryImportProgressProducer);
         registryImportProgressService.registryImportProgress();
 
-        verify(raddRegistryImportDAO, never()).updateEntityToDone(any());
+        verify(raddRegistryImportDAO, never()).updateStatus(any(), any(), anyString());
         verify(registryImportProgressProducer, never()).sendRegistryImportCompletedEvent(anyString(), anyString());
     }
 
     @Test
-    void testCsvImportBatchDoNotUpdateEntity() {
+    void testCsvImportBatchUpdateEntity() {
         String cxId = "cxId";
         String requestId = "requestId";
 
@@ -80,12 +73,12 @@ class RegistryImportProgressServiceTest {
         pnRaddRegistryImportEntity.setRequestId(requestId);
         when(raddRegistryImportDAO.findWithStatusPending()).thenReturn(Flux.just(pnRaddRegistryImportEntity));
         when(raddRegistryRequestDAO.findByCxIdAndRequestIdAndStatusNotIn(eq(cxId), eq(requestId), anyList())).thenReturn(Flux.empty());
-        when(raddRegistryImportDAO.updateEntityToDone(any())).thenReturn(Mono.just(pnRaddRegistryImportEntity));
+        when(raddRegistryImportDAO.updateStatus(pnRaddRegistryImportEntity, RaddRegistryImportStatus.DONE, null)).thenReturn(Mono.just(pnRaddRegistryImportEntity));
 
         RegistryImportProgressService registryImportProgressService = new RegistryImportProgressService(raddRegistryImportDAO, raddRegistryRequestDAO, pnRaddFsuConfig, registryImportProgressProducer);
         registryImportProgressService.registryImportProgress();
 
-        verify(raddRegistryImportDAO, times(1)).updateEntityToDone(any());
+        verify(raddRegistryImportDAO, times(1)).updateStatus(pnRaddRegistryImportEntity, RaddRegistryImportStatus.DONE, null);
         verify(registryImportProgressProducer, times(1)).sendRegistryImportCompletedEvent(anyString(), anyString());
     }
 

@@ -5,6 +5,7 @@ import it.pagopa.pn.radd.middleware.db.BaseDao;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryImportDAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
 import it.pagopa.pn.radd.pojo.ImportStatus;
+import it.pagopa.pn.radd.pojo.RaddRegistryImportStatus;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -64,15 +65,13 @@ public class RaddRegistryImportDAOImpl extends BaseDao<RaddRegistryImportEntity>
     }
 
     @Override
-    public Mono<RaddRegistryImportEntity> updateEntityToDone(RaddRegistryImportEntity entity) {
-        if (entity == null)
-            throw new IllegalArgumentException("Missing PnRaddRegistryImportEntity to update.");
-
-        entity.setStatus(ImportStatus.DONE.name());
+    public Mono<RaddRegistryImportEntity> updateStatus(RaddRegistryImportEntity entity, RaddRegistryImportStatus status, String error) {
+        entity.setStatus(status.name());
+        entity.setError(error);
         entity.setUpdatedAt(Instant.now());
-
-        return putItem(entity);
+        return updateItem(entity);
     }
+
 
     @Override
     public Flux<RaddRegistryImportEntity> findWithStatusPending() {

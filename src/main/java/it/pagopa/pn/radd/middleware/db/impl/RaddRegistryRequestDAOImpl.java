@@ -98,6 +98,30 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
         return this.transactWriteItems(addresses, RaddRegistryRequestEntity.class);
     }
 
+    @Override
+    public Flux<RaddRegistryRequestEntity> findByCxIdAndRequestIdAndStatusNotIn(String cxId, String requestId, List<RegistryRequestStatus> statusList) {
+        Key key = Key.builder().partitionValue(cxId).sortValue(requestId).build();
+        QueryConditional conditional = QueryConditional.keyEqualTo(key);
+
+        Map<String, AttributeValue> valueMap = new HashMap<>();
+
+        String query = addStatusFilterExpression(valueMap, statusList);
+
+        return getByFilter(conditional, RaddRegistryRequestEntity.CXID_REQUESTID_INDEX, valueMap, query, null);
+    }
+
+    private String addStatusFilterExpression(Map<String, AttributeValue> valueMap, List<RegistryRequestStatus> status) {
+        List<String> statusPlaceHolders = status.stream().map(registryRequestStatus -> {
+            String statusPlaceHolder = ":status" + registryRequestStatus.name();
+            valueMap.put(statusPlaceHolder, AttributeValue.builder().s(registryRequestStatus.name()).build());
+            return statusPlaceHolder;
+        }).toList();
+
+        String query = " NOT " + RaddRegistryImportEntity.COL_STATUS + " IN (" + String.join(",", statusPlaceHolders) + ")";
+        log.info("query: {}", query);
+        return query;
+    }
+
     private String getQueryAndPopulateMapForStatusFilter(String status, Map<String, AttributeValue> map) {
         String query = "";
         if (StringUtils.isNotEmpty(status)) {
@@ -105,41 +129,5 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
             query = RaddRegistryRequestEntity.COL_STATUS + " = :status";
         }
         return query;
-    }
-
-    private void addStatus(Map<String, AttributeValue> valueMap, StringBuilder query, RegistryRequestStatus status) {
-        String statusValue = status.name();
-        String statusName = ":status" + statusValue;
-        if (valueMap.containsKey(statusName)) {
-            throw new IllegalArgumentException("Status already present");
-        }
-
-        if (valueMap.keySet().isEmpty()) {
-            query.append(RaddRegistryImportEntity.COL_STATUS + " = ").append(statusName);
-        } else {
-            query.append(" and " + RaddRegistryImportEntity.COL_STATUS + " = ").append(statusName);
-        }
-
-        valueMap.put( statusName, AttributeValue.builder().s(statusValue).build());
-    }
-
-    @Override
-    public Flux<RaddRegistryRequestEntity> findByCxIdAndRequestIdAndStatusNotIn(String cxId, String requestId, List<RegistryRequestStatus> statusList) {
-        if (cxId == null)
-            throw new IllegalArgumentException(MISSING_STATUS);
-        if (requestId == null)
-            throw new IllegalArgumentException("Missing RegistryRequest param");
-        if (statusList == null || statusList.isEmpty()) {
-            throw new IllegalArgumentException("Missing RegistryRequest param");
-        }
-        Key key = Key.builder().partitionValue(cxId).sortValue(requestId).build();
-        QueryConditional conditional = QueryConditional.keyEqualTo(key);
-
-        Map<String, AttributeValue> valueMap = new HashMap<>();
-        StringBuilder query = new StringBuilder();
-
-        statusList.forEach(status -> addStatus(valueMap, query, status));
-
-        return getByFilter(conditional, RaddRegistryRequestEntity.CORRELATIONID_INDEX, valueMap, query.toString(), null);
     }
 }

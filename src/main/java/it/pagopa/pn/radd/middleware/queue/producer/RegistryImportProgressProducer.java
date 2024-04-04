@@ -1,7 +1,8 @@
-package it.pagopa.pn.radd.middleware.queue.producer.csvimport.sqs;
+package it.pagopa.pn.radd.middleware.queue.producer;
 
 import it.pagopa.pn.api.dto.events.MomProducer;
 import it.pagopa.pn.api.dto.events.StandardEventHeader;
+import it.pagopa.pn.radd.middleware.queue.event.RegistryImportProgressEvent;
 
 import java.time.Instant;
 
@@ -12,13 +13,11 @@ public interface RegistryImportProgressProducer extends MomProducer<RegistryImpo
     }
 
     default RegistryImportProgressEvent buildNotification(String cxId, String requestId) {
-        String eventId = cxId + "#" + requestId;
         return RegistryImportProgressEvent.builder()
                 .header(StandardEventHeader.builder()
-                        .publisher("raddAlt")
+                        .publisher("RADD_ALT") //FIXME: update when the correct value is available in EventPublisher enum
                         .createdAt(Instant.now())
-                        .eventId(eventId)
-                        .eventType("importCompleted")
+                        .eventType("IMPORT_COMPLETED")
                         .build()
                 )
                 .payload(RegistryImportProgressEvent.Payload.builder()

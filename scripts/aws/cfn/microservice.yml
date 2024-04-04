@@ -321,6 +321,21 @@ Parameters:
     Type: String
     Description: 'Address manager api key secret'
 
+  VerifyRaddRegistryImportLockAtMost:
+    Type: String
+    Description: It specifies how long the lock should be kept in case the executing node dies for Recovery batches (milliseconds)
+    Default: '120000'
+
+  VerifyRaddRegistryImportLockAtLeast:
+    Type: String
+    Description: It specifies minimum amount of time for which the lock should be kept (milliseconds)
+    Default: '1000'
+
+  VerifyRaddRegistryImportDelay:
+    Type: Number
+    Description: It defines the time interval between each batch of clean expires working requests (milliseconds)
+    Default: '120000'
+
 
 Resources:
 
@@ -378,6 +393,9 @@ Resources:
         ContainerEnvEntry30: !Sub 'SPRING_CLOUD_FUNCTIONROUTER_QUEUES_LIST=${RaddInternalCapCheckerQueueName},${PnRaddAltInputQueueName},${SafeStorageToRaddAltQueueName},${AddressManagerToRaddAltQueueName}'
         ContainerEnvEntry31: !Sub 'PN_RADD_ADDRESSMANAGERBASEURL=${AddressManagerBaseUrl}'
         ContainerEnvEntry32: !Sub 'PN_RADD_ADDRESSMANAGERAPIKEYSECRET=${AddressManagerApiKeySecret}'
+        ContainerEnvEntry33: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_LOCKATMOST=${VerifyRaddRegistryImportLockAtMost}'
+        ContainerEnvEntry34: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_LOCKATLEAST=${VerifyRaddRegistryImportLockAtLeast}'
+        ContainerEnvEntry35: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_DELAY=${VerifyRaddRegistryImportDelay}'
 
         MappedPaths: '/radd-net/*,/radd-net-private/*'
         ECSClusterName: !Ref ECSClusterName
@@ -440,7 +458,6 @@ Resources:
               - !Sub "${RaddRegistryDynamoTableArn}"
               - !Sub "${RaddRegistryDynamoTableArn}/*"
               - !Sub "${ShedLockTableArn}"
-              - !Sub "${ShedLockTableArn}/*"
 
   # Expose PN-Radd-Alt microservice public API with API-GW for RADD usage
   RaddAltMicroservicePublicAPI:
