@@ -1,7 +1,7 @@
 package it.pagopa.pn.radd.middleware.queue.event;
 
 import it.pagopa.pn.api.dto.events.GenericEvent;
-import it.pagopa.pn.api.dto.events.StandardEventHeader;
+import it.pagopa.pn.api.dto.events.GenericEventHeader;
 import lombok.*;
 
 @NoArgsConstructor
@@ -10,11 +10,11 @@ import lombok.*;
 @Builder(toBuilder = true)
 @EqualsAndHashCode
 @ToString
-public class RegistryImportProgressEvent implements GenericEvent<StandardEventHeader, RegistryImportProgressEvent.Payload> {
+public class RegistryImportProgressEvent implements GenericEvent<GenericEventHeader, RegistryImportProgressEvent.Payload> {
 
-    private StandardEventHeader header;
+    private GenericEventHeader header;
 
-    private RegistryImportProgressEvent.Payload payload;
+    private Payload payload;
 
     @NoArgsConstructor
     @AllArgsConstructor

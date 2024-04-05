@@ -302,7 +302,7 @@ Resources:
     UpdateReplacePolicy: Retain
     DeletionPolicy: Retain
     Properties:
-      TableName: !Sub '${ProjectName}-radd-alt-ShedLock'
+      TableName: !Sub '${ProjectName}-RaddShedLock'
       AttributeDefinitions:
         - AttributeName: "_id"
           AttributeType: "S"

@@ -4,6 +4,7 @@ import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.middleware.db.BaseDao;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryImportDAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.pojo.ImportStatus;
 import it.pagopa.pn.radd.pojo.RaddRegistryImportStatus;
 import org.springframework.stereotype.Repository;
@@ -37,7 +38,7 @@ public class RaddRegistryImportDAOImpl extends BaseDao<RaddRegistryImportEntity>
     public Flux<RaddRegistryImportEntity> getRegistryImportByCxId(String xPagopaPnCxId) {
         Key key = Key.builder().partitionValue(xPagopaPnCxId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
-        return getByFilter(conditional, null, null, null, null);
+        return getByFilter(conditional, null, null, null, null, null);
     }
 
     @Override
@@ -61,7 +62,11 @@ public class RaddRegistryImportDAOImpl extends BaseDao<RaddRegistryImportEntity>
         map.put(":status", AttributeValue.builder().s(importStatus.name()).build());
         String filterExpression = RaddRegistryImportEntity.COL_STATUS + " = :status";
 
-        return getByFilter(conditional, null, map, filterExpression, null);
+
+        Map<String,String> expressionName = new HashMap<>();
+        expressionName.put("#status", RaddRegistryRequestEntity.COL_STATUS);
+
+        return getByFilter(conditional, null, filterExpression, map, expressionName, null);
     }
 
     @Override
@@ -77,6 +82,6 @@ public class RaddRegistryImportDAOImpl extends BaseDao<RaddRegistryImportEntity>
     public Flux<RaddRegistryImportEntity> findWithStatusPending() {
         Key key = Key.builder().partitionValue(ImportStatus.PENDING.name()).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
-        return getByFilter(conditional, RaddRegistryImportEntity.STATUS_INDEX, null, null, null);
+        return getByFilter(conditional, RaddRegistryImportEntity.STATUS_INDEX, null, null, null, null);
     }
 }

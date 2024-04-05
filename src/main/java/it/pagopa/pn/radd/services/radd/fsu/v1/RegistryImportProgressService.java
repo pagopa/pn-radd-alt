@@ -71,6 +71,6 @@ public class RegistryImportProgressService {
     }
 
     private Mono<Void> sendSqsImportCompleted(String cxId, String requestId) {
-        return Mono.from(subscriber -> registryImportProgressProducer.sendRegistryImportCompletedEvent(cxId, requestId));
+        return Mono.fromRunnable(() -> registryImportProgressProducer.sendRegistryImportCompletedEvent(cxId, requestId));
     }
 }

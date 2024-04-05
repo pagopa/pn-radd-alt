@@ -74,6 +74,7 @@ class RegistryImportProgressServiceTest {
         when(raddRegistryImportDAO.findWithStatusPending()).thenReturn(Flux.just(pnRaddRegistryImportEntity));
         when(raddRegistryRequestDAO.findByCxIdAndRequestIdAndStatusNotIn(eq(cxId), eq(requestId), anyList())).thenReturn(Flux.empty());
         when(raddRegistryImportDAO.updateStatus(pnRaddRegistryImportEntity, RaddRegistryImportStatus.DONE, null)).thenReturn(Mono.just(pnRaddRegistryImportEntity));
+        doNothing().when(registryImportProgressProducer).sendRegistryImportCompletedEvent(anyString(), anyString());
 
         RegistryImportProgressService registryImportProgressService = new RegistryImportProgressService(raddRegistryImportDAO, raddRegistryRequestDAO, pnRaddFsuConfig, registryImportProgressProducer);
         registryImportProgressService.registryImportProgress();
