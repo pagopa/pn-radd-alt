@@ -4,7 +4,7 @@ import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.middleware.db.BaseDao;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryImportDAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
-import it.pagopa.pn.radd.pojo.ImportStatus;
+import it.pagopa.pn.radd.pojo.RaddRegistryImportStatus;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -35,7 +35,7 @@ public class RaddRegistryImportDAOImpl extends BaseDao<RaddRegistryImportEntity>
     public Flux<RaddRegistryImportEntity> getRegistryImportByCxId(String xPagopaPnCxId) {
         Key key = Key.builder().partitionValue(xPagopaPnCxId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
-        return getByFilter(conditional, null, null, null, null);
+        return getByFilter(conditional, null, null, null,null,null);
     }
 
     @Override
@@ -51,14 +51,15 @@ public class RaddRegistryImportDAOImpl extends BaseDao<RaddRegistryImportEntity>
 
 
     @Override
-    public Flux<RaddRegistryImportEntity> getRegistryImportByCxIdAndRequestIdFilterByStatus(String cxId, String requestId, ImportStatus importStatus) {
+    public Flux<RaddRegistryImportEntity> getRegistryImportByCxIdAndRequestIdFilterByStatus(String cxId, String requestId, RaddRegistryImportStatus importStatus) {
         Key key = Key.builder().partitionValue(cxId).sortValue(requestId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
 
         Map<String, AttributeValue> map = new HashMap<>();
         map.put(":status", AttributeValue.builder().s(importStatus.name()).build());
-        String filterExpression = RaddRegistryImportEntity.COL_STATUS + " = :status";
-
-        return getByFilter(conditional, null, map, filterExpression, null);
+        String filterExpression = "#status = :status";
+        Map<String,String> expressionName = new HashMap<>();
+        expressionName.put("#status", RaddRegistryImportEntity.COL_STATUS);
+        return getByFilter(conditional, null, filterExpression,map,expressionName, null);
     }
 }

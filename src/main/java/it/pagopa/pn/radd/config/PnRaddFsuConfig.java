@@ -38,6 +38,8 @@ public class PnRaddFsuConfig {
 
     private Long regitryImportUploadFileTtl;
 
+    private Integer maxQuerySize;
+
     @Data
     public static class Dao {
         private String raddTransactionTable;

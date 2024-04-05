@@ -1,6 +1,7 @@
 package it.pagopa.pn.radd.middleware.queue.consumer;
 
 import it.pagopa.pn.commons.utils.MDCUtils;
+import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.PnRaddAltNormalizeRequestEvent;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistryService;
 import lombok.CustomLog;
@@ -20,6 +21,8 @@ public class RaddAltInputEventHandler {
 
     private static final String HANDLER_NORMALIZE_REQUEST = "pnRaddAltInputNormalizeRequestConsumer";
 
+    private static final String IMPORT_COMPLETED_REQUEST = "importCompletedRequestHandler";
+
     @Bean
     public Consumer<Message<PnRaddAltNormalizeRequestEvent.Payload>> pnRaddAltInputNormalizeRequestConsumer() {
         return message -> {
@@ -30,6 +33,24 @@ public class RaddAltInputEventHandler {
                     .doOnSuccess(unused -> log.logEndingProcess(HANDLER_NORMALIZE_REQUEST))
                     .doOnError(throwable ->  {
                         log.logEndingProcess(HANDLER_NORMALIZE_REQUEST, false, throwable.getMessage());
+                        HandleEventUtils.handleException(message.getHeaders(), throwable);
+                    });
+
+            MDCUtils.addMDCToContextAndExecute(monoResult).block();
+        };
+    }
+
+    @Bean
+    public Consumer<Message<ImportCompletedRequestEvent.Payload>> importCompletedRequestConsumer() {
+        return message -> {
+            log.logStartingProcess(IMPORT_COMPLETED_REQUEST);
+            log.debug(IMPORT_COMPLETED_REQUEST + "- message: {}", message);
+            MDC.put(MDCUtils.MDC_CX_ID_KEY, message.getPayload().getCxId());
+            MDC.put(MDCUtils.MDC_PN_CTX_REQUEST_ID, message.getPayload().getRequestId());
+            var monoResult = registryService.handleImportCompletedRequest(message.getPayload())
+                    .doOnSuccess(unused -> log.logEndingProcess(IMPORT_COMPLETED_REQUEST))
+                    .doOnError(throwable ->  {
+                        log.logEndingProcess(IMPORT_COMPLETED_REQUEST, false, throwable.getMessage());
                         HandleEventUtils.handleException(message.getHeaders(), throwable);
                     });
 

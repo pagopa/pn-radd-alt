@@ -38,8 +38,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 
-import static it.pagopa.pn.radd.pojo.ImportStatus.PENDING;
-import static it.pagopa.pn.radd.pojo.ImportStatus.TO_PROCESS;
+import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.PENDING;
+import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.TO_PROCESS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

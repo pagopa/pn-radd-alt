@@ -19,7 +19,6 @@ import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestE
 import it.pagopa.pn.radd.middleware.queue.consumer.event.PnAddressManagerEvent;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.PnRaddAltNormalizeRequestEvent;
 import it.pagopa.pn.radd.pojo.AddressManagerRequest;
-import it.pagopa.pn.radd.pojo.ImportStatus;
 import it.pagopa.pn.radd.pojo.RaddRegistryImportStatus;
 import it.pagopa.pn.radd.pojo.RegistryRequestStatus;
 import it.pagopa.pn.radd.utils.RaddRegistryUtils;
@@ -103,9 +102,9 @@ public class RegistryService {
         String id = resultItems.get(0).getId();
         String cxId = PnAddressManagerEvent.ResultItem.retrieveCxIdFromId(id);
         String requestId = PnAddressManagerEvent.ResultItem.retrieveRequestIdFromId(id);
-        return raddRegistryImportDAO.getRegistryImportByCxIdAndRequestIdFilterByStatus(cxId, requestId, ImportStatus.PENDING)
+        return raddRegistryImportDAO.getRegistryImportByCxIdAndRequestIdFilterByStatus(cxId, requestId, RaddRegistryImportStatus.PENDING)
                 .switchIfEmpty(Mono.error(new RaddGenericException(String.format("No pending import request found for cxId: [%s] and requestId: [%s] ", cxId, requestId))))
-                .flatMap(registryImport -> raddRegistryRequestDAO.findByCorrelationIdWithStatus(correlationId, ImportStatus.PENDING)
+                .flatMap(registryImport -> raddRegistryRequestDAO.findByCorrelationIdWithStatus(correlationId, RegistryRequestStatus.PENDING)
                         .switchIfEmpty(Mono.error(new RaddGenericException("No pending items found for correlationId " + correlationId)))
                         .flatMap(raddRegistryRequest -> processAddressForRegistryRequest(resultItems, raddRegistryRequest)))
                 .doOnError(throwable -> log.error("Error processing addressManager event: {}", throwable.getMessage(), throwable))
@@ -119,7 +118,7 @@ public class RegistryService {
                     String error = item.getError();
                     if (StringUtils.isNotBlank(error)) {
                         log.warn("Id {} error not empty", item.getError());
-                        return raddRegistryRequestDAO.updateStatusAndError(raddRegistryRequest, ImportStatus.REJECTED, error);
+                        return raddRegistryRequestDAO.updateStatusAndError(raddRegistryRequest, RegistryRequestStatus.REJECTED, error);
                     }
                     return handleRegistryUpdate(raddRegistryRequest, item);
                 });
@@ -135,7 +134,7 @@ public class RegistryService {
                     if (throwable instanceof RaddGenericException ex && ERROR_DUPLICATE.equals(ex.getMessage())) {
                         return raddRegistryRequestDAO.updateStatusAndError(
                                 raddRegistryRequestEntity,
-                                ImportStatus.REJECTED,
+                                RegistryRequestStatus.REJECTED,
                                 ERROR_DUPLICATE
                         );
                     }
@@ -145,7 +144,7 @@ public class RegistryService {
 
     private Mono<RaddRegistryRequestEntity> updateRegistryRequestEntity(RaddRegistryRequestEntity newRegistryRequestEntity, RaddRegistryEntity preExistingRegistryEntity) {
         if (StringUtils.equals(preExistingRegistryEntity.getRequestId(), newRegistryRequestEntity.getRequestId())) {
-            return raddRegistryRequestDAO.updateStatusAndError(newRegistryRequestEntity, ImportStatus.REJECTED, ERROR_DUPLICATE);
+            return raddRegistryRequestDAO.updateStatusAndError(newRegistryRequestEntity, RegistryRequestStatus.REJECTED, ERROR_DUPLICATE);
         } else {
             return raddRegistryUtils.mergeNewRegistryEntity(preExistingRegistryEntity, newRegistryRequestEntity)
                     .flatMap(updatedEntity -> raddRegistryDAO.updateRegistryEntity(updatedEntity)
@@ -192,10 +191,8 @@ public class RegistryService {
 
     public Mono<Void> handleImportCompletedRequest(ImportCompletedRequestEvent.Payload payload) {
         log.logStartingProcess(PROCESS_SERVICE_IMPORT_COMPLETE);
-        return Flux.merge(raddRegistryRequestDAO.getAllFromCxidAndRequestIdWithState(payload.getCxId(), payload.getRequestId(), RegistryRequestStatus.ACCEPTED.name())
-                                .map(RaddRegistryRequestEntity::getZipCode),
-                        //FIXME richiamare metodo su 02.11
-                        Flux.empty())
+        return Flux.merge(raddRegistryRequestDAO.getAllFromCxidAndRequestIdWithState(payload.getCxId(), payload.getRequestId(), RegistryRequestStatus.ACCEPTED.name()).map(RaddRegistryRequestEntity::getZipCode),
+                        Flux.empty()) //FIXME richiamare metodo su 02.11)
                 .distinct()
                 .flatMap(raddAltCapCheckerProducer::sendCapCheckerEvent)
                 .then();

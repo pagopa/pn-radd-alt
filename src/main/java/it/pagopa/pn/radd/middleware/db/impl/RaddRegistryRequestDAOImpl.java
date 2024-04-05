@@ -5,7 +5,6 @@ import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.middleware.db.BaseDao;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
-import it.pagopa.pn.radd.pojo.ImportStatus;
 import it.pagopa.pn.radd.pojo.RegistryRequestStatus;
 import lombok.CustomLog;
 import org.springframework.stereotype.Repository;
@@ -28,6 +27,7 @@ import java.util.Map;
 public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntity> implements RaddRegistryRequestDAO {
 
     private static final String MISSING_STATUS = "Missing status param";
+    private final PnRaddFsuConfig pnRaddFsuConfig;
 
     public RaddRegistryRequestDAOImpl(DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient,
                                       DynamoDbAsyncClient dynamoDbAsyncClient,
@@ -38,31 +38,25 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
                 raddFsuConfig,
                 RaddRegistryRequestEntity.class
         );
+        pnRaddFsuConfig = raddFsuConfig;
     }
 
     @Override
-    public Flux<RaddRegistryRequestEntity> findByCorrelationIdWithStatus(String correlationId, ImportStatus status) throws IllegalArgumentException {
-        if (correlationId == null)
-            throw new IllegalArgumentException("Missing correlationId param");
-        if (status == null)
-            throw new IllegalArgumentException(MISSING_STATUS);
-
+    public Flux<RaddRegistryRequestEntity> findByCorrelationIdWithStatus(String correlationId, RegistryRequestStatus status) throws IllegalArgumentException {
         Key key = Key.builder().partitionValue(correlationId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
 
         Map<String, AttributeValue> map = new HashMap<>();
+
         String query = getQueryAndPopulateMapForStatusFilter(status.name(), map);
 
-        return getByFilter(conditional, RaddRegistryRequestEntity.CORRELATIONID_INDEX, map, query, null);
+        Map<String,String> expressionName = new HashMap<>();
+        expressionName.put("#status", RaddRegistryRequestEntity.COL_STATUS);
+        return getByFilter(conditional, RaddRegistryRequestEntity.CORRELATIONID_INDEX, query,map,expressionName, null);
     }
 
     @Override
-    public Mono<RaddRegistryRequestEntity> updateStatusAndError(RaddRegistryRequestEntity raddRegistryRequestEntity, ImportStatus importStatus, String error) throws IllegalArgumentException {
-        if (importStatus == null)
-            throw new IllegalArgumentException(MISSING_STATUS);
-        if (raddRegistryRequestEntity == null)
-            throw new IllegalArgumentException("Missing RegistryRequest param");
-
+    public Mono<RaddRegistryRequestEntity> updateStatusAndError(RaddRegistryRequestEntity raddRegistryRequestEntity, RegistryRequestStatus importStatus, String error) throws IllegalArgumentException {
         raddRegistryRequestEntity.setStatus(importStatus.name());
         raddRegistryRequestEntity.setError(error);
         raddRegistryRequestEntity.setUpdatedAt(Instant.now());
@@ -71,9 +65,6 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
 
     @Override
     public Mono<RaddRegistryRequestEntity> updateRegistryRequestStatus(RaddRegistryRequestEntity entity, RegistryRequestStatus importStatus) {
-        if (importStatus == null)
-            throw new IllegalArgumentException(MISSING_STATUS);
-
         entity.setStatus(importStatus.name());
         entity.setUpdatedAt(Instant.now());
         return putItem(entity);
@@ -87,8 +78,10 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
         Map<String, AttributeValue> map = new HashMap<>();
         String query = getQueryAndPopulateMapForStatusFilter(state, map);
 
-        return this.getByFilter(conditional, RaddRegistryRequestEntity.CORRELATIONID_INDEX, map, query, null);
+        Map<String,String> expressionName = new HashMap<>();
+        expressionName.put("#status", RaddRegistryRequestEntity.COL_STATUS);
 
+        return getByFilter(conditional, RaddRegistryRequestEntity.CORRELATIONID_INDEX, query,map,expressionName, null);
     }
 
     @Override
@@ -97,30 +90,28 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
         return this.transactWriteItems(addresses, RaddRegistryRequestEntity.class);
     }
 
-    private String getQueryAndPopulateMapForStatusFilter(String status, Map<String, AttributeValue> map) {
-        String query = "";
-        if (StringUtils.isNotEmpty(status)) {
-            map.put(":status", AttributeValue.builder().s(status).build());
-            query = RaddRegistryRequestEntity.COL_STATUS + " = :status";
-        }
-        return query;
-    }
-
     @Override
     public Flux<RaddRegistryRequestEntity> getAllFromCxidAndRequestIdWithState(String cxId, String requestId, String state) {
         Key key = Key.builder().partitionValue(cxId).sortValue(requestId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
-        String index = RaddRegistryRequestEntity.CXID_REQUESTID_INDEX;
 
         Map<String, AttributeValue> map = new HashMap<>();
-        String query = "";
 
-        if (StringUtils.isNotEmpty(state)) {
-            map.put(":"+RaddRegistryRequestEntity.COL_STATUS, AttributeValue.builder().s(state).build());
-            query = RaddRegistryRequestEntity.COL_STATUS + " = :"+RaddRegistryRequestEntity.COL_STATUS ;
-        }
+        Map<String,String> expressionName = new HashMap<>();
+        expressionName.put("#status", RaddRegistryRequestEntity.COL_STATUS);
 
-        return this.getByFilter(conditional, index, map, query, null);
+        String query = getQueryAndPopulateMapForStatusFilter(state, map);
+
+        return getAllPaginatedItems(conditional, RaddRegistryRequestEntity.CXID_REQUESTID_INDEX, query,map,expressionName, pnRaddFsuConfig.getMaxQuerySize())
+                .flatMapIterable(page -> page);
     }
 
+    private String getQueryAndPopulateMapForStatusFilter(String status, Map<String, AttributeValue> map) {
+        String query = "";
+        if (StringUtils.isNotEmpty(status)) {
+            map.put(":status", AttributeValue.builder().s(status).build());
+            query = "#status = :status";
+        }
+        return query;
+    }
 }
