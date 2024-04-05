@@ -134,9 +134,6 @@ public abstract class BaseDao<T> {
 
     private Mono<List<T>> processPage(Mono<Page<T>> pageMono, List<T> items, QueryEnhancedRequest.Builder qeRequest, String index) {
         return pageMono.flatMap(page -> {
-            if (page.items().isEmpty()) {
-                return Mono.just(items);
-            }
             items.addAll(page.items());
             if (page.lastEvaluatedKey() != null) {
                 return processPage(constructAndExecuteQuery(qeRequest, page.lastEvaluatedKey(), index), items, qeRequest, index);

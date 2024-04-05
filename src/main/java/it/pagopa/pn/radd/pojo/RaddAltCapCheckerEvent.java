@@ -1,6 +1,7 @@
 package it.pagopa.pn.radd.pojo;
 
 import it.pagopa.pn.api.dto.events.GenericEvent;
+import it.pagopa.pn.api.dto.events.GenericEventHeader;
 import it.pagopa.pn.api.dto.events.StandardEventHeader;
 import lombok.*;
 
@@ -12,9 +13,9 @@ import javax.validation.constraints.NotEmpty;
 @Builder(toBuilder = true)
 @EqualsAndHashCode
 @ToString
-public class RaddAltCapCheckerEvent implements GenericEvent<StandardEventHeader, RaddAltCapCheckerEvent.Payload> {
+public class RaddAltCapCheckerEvent implements GenericEvent<GenericEventHeader, RaddAltCapCheckerEvent.Payload> {
 
-    private StandardEventHeader header;
+    private GenericEventHeader header;
 
     private Payload payload;
 

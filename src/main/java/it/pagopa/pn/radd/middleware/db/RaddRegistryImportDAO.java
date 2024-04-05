@@ -1,7 +1,6 @@
 package it.pagopa.pn.radd.middleware.db;
 
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
-import it.pagopa.pn.radd.pojo.ImportStatus;
 import it.pagopa.pn.radd.pojo.RaddRegistryImportStatus;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

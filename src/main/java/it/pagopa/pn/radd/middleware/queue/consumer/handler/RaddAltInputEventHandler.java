@@ -10,6 +10,7 @@ import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
+import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
 
 import java.util.function.Consumer;
 @Configuration
@@ -21,7 +22,7 @@ public class RaddAltInputEventHandler {
 
     private static final String HANDLER_NORMALIZE_REQUEST = "pnRaddAltInputNormalizeRequestConsumer";
 
-    private static final String IMPORT_COMPLETED_REQUEST = "importCompletedRequestHandler";
+    private static final String IMPORT_COMPLETED_REQUEST = "pnRaddAltImportCompletedRequestConsumer";
 
     @Bean
     public Consumer<Message<PnRaddAltNormalizeRequestEvent.Payload>> pnRaddAltInputNormalizeRequestConsumer() {
@@ -41,7 +42,7 @@ public class RaddAltInputEventHandler {
     }
 
     @Bean
-    public Consumer<Message<ImportCompletedRequestEvent.Payload>> importCompletedRequestConsumer() {
+    public Consumer<Message<ImportCompletedRequestEvent.Payload>> pnRaddAltImportCompletedRequestConsumer() {
         return message -> {
             log.logStartingProcess(IMPORT_COMPLETED_REQUEST);
             log.debug(IMPORT_COMPLETED_REQUEST + "- message: {}", message);

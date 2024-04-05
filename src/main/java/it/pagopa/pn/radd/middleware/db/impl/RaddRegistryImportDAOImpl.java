@@ -76,7 +76,7 @@ public class RaddRegistryImportDAOImpl extends BaseDao<RaddRegistryImportEntity>
 
     @Override
     public Flux<RaddRegistryImportEntity> findWithStatusPending() {
-        Key key = Key.builder().partitionValue(ImportStatus.PENDING.name()).build();
+        Key key = Key.builder().partitionValue(RaddRegistryImportStatus.PENDING.name()).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
         return getByFilter(conditional, RaddRegistryImportEntity.STATUS_INDEX, null, null, null, null);
     }

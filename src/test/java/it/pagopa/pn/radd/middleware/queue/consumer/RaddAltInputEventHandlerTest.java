@@ -22,7 +22,7 @@ class RaddAltInputEventHandlerTest {
     private Message<PnRaddAltNormalizeRequestEvent.Payload> messageNormalizeRequest;
 
     @Mock
-    private Message<ImportCompletedRequestEvent.Payload> messageImportCompleted;
+    private Message<it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent.Payload> messageImportCompleted;
 
     @InjectMocks
     private RaddAltInputEventHandler raddAltInputEventHandler;
@@ -46,14 +46,14 @@ class RaddAltInputEventHandlerTest {
 
     @Test
     void shouldHandleImportCompletedSuccessfully() {
-        ImportCompletedRequestEvent.Payload event = mock(ImportCompletedRequestEvent.Payload.class);
+        it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent.Payload event = mock(it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent.Payload.class);
         when(event.getCxId()).thenReturn("cxId");
         when(event.getRequestId()).thenReturn("requestId");
         when(messageImportCompleted.getPayload()).thenReturn(event);
 
         when(registryService.handleImportCompletedRequest(event)).thenReturn(Mono.empty());
 
-        raddAltInputEventHandler.importCompletedRequestConsumer().accept(messageImportCompleted);
+        raddAltInputEventHandler.pnRaddAltImportCompletedRequestConsumer().accept(messageImportCompleted);
 
         verify(registryService, times(1)).handleImportCompletedRequest(event);
     }

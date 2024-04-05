@@ -26,6 +26,7 @@ import java.util.Map;
 @CustomLog
 public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntity> implements RaddRegistryRequestDAO {
 
+    private final PnRaddFsuConfig pnRaddFsuConfig;
     public RaddRegistryRequestDAOImpl(DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient,
                                       DynamoDbAsyncClient dynamoDbAsyncClient,
                                       PnRaddFsuConfig raddFsuConfig) {
@@ -39,7 +40,7 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
     }
 
     @Override
-    public Flux<RaddRegistryRequestEntity> findByCorrelationIdWithStatus(String correlationId, ImportStatus status) throws IllegalArgumentException {
+    public Flux<RaddRegistryRequestEntity> findByCorrelationIdWithStatus(String correlationId, RegistryRequestStatus status) throws IllegalArgumentException {
         Key key = Key.builder().partitionValue(correlationId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
 
@@ -54,7 +55,7 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
     }
 
     @Override
-    public Mono<RaddRegistryRequestEntity> updateStatusAndError(RaddRegistryRequestEntity raddRegistryRequestEntity, ImportStatus importStatus, String error) throws IllegalArgumentException {
+    public Mono<RaddRegistryRequestEntity> updateStatusAndError(RaddRegistryRequestEntity raddRegistryRequestEntity, RegistryRequestStatus importStatus, String error) throws IllegalArgumentException {
         raddRegistryRequestEntity.setStatus(importStatus.name());
         raddRegistryRequestEntity.setError(error);
         raddRegistryRequestEntity.setUpdatedAt(Instant.now());
