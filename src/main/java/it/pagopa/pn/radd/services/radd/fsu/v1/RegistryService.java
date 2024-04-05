@@ -14,10 +14,8 @@ import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.msclient.PnAddressManagerClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
-import it.pagopa.pn.radd.middleware.queue.RaddAltCapCheckerProducer;
-import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
-import it.pagopa.pn.radd.middleware.queue.consumer.event.PnAddressManagerEvent;
-import it.pagopa.pn.radd.middleware.queue.consumer.event.PnRaddAltNormalizeRequestEvent;
+import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
+import it.pagopa.pn.radd.middleware.queue.event.PnRaddAltNormalizeRequestEvent;
 import it.pagopa.pn.radd.pojo.AddressManagerRequest;
 import it.pagopa.pn.radd.pojo.RaddRegistryImportStatus;
 import it.pagopa.pn.radd.pojo.RegistryRequestStatus;
@@ -38,6 +36,7 @@ import java.util.UUID;
 import static it.pagopa.pn.radd.constant.ProcessStatus.PROCESS_SERVICE_IMPORT_COMPLETE;
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.DUPLICATE_REQUEST;
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.PENDING_REQUEST;
+import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.*;
 import static it.pagopa.pn.radd.utils.Const.ERROR_DUPLICATE;
 
 @Service
@@ -162,7 +161,7 @@ public class RegistryService {
     public Mono<VerifyRequestResponse> verifyRegistriesImportRequest(String xPagopaPnCxId, String requestId) {
         log.info("start verifyRegistriesImportRequest for cxId: {} and requestId: {}", xPagopaPnCxId, requestId);
         return raddRegistryImportDAO.getRegistryImportByCxIdAndRequestId(xPagopaPnCxId, requestId)
-                .switchIfEmpty(Mono.error(new RaddGenericException(String.format("No import request found for cxId: [%s] and requestId: [%s] ", xPagopaPnCxId, requestId))))
+                .switchIfEmpty(Mono.error(new RaddGenericException(IMPORT_REQUEST_NOT_FOUND, HttpStatus.NOT_FOUND)))
                 .map(this::createVerifyRequestResponse)
                 .doOnError(throwable -> log.error("Error during verify registries import request for cxId: [{}] and requestId: [{}]", xPagopaPnCxId, requestId, throwable));
     }

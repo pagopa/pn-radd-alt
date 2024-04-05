@@ -239,4 +239,16 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
             }
         ]"
 
+echo "### CREATE PN RADD SCHEDLOCK TABLE ###"
+
+aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
+    dynamodb create-table \
+    --table-name pn-RaddShedLock\
+    --attribute-definitions \
+        AttributeName=_id,AttributeType=S \
+    --key-schema \
+        AttributeName=_id,KeyType=HASH \
+    --provisioned-throughput \
+        ReadCapacityUnits=10,WriteCapacityUnits=5 \
+
 echo "Initialization terminated"

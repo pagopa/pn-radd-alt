@@ -26,9 +26,6 @@ import java.util.Map;
 @CustomLog
 public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntity> implements RaddRegistryRequestDAO {
 
-    private static final String MISSING_STATUS = "Missing status param";
-    private final PnRaddFsuConfig pnRaddFsuConfig;
-
     public RaddRegistryRequestDAOImpl(DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient,
                                       DynamoDbAsyncClient dynamoDbAsyncClient,
                                       PnRaddFsuConfig raddFsuConfig) {
@@ -42,7 +39,7 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
     }
 
     @Override
-    public Flux<RaddRegistryRequestEntity> findByCorrelationIdWithStatus(String correlationId, RegistryRequestStatus status) throws IllegalArgumentException {
+    public Flux<RaddRegistryRequestEntity> findByCorrelationIdWithStatus(String correlationId, ImportStatus status) throws IllegalArgumentException {
         Key key = Key.builder().partitionValue(correlationId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
 
@@ -52,11 +49,12 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
 
         Map<String,String> expressionName = new HashMap<>();
         expressionName.put("#status", RaddRegistryRequestEntity.COL_STATUS);
+
         return getByFilter(conditional, RaddRegistryRequestEntity.CORRELATIONID_INDEX, query,map,expressionName, null);
     }
 
     @Override
-    public Mono<RaddRegistryRequestEntity> updateStatusAndError(RaddRegistryRequestEntity raddRegistryRequestEntity, RegistryRequestStatus importStatus, String error) throws IllegalArgumentException {
+    public Mono<RaddRegistryRequestEntity> updateStatusAndError(RaddRegistryRequestEntity raddRegistryRequestEntity, ImportStatus importStatus, String error) throws IllegalArgumentException {
         raddRegistryRequestEntity.setStatus(importStatus.name());
         raddRegistryRequestEntity.setError(error);
         raddRegistryRequestEntity.setUpdatedAt(Instant.now());
@@ -91,6 +89,21 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
     }
 
     @Override
+    public Flux<RaddRegistryRequestEntity> findByCxIdAndRequestIdAndStatusNotIn(String cxId, String requestId, List<RegistryRequestStatus> statusList) {
+        Key key = Key.builder().partitionValue(cxId).sortValue(requestId).build();
+        QueryConditional conditional = QueryConditional.keyEqualTo(key);
+
+        Map<String, AttributeValue> valueMap = new HashMap<>();
+
+        String query = addStatusFilterExpression(valueMap, statusList);
+
+        Map<String,String> expressionName = new HashMap<>();
+        expressionName.put("#status", RaddRegistryRequestEntity.COL_STATUS);
+
+        return getByFilter(conditional, RaddRegistryRequestEntity.CXID_REQUESTID_INDEX, query, valueMap, expressionName, null);
+    }
+
+    @Override
     public Flux<RaddRegistryRequestEntity> getAllFromCxidAndRequestIdWithState(String cxId, String requestId, String state) {
         Key key = Key.builder().partitionValue(cxId).sortValue(requestId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
@@ -104,6 +117,19 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
 
         return getAllPaginatedItems(conditional, RaddRegistryRequestEntity.CXID_REQUESTID_INDEX, query,map,expressionName, pnRaddFsuConfig.getMaxQuerySize())
                 .flatMapIterable(page -> page);
+    }
+
+
+    private String addStatusFilterExpression(Map<String, AttributeValue> valueMap, List<RegistryRequestStatus> status) {
+        List<String> statusPlaceHolders = status.stream().map(registryRequestStatus -> {
+            String statusPlaceHolder = ":status" + registryRequestStatus.name();
+            valueMap.put(statusPlaceHolder, AttributeValue.builder().s(registryRequestStatus.name()).build());
+            return statusPlaceHolder;
+        }).toList();
+
+        String query = " NOT #status IN (" + String.join(",", statusPlaceHolders) + ")";
+        log.info("query: {}", query);
+        return query;
     }
 
     private String getQueryAndPopulateMapForStatusFilter(String status, Map<String, AttributeValue> map) {
