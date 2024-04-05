@@ -34,7 +34,8 @@ class RaddAltInputEventHandlerTest {
 
     @Test
     void shouldHandleNormalizeRequestSuccessfully() {
-        PnRaddAltNormalizeRequestEvent.Payload event = new PnRaddAltNormalizeRequestEvent.Payload();
+        PnRaddAltNormalizeRequestEvent.Payload event = mock(PnRaddAltNormalizeRequestEvent.Payload.class);
+        when(event.getCorrelationId()).thenReturn("correlationId");
         when(messageNormalizeRequest.getPayload()).thenReturn(event);
         when(registryService.handleNormalizeRequestEvent(event)).thenReturn(Mono.empty());
 
@@ -45,7 +46,11 @@ class RaddAltInputEventHandlerTest {
 
     @Test
     void shouldHandleImportCompletedSuccessfully() {
-        ImportCompletedRequestEvent.Payload event = new ImportCompletedRequestEvent.Payload();
+        ImportCompletedRequestEvent.Payload event = mock(ImportCompletedRequestEvent.Payload.class);
+        when(event.getCxId()).thenReturn("cxId");
+        when(event.getRequestId()).thenReturn("requestId");
+        when(messageImportCompleted.getPayload()).thenReturn(event);
+
         when(registryService.handleImportCompletedRequest(event)).thenReturn(Mono.empty());
 
         raddAltInputEventHandler.importCompletedRequestConsumer().accept(messageImportCompleted);
