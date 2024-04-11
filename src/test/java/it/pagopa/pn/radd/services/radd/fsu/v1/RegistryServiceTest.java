@@ -150,6 +150,7 @@ class RegistryServiceTest {
         StepVerifier.create(registryService.uploadRegistryRequests("cxId", Mono.just(request)))
                 .expectErrorMessage("Una precedente richiesta di import è ancora in corso").verify();
     }
+
     @Test
     public void shouldProcessMessageSuccessfully() throws JsonProcessingException {
 
@@ -352,10 +353,39 @@ class RegistryServiceTest {
 
     @Test
     void handleImportCompletedRequest() {
-        ImportCompletedRequestEvent.Payload payload = ImportCompletedRequestEvent.Payload.builder().cxId("cxId").requestId("requestId").build();
-        when(raddRegistryRequestDAO.getAllFromCxidAndRequestIdWithState("cxId", "requestId", RegistryRequestStatus.ACCEPTED.name()))
-                .thenReturn(Flux.just(mock(RaddRegistryRequestEntity.class)));
+        String xPagopaPnCxId = "testCxId";
+        String requestId = "testRequestId";
+
+        RaddRegistryImportEntity raddRegistryImportEntity = new RaddRegistryImportEntity();
+        raddRegistryImportEntity.setConfig("{}");
+        raddRegistryImportEntity.setRequestId(requestId);
+        raddRegistryImportEntity.setCxId(xPagopaPnCxId);
+
+        RaddRegistryEntity raddRegistryEntity = new RaddRegistryEntity();
+        raddRegistryEntity.setRegistryId("testRegistryId");
+        raddRegistryEntity.setZipCode("00100");
+
+        RaddRegistryImportConfig raddRegistryImportConfig = new RaddRegistryImportConfig();
+        raddRegistryImportConfig.setDeleteRole("duplicate");
+        raddRegistryImportConfig.setDefaultEndValidity(1);
+
+        RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
+        raddRegistryRequestEntity.setPk("cxId#requestId#index");
+        raddRegistryRequestEntity.setZipCode("00100");
+
+        when(raddRegistryImportDAO.getRegistryImportByCxIdAndRequestIdFilterByStatus(any(), any(), any()))
+                .thenReturn(Flux.just(raddRegistryImportEntity));
+        when(raddRegistryDAO.findByCxIdAndRequestId(xPagopaPnCxId, REQUEST_ID_PREFIX))
+                .thenReturn(Flux.just(raddRegistryEntity));
+        when(raddRegistryDAO.updateRegistryEntity(raddRegistryEntity))
+                .thenReturn(Mono.just(raddRegistryEntity));
+
+        ImportCompletedRequestEvent.Payload payload = ImportCompletedRequestEvent.Payload.builder().cxId(xPagopaPnCxId).requestId(requestId).build();
+        when(raddRegistryRequestDAO.getAllFromCxidAndRequestIdWithState(xPagopaPnCxId, requestId, RegistryRequestStatus.ACCEPTED.name()))
+                .thenReturn(Flux.just(raddRegistryRequestEntity));
+
         StepVerifier.create(registryService.handleImportCompletedRequest(payload)).expectComplete();
+
     }
 
     @Test
