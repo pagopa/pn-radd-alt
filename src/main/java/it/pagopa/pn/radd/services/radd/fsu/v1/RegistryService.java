@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.*;
 import static it.pagopa.pn.radd.utils.Const.*;
@@ -69,6 +70,7 @@ public class RegistryService {
     private final ObjectMapperUtil objectMapperUtil;
 
     public static final String PROCESS_SERVICE_IMPORT_COMPLETE = "[IMPORT_COMPLETE] import complete request service";
+    public static final String REGISTRY_REQUEST_UPDATED_IN_STATUS_ACCEPTED = "Registry request [{}] updated in status ACCEPTED";
 
     public Mono<RegistryUploadResponse> uploadRegistryRequests(String xPagopaPnCxId, Mono<RegistryUploadRequest> registryUploadRequest) {
         String requestId = UUID.randomUUID().toString();
@@ -171,30 +173,26 @@ public class RegistryService {
         } else {
             return raddRegistryUtils.mergeNewRegistryEntity(preExistingRegistryEntity, newRegistryRequestEntity)
                     .flatMap(updatedEntity -> raddRegistryDAO.updateRegistryEntity(updatedEntity)
-                            .flatMap(entity -> {
-                                newRegistryRequestEntity.setUpdatedAt(Instant.now());
-                                newRegistryRequestEntity.setStatus(RegistryRequestStatus.ACCEPTED.name());
-                                newRegistryRequestEntity.setRegistryId(entity.getRegistryId());
-                                newRegistryRequestEntity.setZipCode(entity.getZipCode());
-                                return raddRegistryRequestDAO.updateRegistryRequestData(newRegistryRequestEntity)
-                                        .doOnNext(requestEntity -> log.info("Registry request [{}] updated in status ACCEPTED", requestEntity.getPk()));
-                            }));
+                            .flatMap(updateEntity(newRegistryRequestEntity)));
         }
+    }
+
+    private Function<RaddRegistryEntity, Mono<? extends RaddRegistryRequestEntity>> updateEntity(RaddRegistryRequestEntity newRegistryRequestEntity) {
+        return entity -> {
+            newRegistryRequestEntity.setUpdatedAt(Instant.now());
+            newRegistryRequestEntity.setStatus(RegistryRequestStatus.ACCEPTED.name());
+            newRegistryRequestEntity.setRegistryId(entity.getRegistryId());
+            newRegistryRequestEntity.setZipCode(entity.getZipCode());
+            return raddRegistryRequestDAO.updateRegistryRequestData(newRegistryRequestEntity)
+                    .doOnNext(requestEntity -> log.info(REGISTRY_REQUEST_UPDATED_IN_STATUS_ACCEPTED, requestEntity.getPk()));
+        };
     }
 
     private Mono<RaddRegistryRequestEntity> createNewRegistryEntity(String registryId, RaddRegistryRequestEntity raddRegistryRequestEntity, PnAddressManagerEvent.ResultItem resultItem) {
         return raddRegistryUtils.constructRaddRegistryEntity(registryId, resultItem.getNormalizedAddress(), raddRegistryRequestEntity)
                 .flatMap(item -> this.raddRegistryDAO.putItemIfAbsent(item)
                         .onErrorResume(TransactionAlreadyExistsException.class, ex -> Mono.error(new RaddGenericException(ERROR_DUPLICATE))))
-                .flatMap(raddRegistryEntity -> {
-                    raddRegistryRequestEntity.setUpdatedAt(Instant.now());
-                    raddRegistryRequestEntity.setStatus(RegistryRequestStatus.ACCEPTED.name());
-                    raddRegistryRequestEntity.setRegistryId(raddRegistryEntity.getRegistryId());
-                    raddRegistryRequestEntity.setZipCode(raddRegistryEntity.getZipCode());
-                    return raddRegistryRequestDAO.updateRegistryRequestData(raddRegistryRequestEntity)
-                            .doOnNext(requestEntity -> log.info("Registry request [{}] updated in status ACCEPTED", requestEntity.getPk()));
-                });
-
+                .flatMap(updateEntity(raddRegistryRequestEntity));
     }
 
     public Mono<VerifyRequestResponse> verifyRegistriesImportRequest(String xPagopaPnCxId, String requestId) {

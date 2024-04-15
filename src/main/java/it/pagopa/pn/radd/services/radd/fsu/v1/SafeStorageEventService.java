@@ -7,6 +7,7 @@ import it.pagopa.pn.radd.exception.TransactionAlreadyExistsException;
 import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryImportDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.msclient.DocumentDownloadClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
@@ -17,12 +18,17 @@ import it.pagopa.pn.radd.pojo.RaddRegistryRequest;
 import lombok.AllArgsConstructor;
 import lombok.CustomLog;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -51,24 +57,26 @@ public class SafeStorageEventService {
                 .switchIfEmpty(Mono.error(new RaddImportException(String.format("Import request for FileKey [%s] does not exist", fileKey))))
                 .flatMap(raddRegistryImportEntity -> pnRaddRegistryImportDAO.updateStatus(raddRegistryImportEntity, RaddRegistryImportStatus.TAKEN_CHARGE, null))
                 .zipWhen(raddRegistryImportEntity -> retrieveAndProcessFile(fileKey))
-                .flatMap(tuple -> {
-                    if (CollectionUtils.isEmpty(tuple.getT2())) {
-                        log.info("Error during import csv for fileKey [{}] - update importEntity with status REJECTED", fileKey);
-                        return pnRaddRegistryImportDAO.updateStatus(tuple.getT1(), RaddRegistryImportStatus.REJECTED, errorCSV)
-                                .flatMap(importEntity -> Mono.error(new RaddImportException(ERROR_RADD_ALT_READING_CSV)));
-                    } else {
-                        List<RaddRegistryOriginalRequest> originalRequests = raddRegistryRequestEntityMapper.retrieveOriginalRequest(tuple.getT2());
-                        List<RaddRegistryRequestEntity> raddRegistryRequestEntities = raddRegistryRequestEntityMapper.retrieveRaddRegistryRequestEntity(originalRequests, tuple.getT1());
-                        Map<String, List<RaddRegistryRequestEntity>> map = groupingRaddRegistryRequest(tuple.getT1().getCxId(), tuple.getT1().getRequestId(), raddRegistryRequestEntities, 20);
-                        return persistRaddRegistryRequest(map)
-                                .thenReturn(tuple.getT1());
-                    }
-                })
+                .flatMap(tuple -> updatedRaddRegistryImportRegistryEntityStatus(tuple, fileKey))
                 .flatMap(importEntity -> pnRaddRegistryImportDAO.updateStatus(importEntity, RaddRegistryImportStatus.PENDING, null))
                 .doOnError(throwable -> log.error("Error during import csv for fileKey [{}]", fileKey, throwable))
                 .onErrorResume(RaddImportException.class, e -> Mono.empty())
                 .then();
 
+    }
+
+    private @NotNull Mono<RaddRegistryImportEntity> updatedRaddRegistryImportRegistryEntityStatus(Tuple2<RaddRegistryImportEntity, List<RaddRegistryRequest>> tuple, String fileKey) {
+        if (CollectionUtils.isEmpty(tuple.getT2())) {
+            log.info("Error during import csv for fileKey [{}] - update importEntity with status REJECTED", fileKey);
+            return pnRaddRegistryImportDAO.updateStatus(tuple.getT1(), RaddRegistryImportStatus.REJECTED, errorCSV)
+                    .flatMap(importEntity -> Mono.error(new RaddImportException(ERROR_RADD_ALT_READING_CSV)));
+        } else {
+            List<RaddRegistryOriginalRequest> originalRequests = raddRegistryRequestEntityMapper.retrieveOriginalRequest(tuple.getT2());
+            List<RaddRegistryRequestEntity> raddRegistryRequestEntities = raddRegistryRequestEntityMapper.retrieveRaddRegistryRequestEntity(originalRequests, tuple.getT1());
+            Map<String, List<RaddRegistryRequestEntity>> map = groupingRaddRegistryRequest(tuple.getT1().getCxId(), tuple.getT1().getRequestId(), raddRegistryRequestEntities, 20);
+            return persistRaddRegistryRequest(map)
+                    .thenReturn(tuple.getT1());
+        }
     }
 
     private Mono<List<RaddRegistryRequest>> retrieveAndProcessFile(String fileKey) {

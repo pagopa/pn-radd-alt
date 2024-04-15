@@ -1,11 +1,7 @@
 package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.RegistryApi;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryRequest;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryResponse;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistriesResponse;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateRegistryRequest;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,7 +17,7 @@ public class RegistrySelfController implements RegistryApi {
     private final RegistrySelfService registrySelfService;
 
     /**
-     * PATCH /radd-alt/api/v1/registry/{registryId}
+     * PATCH /radd-net/api/v1/registry/{registryId}
      * API utilizzata per la modifica di un&#39;anagrafica RADD
      *
      * @param xPagopaPnCxType Customer/Receiver Type (required)
@@ -44,7 +40,7 @@ public class RegistrySelfController implements RegistryApi {
     }
 
     /**
-     * POST /radd-alt/api/v1/registry
+     * POST /radd-net/api/v1/registry
      * API utilizzata per la richiesta di attivazione nuova anagrafica RADD
      *
      * @param xPagopaPnCxType Customer/Receiver Type (required)
@@ -65,7 +61,7 @@ public class RegistrySelfController implements RegistryApi {
     }
 
     /**
-     * PATCH /radd-alt/api/v1/registry/{registryId}/dismiss
+     * PATCH /radd-net/api/v1/registry/{registryId}/dismiss
      * L'API di eliminazione sportello permette a un soggetto RADD di rimuovere un'anagrafica fornendo l'identificativo univoco dello sportello e la data in cui tale sportello sarà disattivato.
      *
      * @param xPagopaPnCxType Customer/Receiver Type (required)
@@ -87,7 +83,7 @@ public class RegistrySelfController implements RegistryApi {
     }
 
     /**
-     * GET /radd-alt/api/v1/registry
+     * GET /radd-net/api/v1/registry
      * API utilizzata per recuperare la lista paginata di anagrafiche RADD dato il cxId
      *
      * @param xPagopaPnCxType Customer/Receiver Type (required)

@@ -2,6 +2,7 @@ package it.pagopa.pn.radd.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
 import it.pagopa.pn.api.dto.events.PnAttachmentsConfigEventItem;
 import it.pagopa.pn.api.dto.events.PnAttachmentsConfigEventPayload;
 import it.pagopa.pn.api.dto.events.PnEvaluatedZipCodeEvent;
@@ -35,7 +36,8 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.*;
 
-import static it.pagopa.pn.radd.utils.RaddRegistryUtils.*;
+import static it.pagopa.pn.radd.utils.RaddRegistryUtils.findIntersection;
+import static it.pagopa.pn.radd.utils.RaddRegistryUtils.mergeIntervals;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -985,102 +987,9 @@ class RaddRegistryUtilsTest {
         // Assert
         assertEquals(1, actualFindActiveIntervalsResult.size());
         TimeInterval getResult = actualFindActiveIntervalsResult.iterator().next();
-        Instant expectedStart = getResult.getStart();
+        Instant expectedStart = LocalDate.now().atStartOfDay().atZone(ZoneOffset.UTC).toInstant(); // we expect to retrieve only active intervals starting today
         Instant startOfToday = LocalDate.now().atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
         assertEquals(expectedStart, startOfToday);
-    }
-
-    /**
-     * Method under test:
-     * {@link RaddRegistryUtils#combinations(TimeInterval[], List, Set, int, int)}
-     */
-    @Test
-    void testCombinations() {
-        // Arrange
-        Instant start = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-
-        ArrayList<TimeInterval> current = new ArrayList<>();
-        Instant start2 = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-        current.add(new TimeInterval(start2, LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant()));
-        Instant start3 = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-        current.add(new TimeInterval(start3, LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant()));
-        Instant start4 = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-        current.add(new TimeInterval(start4, LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant()));
-        HashSet<Set<TimeInterval>> accumulator = new HashSet<>();
-
-        // Act
-        combinations(
-                new TimeInterval[]{
-                        new TimeInterval(start, LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant())},
-                current, accumulator, 3, 2);
-
-        // Assert
-        assertEquals(1, accumulator.size());
-    }
-
-    /**
-     * Method under test:
-     * {@link RaddRegistryUtils#combinations(TimeInterval[], List, Set, int, int)}
-     */
-    @Test
-    void testCombinations2() {
-        // Arrange
-        Instant start = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-        TimeInterval timeInterval = new TimeInterval(start,
-                LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant());
-
-        Instant start2 = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-        TimeInterval timeInterval2 = new TimeInterval(start2,
-                LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant());
-
-        Instant start3 = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-
-        ArrayList<TimeInterval> current = new ArrayList<>();
-        Instant start4 = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-        current.add(new TimeInterval(start4, LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant()));
-        Instant start5 = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-        current.add(new TimeInterval(start5, LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant()));
-        HashSet<Set<TimeInterval>> accumulator = new HashSet<>();
-
-        // Act
-        combinations(
-                new TimeInterval[]{timeInterval, timeInterval2,
-                        new TimeInterval(start3, LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant())},
-                current, accumulator, 3, 2);
-
-        // Assert
-        assertEquals(1, accumulator.size());
-        assertEquals(2, current.size());
-    }
-
-    /**
-     * Method under test:
-     * {@link RaddRegistryUtils#combinations(TimeInterval[], List, Set, int, int)}
-     */
-    @Test
-    void testCombinations3() {
-        // Arrange
-        Instant start = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-
-        ArrayList<TimeInterval> current = new ArrayList<>();
-        Instant start2 = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-        current.add(new TimeInterval(start2, LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant()));
-        Instant start3 = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-        current.add(new TimeInterval(start3, LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant()));
-        Instant start4 = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
-        current.add(new TimeInterval(start4, LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant()));
-
-        HashSet<Set<TimeInterval>> accumulator = new HashSet<>();
-        accumulator.add(new HashSet<>());
-
-        // Act
-        combinations(
-                new TimeInterval[]{
-                        new TimeInterval(start, LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant())},
-                current, accumulator, 3, 2);
-
-        // Assert
-        assertEquals(2, accumulator.size());
     }
 
     /**
@@ -1203,10 +1112,8 @@ class RaddRegistryUtilsTest {
         timeIntervals.add(new TimeInterval(Instant.parse("2024-05-06T00:00:00Z"), Instant.parse("2024-05-12T00:00:00Z"))); // Intersects with first interval
         timeIntervals.add(new TimeInterval(Instant.parse("2024-05-15T00:00:00Z"), Instant.parse("2024-05-22T00:00:00Z")));
         timeIntervals.add(new TimeInterval(Instant.parse("2024-05-18T00:00:00Z"), Instant.parse("2024-05-25T00:00:00Z"))); // Intersects with third interval
-        TimeInterval[] timeIntervalArray = timeIntervals.toArray(new TimeInterval[0]);
 
-        Set<Set<TimeInterval>> result = new HashSet<>();
-        combinations(timeIntervalArray, new ArrayList<>(), result, 1, 0);
+        Set<Set<TimeInterval>> result = Sets.combinations(new HashSet<>(timeIntervals), 1);
 
         List<TimeInterval> activeIntervals = new ArrayList<>();
 
@@ -1230,7 +1137,7 @@ class RaddRegistryUtilsTest {
         Set<TimeInterval> verify = Set.of(interval1, interval2);
         TimeInterval[] timeIntervals1 = new TimeInterval[0];
 
-        Assertions.assertEquals(verify, mergeIntervals(activeIntervals.toArray(timeIntervals1)));
+        Assertions.assertEquals(verify, mergeIntervals(new ArrayList<>(activeIntervals)));
     }
 
     @Test

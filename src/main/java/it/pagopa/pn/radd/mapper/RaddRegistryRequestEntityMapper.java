@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 
 import static it.pagopa.pn.radd.utils.Const.MISSING_ADDRESS_REQUIRED_FIELD;
 import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
@@ -85,38 +86,7 @@ public class RaddRegistryRequestEntityMapper {
     public List<RaddRegistryOriginalRequest> retrieveOriginalRequest(List<RaddRegistryRequest> raddRegistryRequest) {
 
         return raddRegistryRequest.stream()
-                .map(request -> {
-                    RaddRegistryOriginalRequest originalRequest = new RaddRegistryOriginalRequest();
-                    originalRequest.setAddressRow(request.getVia());
-                    originalRequest.setCap(request.getCap());
-                    originalRequest.setCity(request.getCitta());
-                    originalRequest.setPr(request.getProvincia());
-                    originalRequest.setCountry(request.getPaese());
-
-                    if (StringUtils.isNotBlank(request.getDataInizioValidita())) {
-                        LocalDate date = LocalDate.parse(request.getDataInizioValidita());
-                        originalRequest.setStartValidity(date.atStartOfDay().toInstant(ZoneOffset.UTC).toString());
-                    } else {
-                        originalRequest.setStartValidity(LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC).toString());
-                    }
-
-                    if (StringUtils.isNotBlank(request.getDataFineValidita())) {
-                        LocalDate date = LocalDate.parse(request.getDataFineValidita());
-                        originalRequest.setEndValidity(date.atStartOfDay().toInstant(ZoneOffset.UTC).toString());
-                    }
-
-                    originalRequest.setOpeningTime(request.getOrariApertura());
-                    originalRequest.setDescription(request.getDescrizione());
-
-                    if (StringUtils.isNotBlank(request.getCoordinateGeoReferenziali())) {
-                        originalRequest.setGeoLocation(objectMapperUtil.toJson(retrieveGeoLocationObject(request.getCoordinateGeoReferenziali())));
-                    }
-
-                    originalRequest.setPhoneNumber(request.getTelefono());
-                    originalRequest.setExternalCode(request.getExternalCode());
-                    originalRequest.setCapacity(request.getCapacita());
-                    return originalRequest;
-                })
+                .map(this::mapRequestToOriginalRequest)
                 .toList();
     }
 
@@ -132,7 +102,11 @@ public class RaddRegistryRequestEntityMapper {
     }
 
     public List<RaddRegistryRequestEntity> retrieveRaddRegistryRequestEntity(List<RaddRegistryOriginalRequest> originalRequests, RaddRegistryImportEntity importEntity) {
-        return originalRequests.stream().map(originalRequest -> {
+        return originalRequests.stream().map(getRaddRegistryOriginalRequestRaddRegistryRequestEntity(importEntity)).toList();
+    }
+
+    private Function<RaddRegistryOriginalRequest, RaddRegistryRequestEntity> getRaddRegistryOriginalRequestRaddRegistryRequestEntity(RaddRegistryImportEntity importEntity) {
+        return originalRequest -> {
             String originalRequestString = objectMapperUtil.toJson(originalRequest);
 
             RaddRegistryRequestEntity requestEntity = new RaddRegistryRequestEntity();
@@ -146,7 +120,7 @@ public class RaddRegistryRequestEntityMapper {
             checkRequiredFieldsAndSetStatus(originalRequest, requestEntity);
 
             return requestEntity;
-        }).toList();
+        };
     }
 
     private void checkRequiredFieldsAndSetStatus(RaddRegistryOriginalRequest originalRequest, RaddRegistryRequestEntity requestEntity) {
@@ -164,5 +138,43 @@ public class RaddRegistryRequestEntityMapper {
     private static String buildPk(RaddRegistryImportEntity importEntity, String originalRequest) {
         UUID index = UUID.nameUUIDFromBytes(originalRequest.getBytes(StandardCharsets.UTF_8));
         return importEntity.getCxId() + "#" + importEntity.getRequestId() + "#" + index;
+    }
+    private String convertDate(String date) {
+        LocalDate localDate = LocalDate.parse(date);
+        Instant instant = localDate.atStartOfDay().toInstant(ZoneOffset.UTC);
+        return instant.toString();
+    }
+    private RaddRegistryOriginalRequest mapRequestToOriginalRequest(RaddRegistryRequest request) {
+        RaddRegistryOriginalRequest originalRequest = new RaddRegistryOriginalRequest();
+        mapAddressForOriginalRequest(request, originalRequest);
+        setValidityDatesForOriginalRequest(request, originalRequest);
+        originalRequest.setOpeningTime(request.getOrariApertura());
+        originalRequest.setDescription(request.getDescrizione());
+        if (StringUtils.isNotBlank(request.getCoordinateGeoReferenziali())) {
+            originalRequest.setGeoLocation(objectMapperUtil.toJson(retrieveGeoLocationObject(request.getCoordinateGeoReferenziali())));
+        }
+        originalRequest.setPhoneNumber(request.getTelefono());
+        originalRequest.setExternalCode(request.getExternalCode());
+        originalRequest.setCapacity(request.getCapacita());
+
+        return originalRequest;
+    }
+    private void setValidityDatesForOriginalRequest(RaddRegistryRequest request, RaddRegistryOriginalRequest originalRequest) {
+        if (StringUtils.isNotBlank(request.getDataInizioValidita())) {
+            originalRequest.setStartValidity(convertDate(request.getDataInizioValidita()));
+        } else {
+            originalRequest.setStartValidity(convertDate(LocalDate.now().toString()));
+        }
+
+        if (StringUtils.isNotBlank(request.getDataFineValidita())) {
+            originalRequest.setEndValidity(convertDate(request.getDataFineValidita()));
+        }
+    }
+    private void mapAddressForOriginalRequest(RaddRegistryRequest request, RaddRegistryOriginalRequest originalRequest) {
+        originalRequest.setAddressRow(request.getVia());
+        originalRequest.setCap(request.getCap());
+        originalRequest.setCity(request.getCitta());
+        originalRequest.setPr(request.getProvincia());
+        originalRequest.setCountry(request.getPaese());
     }
 }
