@@ -10,6 +10,7 @@ import it.pagopa.pn.radd.pojo.RaddRegistryRequest;
 import it.pagopa.pn.radd.pojo.RegistryRequestStatus;
 import it.pagopa.pn.radd.pojo.WrappedRaddRegistryOriginalRequest;
 import it.pagopa.pn.radd.utils.ObjectMapperUtil;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,7 @@ import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay
 
 @RequiredArgsConstructor
 @Component
+@CustomLog
 public class RaddRegistryRequestEntityMapper {
 
     private final ObjectMapperUtil objectMapperUtil;
@@ -102,6 +104,7 @@ public class RaddRegistryRequestEntityMapper {
                 LocalDate date = LocalDate.parse(request.getDataInizioValidita());
                 originalRequest.setStartValidity(date.atStartOfDay().toInstant(ZoneOffset.UTC).toString());
             } catch (DateTimeParseException exception) {
+                log.warn("Error during parse date: {}", request.getDataInizioValidita(), exception);
                 errors.add("Formato non valido per data inizio validità");
             }
         } else {
@@ -113,6 +116,7 @@ public class RaddRegistryRequestEntityMapper {
                 LocalDate date = LocalDate.parse(request.getDataFineValidita());
                 originalRequest.setEndValidity(date.atStartOfDay().toInstant(ZoneOffset.UTC).toString());
             } catch (DateTimeParseException exception) {
+                log.warn("Error during parse date: {}", request.getDataFineValidita(), exception);
                 errors.add("Formato non valido per data fine validità");
             }
         }
@@ -161,7 +165,7 @@ public class RaddRegistryRequestEntityMapper {
             requestEntity.setOriginalRequest(originalRequestString);
 
             checkRequiredFieldsAndUpdateError(originalRequest);
-            if (CollectionUtils.isNullOrEmpty(originalRequest.getErrors())) {
+            if (!CollectionUtils.isNullOrEmpty(originalRequest.getErrors())) {
                 requestEntity.setStatus(RegistryRequestStatus.REJECTED.name());
                 requestEntity.setError(String.join(", ", originalRequest.getErrors()));
             } else {
