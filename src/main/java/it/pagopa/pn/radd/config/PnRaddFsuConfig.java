@@ -72,6 +72,8 @@ public class PnRaddFsuConfig {
         private String inputQueueName;
         private String safeStorageQueueName;
         private String addressManagerQueueName;
+        private String storeLocatorQueueName;
+
     }
 
     @Data
