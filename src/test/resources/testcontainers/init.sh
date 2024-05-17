@@ -251,4 +251,52 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
     --provisioned-throughput \
         ReadCapacityUnits=10,WriteCapacityUnits=5 \
 
+echo "### CREATE PN RADD STORE LOCATOR TABLE ###"
+
+#status-createdAt-index: pk su "status" , sk su "createdAt", projection ALL
+#csvType-createdAt-index: pk su "csvType" , sk su "createdAt", projection ALL
+
+aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
+    dynamodb create-table \
+    --table-name pn-RaddStoreLocator \
+    --attribute-definitions \
+        AttributeName=pk,AttributeType=S \
+        AttributeName=createdAt,AttributeType=S \
+        AttributeName=status,AttributeType=S \
+        AttributeName=csvType,AttributeType=S \
+    --key-schema \
+        AttributeName=pk,KeyType=HASH \
+        AttributeName=createdAt,KeyType=RANGE \
+    --provisioned-throughput ReadCapacityUnits=10,WriteCapacityUnits=5 \
+    --global-secondary-indexes \
+    "[
+            {
+                \"IndexName\":\"status-createdAt-index\",
+                \"KeySchema\":[
+                    {\"AttributeName\":\"status\",\"KeyType\":\"HASH\"},
+                    {\"AttributeName\":\"createdAt\",\"KeyType\":\"RANGE\"}
+                ],
+                \"Projection\":{
+                    \"ProjectionType\":\"ALL\"
+                },
+                \"ProvisionedThroughput\":{
+                    \"ReadCapacityUnits\":10,
+                    \"WriteCapacityUnits\":5
+                }
+            },{
+                \"IndexName\":\"csvType-createdAt-index\",
+                \"KeySchema\":[
+                    {\"AttributeName\":\"csvType\",\"KeyType\":\"HASH\"},
+                    {\"AttributeName\":\"createdAt\",\"KeyType\":\"RANGE\"}
+                ],
+                \"Projection\":{
+                    \"ProjectionType\":\"ALL\"
+                },
+                \"ProvisionedThroughput\":{
+                    \"ReadCapacityUnits\":10,
+                    \"WriteCapacityUnits\":5
+                }
+            }
+        ]"
+
 echo "Initialization terminated"
