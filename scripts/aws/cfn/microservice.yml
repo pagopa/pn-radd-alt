@@ -120,6 +120,14 @@ Parameters:
     Type: String
     Description: 'ARN of dynamodb table containing radd registries'
 
+  RaddStoreLocatorDynamoTableName:
+    Type: String
+    Description: 'Name of dynamodb table containing radd store locator'
+
+  RaddStoreLocatorDynamoTableArn:
+    Type: String
+    Description: 'ARN of dynamodb table containing radd store locator'
+
   RaddInternalCapCheckerQueueName:
     Type: String
     Description: Name of Internal queue
@@ -441,6 +449,7 @@ Resources:
         ContainerEnvEntry44: !Sub 'PN_RADD_EVENTBUS_NAME=arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-CoreEventBus'
         ContainerEnvEntry45: !Sub 'PN_RADD_MAX_DYNAMO_DB_QUERY_SIZE=${PnRaddMaxDynamoDBQuerySize}'
         ContainerEnvEntry46: !Sub 'PN_RADD_MAX_PAGE_NUMBER=${PnRaddMaxPageNumber}'
+        ContainerEnvEntry47: !Sub 'PN_RADD_DAO_RADDSTORELOCATORTABLE=${RaddStoreLocatorDynamoTableName}'
         MappedPaths: '/radd-net/*,/radd-net-private/*,/radd-alt/*'
         ECSClusterName: !Ref ECSClusterName
         Subnets: !Ref SubnetsIds
@@ -504,6 +513,8 @@ Resources:
               - !Sub "${RaddRegistryDynamoTableArn}"
               - !Sub "${RaddRegistryDynamoTableArn}/*"
               - !Sub "${ShedLockTableArn}"
+              - !Sub "${RaddStoreLocatorDynamoTableArn}"
+              - !Sub "${RaddStoreLocatorDynamoTableArn}/*"
           - Effect: Allow
             Action:
               - events:PutEvents
@@ -552,6 +563,7 @@ Resources:
             - !Ref RaddRegistryRequestDynamoTableName
             - !Ref RaddRegistryImportDynamoTableName
             - !Ref RaddRegistryDynamoTableName
+            - !Ref RaddStoreLocatorDynamoTableName
         QueueArns: !Join
           - ','
           - - !Ref PnRaddAltInputQueueName

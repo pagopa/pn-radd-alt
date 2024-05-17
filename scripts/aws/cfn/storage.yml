@@ -256,6 +256,51 @@ Resources:
         PointInTimeRecoveryEnabled: true
 
 
+  RaddStoreLocatorDynamoTable:
+    Type: AWS::DynamoDB::Table
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub '${ProjectName}-RaddStoreLocator'
+      AttributeDefinitions:
+        - AttributeName: "pk"
+          AttributeType: "S"
+        - AttributeName: "createdAt"
+          AttributeType: "S"
+        - AttributeName: "status"
+          AttributeType: "S"
+        - AttributeName: "csvType"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "pk"
+          KeyType: "HASH"
+        - AttributeName: "createdAt"
+          KeyType: "RANGE"
+      GlobalSecondaryIndexes:
+        - IndexName: "status-createdAt-index"
+          KeySchema:
+            - AttributeName: "status"
+              KeyType: "HASH"
+            - AttributeName: "createdAt"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+        - IndexName: "csvType-createdAt-index"
+          KeySchema:
+            - AttributeName: "csvType"
+              KeyType: "HASH"
+            - AttributeName: "createdAt"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+      BillingMode: "PAY_PER_REQUEST"
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+
   # Coda per interna per valutazione cap
   # NB: usati i valori di default per: DeadLetterQueueName, MessageRetentionPeriod, DeadLetterMessageRetentionPeriod
   RaddInternalCapCheckerQueue:
@@ -353,6 +398,14 @@ Outputs:
   RaddRegistryDynamoTableArn:
     Description: ARN of dynamodb table containing radd registry
     Value: !Sub '${RaddRegistryDynamoTable.Arn}'
+
+  RaddStoreLocatorDynamoTableName:
+    Description: Name of dynamodb table containing radd store locator
+    Value: !Ref RaddStoreLocatorDynamoTable
+
+  RaddStoreLocatorDynamoTableArn:
+    Description: ARN of dynamodb table containing radd store locator
+    Value: !Sub '${RaddStoreLocatorDynamoTable.Arn}'
 
   # RaddInternalCapCheckerQueue Queue
   RaddInternalCapCheckerQueueName:
