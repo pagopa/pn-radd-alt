@@ -20,6 +20,7 @@ public class RaddStoreLocatorEntity {
     public static final String COL_STATUS = "status";
     public static final String COL_TTL = "ttl";
     public static final String COL_CSVTYPE = "csvType";
+    public static final String COL_VERSIONID = "versionId";
 
     public static final String STATUS_CREATEDAT_INDEX = "status-createdAt-index";
     public static final String CSVTYPE_CREATEDAT_INDEX = "csvType-createdAt-index";
@@ -27,7 +28,9 @@ public class RaddStoreLocatorEntity {
 
     @Getter(onMethod = @__({@DynamoDbPartitionKey, @DynamoDbAttribute(COL_PK)}))
     private String pk;
-    @Getter(onMethod = @__({@DynamoDbSortKey, @DynamoDbSecondarySortKey(indexNames = {STATUS_CREATEDAT_INDEX, CSVTYPE_CREATEDAT_INDEX}), @DynamoDbAttribute(COL_CREATEDAT)}))
+    @Getter(onMethod = @__({@DynamoDbAttribute(COL_VERSIONID)}))
+    private String versionId;
+    @Getter(onMethod = @__({@DynamoDbSecondarySortKey(indexNames = {STATUS_CREATEDAT_INDEX, CSVTYPE_CREATEDAT_INDEX}), @DynamoDbAttribute(COL_CREATEDAT)}))
     private Instant createdAt;
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_DIGEST)}))
     private String digest;

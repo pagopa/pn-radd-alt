@@ -274,8 +274,6 @@ Resources:
       KeySchema:
         - AttributeName: "pk"
           KeyType: "HASH"
-        - AttributeName: "createdAt"
-          KeyType: "RANGE"
       GlobalSecondaryIndexes:
         - IndexName: "status-createdAt-index"
           KeySchema:
