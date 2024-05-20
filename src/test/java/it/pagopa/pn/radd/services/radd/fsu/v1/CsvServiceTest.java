@@ -3,13 +3,17 @@ package it.pagopa.pn.radd.services.radd.fsu.v1;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.pojo.RaddRegistryRequest;
 import it.pagopa.pn.radd.pojo.StoreLocatorCsvEntity;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ClassPathResource;
 import reactor.test.StepVerifier;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +45,7 @@ class CsvServiceTest {
     }
 
     @Test
-    void writeCsvContentOk() {
+    void writeCsvContentOk() throws IOException {
         StoreLocatorCsvEntity storeLocatorCsvEntity =
                 new StoreLocatorCsvEntity("descrizione", "citta", "via", "provincia", "cap", "telefono", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "latitude", "longitude");
         StoreLocatorCsvEntity storeLocatorCsvEntity2 =
@@ -50,7 +54,12 @@ class CsvServiceTest {
         storeLocatorCsvEntityList.add(storeLocatorCsvEntity);
         storeLocatorCsvEntityList.add(storeLocatorCsvEntity2);
 
-        assertDoesNotThrow(() -> csvService.writeCsvContent(storeLocatorCsvEntityList));
+        ClassPathResource inputResource = new ClassPathResource("writeCsv.txt");
+        byte[] csvContent = Files.readAllBytes(inputResource.getFile().toPath());
+
+        String content = csvService.writeCsvContent(storeLocatorCsvEntityList);
+        Assertions.assertEquals(new String(csvContent), content);
+
     }
 
 }

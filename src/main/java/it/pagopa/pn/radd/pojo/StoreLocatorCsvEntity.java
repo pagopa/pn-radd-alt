@@ -17,7 +17,7 @@ public class StoreLocatorCsvEntity {
     private String denomination;
 
     @ToString.Exclude
-    @CsvBindByName(column = "citta")
+    @CsvBindByName(column = "città")
     @CsvBindByPosition(position = 1)
     private String city;
 
