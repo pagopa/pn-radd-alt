@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 class PaperNotificationFailedEmptyExceptionTest {
     /**
@@ -12,7 +13,7 @@ class PaperNotificationFailedEmptyExceptionTest {
     @Test
     void testConstructor() {
         PaperNotificationFailedEmptyException actualPaperNotificationFailedEmptyException = new PaperNotificationFailedEmptyException();
-        assertNull(actualPaperNotificationFailedEmptyException.getStatus());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, actualPaperNotificationFailedEmptyException.getStatus());
         assertNull(actualPaperNotificationFailedEmptyException.getMessage());
         assertNull(actualPaperNotificationFailedEmptyException.getExtra());
         assertEquals(ExceptionTypeEnum.NO_NOTIFICATIONS_FAILED_FOR_CF,
