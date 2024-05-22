@@ -3,8 +3,8 @@ package it.pagopa.pn.radd.middleware.db;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.exception.TransactionAlreadyExistsException;
-import it.pagopa.pn.radd.pojo.ResultPaginationDto;
 import it.pagopa.pn.radd.pojo.PnLastEvaluatedKey;
+import it.pagopa.pn.radd.pojo.ResultPaginationDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
@@ -113,6 +113,20 @@ public abstract class BaseDao<T> {
         }
         if (!StringUtils.isBlank(expression)){
             qeRequest.filterExpression(Expression.builder().expression(expression).expressionValues(expressionValues).expressionNames(expressionNames).build());
+        }
+        if (StringUtils.isNotBlank(index)){
+            return Flux.from(this.tableAsync.index(index).query(qeRequest.build()).flatMapIterable(Page::items));
+        }
+        return Flux.from(this.tableAsync.query(qeRequest.build()).flatMapIterable(Page::items));
+    }
+
+    protected Flux<T> getWithScanIndexForward(QueryConditional conditional, String index, Integer maxElements, boolean orderAsc) {
+        QueryEnhancedRequest.Builder qeRequest = QueryEnhancedRequest
+                .builder()
+                .scanIndexForward(orderAsc)
+                .queryConditional(conditional);
+        if (maxElements != null) {
+            qeRequest.limit(maxElements);
         }
         if (StringUtils.isNotBlank(index)){
             return Flux.from(this.tableAsync.index(index).query(qeRequest.build()).flatMapIterable(Page::items));

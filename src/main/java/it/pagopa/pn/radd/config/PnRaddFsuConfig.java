@@ -45,6 +45,14 @@ public class PnRaddFsuConfig {
     private Integer evaluatedZipCodeConfigNumber;
 
     private RegistryImportProgress registryImportProgress;
+    private StoreLocator storeLocator;
+
+    @Data
+    public static class StoreLocator {
+        private String csvType;
+        private Integer generateInterval;
+    }
+
 
     @Data
     public static class RegistryImportProgress {
