@@ -1,8 +1,10 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.pojo.RaddRegistryRequest;
-import it.pagopa.pn.radd.pojo.StoreLocatorCsvEntity;
+import it.pagopa.pn.radd.pojo.StoreLocatorCsvConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,13 +13,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
 import reactor.test.StepVerifier;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -45,21 +48,25 @@ class CsvServiceTest {
     }
 
     @Test
-    void writeCsvContentOk() throws IOException {
-        StoreLocatorCsvEntity storeLocatorCsvEntity =
-                new StoreLocatorCsvEntity("descrizione", "citta", "via", "provincia", "cap", "telefono", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "latitude", "longitude");
-        StoreLocatorCsvEntity storeLocatorCsvEntity2 =
-                new StoreLocatorCsvEntity("descrizione2", "citta2", "via2", "provincia2", "cap2", "telefono2", "monday2", "tuesday2", "wednesday2", "thursday2", "friday2", "saturday2", "sunday2", "latitude2", "longitude2");
-        List<StoreLocatorCsvEntity> storeLocatorCsvEntityList = new ArrayList<>();
-        storeLocatorCsvEntityList.add(storeLocatorCsvEntity);
-        storeLocatorCsvEntityList.add(storeLocatorCsvEntity2);
+    void writeItemsOnCsvToString() throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<String[]> list = new ArrayList<>();
 
-        ClassPathResource inputResource = new ClassPathResource("writeCsv.txt");
+        ClassPathResource inputConfigResource = new ClassPathResource("csvConfig.json");
+        byte[] config = Files.readAllBytes(inputConfigResource.getFile().toPath());
+        String json = new String(config, StandardCharsets.UTF_8);
+        List<StoreLocatorCsvConfig> storeLocatorCsvConfigList = objectMapper.readValue(json, new TypeReference<>() {});
+        storeLocatorCsvConfigList.forEach(storeLocatorCsvConfig -> storeLocatorCsvConfig.setValue("test"));
+        String[] headers = storeLocatorCsvConfigList.stream().map(StoreLocatorCsvConfig::getHeader).toList().toArray(new String[0]);
+        String[] row = storeLocatorCsvConfigList.stream().map(StoreLocatorCsvConfig::getValue).toList().toArray(new String[0]);
+        list.add(headers);
+        list.add(row);
+
+        ClassPathResource inputResource = new ClassPathResource("writeCsvWithArray.csv");
         byte[] csvContent = Files.readAllBytes(inputResource.getFile().toPath());
 
-        String content = csvService.writeCsvContent(storeLocatorCsvEntityList);
+        String content = csvService.writeCsvContentFromArray(list);
         Assertions.assertEquals(new String(csvContent), content);
-
     }
 
 }
