@@ -577,3 +577,38 @@ Resources:
         AlarmArns: !Join
           - ','
           - - !GetAtt RaddMicroservice.Outputs.FatalLogsMetricAlarmArn
+
+  #Scheduled Event Bridge Rule that send message to target sqs queue
+  RaddStoreLocatorScheduledRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${ProjectName}-raddStoreLocatorScheduleRule'
+      ScheduleExpression: "rate(24 hours)"
+      State: "ENABLED"
+      RoleArn: !GetAtt EventBridgeToSqsPolicy.Arn
+      Targets:
+        - Arn: !Ref RaddAltStoreLocatorQueueARN
+          Input: '{"event": "SCHEDULE"}'
+          RoleArn: !GetAtt EventBridgeToSqsPolicy.Arn
+
+  # Event Bridge to target sqs queue role
+  EventBridgeToSqsPolicy:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+        Version: "2012-10-17"
+      Policies:
+        - PolicyName: sendMessageIntoTargetSqs
+          PolicyDocument:
+            Statement:
+              - Sid: SendMessage
+                Action:
+                  - sqs:SendMessage
+                Effect: Allow
+                Resource:
+                  - !Ref RaddAltStoreLocatorQueueARN
