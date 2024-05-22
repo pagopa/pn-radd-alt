@@ -16,8 +16,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 @CustomLog
 public class RaddStoreLocatorDAOImpl extends BaseDao<RaddStoreLocatorEntity> implements RaddStoreLocatorDAO {
     private final PnRaddFsuConfig pnRaddFsuConfig;
-    protected RaddStoreLocatorDAOImpl(DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient, DynamoDbAsyncClient dynamoDbAsyncClient, String tableName, PnRaddFsuConfig raddFsuConfig, Class<RaddStoreLocatorEntity> raddStoreLocatorEntityClass, PnRaddFsuConfig pnRaddFsuConfig) {
-        super(dynamoDbEnhancedAsyncClient, dynamoDbAsyncClient, tableName, raddFsuConfig, raddStoreLocatorEntityClass);
+    protected RaddStoreLocatorDAOImpl(DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient, DynamoDbAsyncClient dynamoDbAsyncClient, PnRaddFsuConfig raddFsuConfig, PnRaddFsuConfig pnRaddFsuConfig) {
+        super(dynamoDbEnhancedAsyncClient, dynamoDbAsyncClient, raddFsuConfig.getDao().getRaddStoreLocatorTable(), raddFsuConfig, RaddStoreLocatorEntity.class);
         this.pnRaddFsuConfig = pnRaddFsuConfig;
     }
 
