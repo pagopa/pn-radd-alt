@@ -44,7 +44,8 @@ public enum ExceptionTypeEnum {
     GEOLOCATION_ERROR("GEOLOCATION_ERROR","Il formato della geolocalizzazione non è corretto", 99),
     OPENING_TIME_ERROR("OPENING_TIME_ERROR","Il formato dell'orario di apertura non è corretto", 99),
     CAPACITY_ERROR("CAPACITY_ERROR","Il formato della capacità non è corretto", 99),
-    STORE_LOCATOR_ENTITY_NOT_FOUND("STORE_LOCATOR_ENTITY_NOT_FOUND","Nessun record trovato sulla tabella pn-RaddStoreLocator", 99);
+    STORE_LOCATOR_ENTITY_NOT_FOUND("STORE_LOCATOR_ENTITY_NOT_FOUND","Nessun record trovato sulla tabella pn-RaddStoreLocator", 99),
+    STORE_LOCATOR_CSV_CONFIGURATION_PARAMETER_ERROR("STORE_LOCATOR_CSV_CONFIGURATION_PARAMETER_ERROR","Impossibile recuperare la configurazione per il csv", 99);
 
 
     private final String title;

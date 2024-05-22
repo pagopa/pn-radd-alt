@@ -19,25 +19,25 @@ public class RaddStoreLocatorEntity {
     public static final String COL_DIGEST = "digest";
     public static final String COL_STATUS = "status";
     public static final String COL_TTL = "ttl";
-    public static final String COL_CSVTYPE = "csvType";
+    public static final String COL_CSVCONFIGURATIONVERSION = "csvConfigurationVersion";
     public static final String COL_VERSIONID = "versionId";
 
     public static final String STATUS_CREATEDAT_INDEX = "status-createdAt-index";
-    public static final String CSVTYPE_CREATEDAT_INDEX = "csvType-createdAt-index";
+    public static final String CSVCONFIGURATIONVERSION_CREATEDAT_INDEX = "csvConfigurationVersion-createdAt-index";
 
 
     @Getter(onMethod = @__({@DynamoDbPartitionKey, @DynamoDbAttribute(COL_PK)}))
     private String pk;
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_VERSIONID)}))
     private String versionId;
-    @Getter(onMethod = @__({@DynamoDbSecondarySortKey(indexNames = {STATUS_CREATEDAT_INDEX, CSVTYPE_CREATEDAT_INDEX}), @DynamoDbAttribute(COL_CREATEDAT)}))
+    @Getter(onMethod = @__({@DynamoDbSecondarySortKey(indexNames = {STATUS_CREATEDAT_INDEX, CSVCONFIGURATIONVERSION_CREATEDAT_INDEX}), @DynamoDbAttribute(COL_CREATEDAT)}))
     private Instant createdAt;
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_DIGEST)}))
     private String digest;
     @Getter(onMethod = @__({@DynamoDbSecondaryPartitionKey(indexNames = STATUS_CREATEDAT_INDEX), @DynamoDbAttribute(COL_STATUS)}))
     private String status;
-    @Getter(onMethod = @__({@DynamoDbSecondaryPartitionKey(indexNames = CSVTYPE_CREATEDAT_INDEX), @DynamoDbAttribute(COL_CSVTYPE)}))
-    private String csvType;
+    @Getter(onMethod = @__({@DynamoDbSecondaryPartitionKey(indexNames = CSVCONFIGURATIONVERSION_CREATEDAT_INDEX), @DynamoDbAttribute(COL_CSVCONFIGURATIONVERSION)}))
+    private String csvConfigurationVersion;
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_TTL)}))
     private Long ttl;
 

@@ -396,10 +396,9 @@ Parameters:
     Description: max number of pages to retrieve nextPagesKey of (listing APIs)
     Default: 10
 
-  PnRaddStoreLocatorCsvType:
+  PnRaddStoreLocatorCsvConfigurationParameter:
     Type: String
-    Description: Type of structure that the Store Locator csv file will have
-    Default: TABLE
+    Description: Name of parameter in parameter store containing store locator csv configuration
 
   PnRaddStoreLocatorGenerateInterval:
     Type: Number
@@ -477,7 +476,7 @@ Resources:
         ContainerEnvEntry46: !Sub 'PN_RADD_SQS_STORELOCATORQUEUENAME=${RaddAltStoreLocatorQueueName}'
         ContainerEnvEntry47: !Sub 'PN_RADD_DAO_RADDSTORELOCATORTABLE=${RaddStoreLocatorDynamoTableName}'
         ContainerEnvEntry48: !Sub 'PN_RADD_DAO_RADDSTORELOCATORTABLE=${RaddStoreLocatorDynamoTableName}'
-        ContainerEnvEntry49: !Sub 'PN_RADD_STORELOCATOR_CSV_TYPE=${PnRaddStoreLocatorCsvType}'
+        ContainerEnvEntry49: !Sub 'PN_RADD_STORELOCATOR_CSVCONFIGURATIONPARAMETER=${PnRaddStoreLocatorCsvConfigurationParameter}'
         ContainerEnvEntry50: !Sub 'PN_RADD_STORELOCATOR_GENERATE_INTERVAL=${PnRaddStoreLocatorGenerateInterval}'
 
         MappedPaths: '/radd-net/*,/radd-net-private/*,/radd-alt/*'

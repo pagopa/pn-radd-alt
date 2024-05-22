@@ -49,8 +49,8 @@ public class PnRaddFsuConfig {
 
     @Data
     public static class StoreLocator {
-        private String csvType;
         private Integer generateInterval;
+        private String csvConfigurationParameter;
     }
 
 

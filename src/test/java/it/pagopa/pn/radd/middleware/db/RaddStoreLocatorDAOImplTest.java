@@ -33,7 +33,7 @@ class RaddStoreLocatorDAOImplTest extends BaseTest.WithLocalStack{
     public void setUp() {
         baseEntity = new RaddStoreLocatorEntity();
         baseEntity.setPk("testPk");
-        baseEntity.setCsvType("TABLE");
+        baseEntity.setCsvConfigurationVersion("TABLE");
         baseEntity.setCreatedAt(Instant.now());
         baseEntity.setDigest("digest");
         baseEntity.setVersionId("versionId");
@@ -48,7 +48,7 @@ class RaddStoreLocatorDAOImplTest extends BaseTest.WithLocalStack{
         assertNotNull(response);
         Assertions.assertEquals(baseEntity.getPk(), response.getPk());
         Assertions.assertEquals(baseEntity.getDigest(), response.getDigest());
-        Assertions.assertEquals(baseEntity.getCsvType(), response.getCsvType());
+        Assertions.assertEquals(baseEntity.getCsvConfigurationVersion(), response.getCsvConfigurationVersion());
         Assertions.assertEquals(baseEntity.getVersionId(), response.getVersionId());
         Assertions.assertEquals(baseEntity.getCreatedAt(), response.getCreatedAt());
         Assertions.assertEquals(baseEntity.getStatus(), response.getStatus());
@@ -63,8 +63,7 @@ class RaddStoreLocatorDAOImplTest extends BaseTest.WithLocalStack{
 
     @Test
     void testGetStoreLocator(){
-        RaddStoreLocatorEntity response = baseDao.putItem(baseEntity).block();
-        StepVerifier.create(raddStoreLocatorDAO.retrieveLatestStoreLocatorEntity())
+        StepVerifier.create(raddStoreLocatorDAO.retrieveLatestStoreLocatorEntity("1"))
                 .expectNextMatches(foundedEntity -> foundedEntity.getPk().equals(baseEntity.getPk()))
                 .verifyComplete();
     }

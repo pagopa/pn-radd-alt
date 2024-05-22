@@ -23,7 +23,7 @@
     "EvaluatedZipCodeConfigNumber": "1",
     "PnRaddMaxPageNumber": "10",
     "PnRaddMaxDynamoDBQuerySize": "1000",
-    "PnRaddStoreLocatorCsvType":  "TABLE",
+    "PnRaddStoreLocatorCsvConfigurationParameter":  "/pn-radd-alt/csv-configuration",
     "PnRaddStoreLocatorGenerateInterval": "7"
   }
 }
