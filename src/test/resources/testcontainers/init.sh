@@ -254,7 +254,7 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
 echo "### CREATE PN RADD STORE LOCATOR TABLE ###"
 
 #status-createdAt-index: pk su "status" , sk su "createdAt", projection ALL
-#csvType-createdAt-index: pk su "csvType" , sk su "createdAt", projection ALL
+#csvConfigurationVersion-createdAt-index: pk su "csvConfigurationVersion" , sk su "createdAt", projection ALL
 
 aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
     dynamodb create-table \
@@ -263,7 +263,7 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
         AttributeName=pk,AttributeType=S \
         AttributeName=createdAt,AttributeType=S \
         AttributeName=status,AttributeType=S \
-        AttributeName=csvType,AttributeType=S \
+        AttributeName=csvConfigurationVersion,AttributeType=S \
     --key-schema \
         AttributeName=pk,KeyType=HASH \
         AttributeName=createdAt,KeyType=RANGE \
@@ -284,9 +284,9 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
                     \"WriteCapacityUnits\":5
                 }
             },{
-                \"IndexName\":\"csvType-createdAt-index\",
+                \"IndexName\":\"csvConfigurationVersion-createdAt-index\",
                 \"KeySchema\":[
-                    {\"AttributeName\":\"csvType\",\"KeyType\":\"HASH\"},
+                    {\"AttributeName\":\"csvConfigurationVersion\",\"KeyType\":\"HASH\"},
                     {\"AttributeName\":\"createdAt\",\"KeyType\":\"RANGE\"}
                 ],
                 \"Projection\":{
