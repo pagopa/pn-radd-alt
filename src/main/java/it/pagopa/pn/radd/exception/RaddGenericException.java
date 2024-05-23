@@ -40,7 +40,7 @@ public class RaddGenericException extends RuntimeException {
         super(message);
         this.exceptionType = null;
         this.message = message;
-        this.status = HttpStatus.BAD_REQUEST;
+        this.status = HttpStatus.INTERNAL_SERVER_ERROR;
         this.extra = null;
     }
 
