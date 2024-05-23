@@ -55,17 +55,15 @@ public class CsvService {
         }
     }
 
-    public <T> String writeCsvContent(List<T> items) {
+    public String writeCsvContentFromArray(List<String[]> list) {
         log.logStartingProcess(PROCESS_START_WRITING_CSV);
         try (StringWriter writer = new StringWriter()) {
-            CSVWriter cw = new CSVWriter(writer, ';', ICSVWriter.DEFAULT_QUOTE_CHARACTER, DEFAULT_ESCAPE_CHARACTER, DEFAULT_LINE_END);
-            StatefulBeanToCsv<T> beanToCsv = new StatefulBeanToCsvBuilder<T>(cw)
-                    .build();
-            beanToCsv.write(items);
+            CSVWriter cw = new CSVWriter(writer, ';', ICSVWriter.NO_QUOTE_CHARACTER, DEFAULT_ESCAPE_CHARACTER, DEFAULT_LINE_END);
+            cw.writeAll(list);
             log.logEndingProcess(PROCESS_END_WRITING_CSV);
             log.debug(writer.toString());
             return writer.toString();
-        } catch (IOException | CsvDataTypeMismatchException | CsvRequiredFieldEmptyException e) {
+        } catch (IOException e) {
             throw new RaddGenericException(ERROR_RADD_ALT_WRITING_CSV + e.getMessage());
         }
     }
