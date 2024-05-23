@@ -299,4 +299,12 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
             }
         ]"
 
+echo "### CREATE SSM PARAMETER FOR CSV CONFIGURATION ###"
+aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
+    ssm put-parameter \
+    --name "/pn-radd-alt/csv-configuration" \
+    --type "String" \
+    --value "{\"version\":\"1\",\"configs\":[{\"header\":\"descrizione\",\"field\":\"description\"},{\"header\":\"città\",\"field\":\"city\"},{\"header\":\"via\",\"field\":\"address\"},{\"header\":\"provincia\",\"field\":\"province\"},{\"header\":\"cap\",\"field\":\"zipCode\"},{\"header\":\"telefono\",\"field\":\"phoneNumber\"}]}"
+
+
 echo "Initialization terminated"

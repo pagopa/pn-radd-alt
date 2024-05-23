@@ -24,6 +24,7 @@ public interface RaddStoreLocatorEventProducer extends MomProducer<RaddStoreLoca
                 .header(GenericEventHeader.builder()
                         .publisher(EventPublisher.RADD_ALT.name())
                         .createdAt(Instant.now())
+                        .eventType("STORE_LOCATOR_EVENTS")
                         .eventId(UUID.randomUUID().toString())
                         .build()
                 )

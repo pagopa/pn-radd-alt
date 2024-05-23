@@ -17,13 +17,12 @@ public class RaddStoreLocatorEvent implements GenericEvent<GenericEventHeader, R
 
     private Payload payload;
 
-    @Getter
-    @Setter
-    @Builder
-    @ToString
-    @EqualsAndHashCode
     @NoArgsConstructor
     @AllArgsConstructor
+    @Getter
+    @Builder(toBuilder = true)
+    @EqualsAndHashCode
+    @ToString
     public static class Payload {
         private String event;
         private String pk;

@@ -11,6 +11,6 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 public class SqsRaddStoreLocatorEventProducer extends AbstractSqsMomProducer<RaddStoreLocatorEvent> implements RaddStoreLocatorEventProducer {
 
     public SqsRaddStoreLocatorEventProducer(SqsClient sqsClient, PnRaddFsuConfig config, ObjectMapper objectMapper) {
-        super(sqsClient, config.getSqs().getInputQueueName(), objectMapper, RaddStoreLocatorEvent.class);
+        super(sqsClient, config.getSqs().getStoreLocatorQueueName(), objectMapper, RaddStoreLocatorEvent.class);
     }
 }
