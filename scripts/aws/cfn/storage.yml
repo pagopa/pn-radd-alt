@@ -269,7 +269,7 @@ Resources:
           AttributeType: "S"
         - AttributeName: "status"
           AttributeType: "S"
-        - AttributeName: "csvType"
+        - AttributeName: "csvConfigurationVersion"
           AttributeType: "S"
       KeySchema:
         - AttributeName: "pk"
@@ -283,9 +283,9 @@ Resources:
               KeyType: "RANGE"
           Projection:
             ProjectionType: "ALL"
-        - IndexName: "csvType-createdAt-index"
+        - IndexName: "csvConfigurationVersion-createdAt-index"
           KeySchema:
-            - AttributeName: "csvType"
+            - AttributeName: "csvConfigurationVersion"
               KeyType: "HASH"
             - AttributeName: "createdAt"
               KeyType: "RANGE"
