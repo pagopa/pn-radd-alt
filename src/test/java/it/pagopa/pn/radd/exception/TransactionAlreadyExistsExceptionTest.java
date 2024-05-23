@@ -13,7 +13,7 @@ class TransactionAlreadyExistsExceptionTest {
     @Test
     void testConstructor() {
         TransactionAlreadyExistsException actualTransactionAlreadyExistsException = new TransactionAlreadyExistsException();
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, actualTransactionAlreadyExistsException.getStatus());
+        assertEquals(HttpStatus.BAD_REQUEST, actualTransactionAlreadyExistsException.getStatus());
         assertNull(actualTransactionAlreadyExistsException.getMessage());
         assertNull(actualTransactionAlreadyExistsException.getExtra());
         assertEquals(ExceptionTypeEnum.TRANSACTION_ALREADY_EXIST,

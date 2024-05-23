@@ -13,7 +13,7 @@ class PaperNotificationFailedEmptyExceptionTest {
     @Test
     void testConstructor() {
         PaperNotificationFailedEmptyException actualPaperNotificationFailedEmptyException = new PaperNotificationFailedEmptyException();
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, actualPaperNotificationFailedEmptyException.getStatus());
+        assertEquals(HttpStatus.BAD_REQUEST, actualPaperNotificationFailedEmptyException.getStatus());
         assertNull(actualPaperNotificationFailedEmptyException.getMessage());
         assertNull(actualPaperNotificationFailedEmptyException.getExtra());
         assertEquals(ExceptionTypeEnum.NO_NOTIFICATIONS_FAILED_FOR_CF,

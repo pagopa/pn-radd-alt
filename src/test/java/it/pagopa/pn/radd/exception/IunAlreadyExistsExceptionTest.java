@@ -13,7 +13,7 @@ class IunAlreadyExistsExceptionTest {
     @Test
     void testConstructor() {
         IunAlreadyExistsException actualIunAlreadyExistsException = new IunAlreadyExistsException();
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, actualIunAlreadyExistsException.getStatus());
+        assertEquals(HttpStatus.BAD_REQUEST, actualIunAlreadyExistsException.getStatus());
         assertNull(actualIunAlreadyExistsException.getMessage());
         assertNull(actualIunAlreadyExistsException.getExtra());
         assertEquals(ExceptionTypeEnum.ALREADY_COMPLETE_PRINT, actualIunAlreadyExistsException.getExceptionType());
