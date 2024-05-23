@@ -87,5 +87,4 @@ public class Const {
     public static final String REGEX_GEOLOCATION = "^[0-9]{1,3}\\.?[0-9]{1,10}$";
     public static final String REGEX_OPENINGTIME = "^((mon|tue|wed|thu|fri|sat|sun)=([0-9]{1,2}:[0-9]{2}-[0-9]{1,2}:[0-9]{2}(_[0-9]{1,2}:[0-9]{2}-[0-9]{1,2}:[0-9]{2})?#)(?!.*\\2))+$";
     public static final String REGEX_CAPACITY = "^[0-9]{0,10}$";
-
 }
