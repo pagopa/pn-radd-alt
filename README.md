@@ -27,6 +27,12 @@ sono i seguenti:
 ```
 
 La configurazione da inserire sul parameter store nel parametro `/pn-radd-alt/csv-configuration` deve avere la seguente struttura:
+
+```
+    - header → nome della colonna del csv di output 
+    - field → nome del campo su radd-alt (uno dei valori al punto 1)
+ ```   
+
 ```
 {
     "version":"1", //ogni nuova configurazione deve incrementare la version
@@ -71,8 +77,9 @@ La configurazione da inserire sul parameter store nel parametro `/pn-radd-alt/cs
 **N.B**
 
 1. Il campo Field può essere popolato solo con uno dei valori del punto 1.
-Qualora non sia presente, nella lista al punto 1, il campo corrispondente alla colonna (header) del csv richiesta, il campo field non dovrà essere inserito.
+Qualora per un determinato header non sia presente il campo corrispondente su radd-alt, il campo "field" non dovrà essere inserito.
+Qualora fosse inserito all'interno del campo Field un valore non valido, la corrispondente colonna del csv non sarà popolata.
 
-2. Ogni nuova configurazione deve incrementare il campo version. 
+4. Ogni nuova configurazione deve incrementare il campo version. 
 Questo parametro è fondamentale per avviare una nuova generazione quando la struttura del csv viene modificata, 
 anche nel caso in cui non sia trascorso l’intervallo di tempo configurato.
