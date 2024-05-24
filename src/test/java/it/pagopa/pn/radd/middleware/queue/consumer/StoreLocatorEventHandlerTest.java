@@ -22,7 +22,7 @@ class StoreLocatorEventHandlerTest {
 
 
     @Mock
-    private Message<RaddStoreLocatorEvent> message;
+    private Message<RaddStoreLocatorEvent.Payload> message;
 
     @InjectMocks
     private StoreLocatorEventHandler storeLocatorEventHandler;
@@ -36,7 +36,7 @@ class StoreLocatorEventHandlerTest {
     void shouldHandleMessageSuccessfully() {
         RaddStoreLocatorEvent event = new RaddStoreLocatorEvent();
         event.setPayload(new RaddStoreLocatorEvent.Payload("GENERATE", ""));
-        when(message.getPayload()).thenReturn(event);
+        when(message.getPayload()).thenReturn(event.getPayload());
         when(storeLocatorService.handleStoreLocatorEvent(event.getPayload())).thenReturn(Mono.empty());
 
         storeLocatorEventHandler.storeLocatorEventInboundConsumer().accept(message);
@@ -48,7 +48,7 @@ class StoreLocatorEventHandlerTest {
     void shouldHandleMessageError() {
         RaddStoreLocatorEvent event = new RaddStoreLocatorEvent();
         event.setPayload(new RaddStoreLocatorEvent.Payload("GENERATE", ""));
-        when(message.getPayload()).thenReturn(event);
+        when(message.getPayload()).thenReturn(event.getPayload());
         when(storeLocatorService.handleStoreLocatorEvent(event.getPayload())).thenReturn(Mono.error(mock(RaddGenericException.class)));
         Assertions.assertThrows(RaddGenericException.class, () -> storeLocatorEventHandler.storeLocatorEventInboundConsumer().accept(message));
     }

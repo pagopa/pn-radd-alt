@@ -32,7 +32,6 @@ class RaddStoreLocatorEventProducerTest {
     void setup() {
         PnRaddFsuConfig.Sqs sqs = mock(PnRaddFsuConfig.Sqs.class);
         Mockito.when( cfg.getSqs() ).thenReturn (sqs);
-        Mockito.when( sqs.getInputQueueName() ).thenReturn("queueName");
 
         GetQueueUrlResponse response = GetQueueUrlResponse.builder()
                 .queueUrl("queueUrl")

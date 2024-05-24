@@ -44,18 +44,20 @@ class StoreLocatorServiceTest {
 
     @Test
     void testHandleStoreLocatorEvent_generate() {
-        RaddStoreLocatorEvent.Payload event = new RaddStoreLocatorEvent.Payload();
-        event.setEvent("GENERATE");
-        event.setPk("pk");
+        RaddStoreLocatorEvent.Payload event = new RaddStoreLocatorEvent.Payload().toBuilder()
+                .pk("pk")
+                .event("GENERATE")
+                .build();
         StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(event))
                 .expectComplete();
     }
 
     @Test
     void testHandleStoreLocatorEvent_invalidevent() {
-        RaddStoreLocatorEvent.Payload event = new RaddStoreLocatorEvent.Payload();
-        event.setEvent("TEST");
-        event.setPk("pk");
+        RaddStoreLocatorEvent.Payload event = new RaddStoreLocatorEvent.Payload().toBuilder()
+                .pk("pk")
+                .event("TEST")
+                .build();
         StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(event))
                 .expectComplete();
     }
@@ -63,8 +65,9 @@ class StoreLocatorServiceTest {
 
     @Test
     void testHandleStoreLocatorEvent_schedule_latest_uploaded_noConditionsToGenerate() {
-        RaddStoreLocatorEvent.Payload payload = new RaddStoreLocatorEvent.Payload();
-        payload.setEvent("SCHEDULE");
+        RaddStoreLocatorEvent.Payload event = new RaddStoreLocatorEvent.Payload().toBuilder()
+                .event("SCHEDULE")
+                .build();
 
         PnRaddFsuConfig.StoreLocator storeLocator = new PnRaddFsuConfig.StoreLocator();
         storeLocator.setCsvConfigurationParameter("/test");
@@ -85,14 +88,15 @@ class StoreLocatorServiceTest {
         raddStoreLocatorEntity.setStatus(UPLOADED.name());
         when(raddStoreLocatorDAO.retrieveLatestStoreLocatorEntity(storeLocatorConfiguration.getVersion())).thenReturn(Mono.just(raddStoreLocatorEntity));
 
-        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(payload))
+        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(event))
                 .verifyComplete();
     }
 
     @Test
     void testHandleStoreLocatorEvent_schedule_latest_notExists_sendEventToGenerate() {
-        RaddStoreLocatorEvent.Payload payload = new RaddStoreLocatorEvent.Payload();
-        payload.setEvent("SCHEDULE");
+        RaddStoreLocatorEvent.Payload event = new RaddStoreLocatorEvent.Payload().toBuilder()
+                .event("SCHEDULE")
+                .build();
 
         PnRaddFsuConfig.StoreLocator storeLocator = new PnRaddFsuConfig.StoreLocator();
         storeLocator.setCsvConfigurationParameter("/test");
@@ -116,14 +120,15 @@ class StoreLocatorServiceTest {
         when(raddStoreLocatorDAO.putRaddStoreLocatorEntity(any())).thenReturn(Mono.just(raddStoreLocatorEntity));
         when(raddStoreLocatorEventProducer.sendStoreLocatorEvent(raddStoreLocatorEntity.getPk())).thenReturn(Mono.empty());
 
-        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(payload))
+        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(event))
                 .verifyComplete();
     }
 
     @Test
     void testHandleStoreLocatorEvent_schedule_latest_toUpload_sendEventToGenerate() {
-        RaddStoreLocatorEvent.Payload payload = new RaddStoreLocatorEvent.Payload();
-        payload.setEvent("SCHEDULE");
+        RaddStoreLocatorEvent.Payload event = new RaddStoreLocatorEvent.Payload().toBuilder()
+                .event("SCHEDULE")
+                .build();
 
         PnRaddFsuConfig.StoreLocator storeLocator = new PnRaddFsuConfig.StoreLocator();
         storeLocator.setCsvConfigurationParameter("/test");
@@ -146,14 +151,15 @@ class StoreLocatorServiceTest {
         when(raddStoreLocatorDAO.putRaddStoreLocatorEntity(any())).thenReturn(Mono.just(raddStoreLocatorEntity));
         when(raddStoreLocatorEventProducer.sendStoreLocatorEvent(raddStoreLocatorEntity.getPk())).thenReturn(Mono.empty());
 
-        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(payload))
+        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(event))
                 .verifyComplete();
     }
 
     @Test
     public void testHandleStoreLocatorEvent_schedule_latest_error_sendEventToGenerate() {
-        RaddStoreLocatorEvent.Payload payload = new RaddStoreLocatorEvent.Payload();
-        payload.setEvent("SCHEDULE");
+        RaddStoreLocatorEvent.Payload event = new RaddStoreLocatorEvent.Payload().toBuilder()
+                .event("SCHEDULE")
+                .build();
 
         PnRaddFsuConfig.StoreLocator storeLocator = new PnRaddFsuConfig.StoreLocator();
         storeLocator.setCsvConfigurationParameter("/test");
@@ -176,14 +182,15 @@ class StoreLocatorServiceTest {
         when(raddStoreLocatorDAO.putRaddStoreLocatorEntity(any())).thenReturn(Mono.just(raddStoreLocatorEntity));
         when(raddStoreLocatorEventProducer.sendStoreLocatorEvent(raddStoreLocatorEntity.getPk())).thenReturn(Mono.empty());
 
-        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(payload))
+        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(event))
                 .verifyComplete();
     }
 
     @Test
     public void testHandleStoreLocatorEvent_schedule_latest_uploaded_sendEventToGenerate() {
-        RaddStoreLocatorEvent.Payload payload = new RaddStoreLocatorEvent.Payload();
-        payload.setEvent("SCHEDULE");
+        RaddStoreLocatorEvent.Payload event = new RaddStoreLocatorEvent.Payload().toBuilder()
+                .event("SCHEDULE")
+                .build();
 
         PnRaddFsuConfig.StoreLocator storeLocator = new PnRaddFsuConfig.StoreLocator();
         storeLocator.setCsvConfigurationParameter("/test");
@@ -207,14 +214,15 @@ class StoreLocatorServiceTest {
         when(raddStoreLocatorDAO.putRaddStoreLocatorEntity(any())).thenReturn(Mono.just(raddStoreLocatorEntity));
         when(raddStoreLocatorEventProducer.sendStoreLocatorEvent(raddStoreLocatorEntity.getPk())).thenReturn(Mono.empty());
 
-        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(payload))
+        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(event))
                 .verifyComplete();
     }
 
     @Test
     public void testHandleStoreLocatorEvent_schedule_latest_error_toRetry() {
-        RaddStoreLocatorEvent.Payload payload = new RaddStoreLocatorEvent.Payload();
-        payload.setEvent("SCHEDULE");
+        RaddStoreLocatorEvent.Payload event = new RaddStoreLocatorEvent.Payload().toBuilder()
+                .event("SCHEDULE")
+                .build();
 
         PnRaddFsuConfig.StoreLocator storeLocator = new PnRaddFsuConfig.StoreLocator();
         storeLocator.setCsvConfigurationParameter("/test");
@@ -237,14 +245,15 @@ class StoreLocatorServiceTest {
         when(raddStoreLocatorDAO.putRaddStoreLocatorEntity(any())).thenReturn(Mono.just(raddStoreLocatorEntity));
         when(raddStoreLocatorEventProducer.sendStoreLocatorEvent(raddStoreLocatorEntity.getPk())).thenThrow(RuntimeException.class);
 
-        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(payload))
+        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(event))
                 .verifyError(RuntimeException.class);
     }
 
     @Test
     public void testHandleStoreLocatorEvent_schedule_configuration_parameter_notFound() {
-        RaddStoreLocatorEvent.Payload payload = new RaddStoreLocatorEvent.Payload();
-        payload.setEvent("SCHEDULE");
+        RaddStoreLocatorEvent.Payload event = new RaddStoreLocatorEvent.Payload().toBuilder()
+                .event("SCHEDULE")
+                .build();
 
         PnRaddFsuConfig.StoreLocator storeLocator = new PnRaddFsuConfig.StoreLocator();
         storeLocator.setCsvConfigurationParameter("/test");
@@ -256,7 +265,7 @@ class StoreLocatorServiceTest {
         when(ssmParameterConsumerActivation.getParameterValue(storeLocator.getCsvConfigurationParameter(), StoreLocatorConfiguration.class))
                 .thenReturn(Optional.empty());
 
-        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(payload))
+        StepVerifier.create(storeLocatorService.handleStoreLocatorEvent(event))
                 .verifyError(RaddGenericException.class);
     }
 }
