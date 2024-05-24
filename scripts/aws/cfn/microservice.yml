@@ -189,6 +189,11 @@ Parameters:
     Default: pn-radd-alt
     Description: 'Secret and Parameter name prefix'
 
+  StoreLocatorRuleScheduleExpression:
+    Description: "The schedule expression for the EventBridge rule (e.g., cron(0 18 ? * MON-FRI *))."
+    Type: String
+    Default: 'rate(24 hours)'
+
   Version:
     Type: String
     Description: 'keep track of used projects commitIds'
@@ -583,7 +588,7 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Name: !Sub '${ProjectName}-raddStoreLocatorScheduleRule'
-      ScheduleExpression: "rate(24 hours)"
+      ScheduleExpression: !Ref StoreLocatorRuleScheduleExpression
       State: "ENABLED"
       RoleArn: !GetAtt EventBridgeToSqsPolicy.Arn
       Targets:
