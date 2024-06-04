@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.OffsetDateTime;
 import java.util.Date;
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.TRANSACTIONS_NOT_FOUND_FOR_CF;
 
@@ -76,7 +77,7 @@ public class OperationService {
                 .map(OperationsResponseMapper::fromResult);
     }
 
-    public Mono<OperationsActDetailsResponse> getAllActTransactionFromFiscalCode(String ensureFiscalCode, Date from, Date to){
+    public Mono<OperationsActDetailsResponse> getAllActTransactionFromFiscalCode(String ensureFiscalCode, OffsetDateTime from, OffsetDateTime to){
         return this.transactionDAO.getTransactionsFromFiscalCode(ensureFiscalCode, from, to)
                 .filter(transactionEntity -> transactionEntity.getOperationType().equals(OperationTypeEnum.ACT.name()))
                 .map(OperationActResponseMapper::getDetail)
@@ -111,7 +112,7 @@ public class OperationService {
                 });
     }
 
-    public Mono<OperationsAorDetailsResponse> getAllAorTransactionFromFiscalCode(String ensureFiscalCode, Date from, Date to){
+    public Mono<OperationsAorDetailsResponse> getAllAorTransactionFromFiscalCode(String ensureFiscalCode, OffsetDateTime from, OffsetDateTime to){
         return getTransactionsFromInternalId(ensureFiscalCode, from, to)
                 .filter(transactionEntity -> transactionEntity.getOperationType().equals(OperationTypeEnum.AOR.name()))
                 .map(OperationAorResponseMapper::getDetail)
@@ -145,7 +146,7 @@ public class OperationService {
                 });
     }
 
-    private Flux<RaddTransactionEntity> getTransactionsFromInternalId(String internalId, Date from, Date to){
+    private Flux<RaddTransactionEntity> getTransactionsFromInternalId(String internalId, OffsetDateTime from, OffsetDateTime to){
         return this.transactionDAO.getTransactionsFromFiscalCode(internalId, from, to)
                 .flatMap(transaction -> operationsIunsDAO.getAllIunsFromTransactionId(transaction.getTransactionId())
                         .map(OperationsIunsEntity::getIun)

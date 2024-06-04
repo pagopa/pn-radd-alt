@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.time.OffsetDateTime;
 import java.util.Date;
 
 
@@ -64,7 +65,7 @@ class AorPrivateRestV1ControllerTest {
         req.setRecipientTaxId("TNTGTR76E21H751S");
         req.setRecipientType(AorStartTransactionRequest.RecipientTypeEnum.valueOf("PF"));
         req.setChecksum("YTlkZGRkNzgyZWM0NzkyODdjNmQ0NGE5ZDM2YTg4ZjQ5OTE1ZGM2NjliYjgzNzViMTZhMmE5ZmE3NmE4ZDQzNwo");
-        req.setOperationDate(new Date());
+        req.setOperationDate(OffsetDateTime.now());
 
 
         String path = "/radd-net/api/v1/aor/transaction/start";
@@ -92,7 +93,7 @@ class AorPrivateRestV1ControllerTest {
 
         CompleteTransactionRequest req = new CompleteTransactionRequest();
         req.setOperationId("123");
-        req.setOperationDate(new Date());
+        req.setOperationDate(OffsetDateTime.now());
 
         String path = "/radd-net/api/v1/aor/transaction/complete";
         Mockito.when(aorService
@@ -119,7 +120,7 @@ class AorPrivateRestV1ControllerTest {
 
         AbortTransactionRequest req = new AbortTransactionRequest();
         req.setOperationId("123");
-        req.setOperationDate(new Date());
+        req.setOperationDate(OffsetDateTime.now());
 
         String path = "/radd-net/api/v1/aor/transaction/abort";
         Mockito.when(aorService.abortTransaction(Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any())

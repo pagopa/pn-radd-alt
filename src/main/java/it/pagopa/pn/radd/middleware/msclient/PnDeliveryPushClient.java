@@ -22,6 +22,7 @@ import reactor.util.retry.Retry;
 
 import java.net.ConnectException;
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.concurrent.TimeoutException;
 
@@ -81,11 +82,11 @@ public class PnDeliveryPushClient extends BaseClient {
                 });
     }
 
-    public Mono<ResponseNotificationViewedDtoDto> notifyNotificationRaddRetrieved(RaddTransactionEntity entity, Date operationDate){
+    public Mono<ResponseNotificationViewedDtoDto> notifyNotificationRaddRetrieved(RaddTransactionEntity entity, OffsetDateTime operationDate){
         RequestNotificationViewedDtoDto request = new RequestNotificationViewedDtoDto();
         request.setRecipientType(RecipientTypeDto.fromValue(entity.getRecipientType()));
         request.setRecipientInternalId(entity.getRecipientId());
-        request.setRaddBusinessTransactionDate(DateUtils.getOffsetDateTimeFromDate(operationDate));
+        request.setRaddBusinessTransactionDate(operationDate);
         request.setRaddBusinessTransactionId(entity.getOperationId());
         request.setRaddType(RADD_TYPE);
         log.trace("NOTIFICATION VIEWED TICK {}", new Date().getTime());

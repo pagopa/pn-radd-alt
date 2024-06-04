@@ -39,7 +39,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -88,7 +88,7 @@ class ActServiceStartTransactionTest {
         actStartTransactionRequest.setDelegateTaxId("DelTaxId");
         actStartTransactionRequest.setRecipientTaxId("recTaxId");
         actStartTransactionRequest.setVersionToken("VersionTokenX");
-        actStartTransactionRequest.setOperationDate(new Date());
+        actStartTransactionRequest.setOperationDate(OffsetDateTime.now());
         actStartTransactionRequest.setRecipientType(ActStartTransactionRequest.RecipientTypeEnum.PF);
         return actStartTransactionRequest;
     }
@@ -99,7 +99,7 @@ class ActServiceStartTransactionTest {
         raddTransactionEntity.setOperationId("Id");
         raddTransactionEntity.setStatus(Const.STARTED);
         raddTransactionEntity.setOperationType(OperationTypeEnum.ACT.name());
-        raddTransactionEntity.setOperationStartDate(String.valueOf(new Date()));
+        raddTransactionEntity.setOperationStartDate(String.valueOf(OffsetDateTime.now()));
         raddTransactionEntity.setRecipientId("recipientTaxIdResult");
         raddTransactionEntity.setDelegateId("delegateTaxIdResult");
         return raddTransactionEntity;
