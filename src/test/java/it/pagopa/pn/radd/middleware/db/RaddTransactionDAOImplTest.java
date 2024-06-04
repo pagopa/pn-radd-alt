@@ -6,6 +6,7 @@ import it.pagopa.pn.radd.middleware.db.entities.OperationsIunsEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity;
 import it.pagopa.pn.radd.pojo.RaddTransactionStatusEnum;
 import it.pagopa.pn.radd.utils.Const;
+import it.pagopa.pn.radd.utils.DateUtils;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
@@ -157,8 +158,11 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy", Locale.ITALIAN);
         String from = "03/11/2022";
         String to = "02/11/2022";
-        OffsetDateTime dateFrom = OffsetDateTime.from(formatter.parse(from).toInstant());
-        OffsetDateTime dateTo = OffsetDateTime.from(formatter.parse(to).toInstant());
+        OffsetDateTime dateFrom = DateUtils.getOffsetDateTimeFromDate(formatter.parse(from));
+        OffsetDateTime dateTo = DateUtils.getOffsetDateTimeFromDate(formatter.parse(to));
+
+        log.info("datefrom={} dateto={}", dateFrom, dateTo);
+
         Flux<RaddTransactionEntity> response = raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, dateFrom, dateTo);
         response.onErrorResume(exception -> {
             if (exception instanceof RaddGenericException){
