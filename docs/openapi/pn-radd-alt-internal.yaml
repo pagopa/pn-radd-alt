@@ -970,16 +970,28 @@ components:
   responses:
     Forbidden:
       description: Forbidden
+      content:
+        application/problem+json
     NotFound:
       description: Not found
+      content:
+        application/problem+json
     Invalid:
       description: Bad Request
+      content:
+        application/problem+json
     NotAllowed:
       description: Method not allowed
+      content:
+        application/problem+json
     InternalError:
       description: Internal Server Error
+      content:
+        application/problem+json
     Unauthorized:
       description: Unauthorized
+      content:
+        application/problem+json
 
 #  securitySchemes: # ONLY EXTERNAL
 #    bearerAuth: # ONLY EXTERNAL
