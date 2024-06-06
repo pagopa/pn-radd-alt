@@ -872,18 +872,25 @@ components:
       properties:
         type:
           type: string
+          description: descrizione tipologia errore
         status:
           type: number
+          description: codice http dell'errore
         title:
           type: string
+          description: descrizione errore
         detail:
           type: string
+          description: dettaglio errore
         traceId:
           type: string
+          description: id traccia
         timestamp:
           type: string
+          description: timestamp dell'evento
         errors:
           type: array
+          description: dettagli relativi all'errore
           items:
             type: string
 
