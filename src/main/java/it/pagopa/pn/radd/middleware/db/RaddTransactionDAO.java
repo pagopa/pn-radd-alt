@@ -7,7 +7,7 @@ import it.pagopa.pn.radd.utils.OperationTypeEnum;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Date;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +24,7 @@ public interface RaddTransactionDAO {
     Mono<Integer> countFromIunAndStatus(String iun, String recipientId);
 
     Flux<RaddTransactionEntity> getTransactionsFromIun(String iun);
-    Flux<RaddTransactionEntity> getTransactionsFromFiscalCode(String ensureFiscalCode, Date from, Date to);
+    Flux<RaddTransactionEntity> getTransactionsFromFiscalCode(String ensureFiscalCode, OffsetDateTime from, OffsetDateTime to);
 
     Mono<RaddTransactionEntity> putTransactionWithConditions(RaddTransactionEntity entity);
 

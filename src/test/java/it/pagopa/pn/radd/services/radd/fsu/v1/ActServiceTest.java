@@ -31,6 +31,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.OffsetDateTime;
 import java.util.Date;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.ALREADY_COMPLETE_PRINT;
@@ -70,7 +71,7 @@ class ActServiceTest  {
     void setUp(){
         completeRequest = new CompleteTransactionRequest();
         completeRequest.setOperationId("operationIdTest");
-        completeRequest.setOperationDate(new Date());
+        completeRequest.setOperationDate(OffsetDateTime.now());
 
         baseEntity = new RaddTransactionEntity();
         baseEntity.setIun("iun");
@@ -404,7 +405,7 @@ class ActServiceTest  {
         AbortTransactionRequest request = new AbortTransactionRequest();
         request.setOperationId("Id");
         request.setReason("reason");
-        request.setOperationDate(new Date());
+        request.setOperationDate(OffsetDateTime.now());
         RaddTransactionEntity entity = new RaddTransactionEntity();
         entity.setStatus(Const.STARTED);
         when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(entity));
@@ -423,7 +424,7 @@ class ActServiceTest  {
         AbortTransactionRequest request = new AbortTransactionRequest();
         request.setOperationId("Id");
         request.setReason("reason");
-        request.setOperationDate(new Date());
+        request.setOperationDate(OffsetDateTime.now());
         RaddTransactionEntity entity = new RaddTransactionEntity();
         entity.setStatus(Const.STARTED);
         when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(entity));

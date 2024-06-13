@@ -11,7 +11,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -87,7 +87,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
         entity.setRecipientType(RecipientTypeDto.PF.getValue());
         entity.setOperationStartDate("2022-09-30T13:57:00.000");
         entity.setRecipientId("1924814");
-        Mono<ResponseNotificationViewedDtoDto> monoResponse = pnDeliveryPushClient.notifyNotificationRaddRetrieved(entity, new Date());
+        Mono<ResponseNotificationViewedDtoDto> monoResponse = pnDeliveryPushClient.notifyNotificationRaddRetrieved(entity, OffsetDateTime.now());
         monoResponse.map(response -> {
             assertNotNull(entity);
             assertEquals(entity.getIun(), response.getIun());
@@ -102,7 +102,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
         entity.setRecipientType(RecipientTypeDto.PF.getValue());
         entity.setOperationStartDate("2022-09-30T13:57:00.000");
         entity.setRecipientId("");
-        Mono<ResponseNotificationViewedDtoDto> response = pnDeliveryPushClient.notifyNotificationRaddRetrieved(entity, new Date());
+        Mono<ResponseNotificationViewedDtoDto> response = pnDeliveryPushClient.notifyNotificationRaddRetrieved(entity, OffsetDateTime.now());
 
         response.onErrorResume(exception -> {
             if (exception instanceof PnRaddException){
