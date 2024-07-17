@@ -162,6 +162,9 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
         if(entity.getOperationStartDate() != null) {
             builder.putExpressionValue(":expectedOperationStartDate", AttributeValue.builder().s(entity.getOperationStartDate()).build());
         }
+        if(entity.getFileKey() != null) {
+            builder.putExpressionValue(":expectedFileKey", AttributeValue.builder().s(entity.getFileKey()).build());
+        }
 
         return builder;
     }
