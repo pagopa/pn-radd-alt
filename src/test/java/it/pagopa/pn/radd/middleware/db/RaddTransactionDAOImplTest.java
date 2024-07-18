@@ -6,13 +6,12 @@ import it.pagopa.pn.radd.middleware.db.entities.OperationsIunsEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity;
 import it.pagopa.pn.radd.pojo.RaddTransactionStatusEnum;
 import it.pagopa.pn.radd.utils.Const;
+import it.pagopa.pn.radd.utils.DateUtils;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import reactor.core.publisher.Flux;
@@ -20,14 +19,15 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
-import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
-import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.DATE_VALIDATION_ERROR;
 import static org.junit.jupiter.api.Assertions.*;
@@ -123,7 +123,7 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
     @Test
     void testGetTransactionsFromFiscalCode() {
         String fiscalCode = "ABCDEF12G34H567I";
-        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, new Date(), new Date())
+        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, OffsetDateTime.now(), OffsetDateTime.now())
                 .map(transaction -> {
                     assertNotNull(transaction);
                     return Mono.empty();
@@ -137,14 +137,14 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
                 })
                 .blockFirst();
 
-        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, null, new Date())
+        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, null, OffsetDateTime.now())
                 .map(transaction -> {
                     assertNotNull(transaction);
                     return Mono.empty();
                 })
                 .blockFirst();
 
-        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, new Date(), null)
+        this.raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, OffsetDateTime.now(), null)
                 .map(transaction -> {
                     assertNotNull(transaction);
                     return Mono.empty();
@@ -158,8 +158,11 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy", Locale.ITALIAN);
         String from = "03/11/2022";
         String to = "02/11/2022";
-        Date dateFrom = formatter.parse(from);
-        Date dateTo = formatter.parse(to);
+        OffsetDateTime dateFrom = DateUtils.getOffsetDateTimeFromDate(formatter.parse(from));
+        OffsetDateTime dateTo = DateUtils.getOffsetDateTimeFromDate(formatter.parse(to));
+
+        log.info("datefrom={} dateto={}", dateFrom, dateTo);
+
         Flux<RaddTransactionEntity> response = raddTransactionDAO.getTransactionsFromFiscalCode(fiscalCode, dateFrom, dateTo);
         response.onErrorResume(exception -> {
             if (exception instanceof RaddGenericException){

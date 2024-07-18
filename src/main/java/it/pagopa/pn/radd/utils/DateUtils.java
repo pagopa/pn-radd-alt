@@ -14,23 +14,23 @@ public class DateUtils {
 
     private DateUtils(){}
 
-    public static String formatDate(Date date)  {
+    public static String formatDate(OffsetDateTime date)  {
         if (date == null) return null;
         Instant instant = date.toInstant();
         return instant.toString();
     }
 
-    public static Date parseDateString(String date) {
+    public static OffsetDateTime parseDateString(String date) {
         if (StringUtils.isBlank(date)) return null;
         // se la data finisce per Z, mi aspetto che sia un Istant
         if (date.endsWith("Z"))
-            return Date.from(Instant.parse(date));
+            return Instant.parse(date).atOffset(ZoneOffset.UTC);
 
         // altrimenti è stata salvata nel formato italiano
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
         LocalDateTime localDate = LocalDateTime.parse(date, formatter);
         ZonedDateTime time = localDate.atZone(italianZoneId);
-        return Date.from(time.toInstant());
+        return time.toInstant().atOffset(ZoneOffset.UTC);
 
     }
 
