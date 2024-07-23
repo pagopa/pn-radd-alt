@@ -147,7 +147,7 @@ public class ActService extends BaseService {
                 .build()
                 .log();
 
-        return verifyRoleForStarTransaction(xPagopaPnCxRole, request.getFileKey())
+        return verifyRoleForStarTransaction(xPagopaPnCxRole, request.getFileKey(), request.getChecksum())
                 .then(validateAndSettingsData(uid, request, xPagopaPnCxType, xPagopaPnCxId))
                 .flatMap(this::getEnsureRecipientAndDelegate)
                 .doOnNext(transactionData -> {
@@ -165,14 +165,17 @@ public class ActService extends BaseService {
                         pnRaddAltAuditLog.getContext().addTransactionId(transactionData.getTransactionId())
                                 .addIun(transactionData.getIun())
                 )
-                .flatMap(transactionData -> verifyCheckSum(transactionData, xPagopaPnCxRole))
+                .flatMap(this::verifyCheckSum)
                 .zipWhen(transaction -> hasDocumentsAvailable(transaction.getIun()))
                 .zipWhen(transactionAndSentNotification -> retrieveDocumentsAndAttachments(request, transactionAndSentNotification),
                         (tupla, response) -> Tuples.of(tupla.getT1(), response))
                 .zipWhen(transactionAndResponse -> {
                     log.debug("Update file metadata");
                     TransactionData transaction = transactionAndResponse.getT1();
-                    return this.updateFileMetadata(transaction);
+                    if (transaction.getFileKey() != null) {
+                        return this.updateFileMetadata(transaction);
+                    }
+                    return Mono.just(transaction);
                 }, (in, out) -> in.getT2())
                 .map(response -> {
                     log.trace("START ACT TRANSACTION TOCK {}", new Date().getTime());
