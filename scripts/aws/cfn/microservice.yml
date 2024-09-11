@@ -605,7 +605,7 @@ Resources:
         MaxRequestPerThrottlingPeriod: !Ref MaxRequestPerThrottlingPeriod
         ThrottlingPeriodSeconds: !Ref ThrottlingPeriodSeconds
 
-  ######### WEB ACL ########
+  ######## WEB ACL ########
   RaddAltBlockRegistryAclAssociation:
     Type: AWS::WAFv2::WebACLAssociation
     Properties: 
@@ -619,7 +619,7 @@ Resources:
       Scope: REGIONAL
       Description: WebACL che permette di inibire le chiamate al registry
       DefaultAction:
-        Allow:
+        Allow: {}
       VisibilityConfig:
         SampledRequestsEnabled: true
         CloudWatchMetricsEnabled: true
@@ -634,7 +634,7 @@ Resources:
           VisibilityConfig: 
             SampledRequestsEnabled: true
             CloudWatchMetricsEnabled: true
-            MetricName: Block-Radd-registry-metric
+            MetricName: radd-alt-blocking-registry-webacl-rule-metric
           Action: 
             Block:
               CustomResponse:
