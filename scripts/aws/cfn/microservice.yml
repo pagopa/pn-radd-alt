@@ -424,7 +424,7 @@ Parameters:
     Description: 'Throttling period in seconds'
 
 Conditions:
-  IsUatEnv: !Equals [!Ref EnvironmentType, 'dev' ]
+  IsNotUatEnv: !Not [!Equals [!Ref EnvironmentType, 'uat']]
 
 Resources:
 
@@ -614,14 +614,14 @@ Resources:
   ######## WEB ACL ########
   RaddAltBlockRegistryAclAssociation:
     Type: AWS::WAFv2::WebACLAssociation
-    Condition: IsUatEnv
+    Condition: IsNotUatEnv
     Properties: 
       ResourceArn: !GetAtt RaddAltMicroservicePublicAPI.Outputs.APIGatewayARN
       WebACLArn: !GetAtt RaddAltBlockRegistryAcl.Arn
 
   RaddAltBlockRegistryAcl:
     Type: AWS::WAFv2::WebACL
-    Condition: IsUatEnv
+    Condition: IsNotUatEnv
     Properties:
       Name: RaddAltBlockRegistryAcl
       Scope: REGIONAL
