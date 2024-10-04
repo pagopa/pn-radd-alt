@@ -428,7 +428,7 @@ Parameters:
     Default: true
 
   Conditions:
-    : [!Equals [!Ref BlockImportLocations, 'true']]
+    IsImportLocationsBlocked: [!Equals [!Ref BlockImportLocations, 'true']]
 
 Resources:
 
@@ -618,14 +618,14 @@ Resources:
   ######## WEB ACL ########
   RaddAltBlockRegistryAclAssociation:
     Type: AWS::WAFv2::WebACLAssociation
-    Condition: 
+    Condition: IsImportLocationsBlocked
     Properties: 
       ResourceArn: !GetAtt RaddAltMicroservicePublicAPI.Outputs.APIGatewayARN
       WebACLArn: !GetAtt RaddAltBlockRegistryAcl.Arn
 
   RaddAltBlockRegistryAcl:
     Type: AWS::WAFv2::WebACL
-    Condition: 
+    Condition: IsImportLocationsBlocked
     Properties:
       Name: RaddAltBlockRegistryAcl
       Scope: REGIONAL
