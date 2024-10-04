@@ -427,8 +427,8 @@ Parameters:
       - "false"
     Default: true
 
-  Conditions:
-    IsImportLocationsBlocked: !Equals [!Ref BlockImportLocations, 'true']
+Conditions:
+  IsImportLocationsBlocked: !Equals [!Ref BlockImportLocations, 'true']
 
 Resources:
 
