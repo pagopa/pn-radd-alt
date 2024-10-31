@@ -84,7 +84,11 @@ public class ActService extends BaseService {
                 .doOnNext(recipientInternalId -> raddAltAuditLog.getContext().addRecipientInternalId(recipientInternalId))
                 .flatMap(recCode -> checkQrCodeOrIun(recipientType, qrCode, iun, recCode))
                 .doOnNext(usedIun -> raddAltAuditLog.getContext().addIun(usedIun))
-                .flatMap(this::hasNotificationsCancelled)
+                .flatMap(usedIun -> {
+                    TransactionData data = new TransactionData();
+                    data.setIun(usedIun);
+                    return hasNotificationsCancelled(data);
+                })
                 .flatMap(this::hasDocumentsAvailable)
                 .doOnNext(nothing -> log.trace("ACT INQUIRY TOCK {}", new Date().getTime()))
                 .map(item -> ActInquiryResponseMapper.fromResult())
@@ -158,7 +162,7 @@ public class ActService extends BaseService {
                 })
                 .flatMap(transactionData -> checkQrCodeOrIun(request.getRecipientType().getValue(), request.getQrCode(), request.getIun(), transactionData.getEnsureRecipientId())
                         .map(s -> setIun(transactionData, s)))
-                .flatMap(transactionData -> hasNotificationsCancelled(transactionData.getIun())
+                .flatMap(transactionData -> hasNotificationsCancelled(transactionData)
                         .thenReturn(transactionData))
                 .flatMap(transactionData -> this.createRaddTransaction(uid, transactionData))
                 .doOnNext(transactionData ->
@@ -205,8 +209,12 @@ public class ActService extends BaseService {
     @NotNull
     private Mono<StartTransactionResponse> retrieveDocumentsAndAttachments(ActStartTransactionRequest request, Tuple2<TransactionData, SentNotificationV23Dto> transactionAndSentNotification) {
         log.debug("Retrieving document and attachments");
-        Flux<DownloadUrl> urlDocuments = getUrlDoc(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
-        Flux<DownloadUrl> urlAttachments = getUrlsAttachments(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
+        Flux<DownloadUrl> urlDocuments = Flux.empty();
+        Flux<DownloadUrl> urlAttachments = Flux.empty();
+        if (!transactionAndSentNotification.getT1().isCancelled()) {
+            urlDocuments = getUrlDoc(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
+            urlAttachments = getUrlsAttachments(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
+        }
         Flux<DownloadUrl> urlLegalFacts = legalFact(transactionAndSentNotification.getT1());
         return ParallelFlux.from(urlDocuments, urlAttachments, urlLegalFacts)
                 .sequential()
@@ -308,7 +316,7 @@ public class ActService extends BaseService {
 
     private Flux<DownloadUrl> legalFact(TransactionData transaction) {
         return pnDeliveryPushClient.getNotificationLegalFacts(transaction.getEnsureRecipientId(), transaction.getIun())
-                .filter(filterLegalFacts(transaction))
+                .filter(transaction.isCancelled() ? filterLegalFactsCancelled(transaction) : filterLegalFacts(transaction))
                 .flatMap(item ->
                         pnDeliveryPushClient.getLegalFact(transaction.getEnsureRecipientId(),
                                         transaction.getIun(),
@@ -348,6 +356,11 @@ public class ActService extends BaseService {
     @NotNull
     private static Predicate<LegalFactListElementDto> filterLegalFacts(TransactionData transaction) {
         return legalFact -> legalFact.getLegalFactsId().getCategory() != LegalFactCategoryDto.PEC_RECEIPT;
+    }
+
+    @NotNull
+    private static Predicate<LegalFactListElementV20Dto> filterLegalFactsCancelled(TransactionData transaction) {
+        return legalFact -> legalFact.getLegalFactsId().getCategory() == LegalFactCategoryV20Dto.NOTIFICATION_CANCELLED;
     }
 
     @NotNull
@@ -517,13 +530,13 @@ public class ActService extends BaseService {
                 });
     }
 
-    private Mono<String> hasNotificationsCancelled(String iun) {
-        return this.pnDeliveryPushClient.getNotificationHistory(iun)
+    private Mono<String> hasNotificationsCancelled(TransactionData transactionData) {
+        return this.pnDeliveryPushClient.getNotificationHistory(transactionData.getIun())
                 .flatMap(response -> {
                     if (response.getNotificationStatus() == NotificationStatusDto.CANCELLED) {
-                        return Mono.error(new RaddGenericException(NOTIFICATION_CANCELLED));
+                        transactionData.setCancelled(true);
                     }
-                    return Mono.just(iun);
+                    return Mono.just(transactionData.getIun());
                 });
     }
 
