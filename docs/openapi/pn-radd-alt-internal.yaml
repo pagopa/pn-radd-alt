@@ -261,13 +261,13 @@ info:
           -  *x-amz-checksum-sha256*: valorizzato con il checksum sha256, codificato in base 64, 
                del contenuto binario del file che verrà caricato.
     
-      NOTA:
+            NOTA:
     
-      -  Non va passato il JWT per l’autenticazione.
-      -  Se l'operazione di upload è stata eseguita con successo, si otterrà come 
+           -   Per la chiamata di upload non risulta necessario valorizzare il token JWT per l’autenticazione.
+            -  Se l'operazione di upload è stata eseguita con successo, si otterrà come 
            risposta http status 200 OK.
-      -  Nell'header di questa risposta, si otterrà il campo *x-amz-version-id* che dovrà 
-           essere utilizzato per l’operazione seguente ([startActTransaction](#/actOperations/startActTransaction) / [startAorTransaction](#/aorOperations/startAorTransaction)), nel campo *versionToken* in corrispondenza del documento ad esso associato.
+          -  Nell'header della risposta si otterrà il campo *x-amz-version-id* il cui valore dovrà
+           essere valorizzato  nel campo *versionToken* della successiva operazione  ([startActTransaction](#/actOperations/startActTransaction) / [startAorTransaction](#/aorOperations/startAorTransaction)) in corrispondenza del documento ad esso associato.
   
 
   contact:
@@ -349,7 +349,7 @@ paths:
           content:
             'application/pdf':
               schema:
-#               type: object    # ONLY EXTERNAL
+                #               type: object    # ONLY EXTERNAL
                 type: string    # NO EXTERNAL
                 format: byte    # NO EXTERNAL
         400:
