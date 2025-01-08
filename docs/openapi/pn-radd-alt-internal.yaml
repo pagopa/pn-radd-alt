@@ -261,12 +261,12 @@ info:
           -  *x-amz-checksum-sha256*: valorizzato con il checksum sha256, codificato in base 64, 
                del contenuto binario del file che verrà caricato.
     
-            NOTA:
+      NOTA:
     
-           -   Per la chiamata di upload non risulta necessario valorizzare il token JWT per l’autenticazione.
-            -  Se l'operazione di upload è stata eseguita con successo, si otterrà come 
+      -  Per la chiamata di upload non risulta necessario valorizzare il token JWT per l’autenticazione.
+      -  Se l'operazione di upload è stata eseguita con successo, si otterrà come 
            risposta http status 200 OK.
-          -  Nell'header della risposta si otterrà il campo *x-amz-version-id* il cui valore dovrà
+      -  Nell'header della risposta si otterrà il campo *x-amz-version-id* il cui valore dovrà
            essere valorizzato  nel campo *versionToken* della successiva operazione  ([startActTransaction](#/actOperations/startActTransaction) / [startAorTransaction](#/aorOperations/startAorTransaction)) in corrispondenza del documento ad esso associato.
   
 
