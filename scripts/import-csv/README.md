@@ -7,14 +7,13 @@
 2. Eseguire il comando:
 
     ```
-    ./registries-import.sh "{CSV_PATH}" "{API_BASE_URL}" "{CX_ID}" "{CX_TYPE}" "{UID}"
+    ./registries-import.sh "{CSV_PATH}" "{API_BASE_URL}" "{CX_ID}" "{UID}"
     ```
    sostituendo i placeholder come segue:
 
      - CSV_PATH = percorso del file CSV da importare
      - API_BASE_URL = base url dell'API di pn-core (es. http://localhost:8888 se il tunnel è stato aperto sulla porta 8888)
      - CX_ID = x-pagopa-pn-cx-id
-     - CX_TYPE = x-pagopa-pn-cx-type
      - UID
 
 ## verifica

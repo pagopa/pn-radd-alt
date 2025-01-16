@@ -1,14 +1,13 @@
 #!/bin/bash
 
-if [ "$#" -ne 5 ]; then
+if [ "$#" -ne 4 ]; then
     exit 1
 fi
 
 CSV_PATH="$1"                                       # Path del file CSV (passato come primo argomento)
 API_BASE_URL="$2"                                   # Base URL per l'API (passato come secondo argomento)
 CX_ID="$3"                                          # x-pagopa-pn-cx-id (passato come terzo argomento)
-CX_TYPE="$4"                                        # x-pagopa-pn-cx-type (passato come quarto argomento)
-CX_UID="$5"                                         # UID (passato come quinto argomento)
+CX_UID="$4"                                         # UID (passato come quinto argomento)
 
 calculate_sha256() {
     local file=$1
@@ -25,7 +24,7 @@ CHECKSUM=$(calculate_sha256 "$CSV_PATH")
 RESPONSE=$(curl POST "$API_BASE_URL/radd-net/api/v1/registry/import/upload" \
            -H "uid: $CX_UID" \
            -H "x-pagopa-pn-cx-id: $CX_ID" \
-           -H "x-pagopa-pn-cx-type: $CX_TYPE" \
+           -H "x-pagopa-pn-cx-type: RADD" \
            -H "Content-Type: application/json" \
            -d '{"checksum": "'"$CHECKSUM"'"}'
            )
