@@ -2,17 +2,20 @@
 
 ## esecuzione
 
-Eseguire il comando:
+1. Eseguire il tunnelling verso il bilanciatore di pn-core.
+
+2. Eseguire il comando:
 
     ```
-    ./tuo_script.sh "{CSV_PATH}" "{API_BASE_URL}" "{JWT}" "{UID}"'
+    ./registries-import.sh "{CSV_PATH}" "{API_BASE_URL}" "{CX_ID}" "{CX_TYPE}" "{UID}"
     ```
-sostituendo i placeholder come segue:
+   sostituendo i placeholder come segue:
 
-   - CSV_PATH = percorso del file CSV da importare
-   - API_BASE_URL = base url per l'Api di import massivo di radd-alt (es. dev https://api.radd.dev.notifichedigitali.it)
-   - JWT = token di autenticazione
-   - UID
+     - CSV_PATH = percorso del file CSV da importare
+     - API_BASE_URL = base url dell'API di pn-core (es. http://localhost:8888 se il tunnel è stato aperto sulla porta 8888)
+     - CX_ID = x-pagopa-pn-cx-id
+     - CX_TYPE = x-pagopa-pn-cx-type
+     - UID
 
 ## verifica
 
