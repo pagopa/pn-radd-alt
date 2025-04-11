@@ -37,6 +37,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -72,11 +73,11 @@ class AorServiceTest {
         abortTransactionRequest = new AbortTransactionRequest();
         abortTransactionRequest.setOperationId("1234AOR");
         abortTransactionRequest.setReason("cancelled by user");
-        abortTransactionRequest.setOperationDate(new Date());
+        abortTransactionRequest.setOperationDate(OffsetDateTime.now());
 
         completeTransactionRequest = new CompleteTransactionRequest();
         completeTransactionRequest.setOperationId("1234AOR");
-        completeTransactionRequest.setOperationDate(new Date());
+        completeTransactionRequest.setOperationDate(OffsetDateTime.now());
 
         startTransactionRequest = new AorStartTransactionRequest();
         startTransactionRequest.setRecipientType(AorStartTransactionRequest.RecipientTypeEnum.PF);
