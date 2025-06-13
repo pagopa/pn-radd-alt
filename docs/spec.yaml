@@ -1,0 +1,238 @@
+openapi: 3.0.3
+info:
+  title: Partner Offices API
+  version: 1.0.0
+
+paths:
+  /partners/{partnerId}/partner-offices:
+    get:
+      operationId: getPartnerOffices
+      tags:
+        - Partner Offices
+      description: Retrieve all partner offices for a specific partner
+      summary: Get all partner offices for a specific partner
+      parameters:
+        - in: path
+          name: partnerId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of partner offices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartnerOffice'
+
+    post:
+      operationId: createPartnerOffice
+      tags:
+        - Partner Offices
+      description: Create a new partner office for a specific partner
+      summary: Create a new partner office
+      parameters:
+        - in: path
+          name: partnerId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerOfficeInput'
+      responses:
+        '201':
+          description: Partner office created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerOffice'
+        '409':
+          description: Conflict - office already exists at the specified location
+
+  /partners/{partnerId}/partner-offices/{officeId}:
+    get:
+      summary: Get a specific partner office by ID
+      parameters:
+        - in: path
+          name: partnerId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: officeId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A single partner office
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerOffice'
+
+    put:
+      summary: Replace a partner office
+      parameters:
+        - in: path
+          name: partnerId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: officeId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerOfficeInput'
+      responses:
+        '200':
+          description: Partner office updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerOffice'
+
+    delete:
+      summary: Delete a partner office
+      parameters:
+        - in: path
+          name: partnerId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: officeId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Office deleted
+
+  /partners/{partnerId}/partner-offices/bulk:
+    post:
+      summary: Bulk add partner offices
+      parameters:
+        - in: path
+          name: partnerId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/PartnerOfficeInput'
+      responses:
+        '201':
+          description: Partner offices created
+
+    put:
+      summary: Bulk replace all partner offices for a specific partner
+      parameters:
+        - in: path
+          name: partnerId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/PartnerOfficeInput'
+      responses:
+        '200':
+          description: Partner offices replaced
+
+  /partners/{partnerId}/partner-offices/operation-ids/{operationId}:
+    get:
+      summary: Verifica se esiste un operationId presso i punti di ritiro del partner
+      parameters:
+        - in: path
+          name: partnerId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: operationId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OperationId esistente
+        '404':
+          description: OperationId non trovato
+
+components:
+  schemas:
+    PartnerOfficeInput:
+      type: object
+      required:
+        - name
+        - address
+        - operationCodes
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        opening_hours:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        appointment_required:
+          type: boolean
+        address:
+          type: string
+        website:
+          type: string
+          format: uri
+        operationCodes:
+          type: array
+          description: Lista di codici operativi che il partner può utilizzare per identificare le operazioni presso il punto di ritiro
+          items:
+            type: string
+
+    PartnerOffice:
+      allOf:
+        - $ref: '#/components/schemas/PartnerOfficeInput'
+        - type: object
+          properties:
+            id:
+              type: string
+            lat:
+              type: number
+              format: float
+            lon:
+              type: number
+              format: float
+            geocoding_confidence:
+              type: number
+              format: float
+            operationIds:
+              type: array
+              description: Lista di operationId generati per ogni operationCode fornito in input
+              items:
+                type: string
