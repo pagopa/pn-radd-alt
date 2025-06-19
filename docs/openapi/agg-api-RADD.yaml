@@ -1,0 +1,461 @@
+openapi: 3.0.1
+info:
+  termsOfService: https://notifichedigitali.pagopa.it/radd/index.html
+  title: 'Piattaforma Notifiche: API B2B per gli operatori RADD'
+  x-summary: 'Piattaforma Notifiche: API B2B per gli operatori RADD'
+  version: '1.0.0'
+  contact:
+    email: pn-supporto-radd@pagopa.it
+  license:
+    name: Licenza di PN
+    url: 'https://notifichedigitali.pagopa.it/radd/index.html'
+  description: >-
+    #Abstract
+    API per la gestione delle richieste di censimento e modifica dei punti di ritiro SEND da parte
+    degli operatori OPS.
+
+    Le API permettono di:
+    - richiedere l'attivazione di un nuovo punto di ritiro SEND
+    - modificare un punto di ritiro SEND
+
+
+servers:
+  - url: https://api.radd.notifichedigitali.it
+    description: Ambiente di produzione
+  - url: https://api.radd.uat.notifichedigitali.it
+    description: Ambiente di collaudo UAT
+
+tags:
+  - name: Registry
+
+paths:
+  /radd-net/api/v1/registry:
+    post:
+      tags:
+        - Registry
+      description: >-
+        API utilizzata per la richiesta di attivazione nuova anagrafica RADD
+      operationId: addRegistry
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: '#/components/parameters/uid'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRegistryRequest'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateRegistryResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+
+
+  /radd-net/api/v1/registry/{locationId}:
+    patch:
+      tags:
+        - Registry
+      description: >-
+        API utilizzata per la modifica di un'anagrafica RADD
+      operationId: updateRegistry
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/locationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRegistryRequest'
+        required: true
+      responses:
+        204:
+          description: OK
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '404':
+          description: Not found - Punto di ritiro SEND non trovato
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+
+components:
+  schemas:
+    CreateRegistryRequest:
+      type: object
+      required:
+        - address
+        - locationId
+        - description
+        - phoneNumbers
+        - externalCodes
+      properties:
+        address:
+          $ref: '#/components/schemas/Address'
+        locationId:
+          type: string
+          description: Identificativo univoco della sede del punto di ritiro.
+        description:
+          type: string
+          description: Descrizione del punto di ritiro.
+          example: Sportello ABC.
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example: ["+390123456789","3921573273"]
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$
+        email:
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
+        capacity:
+          type: string
+          description: >-
+            Numero massimo di pratiche mensili che il punto di ritiro SEND può
+            gestire.
+          example: 100
+        openingTime:
+          type: string
+          description: Orario di apertura del punto di ritiro.
+          example: mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#
+          pattern: ^((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*)(#((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*))*$
+        startValidity:
+          type: string
+          description: >-
+            Data di inizio di validità del punto di ritiro in formato (yyyy-MM-dd),
+            se non inviata viene considerata la data corrente.
+          example: '2024-03-21'
+        endValidity:
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          example: '2024-03-21'
+        externalCodes:
+          type: array
+          items:
+            description: Identificativo del punto di ritiro SEND
+        appointment_required:
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
+        website:
+          type: string
+          description: Link al sito del punto di ritiro
+          format: uri
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
+        partner_type:
+          type: string
+          description: Tipologia del punto di ritiro
+          pattern: "CAF"
+
+    Address:
+      type: object
+      required:
+        - addressRow
+        - cap
+        - city
+        - pr
+      properties:
+        addressRow:
+          type: string
+          description: Indirizzo completo
+          example: Via Roma 123
+          pattern: ^[a-zA-Z0-9\s\.,''-]{5,100}$  # Permette lettere, numeri, spazi e caratteri comuni negli indirizzi
+        cap:
+          type: string
+          description: CAP (Codice di Avviamento Postale).
+          example: 00100
+          pattern: ^\d{5}$  # Esattamente 5 cifre per il CAP italiano
+        city:
+          type: string
+          description: Città.
+          example: Roma
+        pr:
+          type: string
+          description: Provincia.
+          example: RM
+          pattern: ^[A-Z]{2}$  # Esattamente 2 lettere maiuscole per il codice provincia italiano
+        country:
+          type: string
+          description: Paese.
+          example: Italia
+
+    UpdateRegistryRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          description: Descrizione aggiornata dello sportello.
+          example: "Registro aggiornato dello sportello."
+        openingTime:
+          type: string
+          description: Orario di apertura del punto di ritiro.
+          example: mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#
+          pattern: ^((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*)(#((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*))*$
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example: ["+390123456789","3921573273"]
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$
+        endValidity:
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          example: '2024-03-21'
+        appointment_required:
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
+        website:
+          type: string
+          description: Link al sito del punto di ritiro
+          format: uri
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
+        email:
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
+
+
+
+
+    CreateRegistryResponse:
+      type: object
+      properties:
+        requestId:
+          type: string
+
+    RegistriesResponse:
+      type: object
+      properties:
+        registries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Registry'
+        moreResult:
+          description: Indica se sono presenti ulteriori pagine di risultati oltre a quelle restituite dalle chiavi contenute nel campo __nextPagesKey__.
+          type: boolean
+        nextPagesKey:
+          description: >-
+            Elenco delle chiavi da utilizzare per richiedere le pagine di risultati successive a quella corrente. 
+            L'ordine delle chiavi restituite equivale all'ordine delle pagine di risultati.
+            Se __moreResult__ è true, sono presenti ulteriori pagine di risultati oltre a quelle restituite dalle chiavi contenute in questo campo.
+          type: array
+          items:
+            type: string
+
+    Registry:
+      type: object
+      properties:
+        registryId:
+          type: string
+          description: identificativo univoco della sede RADD popolato solo in caso di record in stato ACCEPTED
+        requestId:
+          type: string
+          description: ID della richiesta di import.
+          example: "987654"
+        address:
+          $ref: '#/components/schemas/Address'
+        description:
+          type: string
+          description: Descrizione dello sportello.
+          example: Sportello ABC.
+        phoneNumber:
+          type: string
+          description: Numero di telefono dello sportello.
+          example: "+39 0123456789"
+        geoLocation:
+          $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/GeoLocation'
+        openingTime:
+          type: string
+          description: Orario di apertura dello sportello.
+          example: "mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#"
+        startValidity:
+          type: string
+          format: date-time
+          description: Data e ora di inizio di validità dello sportello.
+          example: "2024-03-21T09:00:00Z"
+        endValidity:
+          type: string
+          format: date-time
+          description: Data e ora di fine di validità dello sportello.
+          example: "2024-03-21T17:00:00Z"
+        externalCode:
+          type: string
+          description: Identificativo punto ritiro SEND
+          example: "123456"
+        capacity:
+          description: Numero massimo di pratiche mensili che il punto di Ritiro SEND può gestire.
+          example: 100
+
+  parameters:
+    registryId:
+      name: registryId
+      description: Identificativo dello sportello RADD
+      in: path
+      required: true
+      schema:
+        type: string
+      example: cxId#uuid
+    locationId:
+      name: locationId
+      description: Identificativo della sede del punto di ritiro
+      in: path
+      required: true
+      schema:
+        type: string
+    endDate:
+      name: endDate
+      description: Data fine validità sportello
+      in: query
+      required: true
+      schema:
+        type: string
+      example: 2024-06-21
+    uid:
+      name: uid
+      description: Identificativo pseudo-anonimizzato dell'operatore RADD
+      in: header
+      required: true
+      schema:
+        type: string
+    requestId:
+      name: requestId
+      description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
+      in: header
+      required: true
+      schema:
+        type: string
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 10
+    lastKey:
+      name: lastKey
+      in: query
+      required: false
+      schema:
+        type: string
+    cap:
+      name: cap
+      description: CAP
+      in: query
+      required: false
+      schema:
+        type: string
+    city:
+      name: city
+      description: Città
+      in: query
+      required: false
+      schema:
+        type: string
+    pr:
+      name: pr
+      description: Provincia
+      in: query
+      required: false
+      schema:
+        type: string
+    externalCode:
+      name: externalCode
+      description: Identificativo punto ritiro SEND indicato dal client
+      in: query
+      required: false
+      schema:
+        type: string
+
+  responses:
+    Forbidden:
+      description: Forbidden
+    NotFound:
+      description: Not found
+    Invalid:
+      description: Bad Request
+    NotAllowed:
+      description: Method not allowed
+    InternalError:
+      description: Internal Server Error
+    Unauthorized:
+      description: Unauthorized
+
+#  securitySchemes: # ONLY EXTERNAL
+#    bearerAuth: # ONLY EXTERNAL
+#      type: http          # ONLY EXTERNAL
+#      scheme: bearer      # ONLY EXTERNAL
+#      bearerFormat: JWT   # ONLY EXTERNAL
+#
+#security: # ONLY EXTERNAL
+#  - bearerAuth: [ ]     # ONLY EXTERNAL
