@@ -286,8 +286,8 @@ components:
               description: Percentuale di affidabilitá della geolocalizzazione
               type: integer
               format: int32
-              max: 100
-              min: 0
+              maximum: 100
+              minimum: 0
 
     UpdateRegistryRequestV2:
       type: object
@@ -334,14 +334,10 @@ components:
           example: mail@esempio.it
 
     CreateRegistryResponseV2:
-      type: object
-      properties:
-        $ref: '#/components/schemas/RegistryV2'
+      $ref: '#/components/schemas/RegistryV2'
 
     UpdateRegistryResponseV2:
-      type: object
-      properties:
-        $ref: '#/components/schemas/RegistryV2'
+      $ref: '#/components/schemas/RegistryV2'
 
     RegistryV2:
       type: object
