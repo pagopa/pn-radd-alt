@@ -29,7 +29,7 @@ tags:
   - name: Registry
 
 paths:
-  /radd-net/api/v1/registry:
+  /radd-net/api/v1/registry/{partnerId}:
     post:
       tags:
         - Registry
@@ -40,6 +40,7 @@ paths:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/partnerId'
       requestBody:
         content:
           application/json:
@@ -85,7 +86,7 @@ paths:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
 
 
-  /radd-net/api/v1/registry/{locationId}:
+  /radd-net/api/v1/registry/{partnerId}/{locationId}:
     patch:
       tags:
         - Registry
@@ -96,6 +97,7 @@ paths:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       requestBody:
         content:
@@ -149,6 +151,7 @@ components:
       type: object
       required:
         - address
+        - partnerId
         - locationId
         - description
         - phoneNumbers
@@ -156,6 +159,10 @@ components:
       properties:
         address:
           $ref: '#/components/schemas/Address'
+        partnerId:
+          type: string
+          description: C.F. del partner erogatore
+          pattern: ^([0-9]{11})$
         locationId:
           type: string
           description: Identificativo univoco della sede del punto di ritiro.
@@ -370,6 +377,13 @@ components:
     locationId:
       name: locationId
       description: Identificativo della sede del punto di ritiro
+      in: path
+      required: true
+      schema:
+        type: string
+    partnerId:
+      name: partnerId
+      description: C.F. del partner erogatore
       in: path
       required: true
       schema:
