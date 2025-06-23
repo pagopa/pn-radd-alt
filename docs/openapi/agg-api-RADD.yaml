@@ -29,7 +29,7 @@ tags:
   - name: Registry
 
 paths:
-  /radd-net/api/v1/registry/{partnerId}:
+  /radd-net/api/v2/registry/{partnerId}:
     post:
       tags:
         - Registry
@@ -45,7 +45,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateRegistryRequest'
+              $ref: '#/components/schemas/CreateRegistryRequestV2'
         required: true
       responses:
         200:
@@ -53,7 +53,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateRegistryResponse'
+                $ref: '#/components/schemas/CreateRegistryResponseV2'
         '400':
           description: Bad Request
           content:
@@ -86,7 +86,7 @@ paths:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
 
 
-  /radd-net/api/v1/registry/{partnerId}/{locationId}:
+  /radd-net/api/v2/registry/{partnerId}/{locationId}:
     patch:
       tags:
         - Registry
@@ -103,11 +103,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateRegistryRequest'
+              $ref: '#/components/schemas/UpdateRegistryRequestV2'
         required: true
       responses:
-        204:
+        200:
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateRegistryResponseV2'
         '400':
           description: Bad Request
           content:
@@ -147,7 +151,7 @@ paths:
 
 components:
   schemas:
-    CreateRegistryRequest:
+    CreateRegistryRequestV2:
       type: object
       required:
         - address
@@ -158,7 +162,7 @@ components:
         - externalCodes
       properties:
         address:
-          $ref: '#/components/schemas/Address'
+          $ref: '#/components/schemas/AddressV2'
         partnerId:
           type: string
           description: C.F. del partner erogatore
@@ -208,8 +212,9 @@ components:
         externalCodes:
           type: array
           items:
-            description: Identificativo del punto di ritiro SEND
-        appointment_required:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
+        appointmentRequired:
           type: boolean
           description: Variabile booleana per indicare se necessario prendere appuntamento
         website:
@@ -217,18 +222,18 @@ components:
           description: Link al sito del punto di ritiro
           format: uri
           pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
-        partner_type:
+        partnerType:
           type: string
           description: Tipologia del punto di ritiro
           pattern: "CAF"
 
-    Address:
+    AddressV2:
       type: object
       required:
         - addressRow
         - cap
         - city
-        - pr
+        - province
       properties:
         addressRow:
           type: string
@@ -244,7 +249,7 @@ components:
           type: string
           description: Città.
           example: Roma
-        pr:
+        province:
           type: string
           description: Provincia.
           example: RM
@@ -254,9 +259,44 @@ components:
           description: Paese.
           example: Italia
 
-    UpdateRegistryRequest:
+    GeoLocation:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: string
+          description: Latitudine della posizione geografica dello sportello.
+          example: "41.9028"
+        longitude:
+          type: string
+          description: Longitudine della posizione geografica dello sportello.
+          example: "12.4964"
+
+    NormalizedAddress:
+      allOf:
+        - $ref: "#/components/schemas/AddressV2"
+        - $ref: "#/components/schemas/GeoLocation"
+        - type: object
+          required:
+            - biasPoint
+          properties:
+            biasPoint:
+              description: Percentuale di affidabilitá della geolocalizzazione
+              type: integer
+              format: int32
+              max: 100
+              min: 0
+
+    UpdateRegistryRequestV2:
       type: object
       properties:
+        externalCodes:
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
         description:
           type: string
           description: Descrizione aggiornata dello sportello.
@@ -279,7 +319,7 @@ components:
           type: string
           description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
           example: '2024-03-21'
-        appointment_required:
+        appointmentRequired:
           type: boolean
           description: Variabile booleana per indicare se necessario prendere appuntamento
         website:
@@ -293,77 +333,99 @@ components:
           pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
           example: mail@esempio.it
 
-
-
-
-    CreateRegistryResponse:
+    CreateRegistryResponseV2:
       type: object
       properties:
-        requestId:
-          type: string
+        $ref: '#/components/schemas/RegistryV2'
 
-    RegistriesResponse:
+    UpdateRegistryResponseV2:
       type: object
       properties:
-        registries:
-          type: array
-          items:
-            $ref: '#/components/schemas/Registry'
-        moreResult:
-          description: Indica se sono presenti ulteriori pagine di risultati oltre a quelle restituite dalle chiavi contenute nel campo __nextPagesKey__.
-          type: boolean
-        nextPagesKey:
-          description: >-
-            Elenco delle chiavi da utilizzare per richiedere le pagine di risultati successive a quella corrente. 
-            L'ordine delle chiavi restituite equivale all'ordine delle pagine di risultati.
-            Se __moreResult__ è true, sono presenti ulteriori pagine di risultati oltre a quelle restituite dalle chiavi contenute in questo campo.
-          type: array
-          items:
-            type: string
+        $ref: '#/components/schemas/RegistryV2'
 
-    Registry:
+    RegistryV2:
       type: object
       properties:
         registryId:
           type: string
-          description: identificativo univoco della sede RADD popolato solo in caso di record in stato ACCEPTED
+          description: identificativo univoco della sede RADD
         requestId:
           type: string
           description: ID della richiesta di import.
           example: "987654"
-        address:
-          $ref: '#/components/schemas/Address'
+        normalizedAddress:
+          $ref: '#/components/schemas/NormalizedAddress'
+        partnerId:
+          type: string
+          description: C.F. del partner erogatore
+          pattern: ^([0-9]{11})$
+        locationId:
+          type: string
+          description: Identificativo univoco della sede del punto di ritiro.
         description:
           type: string
-          description: Descrizione dello sportello.
+          description: Descrizione del punto di ritiro.
           example: Sportello ABC.
-        phoneNumber:
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example: [ "+390123456789","3921573273" ]
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$
+        email:
           type: string
-          description: Numero di telefono dello sportello.
-          example: "+39 0123456789"
-        geoLocation:
-          $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/GeoLocation'
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
+        capacity:
+          type: string
+          description: >-
+            Numero massimo di pratiche mensili che il punto di ritiro SEND può
+            gestire.
+          example: 100
         openingTime:
           type: string
-          description: Orario di apertura dello sportello.
-          example: "mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#"
+          description: Orario di apertura del punto di ritiro.
+          example: mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#
+          pattern: ^((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*)(#((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*))*$
         startValidity:
           type: string
-          format: date-time
-          description: Data e ora di inizio di validità dello sportello.
-          example: "2024-03-21T09:00:00Z"
+          description: >-
+            Data di inizio di validità del punto di ritiro in formato (yyyy-MM-dd),
+            se non inviata viene considerata la data corrente.
+          example: '2024-03-21'
         endValidity:
           type: string
-          format: date-time
-          description: Data e ora di fine di validità dello sportello.
-          example: "2024-03-21T17:00:00Z"
-        externalCode:
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          example: '2024-03-21'
+        externalCodes:
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
+        appointmentRequired:
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
+        website:
           type: string
-          description: Identificativo punto ritiro SEND
-          example: "123456"
-        capacity:
-          description: Numero massimo di pratiche mensili che il punto di Ritiro SEND può gestire.
-          example: 100
+          description: Link al sito del punto di ritiro
+          format: uri
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
+        partnerType:
+          type: string
+          description: Tipologia del punto di ritiro
+          pattern: "CAF"
+        creationTimestamp:
+          type: string
+          description: Istante di creazione del punto di ritiro
+          format: date-time
+        updateTimestamp:
+          type: string
+          description: Istante dell'ultima modifica del punto di ritiro
+          format: date-time
 
   parameters:
     registryId:
