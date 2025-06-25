@@ -30,6 +30,54 @@ tags:
 
 paths:
   /radd-net/api/v2/registry/{partnerId}:
+    get:
+      tags:
+        - Registry
+      description: >-
+        API utilizzata per il recupero di tutti i punti di ritiro di un partner
+      operationId: retrieveRegistry
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/partnerId'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRegistryResponseV2'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
     post:
       tags:
         - Registry
@@ -370,6 +418,15 @@ components:
           description: Indirizzo email del punto di ritiro
           pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
           example: mail@esempio.it
+
+    GetRegistryResponseV2:
+      type: object
+      properties:
+        items:
+          type: array
+          description: Lista dei punti di ritiro trovati
+          items:
+            $ref: '#/components/schemas/RegistryV2'
 
     CreateRegistryResponseV2:
       $ref: '#/components/schemas/RegistryV2'
