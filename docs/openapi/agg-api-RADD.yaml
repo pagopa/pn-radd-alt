@@ -132,50 +132,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
-    delete:
-      tags:
-        - Registry
-      description: >-
-        API utilizzata per la cancellazione di tutti punti di ritiro di un partner
-      operationId: deletePartnerRegistry
-      parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
-        - $ref: '#/components/parameters/partnerId'
-      responses:
-        204:
-          description: Ok
-        '400':
-          description: Bad Request
-          content:
-            application/problem+json:
-              schema:
-                $ref: 'remote-refs.yaml#/components/schemas/Problem'
-        '401':
-          description: Unauthorized
-          content:
-            application/problem+json:
-              schema:
-                $ref: 'remote-refs.yaml#/components/schemas/Problem'
-        '403':
-          description: Forbidden
-          content:
-            application/problem+json:
-              schema:
-                $ref: 'remote-refs.yaml#/components/schemas/Problem'
-        '405':
-          description: Not Allowed
-          content:
-            application/problem+json:
-              schema:
-                $ref: 'remote-refs.yaml#/components/schemas/Problem'
-        '500':
-          description: Internal error
-          content:
-            application/problem+json:
-              schema:
-                $ref: 'remote-refs.yaml#/components/schemas/Problem'
 
 
   /radd-net/api/v2/registry/{partnerId}/{locationId}:
@@ -212,6 +168,51 @@ paths:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
         '404':
           description: Not found - Punto di ritiro SEND non trovato
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+    delete:
+      tags:
+        - Registry
+      description: >-
+        API utilizzata per la cancellazione di un punto di ritiro di un partner
+      operationId: deleteRegistry
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/partnerId'
+        - $ref: '#/components/parameters/locationId'
+      responses:
+        204:
+          description: Ok
+        '400':
+          description: Bad Request
           content:
             application/problem+json:
               schema:
