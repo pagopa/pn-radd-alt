@@ -282,4 +282,8 @@ public abstract class BaseDao<T> {
         return Mono.fromFuture(this.dynamoDbEnhancedAsyncClient.transactWriteItems(transactionWriteRequest.build()));
     }
 
+    protected Mono<T> deleteItem(Key key) {
+        return Mono.fromFuture(() -> tableAsync.deleteItem(r -> r.key(key)));
+    }
+
 }
