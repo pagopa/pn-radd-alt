@@ -90,15 +90,14 @@ public class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
         RaddRegistryEntityV2 entity = buildEntity();
         entity.setDescription("Initial");
 
-        Mono<RaddRegistryEntityV2> test = raddRegistryDAO.putItemIfAbsent(entity)
-                .then(raddRegistryDAO.find(entity.getPartnerId(), entity.getLocationId()))
-                .flatMap(found -> {
-                    found.setDescription("Updated");
-                    return raddRegistryDAO.updateRegistryEntity(found);
-                })
-                .flatMap(updated -> raddRegistryDAO.find(updated.getPartnerId(), updated.getLocationId()));
+        Mono<RaddRegistryEntityV2> insert = raddRegistryDAO.putItemIfAbsent(entity);
+        StepVerifier.create(insert)
+                .expectNextMatches(found -> "Initial".equals(found.getDescription()))
+                .verifyComplete();
 
-        StepVerifier.create(test)
+        entity.setDescription("Updated");
+        Mono<RaddRegistryEntityV2> update = raddRegistryDAO.updateRegistryEntity(entity);
+        StepVerifier.create(update)
                 .expectNextMatches(updated -> "Updated".equals(updated.getDescription()))
                 .verifyComplete();
     }
