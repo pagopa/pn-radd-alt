@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -17,6 +16,8 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @CustomLog
 public class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
@@ -69,67 +70,79 @@ public class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
     }
 
     @Test
-    void testPutAndFind() {
+    void shouldInsertAndFindEntity() {
+        // given
         RaddRegistryEntityV2 entity = buildEntity();
 
-        Mono<RaddRegistryEntityV2> insert = raddRegistryDAO.putItemIfAbsent(entity);
-
-        StepVerifier.create(insert)
-                .expectNextMatches(found -> found.equals(entity))
+        // when + then
+        StepVerifier.create(raddRegistryDAO.putItemIfAbsent(entity))
+                .assertNext(inserted -> assertThat(inserted).isEqualTo(entity))
                 .verifyComplete();
 
-        Mono<RaddRegistryEntityV2> find = raddRegistryDAO.find(entity.getPartnerId(), entity.getLocationId());
-
-        StepVerifier.create(find)
-                .expectNextMatches(found -> found.equals(entity))
+        StepVerifier.create(raddRegistryDAO.find(entity.getPartnerId(), entity.getLocationId()))
+                .assertNext(found -> assertThat(found).isEqualTo(entity))
                 .verifyComplete();
     }
 
     @Test
-    void testUpdate() {
+    void shouldUpdateEntityDescription() {
+        // given
         RaddRegistryEntityV2 entity = buildEntity();
         entity.setDescription("Initial");
 
-        Mono<RaddRegistryEntityV2> insert = raddRegistryDAO.putItemIfAbsent(entity);
-        StepVerifier.create(insert)
-                .expectNextMatches(found -> "Initial".equals(found.getDescription()))
+        StepVerifier.create(raddRegistryDAO.putItemIfAbsent(entity))
+                .assertNext(inserted -> assertThat(inserted.getDescription()).isEqualTo("Initial"))
                 .verifyComplete();
 
+        // when
         entity.setDescription("Updated");
-        Mono<RaddRegistryEntityV2> update = raddRegistryDAO.updateRegistryEntity(entity);
-        StepVerifier.create(update)
-                .expectNextMatches(updated -> "Updated".equals(updated.getDescription()))
+
+        // then
+        StepVerifier.create(raddRegistryDAO.updateRegistryEntity(entity))
+                .assertNext(updated -> assertThat(updated.getDescription()).isEqualTo("Updated"))
                 .verifyComplete();
     }
 
     @Test
-    void testDelete() {
+    void shouldDeleteEntityAndNotFindIt() {
+        // given
         RaddRegistryEntityV2 entity = buildEntity();
 
-        Mono<RaddRegistryEntityV2> test = raddRegistryDAO.putItemIfAbsent(entity)
-                .then(raddRegistryDAO.delete(entity.getPartnerId(), entity.getLocationId()))
-                .then(raddRegistryDAO.find(entity.getPartnerId(), entity.getLocationId()));
+        StepVerifier.create(raddRegistryDAO.putItemIfAbsent(entity))
+                .assertNext(inserted -> assertThat(inserted).isEqualTo(entity))
+                .verifyComplete();
 
-        StepVerifier.create(test)
-                .expectNextMatches(found -> found.equals(entity))
+        // when
+        StepVerifier.create(raddRegistryDAO.delete(entity.getPartnerId(), entity.getLocationId()))
+                .assertNext(deleted -> assertThat(deleted).isEqualTo(entity))
+                .verifyComplete();
+
+        // then
+        StepVerifier.create(raddRegistryDAO.find(entity.getPartnerId(), entity.getLocationId()))
+                .expectNextCount(0)
                 .verifyComplete();
     }
 
     @Test
-    void testFindByPartnerId() {
+    void shouldFindAllEntitiesByPartnerId() {
+        // given
         RaddRegistryEntityV2 entity1 = buildEntity();
         RaddRegistryEntityV2 entity2 = buildEntity();
-        entity2.setPartnerId(entity1.getPartnerId());
+        entity2.setPartnerId(entity1.getPartnerId()); // stesso partnerId
 
-        Mono<Void> setup = raddRegistryDAO.putItemIfAbsent(entity1)
-                .then(raddRegistryDAO.putItemIfAbsent(entity2))
-                .then();
+        StepVerifier.create(
+                raddRegistryDAO.putItemIfAbsent(entity1)
+                        .then(raddRegistryDAO.putItemIfAbsent(entity2))
+                        .then()
+        ).verifyComplete();
 
-        StepVerifier.create(setup)
-                .verifyComplete();
-
+        // when + then
         StepVerifier.create(raddRegistryDAO.findByPartnerId(entity1.getPartnerId()).collectList())
-                .expectNextMatches(list -> list.size() >= 2)
+                .assertNext(list -> {
+                    assertThat(list).hasSizeGreaterThanOrEqualTo(2);
+                    assertThat(list).extracting(RaddRegistryEntityV2::getPartnerId)
+                            .allMatch(pid -> pid.equals(entity1.getPartnerId()));
+                })
                 .verifyComplete();
     }
 
