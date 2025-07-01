@@ -28,6 +28,7 @@ public class RaddRegistryEntityV2 {
     public static final String COL_PARTNER_TYPE = "partnerType";
     public static final String COL_CREATION_TIMESTAMP = "creationTimestamp";
     public static final String COL_UPDATE_TIMESTAMP = "updateTimestamp";
+    public static final String COL_ADDRESS = "address";
     public static final String COL_NORMALIZED_ADDRESS = "normalizedAddress";
     public static final String COL_DESCRIPTION = "description";
     public static final String COL_OPENING_TIME = "openingTime";
@@ -64,6 +65,9 @@ public class RaddRegistryEntityV2 {
 
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_UPDATE_TIMESTAMP)}))
     private Instant updateTimestamp;
+
+    @Getter(onMethod = @__({@DynamoDbAttribute(COL_ADDRESS)}))
+    private AddressEntity address;
 
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_NORMALIZED_ADDRESS)}))
     private NormalizedAddressEntity normalizedAddress;
