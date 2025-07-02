@@ -425,7 +425,7 @@ public class RaddRegistryUtils {
         if (Objects.nonNull(normalizedAddress)) {
             address.addressRow(normalizedAddress.getAddressRow());
             address.cap(normalizedAddress.getCap());
-            address.pr(normalizedAddress.getPr());
+            address.pr(normalizedAddress.getProvince());
             address.city(normalizedAddress.getCity());
             address.country(normalizedAddress.getCountry());
         }
@@ -436,7 +436,7 @@ public class RaddRegistryUtils {
         NormalizedAddressEntity address = new NormalizedAddressEntity();
         address.setAddressRow(normalizedAddress.getAddressRow());
         address.setCap(normalizedAddress.getCap());
-        address.setPr(normalizedAddress.getPr());
+        address.setProvince(normalizedAddress.getPr());
         address.setCity(normalizedAddress.getCity());
         address.setCountry(normalizedAddress.getCountry());
         return address;

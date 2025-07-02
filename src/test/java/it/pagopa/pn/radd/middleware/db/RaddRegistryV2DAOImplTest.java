@@ -56,7 +56,7 @@ public class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
         NormalizedAddressEntity normalizedAddress = new NormalizedAddressEntity();
         normalizedAddress.setAddressRow("123 Test St");
         normalizedAddress.setCity("Test City");
-        normalizedAddress.setPr("TP");
+        normalizedAddress.setProvince("TP");
         normalizedAddress.setCountry("Italy");
         normalizedAddress.setLongitude("12.345678");
         normalizedAddress.setLatitude("34.567890");

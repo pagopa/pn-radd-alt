@@ -77,7 +77,7 @@ public class StoreRegistryServiceTest {
         registryEntity.setOpeningTime("testOpeningTime");
         NormalizedAddressEntity addressEntity = new NormalizedAddressEntity();
         addressEntity.setCountry("country");
-        addressEntity.setPr("pr");
+        addressEntity.setProvince("pr");
         addressEntity.setCity("city");
         addressEntity.setCap("cap");
         registryEntity.setNormalizedAddress(addressEntity);
