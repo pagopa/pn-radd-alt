@@ -239,6 +239,19 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
             }
         ]"
 
+echo "### CREATE PN RADD REGISTRY TABLE V2 ###"
+
+aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
+    dynamodb create-table \
+    --table-name pn-RaddRegistryV2 \
+    --attribute-definitions \
+    AttributeName=partnerId,AttributeType=S \
+    AttributeName=locationId,AttributeType=S \
+    --key-schema \
+    AttributeName=partnerId,KeyType=HASH \
+    AttributeName=locationId,KeyType=RANGE \
+    --provisioned-throughput ReadCapacityUnits=10,WriteCapacityUnits=5
+
 echo "### CREATE PN RADD SCHEDLOCK TABLE ###"
 
 aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
