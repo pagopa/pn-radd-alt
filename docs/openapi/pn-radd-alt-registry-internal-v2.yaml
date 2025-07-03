@@ -292,6 +292,12 @@ components:
           description: Orario di apertura del punto di ritiro.
           example: mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#
           pattern: ^((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*)(#((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*))*$
+        startValidity:
+          type: string
+          description: >-
+            Data di inizio di validità del punto di ritiro in formato (yyyy-MM-dd),
+            se non inviata viene considerata la data corrente.
+          example: '2024-03-21'
         endValidity:
           type: string
           description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
