@@ -313,7 +313,6 @@ components:
         website:
           type: string
           description: Link al sito del punto di ritiro
-          format: uri
           pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
         partnerType:
           type: string
@@ -418,7 +417,6 @@ components:
         website:
           type: string
           description: Link al sito del punto di ritiro
-          format: uri
           pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
         email:
           type: string
@@ -503,7 +501,6 @@ components:
         website:
           type: string
           description: Link al sito del punto di ritiro
-          format: uri
           pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
         partnerType:
           type: string
