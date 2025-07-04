@@ -33,7 +33,7 @@ public class LocalStackTestConfig {
                                                   "/root/.aws/credentials", BindMode.READ_ONLY)
                     .withNetworkAliases("localstack")
                     .withNetwork(Network.builder().build())
-                    .withCommand("chmod +x /etc/localstack/init/ready.d")
+                    .withCommand("bash", "-c", "chmod +x /etc/localstack/init/ready.d/make-storages.sh && exec localstack")
                     .waitingFor(Wait.forLogMessage(".*Initialization terminated.*", 1)
                                     .withStartupTimeout(Duration.ofSeconds(180)));
 
