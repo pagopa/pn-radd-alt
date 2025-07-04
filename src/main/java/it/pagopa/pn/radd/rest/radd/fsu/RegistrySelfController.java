@@ -1,14 +1,28 @@
 package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.RegistryApi;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryRequestV2;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistryV2;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
+@CustomLog
 public class RegistrySelfController implements RegistryApi {
 
     private final RegistrySelfService registrySelfService;
 
+    @Override
+    public Mono<ResponseEntity<RegistryV2>> addRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String partnerId, Mono<CreateRegistryRequestV2> createRegistryRequestV2, ServerWebExchange exchange) {
+        return createRegistryRequestV2.flatMap(request -> registrySelfService.addRegistry(partnerId, request.getLocationId(), request))
+                .map(createRegistryResponse -> ResponseEntity.status(HttpStatus.OK).body(createRegistryResponse));
+    }
 }
