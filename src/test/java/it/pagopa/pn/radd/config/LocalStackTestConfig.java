@@ -7,6 +7,7 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -27,8 +28,8 @@ public class LocalStackTestConfig {
             new LocalStackContainer(DockerImageName.parse("localstack/localstack:4.0.3")
                     .asCompatibleSubstituteFor("localstack/localstack"))
                     .withServices(DYNAMODB, SQS)
-                    .withClasspathResourceMapping("testcontainers/init.sh",
-                                                  "/etc/localstack/init/ready.d/make-storages.sh", BindMode.READ_WRITE)
+                    .withCopyToContainer(MountableFile.forClasspathResource("testcontainers/init.sh", 775),
+                            "/etc/localstack/init/ready.d/make-storages.sh")
                     .withClasspathResourceMapping("testcontainers/credentials",
                                                   "/root/.aws/credentials", BindMode.READ_ONLY)
                     .withNetworkAliases("localstack")
