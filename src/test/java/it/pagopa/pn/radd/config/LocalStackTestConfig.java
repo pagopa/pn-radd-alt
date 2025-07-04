@@ -28,7 +28,7 @@ public class LocalStackTestConfig {
                     .asCompatibleSubstituteFor("localstack/localstack"))
                     .withServices(DYNAMODB, SQS)
                     .withClasspathResourceMapping("testcontainers/init.sh",
-                                                  "/etc/localstack/init/ready.d/make-storages.sh", BindMode.READ_ONLY)
+                                                  "/etc/localstack/init/ready.d/make-storages.sh", BindMode.READ_WRITE)
                     .withClasspathResourceMapping("testcontainers/credentials",
                                                   "/root/.aws/credentials", BindMode.READ_ONLY)
                     .withNetworkAliases("localstack")
