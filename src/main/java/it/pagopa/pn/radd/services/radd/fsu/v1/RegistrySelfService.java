@@ -3,6 +3,7 @@ package it.pagopa.pn.radd.services.radd.fsu.v1;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.exception.TransactionAlreadyExistsException;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import lombok.CustomLog;
@@ -29,7 +30,7 @@ public class RegistrySelfService {
     private final AwsGeoService awsGeoService;
     private  final RaddRegistryMapper raddRegistryMapper;
 
-    public Mono<RegistryV2> addRegistry(String partnerId, String locationId, CreateRegistryRequestV2 request) {
+    public Mono<RegistryV2> addRegistry(String partnerId, String locationId, String uid, CreateRegistryRequestV2 request) {
         checkCreateRegistryRequest(request);
         log.info("Creating registry entity for partnerId: {} and locationId: {}", partnerId, locationId);
         AddressV2 inputAddress = request.getAddress();
@@ -40,7 +41,7 @@ public class RegistrySelfService {
                         inputAddress.getCap(),
                         inputAddress.getCity()))
                 )
-                .map(coordinatesResult -> buildRaddRegistryEntity(partnerId, locationId, request, coordinatesResult))
+                .map(coordinatesResult -> buildRaddRegistryEntity(partnerId, locationId, uid, request, coordinatesResult))
                 .flatMap(raddRegistryDAO::putItemIfAbsent)
                 .doOnNext(result -> log.debug("Registry entity with partnerId: {} and locationId: {} created successfully", partnerId, locationId))
                 .map(raddRegistryMapper::toDto);
@@ -57,7 +58,7 @@ public class RegistrySelfService {
             Instant startValidityInstant = startValidity != null ? convertDateToInstantAtStartOfDay(startValidity) : today;
 
             if (startValidityInstant.isBefore(today)) {
-                throw new RaddGenericException(ExceptionTypeEnum.DATE_IN_THE_PAST, HttpStatus.BAD_REQUEST);
+                throw new RaddGenericException(ExceptionTypeEnum.START_VALIDITY_IN_THE_PAST, HttpStatus.BAD_REQUEST);
             }
 
             if (endValidity != null) {

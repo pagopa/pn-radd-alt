@@ -94,7 +94,7 @@ public class RaddRegistryUtils {
         return Mono.just(getRaddRegistryEntity(registryId, normalizedAddress, registryRequest, raddRegistryOriginalRequest));
     }
 
-    public static RaddRegistryEntityV2 buildRaddRegistryEntity(String partnerId, String locationId, CreateRegistryRequestV2 request, AwsGeoService.CoordinatesResult coordinatesResult) {
+    public static RaddRegistryEntityV2 buildRaddRegistryEntity(String partnerId, String locationId, String uid, CreateRegistryRequestV2 request, AwsGeoService.CoordinatesResult coordinatesResult) {
         RaddRegistryEntityV2 raddRegistryEntityV2 = new RaddRegistryEntityV2();
 
         raddRegistryEntityV2.setPartnerId(partnerId);
@@ -112,6 +112,7 @@ public class RaddRegistryUtils {
         raddRegistryEntityV2.setPartnerType(request.getPartnerType());
         raddRegistryEntityV2.setCreationTimestamp(Instant.now());
         raddRegistryEntityV2.setUpdateTimestamp(Instant.now());
+        raddRegistryEntityV2.setUid(uid);
 
         NormalizedAddressEntity normalizedAddress = buildNormalizedAddressEntity(coordinatesResult);
 

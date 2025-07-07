@@ -1,6 +1,8 @@
 package it.pagopa.pn.radd.middleware.db.impl;
 
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
+import it.pagopa.pn.radd.exception.RaddRegistryAlreadyExistsException;
+import it.pagopa.pn.radd.exception.TransactionAlreadyExistsException;
 import it.pagopa.pn.radd.middleware.db.BaseDao;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
@@ -49,7 +51,9 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
                 .expression("attribute_not_exists(partnerId) AND attribute_not_exists(locationId)")
                 .build();
 
-        return this.putItemWithConditions(newRegistry, condition, RaddRegistryEntityV2.class);
+        return this.putItemWithConditions(newRegistry, condition, RaddRegistryEntityV2.class)
+                .onErrorMap(TransactionAlreadyExistsException.class, e -> new RaddRegistryAlreadyExistsException());
+
     }
 
     @Override

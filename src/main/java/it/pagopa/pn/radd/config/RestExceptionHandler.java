@@ -99,7 +99,7 @@ public class RestExceptionHandler {
         problem.setType(ex.getStatus().getReasonPhrase());
         problem.setStatus(ex.getStatus().value());
         problem.setTitle(ex.getExceptionType().getTitle());
-        problem.setDetail(ex.getExceptionType().getMessage());
+        problem.setDetail(ex.getMessage());
         problem.setTimestamp(OffsetDateTime.now(ZoneOffset.UTC));
         problem.setTraceId(MDC.get(MDC_TRACE_ID_KEY));
         return Mono.just(ResponseEntity.status(ex.getStatus())
