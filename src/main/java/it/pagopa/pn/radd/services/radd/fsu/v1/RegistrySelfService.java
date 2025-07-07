@@ -71,7 +71,9 @@ public class RegistrySelfService {
             registryEntity.setAppointmentRequired(request.getAppointmentRequired());
         }
 
-        registryEntity.setEndValidity(verifyDatesForUpdate(registryEntity.getStartValidity(), request.getEndValidity()));
+        if (request.getEndValidity() != null) {
+            registryEntity.setEndValidity(verifyDatesForUpdate(registryEntity.getStartValidity(), request.getEndValidity()));
+        }
 
         return registryEntity;
     }
@@ -80,12 +82,9 @@ public class RegistrySelfService {
         Instant endValidityInstant = null;
         try {
             Instant startValidityInstant = startValidity != null ? startValidity : getStartOfDayToday();
-
-            if (endValidity != null) {
-                endValidityInstant = convertDateToInstantAtStartOfDay(endValidity);
-                if (endValidityInstant.isBefore(startValidityInstant)) {
-                    throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
-                }
+            endValidityInstant = convertDateToInstantAtStartOfDay(endValidity);
+            if (endValidityInstant.isBefore(startValidityInstant)) {
+                throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
             }
         } catch (DateTimeParseException e) {
             throw new RaddGenericException(ExceptionTypeEnum.DATE_INVALID_ERROR, HttpStatus.BAD_REQUEST);
