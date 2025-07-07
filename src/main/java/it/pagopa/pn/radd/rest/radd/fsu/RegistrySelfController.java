@@ -1,9 +1,9 @@
 package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.RegistryApi;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryRequestV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistryV2;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateRegistryRequestV2;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +21,9 @@ public class RegistrySelfController implements RegistryApi {
     private final RegistrySelfService registrySelfService;
 
     @Override
-    public Mono<ResponseEntity<RegistryV2>> addRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String partnerId, Mono<CreateRegistryRequestV2> createRegistryRequestV2, ServerWebExchange exchange) {
-        return createRegistryRequestV2.flatMap(request -> registrySelfService.addRegistry(partnerId, request.getLocationId(), request))
-                .map(createRegistryResponse -> ResponseEntity.status(HttpStatus.OK).body(createRegistryResponse));
+    public Mono<ResponseEntity<RegistryV2>> updateRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String partnerId, String locationId, Mono<UpdateRegistryRequestV2> updateRegistryRequestV2, ServerWebExchange exchange) {
+        return updateRegistryRequestV2.flatMap(request -> registrySelfService.updateRegistry(partnerId, locationId, request))
+                                      .map(response -> ResponseEntity.status(HttpStatus.OK).body(response));
     }
+
 }
