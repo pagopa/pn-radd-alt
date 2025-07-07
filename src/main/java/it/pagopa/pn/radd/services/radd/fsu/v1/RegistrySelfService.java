@@ -6,7 +6,6 @@ import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.*;
-import it.pagopa.pn.radd.utils.Utils;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -18,8 +17,6 @@ import reactor.core.publisher.Mono;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 
-import static it.pagopa.pn.radd.utils.Const.REGEX_OPENINGTIME;
-import static it.pagopa.pn.radd.utils.Const.REGEX_PHONENUMBER;
 import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
 import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
 
@@ -42,13 +39,7 @@ public class RegistrySelfService {
     }
 
     private void checkUpdateRegistryRequest(UpdateRegistryRequestV2 request) {
-        if (!CollectionUtils.isEmpty(request.getPhoneNumbers())) {
-            for (String pn: request.getPhoneNumbers()) {
-                Utils.matchRegex(REGEX_PHONENUMBER, pn, ExceptionTypeEnum.PHONE_NUMBER_ERROR);
-            }
-        }
-
-        Utils.matchRegex(REGEX_OPENINGTIME, request.getOpeningTime(), ExceptionTypeEnum.OPENING_TIME_ERROR);
+        //TODO: inserire controlli per l'OPENINGTIME.
     }
 
     private RaddRegistryEntityV2 mapFieldToUpdate(RaddRegistryEntityV2 registryEntity, UpdateRegistryRequestV2 request) {
@@ -76,17 +67,22 @@ public class RegistrySelfService {
             registryEntity.setEmail(request.getEmail());
         }
 
-        registryEntity.setAppointmentRequired(request.getAppointmentRequired());
+        if (request.getAppointmentRequired() != null) {
+            registryEntity.setAppointmentRequired(request.getAppointmentRequired());
+        }
+        else {
+            throw new RaddGenericException(ExceptionTypeEnum.APPOINTMENT_REQUIRED_INVALID_ERROR, HttpStatus.BAD_REQUEST);
+        }
 
-        registryEntity.setEndValidity(verifyDatesForUpdate(registryEntity.getStartValidity().toString().substring(0,10), request.getEndValidity()));
+        registryEntity.setEndValidity(verifyDatesForUpdate(registryEntity.getStartValidity(), request.getEndValidity()));
 
         return registryEntity;
     }
 
-    private Instant verifyDatesForUpdate(String startValidity, String endValidity) {
+    private Instant verifyDatesForUpdate(Instant startValidity, String endValidity) {
         Instant endValidityInstant = null;
         try {
-            Instant startValidityInstant = startValidity != null ? convertDateToInstantAtStartOfDay(startValidity) : getStartOfDayToday();
+            Instant startValidityInstant = startValidity != null ? startValidity : getStartOfDayToday();
 
             if (endValidity != null) {
                 endValidityInstant = convertDateToInstantAtStartOfDay(endValidity);
