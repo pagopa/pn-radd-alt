@@ -1,5 +1,6 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ public class AwsGeoService {
 
     public AwsGeoService() {};
 
+    @Getter
     public static class CoordinatesResult {
         String awsLongitude;
         String awsLatitude;

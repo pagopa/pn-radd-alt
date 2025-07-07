@@ -11,12 +11,10 @@ import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.Fil
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileCreationResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
+import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
 import it.pagopa.pn.radd.pojo.*;
+import it.pagopa.pn.radd.services.radd.fsu.v1.AwsGeoService;
 import it.pagopa.pn.radd.services.radd.fsu.v1.SecretService;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +32,8 @@ import java.util.*;
 import java.util.function.Function;
 
 import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.TO_PROCESS;
+import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
+import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
 
 @Component
 @RequiredArgsConstructor
@@ -92,6 +92,54 @@ public class RaddRegistryUtils {
         RaddRegistryOriginalRequest raddRegistryOriginalRequest = objectMapperUtil.toObject(registryRequest.getOriginalRequest(), RaddRegistryOriginalRequest.class);
 
         return Mono.just(getRaddRegistryEntity(registryId, normalizedAddress, registryRequest, raddRegistryOriginalRequest));
+    }
+
+    public static RaddRegistryEntityV2 buildRaddRegistryEntity(String partnerId, String locationId, CreateRegistryRequestV2 request, AwsGeoService.CoordinatesResult coordinatesResult) {
+        RaddRegistryEntityV2 raddRegistryEntityV2 = new RaddRegistryEntityV2();
+
+        raddRegistryEntityV2.setPartnerId(partnerId);
+        raddRegistryEntityV2.setLocationId(locationId);
+        raddRegistryEntityV2.setDescription(request.getDescription());
+        raddRegistryEntityV2.setPhoneNumbers(request.getPhoneNumbers());
+        raddRegistryEntityV2.setOpeningTime(request.getOpeningTime());
+        raddRegistryEntityV2.setCapacity(request.getCapacity());
+        raddRegistryEntityV2.setExternalCodes(request.getExternalCodes());
+        raddRegistryEntityV2.setStartValidity(request.getStartValidity() != null ? convertDateToInstantAtStartOfDay(request.getStartValidity()) : getStartOfDayToday());
+        raddRegistryEntityV2.setEndValidity(convertDateToInstantAtStartOfDay(request.getEndValidity()));
+        raddRegistryEntityV2.setEmail(request.getEmail());
+        raddRegistryEntityV2.setAppointmentRequired(request.getAppointmentRequired());
+        raddRegistryEntityV2.setWebsite(request.getWebsite());
+        raddRegistryEntityV2.setPartnerType(request.getPartnerType());
+        raddRegistryEntityV2.setCreationTimestamp(Instant.now());
+        raddRegistryEntityV2.setUpdateTimestamp(Instant.now());
+
+        NormalizedAddressEntity normalizedAddress = buildNormalizedAddressEntity(coordinatesResult);
+
+        AddressV2 inputAddress = request.getAddress();
+        AddressEntity address = new AddressEntity();
+        address.setAddressRow(inputAddress.getAddressRow());
+        address.setCity(inputAddress.getCity());
+        address.setCap(inputAddress.getCap());
+        address.setProvince(inputAddress.getProvince());
+        address.setCountry(inputAddress.getCountry());
+
+        raddRegistryEntityV2.setNormalizedAddress(normalizedAddress);
+        raddRegistryEntityV2.setAddress(address);
+
+        return raddRegistryEntityV2;
+    }
+
+    private static NormalizedAddressEntity buildNormalizedAddressEntity(AwsGeoService.CoordinatesResult coordinatesResult) {
+        NormalizedAddressEntity normalizedAddress = new NormalizedAddressEntity();
+        normalizedAddress.setAddressRow(coordinatesResult.getAwsAddressRow());
+        normalizedAddress.setCity(coordinatesResult.getAwsLocality());
+        normalizedAddress.setCap(coordinatesResult.getAwsPostalCode());
+        normalizedAddress.setProvince(coordinatesResult.getAwsSubRegion());
+        normalizedAddress.setCountry(coordinatesResult.getAwsCountry());
+        normalizedAddress.setBiasPoint(coordinatesResult.getBiasPoint());
+        normalizedAddress.setLongitude(coordinatesResult.getAwsLongitude());
+        normalizedAddress.setLatitude(coordinatesResult.getAwsLatitude());
+        return normalizedAddress;
     }
 
     private static RaddRegistryEntity getRaddRegistryEntity(String registryId, PnAddressManagerEvent.NormalizedAddress normalizedAddress, RaddRegistryRequestEntity registryRequest, RaddRegistryOriginalRequest raddRegistryOriginalRequest) {
