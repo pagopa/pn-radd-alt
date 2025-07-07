@@ -70,9 +70,6 @@ public class RegistrySelfService {
         if (request.getAppointmentRequired() != null) {
             registryEntity.setAppointmentRequired(request.getAppointmentRequired());
         }
-        else {
-            throw new RaddGenericException(ExceptionTypeEnum.APPOINTMENT_REQUIRED_INVALID_ERROR, HttpStatus.BAD_REQUEST);
-        }
 
         registryEntity.setEndValidity(verifyDatesForUpdate(registryEntity.getStartValidity(), request.getEndValidity()));
 
