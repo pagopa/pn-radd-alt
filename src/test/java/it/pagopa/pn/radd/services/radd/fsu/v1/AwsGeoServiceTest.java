@@ -117,11 +117,11 @@ class AwsGeoServiceTest {
 
                         var matchScore = result.getAwsMatchScore();
                         Assertions.assertNotNull(matchScore);
-                        Assertions.assertEquals(0.82, matchScore.getOverall());
-                        Assertions.assertEquals(1.0, matchScore.getComponents().getCountry());
-                        Assertions.assertEquals(0.9, matchScore.getComponents().getSubRegion());
-                        Assertions.assertEquals(0.82, matchScore.getComponents().getPostalCode());
-                        Assertions.assertEquals(1.0, matchScore.getComponents().getAddressNumber());
+                        Assertions.assertEquals(0.82, matchScore.overall());
+                        Assertions.assertEquals(1.0, matchScore.components().address().country());
+                        Assertions.assertEquals(0.9, matchScore.components().address().subRegion());
+                        Assertions.assertEquals(0.82, matchScore.components().address().postalCode());
+                        Assertions.assertEquals(1.0, matchScore.components().address().addressNumber());
                     })
                     .verifyComplete();
     }
@@ -161,11 +161,11 @@ class AwsGeoServiceTest {
 
                         var matchScore = result.getAwsMatchScore();
                         Assertions.assertNotNull(matchScore);
-                        Assertions.assertEquals(0.86, matchScore.getOverall());
-                        Assertions.assertEquals(1.0, matchScore.getComponents().getCountry());
-                        Assertions.assertEquals(0.9, matchScore.getComponents().getSubRegion());
-                        Assertions.assertEquals(1.0, matchScore.getComponents().getPostalCode());
-                        Assertions.assertEquals(1.0, matchScore.getComponents().getAddressNumber());
+                        Assertions.assertEquals(0.86, matchScore.overall());
+                        Assertions.assertEquals(1.0, matchScore.components().address().country());
+                        Assertions.assertEquals(0.9, matchScore.components().address().subRegion());
+                        Assertions.assertEquals(1.0, matchScore.components().address().postalCode());
+                        Assertions.assertEquals(1.0, matchScore.components().address().addressNumber());
                     })
                     .verifyComplete();
     }
@@ -207,11 +207,11 @@ class AwsGeoServiceTest {
 
                         var matchScore = result.getAwsMatchScore();
                         Assertions.assertNotNull(matchScore);
-                        Assertions.assertEquals(1.0, matchScore.getOverall());
-                        Assertions.assertEquals(1.0, matchScore.getComponents().getCountry());
-                        Assertions.assertEquals(1.0, matchScore.getComponents().getSubRegion());
-                        Assertions.assertEquals(1.0, matchScore.getComponents().getPostalCode());
-                        Assertions.assertEquals(1.0, matchScore.getComponents().getAddressNumber());
+                        Assertions.assertEquals(1.0, matchScore.overall());
+                        Assertions.assertEquals(1.0, matchScore.components().address().country());
+                        Assertions.assertEquals(1.0, matchScore.components().address().subRegion());
+                        Assertions.assertEquals(1.0, matchScore.components().address().postalCode());
+                        Assertions.assertEquals(1.0, matchScore.components().address().addressNumber());
                     })
                     .verifyComplete();
     }

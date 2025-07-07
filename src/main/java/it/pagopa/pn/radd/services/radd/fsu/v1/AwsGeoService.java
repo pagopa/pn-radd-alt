@@ -1,5 +1,6 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.radd.exception.CoordinatesNotFoundException;
 import lombok.Data;
@@ -11,9 +12,7 @@ import reactor.core.publisher.Mono;
 import software.amazon.awssdk.services.geoplaces.GeoPlacesAsyncClient;
 import software.amazon.awssdk.services.geoplaces.model.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -26,9 +25,13 @@ public class AwsGeoService {
         this.geoPlacesAsyncClient = geoPlacesClient;
     }
 
-    public Mono<CoordinatesResult> getCoordinatesForAddress(String address, String province, String zip, String municipality, String country) {
+    public Mono<CoordinatesResult> getCoordinatesForAddress(String address, String province, String zip, String municipality, String country)
+             {
 
-        log.info("##### STARTING AWS GEOLOCATION #####");
+
+        log.info("Input parameters - address: {}, province: {}, zip: {}, municipality: {}, country: {}",
+                 address, province, zip, municipality, country);
+
 
         GeocodeRequest request = buildGeocodeRequest(address, province, zip, municipality, country);
 
@@ -55,19 +58,12 @@ public class AwsGeoService {
         if (StringUtils.isNotBlank(municipality)) builder.locality(municipality);
         if (StringUtils.isNotBlank(address)) builder.street(address);
 
+
         return builder.build();
     }
 
 
 
-    private void logGeocodeQueryComponents(GeocodeQueryComponents components) {
-        log.info("Geocode query components:");
-        log.info("  Street      : {}", components.street());
-        log.info("  Postal Code : {}", components.postalCode());
-        log.info("  SubRegion   : {}", components.subRegion());
-        log.info("  Locality    : {}", components.locality());
-        log.info("  Country     : {}", components.country());
-    }
 
 
 
@@ -111,14 +107,13 @@ public class AwsGeoService {
     private GeocodeRequest buildGeocodeRequest(
             String address, String province, String zip, String municipality, String country) {
 
-        GeocodeQueryComponents components = buildGeocodeQueryComponents(address, province, zip, municipality, country);
 
-        logGeocodeQueryComponents(components);
+
+        GeocodeQueryComponents components = buildGeocodeQueryComponents(address, province, zip, municipality, country);
 
         GeocodeFilter filter = GeocodeFilter.builder()
                                             .includeCountries("IT")
                                             .build();
-
 
         return GeocodeRequest.builder()
                              .maxResults(1)
@@ -135,8 +130,6 @@ public class AwsGeoService {
 
         var results = response.resultItems();
         if (results == null || results.isEmpty()) {
-            log.warn("No geolocation result for address: {}", address);
-            log.info("##### END AWS GEOLOCATION #####");
             return Mono.error(new CoordinatesNotFoundException("No geolocation result for address: " + address));
         }
         var geoResult = results.get(0);
@@ -146,38 +139,31 @@ public class AwsGeoService {
 
         CoordinatesResult result = getCoordinatesResult(position, geoResult, biasPoint, matchScore);
 
-        try {
-            String jsonResult = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result);
-            log.info("AWS GEOPLACES RESULT -> {}", jsonResult);
-            log.info("##### END AWS GEOLOCATION #####");
-
-        } catch (Exception e) {
-            log.error("##### ERROR AWS GEOLOCATION #####");
-            log.error("Error serializing CoordinatesResult to JSON", e);
-            log.error("Fallback log: {}", result);
+        log.info("AWS geoplacesResult  -> {} ", result.toString());
 
 
 
-        }
 
         return Mono.just(result);
     }
 
-    private static CoordinatesResult getCoordinatesResult(List<Double> position, GeocodeResultItem geoResult, double biasPoint, MatchScoreDetails matchScore) {
+    private CoordinatesResult getCoordinatesResult(List<Double> position, GeocodeResultItem geoResult, double biasPoint, MatchScoreDetails matchScore) {
         // Validazione con raccolta campi mancanti
-        validateAllFields(geoResult, position);
+
+        String street = extractStreetAndNumber(geoResult.title());
+        validateAllFields(geoResult, position, street);
 
         CoordinatesResult result = new CoordinatesResult();
 
         result.setAwsLongitude(position.get(0).toString());
         result.setAwsLatitude(position.get(1).toString());
-        result.setAwsAddressRow(Optional.ofNullable(geoResult.title()).orElse(""));
+        result.setAwsAddressRow(street);
         result.setAwsPostalCode(geoResult.address().postalCode());
         result.setAwsLocality(geoResult.address().locality());
         result.setAwsSubRegion(geoResult.address().subRegion().code());
         result.setAwsCountry(geoResult.address().country().name());
         result.setBiasPoint((int) Math.round(biasPoint * 100));
-        result.setAwsMatchScore(getMatchScore(matchScore));
+        result.setAwsMatchScore(matchScore);
 
         return result;
     }
@@ -193,54 +179,14 @@ public class AwsGeoService {
         String awsCountry;
         String awsLongitude;
         String awsLatitude;
-        private SerializableMatchScores awsMatchScore;
+        MatchScoreDetails awsMatchScore;
         Integer biasPoint;
 
     }
 
 
 
-    private static SerializableMatchScores getMatchScore(MatchScoreDetails matchScore) {
-        var awsScore = new SerializableMatchScores();
-
-        if (matchScore != null && matchScore.components() != null && matchScore.components().address() != null) {
-            awsScore.setOverall(matchScore.overall());
-
-            var addressRaw = matchScore.components().address();
-            var addressComponents = new SerializableMatchScores.AddressComponents();
-
-            addressComponents.setAddressNumber(addressRaw.addressNumber());
-            addressComponents.setCountry(addressRaw.country());
-            addressComponents.setPostalCode(addressRaw.postalCode());
-            addressComponents.setSubRegion(addressRaw.subRegion());
-            addressComponents.setIntersection(addressRaw.intersection());
-
-            awsScore.setComponents(addressComponents);
-
-
-        }
-        return awsScore;
-    }
-
-
-
-    @Data
-    public static class SerializableMatchScores {
-        private AddressComponents components;
-        private Double overall;
-
-        @Data
-        public static class AddressComponents {
-            private Double addressNumber;
-            private Double country;
-            private List<Double> intersection;
-            private Double postalCode;
-            private Double subRegion;
-        }
-    }
-
-
-    private static void validateAllFields(GeocodeResultItem geoResult, List<Double> position) {
+    private static void validateAllFields(GeocodeResultItem geoResult, List<Double> position, String street) {
         List<String> missingFields = new ArrayList<>();
 
         if (position == null || position.size() < 2 || position.get(0) == null || position.get(1) == null) {
@@ -262,10 +208,13 @@ public class AwsGeoService {
             if (geoResult.address().country() == null || StringUtils.isBlank(geoResult.address().country().name())) {
                 missingFields.add("country");
             }
+            if (street == null || StringUtils.isBlank(street)){
+                missingFields.add("street");
+            }
         }
 
         if (!missingFields.isEmpty()) {
-            throw new CoordinatesNotFoundException("Missing or empty fields: " + String.join(", ", missingFields));
+            throw new CoordinatesNotFoundException("Missing or empty fields from AWS: " + String.join(", ", missingFields));
         }
     }
 }
