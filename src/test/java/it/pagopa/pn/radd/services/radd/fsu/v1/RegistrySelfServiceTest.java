@@ -1,6 +1,8 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
+import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.NormalizedAddressMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ContextConfiguration;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -21,6 +24,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -62,7 +66,7 @@ class RegistrySelfServiceTest {
     }
 
     @Test
-    void updateRegistryNotFound() {
+    void updateRegistry_NotFound() {
         when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.empty());
         StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, new UpdateRegistryRequestV2()))
                     .verifyErrorMessage("Punto di ritiro SEND non trovato");
@@ -78,12 +82,30 @@ class RegistrySelfServiceTest {
         entity.setPartnerId(PARTNER_ID);
         entity.setLocationId(LOCATION_ID);
 
+        when(raddRegistryDAO.findByPartnerId(PARTNER_ID)).thenReturn(Flux.empty());
         when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.just(entity));
         when(raddRegistryDAO.updateRegistryEntity(entity)).thenReturn(Mono.just(entity));
         StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, updateRegistryRequest))
                     .expectNextMatches(raddRegistryEntity -> entity.getDescription().equalsIgnoreCase(updateRegistryRequest.getDescription())
                                                              && entity.getEmail().equalsIgnoreCase(updateRegistryRequest.getEmail()))
                     .verifyComplete();
+    }
+
+    @Test
+    public void updateRegistry_DuplicatedExternalCode() {
+        UpdateRegistryRequestV2 request = updateRegistryRequestV2();
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setLocationId(UUID.randomUUID().toString());
+        entity.setExternalCodes(List.of("EXT1", "EXT2", "EXT3"));
+        when(raddRegistryDAO.findByPartnerId(PARTNER_ID)).thenReturn(Flux.just(entity));
+        when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.just(entity));
+
+
+        request.setExternalCodes(List.of("EXT1"));
+        StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, request))
+                    .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
+                                                     ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DUPLICATE_EXT_CODE)
+                    .verify();
     }
 
 }

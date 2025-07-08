@@ -12,10 +12,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
 import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
@@ -29,13 +31,14 @@ public class RegistrySelfService {
     private  final RaddRegistryMapper raddRegistryMapper;
 
     public Mono<RegistryV2> updateRegistry(String partnerId, String locationId, UpdateRegistryRequestV2 request) {
-        log.info("start updateRegistry for partnerId [{}] and locationId [{}]", partnerId, locationId);
         checkUpdateRegistryRequest(request);
-        return raddRegistryDAO.find(partnerId, locationId)
-                              .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
-                              .flatMap(registryEntity -> raddRegistryDAO.updateRegistryEntity(mapFieldToUpdate(registryEntity, request)))
-                              .map(raddRegistryMapper::toDto)
-                              .doOnError(throwable -> log.error("Error during update registry request for partnerId: [{}] and locationId: [{}]", partnerId, locationId, throwable));
+        log.info("Start updateRegistry for partnerId [{}] and locationId [{}]", partnerId, locationId);
+        return validateExternalCodes(partnerId, locationId, request.getExternalCodes())
+                .then(raddRegistryDAO.find(partnerId, locationId))
+                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
+                .flatMap(registryEntity -> raddRegistryDAO.updateRegistryEntity(mapFieldToUpdate(registryEntity, request)))
+                .map(raddRegistryMapper::toDto)
+                .doOnError(throwable -> log.error("Error during update registry request for partnerId: [{}] and locationId: [{}]", partnerId, locationId, throwable));
     }
 
     private void checkUpdateRegistryRequest(UpdateRegistryRequestV2 request) {
@@ -91,4 +94,25 @@ public class RegistrySelfService {
         }
         return endValidityInstant;
     }
+
+    private Mono<Void> validateExternalCodes(String partnerId, String locationId, List<String> externalCodes) {
+        if (externalCodes == null || externalCodes.isEmpty()) {
+            return Mono.empty();
+        }
+
+        return raddRegistryDAO.findByPartnerId(partnerId)
+                              .filter(entity -> !entity.getLocationId().equals(locationId))
+                              .flatMap(entity ->
+                                               Flux.fromIterable(entity.getExternalCodes())
+                                                   .filter(externalCodes::contains)
+                                                   .next()
+                                      )
+                              .filter(externalCodes::contains)
+                              .next() // Prende il primo codice esterno duplicato trovato, se esiste
+                              .flatMap(duplicate -> Mono.error(new RaddGenericException(ExceptionTypeEnum.DUPLICATE_EXT_CODE,
+                                                                                        String.format("L'externalCode '%s' è già associato ad un'altra sede", duplicate),
+                                                                                        HttpStatus.CONFLICT)))
+                              .then();
+    }
+
 }
