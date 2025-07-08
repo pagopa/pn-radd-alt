@@ -80,8 +80,11 @@ class AwsGeoServiceTest {
     }
 
 
+    /**
+     * Provincia e CAP errati
+     */
     @Test
-    void testProva1ProvinciaECapErrati() {
+    void notValidLocalityAndPostalCode() {
         GeocodeResponse response = buildGeocodeResponse(
                 "Via Roma, 34, 00010 San Polo dei Cavalieri RM, Italia",
                 "IT", "Italia",
@@ -126,8 +129,60 @@ class AwsGeoServiceTest {
                     .verifyComplete();
     }
 
+    /**
+     * Numero Civico errato
+     */
     @Test
-    void testProva2ProvinciaErrata() {
+    void notValidAddressNumber() {
+        GeocodeResponse response = buildGeocodeResponse(
+                "Via Giuseppe Garibaldi, 00047 Marino RM, Italia",
+                "IT", "Italia",
+                "RM", "Roma",
+                "Marino",
+                "00010",
+                "Via Roma",
+                "34",
+                12.6593,
+                41.7704,
+                1,
+                1,
+                List.of(1.0),
+                1,
+                1,
+                0,
+                0.88
+                                                       );
+
+        when(mockClient.geocode(any(GeocodeRequest.class))).thenReturn(Mono.just(response).toFuture());
+
+        Mono<AwsGeoService.CoordinatesResult> resultMono =
+                awsGeoService.getCoordinatesForAddress("Via G. Garibaldi, 3400, RM, Marino", "RM", "3400", "Marino", "IT");
+
+        StepVerifier.create(resultMono)
+                    .assertNext(result -> {
+                        Assertions.assertEquals("12.6593", result.getAwsLongitude());
+                        Assertions.assertEquals("41.7704", result.getAwsLatitude());
+                        Assertions.assertEquals("00010", result.getAwsPostalCode());
+                        Assertions.assertEquals("RM", result.getAwsSubRegion());
+                        Assertions.assertEquals("Marino", result.getAwsLocality());
+                        Assertions.assertTrue(result.getBiasPoint() > 0);
+
+                        var matchScore = result.getAwsMatchScore();
+                        Assertions.assertNotNull(matchScore);
+                        Assertions.assertEquals(0.88, matchScore.overall());
+                        Assertions.assertEquals(1.0, matchScore.components().address().country());
+                        Assertions.assertEquals(1.0, matchScore.components().address().subRegion());
+                        Assertions.assertEquals(1.0, matchScore.components().address().postalCode());
+                        Assertions.assertEquals(1.0, matchScore.components().address().addressNumber());
+                    })
+                    .verifyComplete();
+    }
+
+    /**
+     * Provincia Errata
+     */
+    @Test
+    void notValidSubRegion() {
         GeocodeResponse response = buildGeocodeResponse(
                 "Via Roma, 34, 00041 Albano Laziale RM, Italia",
                 "IT", "Italia",
@@ -170,8 +225,11 @@ class AwsGeoServiceTest {
                     .verifyComplete();
     }
 
+    /**
+     * Indirizzo abbreviato es. G.Garibaldi
+     */
     @Test
-    void testProva3IndirizzoAbbreviato() {
+    void validAbbreviateAddress() {
         GeocodeResponse response = buildGeocodeResponse(
                 "Via Giuseppe Garibaldi, 32, 00047 Marino RM, Italia",
                 "IT", "Italia",
@@ -216,8 +274,11 @@ class AwsGeoServiceTest {
                     .verifyComplete();
     }
 
+    /**
+     * Indirizzo inesistente
+     */
     @Test
-    void testProva4IndirizzoInesistente() {
+    void notExistingAddress() {
         GeocodeResponse emptyResponse = GeocodeResponse.builder()
                                                        .resultItems(List.of())
                                                        .build();
@@ -233,8 +294,60 @@ class AwsGeoServiceTest {
 
     }
 
+    /**
+     * Via inesistente
+     */
     @Test
-    void testCoordinatesNotFoundExceptionWhenMissingFields() {
+    void notExistingStreet() {
+        GeocodeResponse response = buildGeocodeResponse(
+                "00047, Marino, Lazio, Italia",
+                "IT", "Italia",
+                "RM", "Roma",
+                "Marino",
+                "00047",
+                "",
+                "32",
+                12.66276,
+                41.76907,
+                0.0,
+                1.0,
+                List.of(0.0),
+                1,
+                1,
+                0,
+                0.47
+                                                       );
+
+        when(mockClient.geocode(any(GeocodeRequest.class))).thenReturn(Mono.just(response).toFuture());
+
+        Mono<AwsGeoService.CoordinatesResult> resultMono =
+                awsGeoService.getCoordinatesForAddress("Via che non esiste 32", "RM", "00047", "Marino", "IT");
+
+        StepVerifier.create(resultMono)
+                    .assertNext(result -> {
+                        Assertions.assertEquals("12.66276", result.getAwsLongitude());
+                        Assertions.assertEquals("41.76907", result.getAwsLatitude());
+                        Assertions.assertEquals("00047", result.getAwsPostalCode());
+                        Assertions.assertEquals("RM", result.getAwsSubRegion());
+                        Assertions.assertEquals("Marino", result.getAwsLocality());
+                        Assertions.assertTrue(result.getBiasPoint() > 0);
+
+                        var matchScore = result.getAwsMatchScore();
+                        Assertions.assertNotNull(matchScore);
+                        Assertions.assertEquals(0.47, matchScore.overall());
+                        Assertions.assertEquals(1.0, matchScore.components().address().country());
+                        Assertions.assertEquals(1.0, matchScore.components().address().subRegion());
+                        Assertions.assertEquals(1.0, matchScore.components().address().postalCode());
+                    })
+                    .verifyComplete();
+
+    }
+
+    /**
+     * Campo Mancante da AWS
+     */
+    @Test
+    void coordinatesNotFoundExceptionWhenMissingFields() {
         // Creo un GeocodeResultItem con indirizzo incompleto (es. postalCode mancante)
         Address address = Address.builder()
                                                .postalCode(null) // campo mancante
@@ -270,8 +383,12 @@ class AwsGeoServiceTest {
                     .verify();
     }
 
+
+    /**
+     * Campi Mancanti da AWS
+     */
     @Test
-    void testCoordinatesNotFoundExceptionMultipleMissingFields() {
+    void coordinatesNotFoundExceptionMultipleMissingFields() {
         // Creo un GeocodeResultItem con postalCode e country mancanti
         Address address = Address.builder()
                                                .locality("Milano")
@@ -303,6 +420,7 @@ class AwsGeoServiceTest {
                                        )
                     .verify();
     }
+
 
 
 

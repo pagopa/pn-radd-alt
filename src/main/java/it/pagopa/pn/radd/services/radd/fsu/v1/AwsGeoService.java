@@ -25,15 +25,15 @@ public class AwsGeoService {
         this.geoPlacesAsyncClient = geoPlacesClient;
     }
 
-    public Mono<CoordinatesResult> getCoordinatesForAddress(String address, String province, String zip, String municipality, String country)
+    public Mono<CoordinatesResult> getCoordinatesForAddress(String address, String subRegion, String postalCode, String locality, String country)
              {
 
 
-        log.info("Input parameters - address: {}, province: {}, zip: {}, municipality: {}, country: {}",
-                 address, province, zip, municipality, country);
+        log.info("Input parameters - address: {}, subRegion: {}, postalCode: {}, locality: {}, country: {}",
+                 address, subRegion, postalCode, locality, country);
 
 
-        GeocodeRequest request = buildGeocodeRequest(address, province, zip, municipality, country);
+        GeocodeRequest request = buildGeocodeRequest(address, subRegion, postalCode, locality, country);
 
         return Mono.fromFuture(geoPlacesAsyncClient.geocode(request))
                    .flatMap(response -> {
@@ -105,11 +105,11 @@ public class AwsGeoService {
 
 
     private GeocodeRequest buildGeocodeRequest(
-            String address, String province, String zip, String municipality, String country) {
+            String address, String subRegion, String postalCode, String locality, String country) {
 
 
 
-        GeocodeQueryComponents components = buildGeocodeQueryComponents(address, province, zip, municipality, country);
+        GeocodeQueryComponents components = buildGeocodeQueryComponents(address, subRegion, postalCode, locality, country);
 
         GeocodeFilter filter = GeocodeFilter.builder()
                                             .includeCountries("IT")
