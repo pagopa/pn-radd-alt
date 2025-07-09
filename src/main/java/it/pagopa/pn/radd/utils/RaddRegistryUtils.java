@@ -102,7 +102,6 @@ public class RaddRegistryUtils {
         raddRegistryEntityV2.setDescription(request.getDescription());
         raddRegistryEntityV2.setPhoneNumbers(request.getPhoneNumbers());
         raddRegistryEntityV2.setOpeningTime(request.getOpeningTime());
-        raddRegistryEntityV2.setCapacity(request.getCapacity());
         raddRegistryEntityV2.setExternalCodes(request.getExternalCodes());
         raddRegistryEntityV2.setStartValidity(request.getStartValidity() != null ? convertDateToInstantAtStartOfDay(request.getStartValidity()) : getStartOfDayToday());
         raddRegistryEntityV2.setEndValidity(convertDateToInstantAtStartOfDay(request.getEndValidity()));
@@ -126,6 +125,7 @@ public class RaddRegistryUtils {
 
         raddRegistryEntityV2.setNormalizedAddress(normalizedAddress);
         raddRegistryEntityV2.setAddress(address);
+        raddRegistryEntityV2.setModifiedAddress(!areAddressesEquivalent(address, normalizedAddress));
 
         return raddRegistryEntityV2;
     }
@@ -138,9 +138,18 @@ public class RaddRegistryUtils {
         normalizedAddress.setProvince(coordinatesResult.getAwsSubRegion());
         normalizedAddress.setCountry(coordinatesResult.getAwsCountry());
         normalizedAddress.setBiasPoint(coordinatesResult.getBiasPoint());
+        // TODO valorizzazione di biasPointAws (campo ancora da aggiungere)
         normalizedAddress.setLongitude(coordinatesResult.getAwsLongitude());
         normalizedAddress.setLatitude(coordinatesResult.getAwsLatitude());
         return normalizedAddress;
+    }
+
+    private static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntity normalizedAddress) {
+        return StringUtils.equals(address.getAddressRow(), normalizedAddress.getAddressRow()) &&
+                StringUtils.equals(address.getCap(), normalizedAddress.getCap()) &&
+                StringUtils.equals(address.getCity(), normalizedAddress.getCity()) &&
+                StringUtils.equals(address.getProvince(), normalizedAddress.getProvince()) &&
+                StringUtils.equals(address.getCountry(), normalizedAddress.getCountry());
     }
 
     private static RaddRegistryEntity getRaddRegistryEntity(String registryId, PnAddressManagerEvent.NormalizedAddress normalizedAddress, RaddRegistryRequestEntity registryRequest, RaddRegistryOriginalRequest raddRegistryOriginalRequest) {

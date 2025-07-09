@@ -40,7 +40,6 @@ public class RaddRegistryMapper {
         dto.setOpeningTime(entity.getOpeningTime());
         dto.setStartValidity(toStringDate(entity.getStartValidity()));
         dto.setEndValidity(toStringDate(entity.getEndValidity()));
-        dto.setCapacity(entity.getCapacity());
         dto.setNormalizedAddress(normalizedAddressMapper.toDto(entity.getNormalizedAddress()));
 
         return dto;
@@ -66,7 +65,6 @@ public class RaddRegistryMapper {
         entity.setOpeningTime(dto.getOpeningTime());
         entity.setStartValidity(parseDateString(dto.getStartValidity()));
         entity.setEndValidity(parseDateString(dto.getEndValidity()));
-        entity.setCapacity(dto.getCapacity());
         entity.setNormalizedAddress(normalizedAddressMapper.toEntity(dto.getNormalizedAddress()));
 
         return entity;

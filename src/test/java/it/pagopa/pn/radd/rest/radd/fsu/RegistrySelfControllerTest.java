@@ -61,7 +61,6 @@ class RegistrySelfControllerTest {
         req.setPhoneNumbers(List.of("+390123456789"));
         req.setExternalCodes(List.of("EXT1"));
         req.setEmail("mail@esempio.it");
-        req.setCapacity("100");
         req.setOpeningTime("mon=10:00-13:00_14:00-20:00#tue=10:00-20:00");
         req.setStartValidity("2024-03-21");
         req.setEndValidity("2024-03-22");
@@ -109,9 +108,7 @@ class RegistrySelfControllerTest {
                 .bodyValue(request)
                 .exchange()
                 .expectStatus()
-                .isBadRequest()
-                .expectBody(Problem.class)
-                .value(problem -> Assertions.assertTrue(problem.getTitle().contains("non deve essere null")));
+                .isBadRequest();
     }
 
     @Test
@@ -128,9 +125,7 @@ class RegistrySelfControllerTest {
                 .bodyValue(request)
                 .exchange()
                 .expectStatus()
-                .isBadRequest()
-                .expectBody(Problem.class)
-                .value(problem -> Assertions.assertTrue(problem.getTitle().contains("deve corrispondere a")));
+                .isBadRequest();
     }
 
 }

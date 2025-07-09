@@ -281,17 +281,10 @@ components:
           description: Indirizzo email del punto di ritiro
           pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
           example: mail@esempio.it
-        capacity:
-          type: string
-          description: >-
-            Numero massimo di pratiche mensili che il punto di ritiro SEND può
-            gestire.
-          example: 100
         openingTime:
           type: string
-          description: Orario di apertura del punto di ritiro.
-          example: mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#
-          pattern: ^((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*)(#((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*))*$
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
         startValidity:
           type: string
           description: >-
@@ -395,9 +388,8 @@ components:
           example: "Registro aggiornato dello sportello."
         openingTime:
           type: string
-          description: Orario di apertura del punto di ritiro.
-          example: mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#
-          pattern: ^((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*)(#((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*))*$
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
         phoneNumbers:
           type: array
           description: Lista dei numeri di telefono del punto di ritiro.
@@ -469,17 +461,10 @@ components:
           description: Indirizzo email del punto di ritiro
           pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
           example: mail@esempio.it
-        capacity:
-          type: string
-          description: >-
-            Numero massimo di pratiche mensili che il punto di ritiro SEND può
-            gestire.
-          example: 100
         openingTime:
           type: string
-          description: Orario di apertura del punto di ritiro.
-          example: mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#
-          pattern: ^((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*)(#((mon|tue|wed|thu|fri|sat|sun)=([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d(_([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)*))*$
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
         startValidity:
           type: string
           description: >-

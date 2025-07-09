@@ -82,7 +82,6 @@ class RegistrySelfServiceTest {
         request.setPhoneNumbers(List.of("+390123456789"));
         request.setExternalCodes(List.of("EXT1"));
         request.setEmail("mail@esempio.it");
-        request.setCapacity("100");
         request.setOpeningTime("mon=10:00-13:00_14:00-20:00#tue=10:00-20:00");
         request.setAppointmentRequired(true);
         request.setWebsite("https://test.it");
