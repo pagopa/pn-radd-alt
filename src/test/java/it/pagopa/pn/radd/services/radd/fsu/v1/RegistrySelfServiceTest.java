@@ -50,6 +50,7 @@ class RegistrySelfServiceTest {
 
     private final String PARTNER_ID = "partnerId";
     private final String LOCATION_ID = "locationId";
+    private final String UID = UUID.randomUUID().toString();
 
     @BeforeEach
     void setUp() {
@@ -102,7 +103,7 @@ class RegistrySelfServiceTest {
                         "BiasPoint", "12.34567", 100
                 )));
 
-        Mono<RegistryV2> result = registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, request);
+        Mono<RegistryV2> result = registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request);
 
         StepVerifier.create(result)
                 .assertNext(Assertions::assertNotNull)
@@ -114,7 +115,7 @@ class RegistrySelfServiceTest {
         CreateRegistryRequestV2 request = createValidRegistryRequest();
         request.setEndValidity(formatter.format(convertDateToInstantAtStartOfDay(request.getStartValidity()).minus(1, ChronoUnit.DAYS)));
 
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, request));
+        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request));
         assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
     }
 
@@ -123,7 +124,7 @@ class RegistrySelfServiceTest {
         CreateRegistryRequestV2 request = createValidRegistryRequest();
         request.setStartValidity("10/02/2022");
 
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, request));
+        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request));
         assertEquals(ExceptionTypeEnum.DATE_INVALID_ERROR, ex.getExceptionType());
     }
 
@@ -132,8 +133,8 @@ class RegistrySelfServiceTest {
         CreateRegistryRequestV2 request = createValidRegistryRequest();
         request.setStartValidity("2022-10-21");
 
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, request));
-        assertEquals(ExceptionTypeEnum.DATE_IN_THE_PAST, ex.getExceptionType());
+        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request));
+        assertEquals(ExceptionTypeEnum.START_VALIDITY_IN_THE_PAST, ex.getExceptionType());
     }
 
     @Test
@@ -145,7 +146,7 @@ class RegistrySelfServiceTest {
         when(raddRegistryDAO.findByPartnerId(PARTNER_ID)).thenReturn(Flux.just(entity));
 
         request.setExternalCodes(List.of("EXT1"));
-        StepVerifier.create(registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, request))
+        StepVerifier.create(registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request))
                 .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
                         ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DUPLICATE_EXT_CODE)
                 .verify();

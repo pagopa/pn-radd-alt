@@ -78,7 +78,7 @@ class RegistrySelfControllerTest {
         response.setPartnerId(PARTNER_ID);
         response.setLocationId(request.getLocationId());
 
-        Mockito.when(registrySelfService.addRegistry(eq(PARTNER_ID), eq(request.getLocationId()), any()))
+        Mockito.when(registrySelfService.addRegistry(eq(PARTNER_ID), eq(request.getLocationId()), anyString(), any()))
                 .thenReturn(Mono.just(response));
 
         webTestClient.post()
