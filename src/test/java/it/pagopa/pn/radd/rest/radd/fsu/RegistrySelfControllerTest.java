@@ -99,9 +99,8 @@ class RegistrySelfControllerTest {
                      .bodyValue(request)
                      .exchange()
                      .expectStatus()
-                     .isBadRequest()
-                     .expectBody(Problem.class)
-                     .value(problem -> Assertions.assertTrue(problem.getTitle().contains("deve corrispondere a")));
+                     .isBadRequest();
+
     }
 
 }

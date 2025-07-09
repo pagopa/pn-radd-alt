@@ -6,6 +6,7 @@ import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.*;
+import it.pagopa.pn.radd.utils.OpeningHoursParser;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -42,7 +43,11 @@ public class RegistrySelfService {
     }
 
     private void checkUpdateRegistryRequest(UpdateRegistryRequestV2 request) {
-        //TODO: inserire controlli per l'OPENINGTIME.
+        if (StringUtils.isNotBlank(request.getOpeningTime())) {
+            if (!OpeningHoursParser.isValidOpenHours(request.getOpeningTime())) {
+                throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, HttpStatus.BAD_REQUEST);
+            }
+        }
     }
 
     private RaddRegistryEntityV2 mapFieldToUpdate(RaddRegistryEntityV2 registryEntity, UpdateRegistryRequestV2 request) {
