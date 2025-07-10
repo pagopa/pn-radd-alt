@@ -44,9 +44,7 @@ public class RegistrySelfService {
 
     private void checkUpdateRegistryRequest(UpdateRegistryRequestV2 request) {
         if (StringUtils.isNotBlank(request.getOpeningTime())) {
-            if (!OpeningHoursParser.isValidOpenHours(request.getOpeningTime())) {
-                throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, HttpStatus.BAD_REQUEST);
-            }
+            OpeningHoursParser.validateOpenHours(request.getOpeningTime());
         }
     }
 

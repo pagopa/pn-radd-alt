@@ -18,7 +18,7 @@ public class OpeningHoursParser {
                                                                );
     private static final Pattern TIME_RANGE_PATTERN = Pattern.compile("(\\d{2}):(\\d{2})-(\\d{2}):(\\d{2})");
 
-    public static boolean isValidOpenHours(String input) {
+    public static void validateOpenHours(String input) {
 
         Set<String> usedDays = new HashSet<>();
         String[] lines = input.strip().split("[\\r?\\n;]+");
@@ -29,7 +29,7 @@ public class OpeningHoursParser {
 
             Matcher matcher = LINE_PATTERN.matcher(line);
             if (!matcher.matches()) {
-                return false;
+                throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Formato Opening Hours non valido", HttpStatus.BAD_REQUEST);
             }
 
             String startDay = matcher.group(1).toLowerCase();
@@ -39,7 +39,7 @@ public class OpeningHoursParser {
             List<String> daysInRange = expandDays(startDay, endDay);
             for (String day : daysInRange) {
                 if (!usedDays.add(day)) {
-                    return false;
+                    throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Giorno non riconosciuto", HttpStatus.BAD_REQUEST);
                 }
             }
 
@@ -47,7 +47,7 @@ public class OpeningHoursParser {
             for (String range : timeRanges) {
                 Matcher timeMatcher = TIME_RANGE_PATTERN.matcher(range);
                 if (!timeMatcher.matches()) {
-                    return false;
+                    throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Orario non riconosciuto", HttpStatus.BAD_REQUEST);
                 }
 
                 int startH = Integer.parseInt(timeMatcher.group(1));
@@ -56,16 +56,15 @@ public class OpeningHoursParser {
                 int endM = Integer.parseInt(timeMatcher.group(4));
 
                 if (!isValidTime(startH, startM) || !isValidTime(endH, endM)) {
-                    return false;
+                    throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Orario non valido", HttpStatus.BAD_REQUEST);
                 }
 
                 if (startH > endH || (startH == endH && startM >= endM)) {
-                    return false;
+                    throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Intervallo orario non valido", HttpStatus.BAD_REQUEST);
                 }
             }
         }
 
-        return true;
     }
 
     private static boolean isValidTime(int hour, int minute) {
@@ -75,7 +74,7 @@ public class OpeningHoursParser {
     private static List<String> expandDays(String start, String end) {
         int startIndex = VALID_DAYS_ORDERED.indexOf(start);
         if (startIndex == -1) {
-            throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, HttpStatus.BAD_REQUEST);
+            throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Intervallo giorni non valido", HttpStatus.BAD_REQUEST);
         }
 
         if (end == null) {
@@ -84,7 +83,7 @@ public class OpeningHoursParser {
 
         int endIndex = VALID_DAYS_ORDERED.indexOf(end);
         if (endIndex == -1 || endIndex < startIndex) {
-            throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, HttpStatus.BAD_REQUEST);
+            throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Intervallo giorni invalido o fuori ordine", HttpStatus.BAD_REQUEST);
         }
 
         return VALID_DAYS_ORDERED.subList(startIndex, endIndex + 1);
