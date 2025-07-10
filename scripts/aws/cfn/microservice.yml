@@ -603,6 +603,34 @@ Resources:
         APIGatewayARNs: !GetAtt RaddAltMicroservicePublicAPI.Outputs.APIGatewayARN
         Limit: !Ref RaddWafLimit
 
+  # Expose PN-Radd-Alt microservice public API with API-GW for BACKOFFICE usage
+  RaddAltMicroserviceBoPublicAPI:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/api-gw-expose-service-openapi.yaml"
+      Parameters:
+        MicroServiceUniqueName: !Sub '${ProjectName}-radd-alt'
+        IntendedUsage: BACKOFFICE
+        DnsName: !Ref RaddApiDnsName
+        ProjectName: !Ref ProjectName
+        ServiceApiPath: 'radd-net'
+        NetworkLoadBalancerLink: !Ref NetworkLoadBalancerLink
+        ApplicationLoadBalancerDomain: !Ref ApplicationLoadBalancerDomain
+        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+        CloudwatchLogKinesisStreamArn: !Ref LogsKinesisSourceStreamArn
+        OpenApiBucketName: !Ref MicroserviceBucketName
+        OpenApiBucketKey: !Sub ${MicroserviceBucketBaseKey}/docs/openapi/pn-radd-alt-registry-external-v2.yaml
+
+  RaddAltMicroservicePublicBoApiWaf:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/api-gw-waf-acl.yaml"
+      Parameters:
+        WAFName: !Sub '${ProjectName}-radd-alt-bo'
+        IntendedUsage: BACKOFFICE
+        APIGatewayARNs: !GetAtt RaddAltMicroserviceBoPublicAPI.Outputs.APIGatewayARN
+        Limit: !Ref RaddWafLimit
+
   # Rate limiting
   RaddAltApiRateLimiting:
     Type: AWS::CloudFormation::Stack
