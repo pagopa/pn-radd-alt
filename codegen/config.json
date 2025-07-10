@@ -12,7 +12,7 @@
         {
             "intendedUsage": "BACKOFFICE",
             "openapiFiles": [
-                "pn-radd-alt-registry-internal-v2.yaml"
+                "pn-radd-alt-registry-v2-internal.yaml"
             ],
             "servicePath": "radd-net"
         }
