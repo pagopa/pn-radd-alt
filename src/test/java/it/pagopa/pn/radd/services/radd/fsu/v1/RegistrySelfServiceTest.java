@@ -1,15 +1,12 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.NormalizedAddressMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
-import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
-import it.pagopa.pn.radd.utils.ObjectMapperUtil;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,6 +49,7 @@ class RegistrySelfServiceTest {
     private final String LOCATION_ID = "locationId";
     private final String UID = UUID.randomUUID().toString();
 
+
     @BeforeEach
     void setUp() {
         registrySelfService = new RegistrySelfService(
@@ -82,7 +80,7 @@ class RegistrySelfServiceTest {
         request.setPhoneNumbers(List.of("+390123456789"));
         request.setExternalCodes(List.of("EXT1"));
         request.setEmail("mail@esempio.it");
-        request.setOpeningTime("mon=10:00-13:00_14:00-20:00#tue=10:00-20:00");
+        request.setOpeningTime("Lun-Ven 08:00-12:00, 14:00-18:00; Sab 09:00-12:00; Dom 10:00-11:00");
         request.setAppointmentRequired(true);
         request.setWebsite("https://test.it");
         request.setPartnerType("CAF");
@@ -149,6 +147,15 @@ class RegistrySelfServiceTest {
                 .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
                         ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DUPLICATE_EXT_CODE)
                 .verify();
+    }
+
+    @Test
+    public void shouldAddRegistryFailsForInvalidOpeningTime() {
+        CreateRegistryRequestV2 request = createValidRegistryRequest();
+        request.setOpeningTime("Lun-Lun 08:70-25:00; Invalid 09:00-12:00");
+
+        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request));
+        assertEquals(ExceptionTypeEnum.OPENING_TIME_ERROR, ex.getExceptionType());
     }
 
 }

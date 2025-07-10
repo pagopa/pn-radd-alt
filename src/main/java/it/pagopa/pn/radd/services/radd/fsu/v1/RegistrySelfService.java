@@ -19,6 +19,7 @@ import java.util.List;
 
 import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
 import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
+import static it.pagopa.pn.radd.utils.OpeningHoursParser.validateOpenHours;
 import static it.pagopa.pn.radd.utils.RaddRegistryUtils.buildRaddRegistryEntity;
 
 @Service
@@ -49,7 +50,7 @@ public class RegistrySelfService {
 
     private void checkCreateRegistryRequest(CreateRegistryRequestV2 request) {
         verifyDates(request.getStartValidity(), request.getEndValidity());
-        // TODO Da aggiungere controllo su openingTime
+        validateOpenHours(request.getOpeningTime());
     }
 
     private void verifyDates(String startValidity, String endValidity) {
