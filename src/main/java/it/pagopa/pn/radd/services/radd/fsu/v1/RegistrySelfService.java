@@ -10,7 +10,9 @@ import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
+import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.queue.producer.CorrelationIdEventsProducer;
 import it.pagopa.pn.radd.middleware.queue.producer.RaddAltCapCheckerProducer;
@@ -26,7 +28,6 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import static it.pagopa.pn.radd.utils.Const.*;
@@ -39,6 +40,7 @@ import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
 public class RegistrySelfService {
 
     private final RaddRegistryDAO raddRegistryDAO;
+    private final RaddRegistryV2DAO raddRegistryV2DAO;
     private final RaddRegistryRequestDAO registryRequestDAO;
     private final RaddRegistryRequestEntityMapper raddRegistryRequestEntityMapper;
     private final CorrelationIdEventsProducer correlationIdEventsProducer;
@@ -134,42 +136,6 @@ public class RegistrySelfService {
         return raddRegistryRequestEntityMapper.retrieveRaddRegistryRequestEntity(cxId, requestId, originalRequest);
     }
 
-    public Mono<RaddRegistryEntity> deleteRegistry(String xPagopaPnCxId, String registryId, String endDate) {
-        log.info("deleteRegistry called with xPagopaPnCxId: {}, registryId: {}, endDate: {}", xPagopaPnCxId, registryId, endDate);
-        return raddRegistryDAO.find(registryId, xPagopaPnCxId)
-                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
-                .flatMap(registryEntity -> updateRegistryEntityIfValidDate(registryEntity, endDate, registryId, xPagopaPnCxId))
-                .doOnNext(raddRegistryEntity -> log.info("Registry with id: {} and cap: {} updated successfully", registryId, raddRegistryEntity.getZipCode()))
-                .flatMap(raddRegistryEntity -> raddAltCapCheckerProducer.sendCapCheckerEvent(raddRegistryEntity.getZipCode())
-                        .thenReturn(raddRegistryEntity))
-                .doOnError(throwable -> log.error("Error during delete registry request for registryId: [{}] and cxId: [{}]", registryId, xPagopaPnCxId, throwable));
-    }
-
-    private Mono<RaddRegistryEntity> updateRegistryEntityIfValidDate(RaddRegistryEntity registryEntity, String
-            date, String registryId, String xPagopaPnCxId) {
-        try {
-            Instant instant = convertDateToInstantAtStartOfDay(date);
-            if (isValidDate(instant)) {
-                log.info("Updating registry with id: {} and cxId: {}", registryId, xPagopaPnCxId);
-                registryEntity.setEndValidity(instant);
-                return raddRegistryDAO.updateRegistryEntity(registryEntity);
-            } else {
-                log.error("not enough notice time for cancellation date: {}", instant);
-                return Mono.error(new RaddGenericException(ExceptionTypeEnum.DATE_NOTICE_ERROR, HttpStatus.BAD_REQUEST));
-            }
-        } catch (DateTimeParseException e) {
-            throw new RaddGenericException(ExceptionTypeEnum.DATE_INVALID_ERROR, HttpStatus.BAD_REQUEST);
-        }
-
-    }
-
-    private boolean isValidDate(Instant endDate) {
-        if (pnRaddFsuConfig.getRegistryDefaultEndValidity() != 0) {
-            Instant minimumCancellationTime = Instant.now().plus(pnRaddFsuConfig.getRegistryDefaultEndValidity(), ChronoUnit.DAYS);
-            return endDate.isAfter(minimumCancellationTime);
-        }
-        return true;
-    }
 
     public Mono<RegistriesResponse> registryListing(String xPagopaPnCxId, Integer limit, String lastKey, String
             cap, String city, String pr, String externalCode) {
@@ -177,5 +143,12 @@ public class RegistrySelfService {
         return raddRegistryDAO.findByFilters(xPagopaPnCxId, limit, cap, city, pr, externalCode, lastKey)
                 .map(raddRegistryUtils::mapRegistryEntityToRegistry);
     }
+
+    public Mono<RaddRegistryEntityV2> deleteRegistry(String partnerId, String locationId) {
+        return raddRegistryV2DAO.delete(partnerId, locationId)
+                                .doOnNext(deletedEntity -> log.info("Registry deleted: partnerId={}, locationId={}", partnerId, locationId))
+                                .doOnError(err -> log.error("Error deleting registry for partnerId={}, locationId={}", partnerId, locationId, err));
+    }
+
 
 }

@@ -11,7 +11,9 @@ import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
+import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.queue.producer.CorrelationIdEventsProducer;
 import it.pagopa.pn.radd.pojo.PnLastEvaluatedKey;
@@ -48,6 +50,10 @@ class RegistrySelfServiceTest {
 
     @Mock
     private RaddRegistryDAO raddRegistryDAO;
+
+    @Mock
+    RaddRegistryV2DAO raddRegistryV2DAO;
+
     @Mock
     private RaddRegistryRequestDAO registryRequestDAO;
     @Mock
@@ -64,8 +70,8 @@ class RegistrySelfServiceTest {
 
     @BeforeEach
     void setUp() {
-        registrySelfService = new RegistrySelfService(raddRegistryDAO, registryRequestDAO, raddRegistryRequestEntityMapper, correlationIdEventsProducer, raddAltCapCheckerProducer,
-                new RaddRegistryUtils(new ObjectMapperUtil(new ObjectMapper()), pnRaddFsuConfig, secretService), pnRaddFsuConfig);
+        registrySelfService = new RegistrySelfService(raddRegistryDAO, raddRegistryV2DAO,registryRequestDAO,raddRegistryRequestEntityMapper,correlationIdEventsProducer,raddAltCapCheckerProducer,
+                new RaddRegistryUtils(new ObjectMapperUtil(new ObjectMapper()),pnRaddFsuConfig,secretService),pnRaddFsuConfig);
     }
 
     @Test
@@ -202,84 +208,36 @@ class RegistrySelfServiceTest {
     }
 
     @Test
-    void shouldDeleteRegistrySuccessfullyWhenRegistryExistsAndDateIsValid() {
+    void shouldDeleteRegistrySuccessfully() {
         // Given
-        String registryId = "testRegistryId";
-        String cxId = "testCxId";
-        String endDate = "2023-10-21";
-        RaddRegistryEntity registryEntity = new RaddRegistryEntity();
-        registryEntity.setRegistryId(registryId);
-        registryEntity.setZipCode("testZipCode");
-        when(raddRegistryDAO.find(registryId, cxId)).thenReturn(Mono.just(registryEntity));
-        when(raddRegistryDAO.updateRegistryEntity(any())).thenReturn(Mono.just(registryEntity));
-        when(raddAltCapCheckerProducer.sendCapCheckerEvent(any())).thenReturn(Mono.empty());
+        String partnerId = "partnerTest";
+        String locationId = "locationTest";
 
-        // When
-        Mono<RaddRegistryEntity> result = registrySelfService.deleteRegistry(cxId, registryId, endDate);
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setPartnerId(partnerId);
+        entity.setLocationId(locationId);
 
-        // Then
+
+        when(raddRegistryV2DAO.delete(partnerId, locationId)).thenReturn(Mono.just(entity));
+
+        Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(partnerId, locationId);
+
         StepVerifier.create(result)
-                .expectNextMatches(raddRegistryEntity -> registryId.equals(raddRegistryEntity.getRegistryId()))
-                .verifyComplete();
+                    .expectNextMatches(deleted -> deleted.getPartnerId().equals(partnerId) && deleted.getLocationId().equals(locationId))
+                    .verifyComplete();
     }
+
 
     @Test
-    void shouldThrowExceptionWhenRegistryNotFound() {
+    void shouldCompleteDeleteWhenRegistryNotFound() {
         // Given
-        String registryId = "testRegistryId";
-        String cxId = "testCxId";
-        String endDate = "2023-10-21";
-        when(raddRegistryDAO.find(registryId, cxId)).thenReturn(Mono.empty());
+        String partnerId = "partnerTest";
+        String locationId = "locationTest";
 
-        // When
-        Mono<RaddRegistryEntity> result = registrySelfService.deleteRegistry(cxId, registryId, endDate);
+        when(raddRegistryV2DAO.delete(partnerId, locationId)).thenReturn(Mono.empty());
 
-        // Then
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
-                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.REGISTRY_NOT_FOUND)
-                .verify();
+        Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(partnerId, locationId);
+
+        StepVerifier.create(result).verifyComplete();
     }
-
-    @Test
-    void shouldThrowExceptionWhenEndDateIsInvalid() {
-        // Given
-        String registryId = "testRegistryId";
-        String cxId = "testCxId";
-        String endDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE); // Invalid date
-        RaddRegistryEntity registryEntity = new RaddRegistryEntity();
-        registryEntity.setRegistryId(registryId);
-        when(raddRegistryDAO.find(registryId, cxId)).thenReturn(Mono.just(registryEntity));
-        when(pnRaddFsuConfig.getRegistryDefaultEndValidity()).thenReturn(1);
-
-        // When
-        Mono<RaddRegistryEntity> result = registrySelfService.deleteRegistry(cxId, registryId, endDate);
-
-        // Then
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
-                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DATE_NOTICE_ERROR)
-                .verify();
-    }
-
-    @Test
-    void shouldThrowExceptionWhenEndDateHasInvalidFormat() {
-        // Given
-        String registryId = "testRegistryId";
-        String cxId = "testCxId";
-        String endDate = "20/02/2020"; // Invalid date
-        RaddRegistryEntity registryEntity = new RaddRegistryEntity();
-        registryEntity.setRegistryId(registryId);
-        when(raddRegistryDAO.find(registryId, cxId)).thenReturn(Mono.just(registryEntity));
-
-        // When
-        Mono<RaddRegistryEntity> result = registrySelfService.deleteRegistry(cxId, registryId, endDate);
-
-        // Then
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
-                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DATE_INVALID_ERROR)
-                .verify();
-    }
-
 }
