@@ -10,7 +10,7 @@
             "servicePath": "radd-net"
         },
         {
-            "intendedUsage": "BACKOFFICE",
+            "intendedUsage": "BO",
             "openapiFiles": [
                 "pn-radd-alt-registry-v2-internal.yaml"
             ],
