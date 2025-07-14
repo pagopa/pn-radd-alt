@@ -116,7 +116,8 @@ class AwsGeoServiceTest {
                         Assertions.assertEquals("00010", result.getAwsPostalCode());
                         Assertions.assertEquals("RM", result.getAwsSubRegion());
                         Assertions.assertEquals("San Polo dei Cavalieri", result.getAwsLocality());
-                        Assertions.assertTrue(result.getBiasPoint() > 0);
+                        Assertions.assertNotNull(result.getAwsMatchScore());
+                        Assertions.assertTrue(result.getAwsMatchScore().overall() > 0);
 
                         var matchScore = result.getAwsMatchScore();
                         Assertions.assertNotNull(matchScore);
@@ -165,7 +166,7 @@ class AwsGeoServiceTest {
                         Assertions.assertEquals("00010", result.getAwsPostalCode());
                         Assertions.assertEquals("RM", result.getAwsSubRegion());
                         Assertions.assertEquals("Marino", result.getAwsLocality());
-                        Assertions.assertTrue(result.getBiasPoint() > 0);
+                        Assertions.assertTrue(result.getAwsMatchScore().overall() > 0);
 
                         var matchScore = result.getAwsMatchScore();
                         Assertions.assertNotNull(matchScore);
@@ -212,7 +213,8 @@ class AwsGeoServiceTest {
                         Assertions.assertEquals("00041", result.getAwsPostalCode());
                         Assertions.assertEquals("RM", result.getAwsSubRegion());
                         Assertions.assertEquals("Albano Laziale", result.getAwsLocality());
-                        Assertions.assertTrue(result.getBiasPoint() > 0);
+                        Assertions.assertNotNull(result.getAwsMatchScore());
+                        Assertions.assertTrue(result.getAwsMatchScore().overall() > 0);
 
                         var matchScore = result.getAwsMatchScore();
                         Assertions.assertNotNull(matchScore);
@@ -261,7 +263,8 @@ class AwsGeoServiceTest {
                         Assertions.assertEquals("00047", result.getAwsPostalCode());
                         Assertions.assertEquals("RM", result.getAwsSubRegion());
                         Assertions.assertEquals("Marino", result.getAwsLocality());
-                        Assertions.assertTrue(result.getBiasPoint() > 0);
+                        Assertions.assertNotNull(result.getAwsMatchScore());
+                        Assertions.assertTrue(result.getAwsMatchScore().overall() > 0);
 
                         var matchScore = result.getAwsMatchScore();
                         Assertions.assertNotNull(matchScore);
@@ -330,7 +333,8 @@ class AwsGeoServiceTest {
                         Assertions.assertEquals("00047", result.getAwsPostalCode());
                         Assertions.assertEquals("RM", result.getAwsSubRegion());
                         Assertions.assertEquals("Marino", result.getAwsLocality());
-                        Assertions.assertTrue(result.getBiasPoint() > 0);
+                        Assertions.assertNotNull(result.getAwsMatchScore());
+                        Assertions.assertTrue(result.getAwsMatchScore().overall() > 0);
 
                         var matchScore = result.getAwsMatchScore();
                         Assertions.assertNotNull(matchScore);

@@ -1,6 +1,5 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.radd.exception.CoordinatesNotFoundException;
 import lombok.Data;
@@ -67,23 +66,7 @@ public class AwsGeoService {
 
 
 
-    public double calculateBiasPoint(MatchScoreDetails matchScore) {
-        if (matchScore == null || matchScore.components() == null || matchScore.components().address() == null) {
-            return 0.0;
-        }
 
-        var addressComponents = matchScore.components().address();
-
-        double addressNumberScore = Optional.ofNullable(addressComponents.addressNumber()).orElse(0.0);
-        double postalCodeScore = Optional.ofNullable(addressComponents.postalCode()).orElse(0.0);
-        double subRegionScore = Optional.ofNullable(addressComponents.subRegion()).orElse(0.0);
-        double countryScore = Optional.ofNullable(addressComponents.country()).orElse(0.0);
-
-        return (0.10 * addressNumberScore) +
-               (0.20 * countryScore) +
-               (0.35 * postalCodeScore) +
-               (0.35 * subRegionScore);
-    }
 
 
 
@@ -135,9 +118,8 @@ public class AwsGeoService {
         var geoResult = results.get(0);
         var position = geoResult.position();
         var matchScore = geoResult.matchScores();
-        double biasPoint = calculateBiasPoint(matchScore);
 
-        CoordinatesResult result = getCoordinatesResult(position, geoResult, biasPoint, matchScore);
+        CoordinatesResult result = getCoordinatesResult(position, geoResult, matchScore);
 
         log.info("AWS geoplacesResult  -> {} ", result.toString());
 
@@ -147,7 +129,7 @@ public class AwsGeoService {
         return Mono.just(result);
     }
 
-    private CoordinatesResult getCoordinatesResult(List<Double> position, GeocodeResultItem geoResult, double biasPoint, MatchScoreDetails matchScore) {
+    private CoordinatesResult getCoordinatesResult(List<Double> position, GeocodeResultItem geoResult, MatchScoreDetails matchScore) {
         // Validazione con raccolta campi mancanti
 
         String street = extractStreetAndNumber(geoResult.title());
@@ -162,7 +144,6 @@ public class AwsGeoService {
         result.setAwsLocality(geoResult.address().locality());
         result.setAwsSubRegion(geoResult.address().subRegion().code());
         result.setAwsCountry(geoResult.address().country().name());
-        result.setBiasPoint((int) Math.round(biasPoint * 100));
         result.setAwsMatchScore(matchScore);
 
         return result;
@@ -180,7 +161,6 @@ public class AwsGeoService {
         String awsLongitude;
         String awsLatitude;
         MatchScoreDetails awsMatchScore;
-        Integer biasPoint;
 
     }
 
