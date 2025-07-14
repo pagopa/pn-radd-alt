@@ -1,6 +1,5 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.radd.exception.CoordinatesNotFoundException;
 import lombok.Data;
 import lombok.ToString;
@@ -18,7 +17,6 @@ import java.util.*;
 public class AwsGeoService {
 
     private final GeoPlacesAsyncClient geoPlacesAsyncClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public AwsGeoService(GeoPlacesAsyncClient geoPlacesClient) {
         this.geoPlacesAsyncClient = geoPlacesClient;
@@ -27,10 +25,8 @@ public class AwsGeoService {
     public Mono<CoordinatesResult> getCoordinatesForAddress(String address, String subRegion, String postalCode, String locality, String country)
              {
 
-
         log.info("Input parameters - address: {}, subRegion: {}, postalCode: {}, locality: {}, country: {}",
                  address, subRegion, postalCode, locality, country);
-
 
         GeocodeRequest request = buildGeocodeRequest(address, subRegion, postalCode, locality, country);
 
@@ -40,11 +36,6 @@ public class AwsGeoService {
                    })
                    .doOnError(e -> log.error("Error during AWS geolocation", e));
     }
-
-
-
-
-
 
     private GeocodeQueryComponents buildGeocodeQueryComponents(
             String address, String province, String zip, String municipality, String country) {
@@ -57,19 +48,8 @@ public class AwsGeoService {
         if (StringUtils.isNotBlank(municipality)) builder.locality(municipality);
         if (StringUtils.isNotBlank(address)) builder.street(address);
 
-
         return builder.build();
     }
-
-
-
-
-
-
-
-
-
-
 
     private String extractStreetAndNumber(String awsAddressRow) {
         if (StringUtils.isBlank(awsAddressRow)) {
@@ -85,19 +65,14 @@ public class AwsGeoService {
         }
     }
 
-
-
     private GeocodeRequest buildGeocodeRequest(
             String address, String subRegion, String postalCode, String locality, String country) {
-
-
 
         GeocodeQueryComponents components = buildGeocodeQueryComponents(address, subRegion, postalCode, locality, country);
 
         GeocodeFilter filter = GeocodeFilter.builder()
                                             .includeCountries("IT")
                                             .build();
-
         return GeocodeRequest.builder()
                              .maxResults(1)
                              .filter(filter)
@@ -105,9 +80,6 @@ public class AwsGeoService {
                              .language("it")
                              .build();
     }
-
-
-
 
     private Mono<CoordinatesResult> getCoordinateResult ( GeocodeResponse response, String address ){
 
@@ -123,32 +95,26 @@ public class AwsGeoService {
 
         log.info("AWS geoplacesResult  -> {} ", result.toString());
 
-
-
-
         return Mono.just(result);
     }
 
     private CoordinatesResult getCoordinatesResult(List<Double> position, GeocodeResultItem geoResult, MatchScoreDetails matchScore) {
-        // Validazione con raccolta campi mancanti
 
-        String street = extractStreetAndNumber(geoResult.title());
-        validateAllFields(geoResult, position, street);
+        validateAllFields(geoResult, position);
 
         CoordinatesResult result = new CoordinatesResult();
-
         result.setAwsLongitude(position.get(0).toString());
         result.setAwsLatitude(position.get(1).toString());
-        result.setAwsAddressRow(street);
+        result.setAwsAddressRow(geoResult.title());
         result.setAwsPostalCode(geoResult.address().postalCode());
         result.setAwsLocality(geoResult.address().locality());
         result.setAwsSubRegion(geoResult.address().subRegion().code());
+        result.setAwsRegion(geoResult.address().region().name());
         result.setAwsCountry(geoResult.address().country().name());
         result.setAwsMatchScore(matchScore);
 
         return result;
     }
-
 
     @Data
     @ToString
@@ -157,6 +123,7 @@ public class AwsGeoService {
         String awsPostalCode;
         String awsLocality;
         String awsSubRegion;
+        String awsRegion;
         String awsCountry;
         String awsLongitude;
         String awsLatitude;
@@ -164,9 +131,7 @@ public class AwsGeoService {
 
     }
 
-
-
-    private static void validateAllFields(GeocodeResultItem geoResult, List<Double> position, String street) {
+    private static void validateAllFields(GeocodeResultItem geoResult, List<Double> position) {
         List<String> missingFields = new ArrayList<>();
 
         if (position == null || position.size() < 2 || position.get(0) == null || position.get(1) == null) {
@@ -188,7 +153,7 @@ public class AwsGeoService {
             if (geoResult.address().country() == null || StringUtils.isBlank(geoResult.address().country().name())) {
                 missingFields.add("country");
             }
-            if (street == null || StringUtils.isBlank(street)){
+            if (geoResult.title() == null || StringUtils.isBlank(geoResult.title())){
                 missingFields.add("street");
             }
         }

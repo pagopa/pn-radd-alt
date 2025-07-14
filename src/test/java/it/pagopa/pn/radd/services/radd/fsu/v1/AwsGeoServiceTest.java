@@ -27,7 +27,7 @@ class AwsGeoServiceTest {
     }
 
     private GeocodeResponse buildGeocodeResponse(String label, String countryCode, String countryName, String subRegionCode, String subRegionName,
-                                                 String locality, String postalCode, String street, String addressNumber,
+                                                 String locality, String postalCode,String region, String street, String addressNumber,
                                                  double lon, double lat, double addressNumberScore,double countryScore,  List<Double> intersectionScores,double postalCodeScore, double subRegionScore , double localityScore, double overall) {
 
         List<Double> intersectionList = List.of(1.0); // o altri valori realistici
@@ -38,6 +38,7 @@ class AwsGeoServiceTest {
                                  .subRegion(SubRegion.builder().code(subRegionCode).name(subRegionName).build())
                                  .locality(locality)
                                  .postalCode(postalCode)
+                                 .region(Region.builder().code(region).name(region).build())
                                  .street(street)
                                  .addressNumber(addressNumber)
                                  .build();
@@ -54,13 +55,6 @@ class AwsGeoServiceTest {
         ComponentMatchScores componentMatchScores = ComponentMatchScores.builder()
                                                                         .address(addressMatchScore)
                                                                         .build();
-
-        // ✅ Calcolo media includendo AddressNumber e media di Intersection
-        double intersectionAvg = intersectionList.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-
-        double sum = addressNumberScore + postalCodeScore + subRegionScore + countryScore + intersectionAvg;
-        int count = 5;
-
 
         MatchScoreDetails matchScores = MatchScoreDetails.builder()
                                                          .components(componentMatchScores)
@@ -79,7 +73,6 @@ class AwsGeoServiceTest {
                               .build();
     }
 
-
     /**
      * Provincia e CAP errati
      */
@@ -91,6 +84,7 @@ class AwsGeoServiceTest {
                 "RM", "Roma",
                 "San Polo dei Cavalieri",
                 "00010",
+                "Lazio",
                 "Via Roma",
                 "34",
                 12.84315,
@@ -103,7 +97,6 @@ class AwsGeoServiceTest {
                 0,
                 0.82
                                                        );
-
         when(mockClient.geocode(any(GeocodeRequest.class))).thenReturn(Mono.just(response).toFuture());
 
         Mono<AwsGeoService.CoordinatesResult> resultMono =
@@ -141,6 +134,7 @@ class AwsGeoServiceTest {
                 "RM", "Roma",
                 "Marino",
                 "00010",
+                "Lazio",
                 "Via Roma",
                 "34",
                 12.6593,
@@ -153,7 +147,6 @@ class AwsGeoServiceTest {
                 0,
                 0.88
                                                        );
-
         when(mockClient.geocode(any(GeocodeRequest.class))).thenReturn(Mono.just(response).toFuture());
 
         Mono<AwsGeoService.CoordinatesResult> resultMono =
@@ -190,6 +183,7 @@ class AwsGeoServiceTest {
                 "RM", "Roma",
                 "Albano Laziale",
                 "00041",
+                "Lazio",
                 "Via Roma",
                 "34",
                 12.61756,
@@ -238,6 +232,7 @@ class AwsGeoServiceTest {
                 "RM", "Roma",
                 "Marino",
                 "00047",
+                "Lazio",
                 "Via Giuseppe Garibaldi",
                 "32",
                 12.65886,
@@ -250,7 +245,6 @@ class AwsGeoServiceTest {
                 1,
                 1
                                                        );
-
         when(mockClient.geocode(any(GeocodeRequest.class))).thenReturn(Mono.just(response).toFuture());
 
         Mono<AwsGeoService.CoordinatesResult> resultMono =
@@ -294,7 +288,6 @@ class AwsGeoServiceTest {
         StepVerifier.create(resultMono)
                     .expectError(CoordinatesNotFoundException.class)
                     .verify();
-
     }
 
     /**
@@ -308,6 +301,7 @@ class AwsGeoServiceTest {
                 "RM", "Roma",
                 "Marino",
                 "00047",
+                "Lazio",
                 "",
                 "32",
                 12.66276,
@@ -320,7 +314,6 @@ class AwsGeoServiceTest {
                 0,
                 0.47
                                                        );
-
         when(mockClient.geocode(any(GeocodeRequest.class))).thenReturn(Mono.just(response).toFuture());
 
         Mono<AwsGeoService.CoordinatesResult> resultMono =
@@ -424,10 +417,4 @@ class AwsGeoServiceTest {
                                        )
                     .verify();
     }
-
-
-
-
-
-
 }
