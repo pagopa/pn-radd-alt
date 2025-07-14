@@ -34,13 +34,15 @@ paths:
       tags:
         - Registry
       description: >-
-        API utilizzata per il recupero di tutti i punti di ritiro di un partner
+        API utilizzata per il recupero di tutti i punti di ritiro di un partner, con paginazione lato DynamoDB.
       operationId: retrieveRegistry
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: '#/components/parameters/uid'
         - $ref: '#/components/parameters/partnerId'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/lastKey'
       responses:
         200:
           description: OK
@@ -426,6 +428,8 @@ components:
           description: Lista dei punti di ritiro trovati
           items:
             $ref: '#/components/schemas/RegistryV2'
+        lastKey:
+            $ref: '#/components/parameters/lastKey'
 
     CreateRegistryResponseV2:
       $ref: '#/components/schemas/RegistryV2'
@@ -526,6 +530,20 @@ components:
       required: true
       schema:
         type: string
+    limit:
+      name: limit
+      description: Numero massimo di elementi da restituire per pagina
+      in: query
+      required: false
+      schema:
+        type: integer
+    lastKey:
+      name: lastKey
+      description: Chiave dell’ultimo elemento restituito per ottenere la pagina successiva (ExclusiveStartKey DynamoDB)
+      in: query
+      required: false
+      schema: 
+        type: string
     endDate:
       name: endDate
       description: Data fine validità sportello
@@ -546,18 +564,6 @@ components:
       description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
       in: header
       required: true
-      schema:
-        type: string
-    limit:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        default: 10
-    lastKey:
-      name: lastKey
-      in: query
-      required: false
       schema:
         type: string
     cap:
