@@ -19,6 +19,7 @@
         <tag>HEAD</tag>
     </scm>
     <properties>
+        <awssdk.version>2.29.4</awssdk.version>
         <java.version>17</java.version>
         <jacoco.min.line.cover.ratio>0.01</jacoco.min.line.cover.ratio>
         <pagopa.codegen.version>v01.05.00</pagopa.codegen.version>
@@ -181,6 +182,13 @@
             <artifactId>assertj-logging-logback</artifactId>
             <version> 0.5.0</version>
             <scope>test</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/geoplaces -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>geoplaces</artifactId>
+            <version>${awssdk.version}</version>
         </dependency>
 
     </dependencies>
