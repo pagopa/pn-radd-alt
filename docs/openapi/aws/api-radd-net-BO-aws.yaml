@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: 9z2fJiPk5yOIDKdYCTrNuAp3m0yEsPO6J/UwIQE7kpk=
+  version: 09MoWyTyesFXDY84S3VDDK4Rws2UzpAzRzBwPwNVzDw=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -73,7 +73,6 @@ paths:
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
           integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
-          integration.request.path.proxy: method.request.path.proxy
           integration.request.path.partnerId: method.request.path.partnerId
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
@@ -146,7 +145,6 @@ paths:
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
           integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
-          integration.request.path.proxy: method.request.path.proxy
           integration.request.path.partnerId: method.request.path.partnerId
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
@@ -240,7 +238,6 @@ paths:
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
           integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
-          integration.request.path.proxy: method.request.path.proxy
           integration.request.path.partnerId: method.request.path.partnerId
           integration.request.path.locationId: method.request.path.locationId
         passthroughBehavior: when_no_match
@@ -305,7 +302,6 @@ paths:
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
           integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
-          integration.request.path.proxy: method.request.path.proxy
           integration.request.path.partnerId: method.request.path.partnerId
           integration.request.path.locationId: method.request.path.locationId
         passthroughBehavior: when_no_match
