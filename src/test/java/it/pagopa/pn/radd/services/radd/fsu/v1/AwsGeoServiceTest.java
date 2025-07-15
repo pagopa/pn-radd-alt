@@ -27,7 +27,7 @@ class AwsGeoServiceTest {
     }
 
     private GeocodeResponse buildGeocodeResponse(String label, String countryCode, String countryName, String subRegionCode, String subRegionName,
-                                                 String locality, String postalCode,String region, String street, String addressNumber,
+                                                 String locality, String postalCode, String street, String addressNumber,
                                                  double lon, double lat, double addressNumberScore,double countryScore,  List<Double> intersectionScores,double postalCodeScore, double subRegionScore , double localityScore, double overall) {
 
         List<Double> intersectionList = List.of(1.0); // o altri valori realistici
@@ -38,7 +38,6 @@ class AwsGeoServiceTest {
                                  .subRegion(SubRegion.builder().code(subRegionCode).name(subRegionName).build())
                                  .locality(locality)
                                  .postalCode(postalCode)
-                                 .region(Region.builder().code(region).name(region).build())
                                  .street(street)
                                  .addressNumber(addressNumber)
                                  .build();
@@ -84,7 +83,6 @@ class AwsGeoServiceTest {
                 "RM", "Roma",
                 "San Polo dei Cavalieri",
                 "00010",
-                "Lazio",
                 "Via Roma",
                 "34",
                 12.84315,
@@ -134,7 +132,6 @@ class AwsGeoServiceTest {
                 "RM", "Roma",
                 "Marino",
                 "00010",
-                "Lazio",
                 "Via Roma",
                 "34",
                 12.6593,
@@ -183,7 +180,6 @@ class AwsGeoServiceTest {
                 "RM", "Roma",
                 "Albano Laziale",
                 "00041",
-                "Lazio",
                 "Via Roma",
                 "34",
                 12.61756,
@@ -232,7 +228,6 @@ class AwsGeoServiceTest {
                 "RM", "Roma",
                 "Marino",
                 "00047",
-                "Lazio",
                 "Via Giuseppe Garibaldi",
                 "32",
                 12.65886,
@@ -301,8 +296,7 @@ class AwsGeoServiceTest {
                 "RM", "Roma",
                 "Marino",
                 "00047",
-                "Lazio",
-                "",
+                    "",
                 "32",
                 12.66276,
                 41.76907,

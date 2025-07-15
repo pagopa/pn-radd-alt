@@ -51,19 +51,6 @@ public class AwsGeoService {
         return builder.build();
     }
 
-    private String extractStreetAndNumber(String awsAddressRow) {
-        if (StringUtils.isBlank(awsAddressRow)) {
-            return "";
-        }
-
-        // Esempio: "Via Roma, 34, 00041 Albano Laziale RM, Italia"
-        String[] parts = awsAddressRow.split(",");
-        if (parts.length >= 2) {
-            return parts[0].trim() + ", " + parts[1].trim();  // "Via Roma, 34"
-        } else {
-            return awsAddressRow.trim();
-        }
-    }
 
     private GeocodeRequest buildGeocodeRequest(
             String address, String subRegion, String postalCode, String locality, String country) {
@@ -109,7 +96,6 @@ public class AwsGeoService {
         result.setAwsPostalCode(geoResult.address().postalCode());
         result.setAwsLocality(geoResult.address().locality());
         result.setAwsSubRegion(geoResult.address().subRegion().code());
-        result.setAwsRegion(geoResult.address().region().name());
         result.setAwsCountry(geoResult.address().country().name());
         result.setAwsMatchScore(matchScore);
 
@@ -123,7 +109,6 @@ public class AwsGeoService {
         String awsPostalCode;
         String awsLocality;
         String awsSubRegion;
-        String awsRegion;
         String awsCountry;
         String awsLongitude;
         String awsLatitude;
@@ -154,7 +139,7 @@ public class AwsGeoService {
                 missingFields.add("country");
             }
             if (geoResult.title() == null || StringUtils.isBlank(geoResult.title())){
-                missingFields.add("street");
+                missingFields.add("title");
             }
         }
 
