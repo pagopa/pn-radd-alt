@@ -610,7 +610,7 @@ Resources:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/api-gw-expose-service-openapi.yaml"
       Parameters:
         MicroServiceUniqueName: !Sub '${ProjectName}-radd-alt'
-        IntendedUsage: BO
+        IntendedUsage: BACKOFFICE
         DnsName: !Ref RaddApiDnsName
         ProjectName: !Ref ProjectName
         ServiceApiPath: 'radd-net'
@@ -627,7 +627,7 @@ Resources:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/api-gw-waf-acl.yaml"
       Parameters:
         WAFName: !Sub '${ProjectName}-radd-alt-bo'
-        IntendedUsage: BO
+        IntendedUsage: BACKOFFICE
         APIGatewayARNs: !GetAtt RaddAltMicroserviceBoPublicAPI.Outputs.APIGatewayARN
         Limit: !Ref RaddWafLimit
 
