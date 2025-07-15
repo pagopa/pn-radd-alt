@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: EMNChvMT3yGRHxS5PS1GKpqycooZU8XW90tL28nmoq8=
+  version: 9z2fJiPk5yOIDKdYCTrNuAp3m0yEsPO6J/UwIQE7kpk=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -536,10 +536,41 @@ components:
             - biasPoint
           properties:
             biasPoint:
-              description: Percentuale di affidabilitá della geolocalizzazione
-              type: number
-              maximum: 100
-              minimum: 0
+              description: >-
+                Punti di bias per la normalizzazione dell'indirizzo restituiti
+                dal servizio di geocoding in valori compresi tra 0 e 1.
+              type: object
+              properties:
+                addressNumber:
+                  type: number
+                  description: Numero civico dell’indirizzo
+                  minimum: 0
+                  maximum: 1
+                country:
+                  type: number
+                  description: Stato
+                  minimum: 0
+                  maximum: 1
+                locality:
+                  type: number
+                  description: Località o città
+                  minimum: 0
+                  maximum: 1
+                postalCode:
+                  type: number
+                  description: CAP
+                  minimum: 0
+                  maximum: 1
+                subRegion:
+                  type: number
+                  description: Provincia o regione
+                  minimum: 0
+                  maximum: 1
+                overall:
+                  type: number
+                  description: Valore complessivo del bias point
+                  minimum: 0
+                  maximum: 1
     UpdateRegistryRequestV2:
       type: object
       properties:
