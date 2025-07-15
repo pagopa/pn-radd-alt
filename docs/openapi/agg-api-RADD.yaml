@@ -455,7 +455,8 @@ components:
           items:
             $ref: '#/components/schemas/RegistryV2'
         lastKey:
-            $ref: '#/components/parameters/lastKey'
+          type: string
+          description: Chiave dell’ultimo elemento restituito (LastEvaluatedKey DynamoDB)
 
     CreateRegistryResponseV2:
       $ref: '#/components/schemas/RegistryV2'
