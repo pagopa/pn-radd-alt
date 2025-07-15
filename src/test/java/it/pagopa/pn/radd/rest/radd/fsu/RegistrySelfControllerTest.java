@@ -2,9 +2,8 @@ package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.RestExceptionHandler;
+import it.pagopa.pn.radd.exception.CoordinatesNotFoundException;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
-import lombok.CustomLog;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -115,6 +114,28 @@ class RegistrySelfControllerTest {
     void addRegistry_invalidField() {
         CreateRegistryRequestV2 request = buildValidRequest();
         request.setEmail("not-an-email");
+
+        webTestClient.post()
+                .uri(CREATE_PATH, PARTNER_ID)
+                .header("x-pagopa-pn-cx-type", "RADD")
+                .header("x-pagopa-pn-cx-id", "test-cx-id")
+                .header("uid", "test-uid")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest();
+    }
+
+    @Test
+    void addRegistry_coordinatesNotFound() {
+        CreateRegistryRequestV2 request = buildValidRequest();
+        RegistryV2 response = new RegistryV2();
+        response.setPartnerId(PARTNER_ID);
+        response.setLocationId(request.getLocationId());
+
+        Mockito.when(registrySelfService.addRegistry(eq(PARTNER_ID), eq(request.getLocationId()), anyString(), any()))
+                .thenReturn(Mono.error(new CoordinatesNotFoundException("Coordinates not found")));
 
         webTestClient.post()
                 .uri(CREATE_PATH, PARTNER_ID)

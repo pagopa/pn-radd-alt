@@ -23,7 +23,10 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.geoplaces.model.AddressComponentMatchScores;
+import software.amazon.awssdk.services.geoplaces.model.MatchScoreDetails;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -137,11 +140,22 @@ public class RaddRegistryUtils {
         normalizedAddress.setCap(coordinatesResult.getAwsPostalCode());
         normalizedAddress.setProvince(coordinatesResult.getAwsSubRegion());
         normalizedAddress.setCountry(coordinatesResult.getAwsCountry());
-        normalizedAddress.setBiasPoint(coordinatesResult.getBiasPoint());
-        // TODO valorizzazione di biasPointAws (campo ancora da aggiungere)
         normalizedAddress.setLongitude(coordinatesResult.getAwsLongitude());
         normalizedAddress.setLatitude(coordinatesResult.getAwsLatitude());
+        normalizedAddress.setBiasPoint(buildBiasPointEntity(coordinatesResult.getAwsMatchScore()));
         return normalizedAddress;
+    }
+
+    private static BiasPointEntity buildBiasPointEntity(MatchScoreDetails matchScoreDetails) {
+        BiasPointEntity biasPoint = new BiasPointEntity();
+        AddressComponentMatchScores addressComponents = matchScoreDetails.components().address();
+        biasPoint.setOverall(BigDecimal.valueOf(matchScoreDetails.overall()));
+        biasPoint.setCountry(BigDecimal.valueOf(addressComponents.country()));
+        biasPoint.setAddressNumber(BigDecimal.valueOf(addressComponents.addressNumber()));
+        biasPoint.setLocality(BigDecimal.valueOf(addressComponents.locality()));
+        biasPoint.setPostalCode(BigDecimal.valueOf(addressComponents.postalCode()));
+        biasPoint.setSubRegion(BigDecimal.valueOf(addressComponents.subRegion()));
+        return biasPoint;
     }
 
     private static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntity normalizedAddress) {

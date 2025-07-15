@@ -18,6 +18,8 @@ import org.springframework.test.context.ContextConfiguration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import software.amazon.awssdk.services.geoplaces.model.AddressComponentMatchScores;
+import software.amazon.awssdk.services.geoplaces.model.MatchScoreDetails;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -87,6 +89,29 @@ class RegistrySelfServiceTest {
         return request;
     }
 
+    private AwsGeoService.CoordinatesResult buildCoordinatesResult() {
+        AwsGeoService.CoordinatesResult coordinatesResult = new AwsGeoService.CoordinatesResult();
+        coordinatesResult.setAwsAddressRow("Via Roma 123");
+        coordinatesResult.setAwsSubRegion("Roma");
+        coordinatesResult.setAwsPostalCode("00100");
+        coordinatesResult.setAwsLocality("RM");
+        coordinatesResult.setAwsCountry("Italia");
+        AddressComponentMatchScores addressComponents = AddressComponentMatchScores.builder()
+                .addressNumber(1.0)
+                .locality(1.0)
+                .subRegion(1.0)
+                .postalCode(1.0)
+                .country(1.0)
+                .build();
+        coordinatesResult.setAwsMatchScore(MatchScoreDetails.builder()
+                .overall(1.0)
+                .components(builder -> builder.address(addressComponents))
+                .build());
+        coordinatesResult.setAwsLatitude("12.34567");
+        coordinatesResult.setAwsLongitude("100.00000");
+        return coordinatesResult;
+    }
+
     @Test
     public void shouldAddRegistrySuccessfully() {
         CreateRegistryRequestV2 request = createValidRegistryRequest();
@@ -94,11 +119,8 @@ class RegistrySelfServiceTest {
 
         when(raddRegistryDAO.findByPartnerId(PARTNER_ID)).thenReturn(Flux.empty());
         when(raddRegistryDAO.putItemIfAbsent(any())).thenReturn(Mono.just(entity));
-        when(awsGeoService.getCoordinatesForAddress(any(), any(), any(), any()))
-                .thenReturn(Mono.just(new AwsGeoService.CoordinatesResult(
-                        "Via Roma 123", "Roma", "00100", "RM", "Italia",
-                        "BiasPoint", "12.34567", 100
-                )));
+        when(awsGeoService.getCoordinatesForAddress(any(), any(), any(), any(), any()))
+                .thenReturn(Mono.just(buildCoordinatesResult()));
 
         Mono<RegistryV2> result = registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request);
 

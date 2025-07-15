@@ -1,6 +1,8 @@
 package it.pagopa.pn.radd.mapper;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.NormalizedAddress;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.NormalizedAddressAllOfBiasPoint;
+import it.pagopa.pn.radd.middleware.db.entities.BiasPointEntity;
 import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +25,7 @@ public class NormalizedAddressMapper {
         entity.setCountry(dto.getCountry());
         entity.setLatitude(dto.getLatitude());
         entity.setLongitude(dto.getLongitude());
-        entity.setBiasPoint(dto.getBiasPoint());
+        entity.setBiasPoint(toEntity(dto.getBiasPoint()));
         return entity;
     }
 
@@ -39,7 +41,35 @@ public class NormalizedAddressMapper {
         dto.setCountry(entity.getCountry());
         dto.setLatitude(entity.getLatitude());
         dto.setLongitude(entity.getLongitude());
-        dto.setBiasPoint(entity.getBiasPoint());
+        dto.setBiasPoint(toDto(entity.getBiasPoint()));
         return dto;
+    }
+
+    private BiasPointEntity toEntity(NormalizedAddressAllOfBiasPoint biasPoint) {
+        if (biasPoint == null) {
+            return null;
+        }
+        BiasPointEntity biasPointEntity = new BiasPointEntity();
+        biasPointEntity.setAddressNumber(biasPoint.getAddressNumber());
+        biasPointEntity.setCountry(biasPoint.getCountry());
+        biasPointEntity.setLocality(biasPoint.getLocality());
+        biasPointEntity.setPostalCode(biasPoint.getPostalCode());
+        biasPointEntity.setSubRegion(biasPoint.getSubRegion());
+        biasPointEntity.setOverall(biasPoint.getOverall());
+        return biasPointEntity;
+    }
+
+    private NormalizedAddressAllOfBiasPoint toDto(BiasPointEntity biasPointEntity) {
+        if (biasPointEntity == null) {
+            return null;
+        }
+        NormalizedAddressAllOfBiasPoint biasPoint = new NormalizedAddressAllOfBiasPoint();
+        biasPoint.setAddressNumber(biasPointEntity.getAddressNumber());
+        biasPoint.setCountry(biasPointEntity.getCountry());
+        biasPoint.setLocality(biasPointEntity.getLocality());
+        biasPoint.setPostalCode(biasPointEntity.getPostalCode());
+        biasPoint.setSubRegion(biasPointEntity.getSubRegion());
+        biasPoint.setOverall(biasPointEntity.getOverall());
+        return biasPoint;
     }
 }

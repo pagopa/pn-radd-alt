@@ -40,7 +40,8 @@ public class RegistrySelfService {
                         inputAddress.getAddressRow(),
                         inputAddress.getProvince(),
                         inputAddress.getCap(),
-                        inputAddress.getCity()))
+                        inputAddress.getCity(),
+                        inputAddress.getCountry()))
                 )
                 .map(coordinatesResult -> buildRaddRegistryEntity(partnerId, locationId, uid, request, coordinatesResult))
                 .flatMap(raddRegistryDAO::putItemIfAbsent)
