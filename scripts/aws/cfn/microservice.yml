@@ -610,7 +610,7 @@ Resources:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/api-gw-expose-service-openapi.yaml"
       Parameters:
         MicroServiceUniqueName: !Sub '${ProjectName}-radd-alt'
-        IntendedUsage: BACKOFFICE
+        IntendedUsage: BO
         DnsName: !Ref RaddApiDnsName
         ProjectName: !Ref ProjectName
         ServiceApiPath: 'radd-net'
@@ -619,7 +619,7 @@ Resources:
         AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
         CloudwatchLogKinesisStreamArn: !Ref LogsKinesisSourceStreamArn
         OpenApiBucketName: !Ref MicroserviceBucketName
-        OpenApiBucketKey: !Sub ${MicroserviceBucketBaseKey}/docs/openapi/aws/api-radd-net-BACKOFFICE-aws.yaml
+        OpenApiBucketKey: !Sub ${MicroserviceBucketBaseKey}/docs/openapi/aws/api-radd-net-BO-aws.yaml
 
   RaddAltMicroservicePublicBoApiWaf:
     Type: AWS::CloudFormation::Stack
@@ -627,7 +627,7 @@ Resources:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/api-gw-waf-acl.yaml"
       Parameters:
         WAFName: !Sub '${ProjectName}-radd-alt-bo'
-        IntendedUsage: BACKOFFICE
+        IntendedUsage: BO
         APIGatewayARNs: !GetAtt RaddAltMicroserviceBoPublicAPI.Outputs.APIGatewayARN
         Limit: !Ref RaddWafLimit
 
