@@ -1,6 +1,9 @@
 package it.pagopa.pn.radd.exception;
 
-public class CoordinatesNotFoundException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class CoordinatesNotFoundException extends RaddGenericException {
     public CoordinatesNotFoundException(String message) {
-        super(message);
-    }}
+        super(ExceptionTypeEnum.COORDINATES_NOT_FOUND, message, HttpStatus.BAD_REQUEST);
+    }
+}
