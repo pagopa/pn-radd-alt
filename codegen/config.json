@@ -14,7 +14,7 @@
             "openapiFiles": [
                 "pn-radd-alt-registry-v2-internal.yaml"
             ],
-            "servicePath": "radd-net"
+            "servicePath": "radd-bo"
         }
     ]
 }
