@@ -587,7 +587,7 @@ Resources:
             Action:
               - geo-places:Geocode
             Resource:
-              - !Sub arn:aws:geo-places:{AwsGeoRegionCode}::provider/default
+              - !Sub arn:aws:geo-places:${AwsGeoRegionCode}::provider/default
 
 
   # Expose PN-Radd-Alt microservice public API with API-GW for RADD usage
