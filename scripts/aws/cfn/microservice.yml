@@ -613,7 +613,7 @@ Resources:
         IntendedUsage: BACKOFFICE
         DnsName: !Ref RaddApiDnsName
         ProjectName: !Ref ProjectName
-        ServiceApiPath: 'radd-net'
+        ServiceApiPath: 'radd-bo'
         NetworkLoadBalancerLink: !Ref NetworkLoadBalancerLink
         ApplicationLoadBalancerDomain: !Ref ApplicationLoadBalancerDomain
         AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
