@@ -24,6 +24,7 @@ import reactor.core.publisher.Mono;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.geoplaces.model.AddressComponentMatchScores;
+import software.amazon.awssdk.services.geoplaces.model.ComponentMatchScores;
 import software.amazon.awssdk.services.geoplaces.model.MatchScoreDetails;
 
 import java.math.BigDecimal;
@@ -32,6 +33,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.TO_PROCESS;
@@ -148,14 +150,33 @@ public class RaddRegistryUtils {
 
     private static BiasPointEntity buildBiasPointEntity(MatchScoreDetails matchScoreDetails) {
         BiasPointEntity biasPoint = new BiasPointEntity();
-        AddressComponentMatchScores addressComponents = matchScoreDetails.components().address();
-        biasPoint.setOverall(BigDecimal.valueOf(matchScoreDetails.overall()));
-        biasPoint.setCountry(BigDecimal.valueOf(addressComponents.country()));
-        biasPoint.setAddressNumber(BigDecimal.valueOf(addressComponents.addressNumber()));
-        biasPoint.setLocality(BigDecimal.valueOf(addressComponents.locality()));
-        biasPoint.setPostalCode(BigDecimal.valueOf(addressComponents.postalCode()));
-        biasPoint.setSubRegion(BigDecimal.valueOf(addressComponents.subRegion()));
+
+        if (matchScoreDetails == null) {
+            return biasPoint;
+        }
+
+        setBigDecimalIfNotNull(biasPoint::setOverall, matchScoreDetails.overall());
+
+        AddressComponentMatchScores addressComponents =
+                Optional.ofNullable(matchScoreDetails.components())
+                        .map(ComponentMatchScores::address)
+                        .orElse(null);
+
+        if (addressComponents != null) {
+            setBigDecimalIfNotNull(biasPoint::setCountry, addressComponents.country());
+            setBigDecimalIfNotNull(biasPoint::setAddressNumber, addressComponents.addressNumber());
+            setBigDecimalIfNotNull(biasPoint::setLocality, addressComponents.locality());
+            setBigDecimalIfNotNull(biasPoint::setPostalCode, addressComponents.postalCode());
+            setBigDecimalIfNotNull(biasPoint::setSubRegion, addressComponents.subRegion());
+        }
+
         return biasPoint;
+    }
+
+    private static void setBigDecimalIfNotNull(Consumer<BigDecimal> setter, Double value) {
+        if (value != null) {
+            setter.accept(BigDecimal.valueOf(value));
+        }
     }
 
     private static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntity normalizedAddress) {
