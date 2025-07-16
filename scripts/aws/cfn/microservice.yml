@@ -583,7 +583,7 @@ Resources:
               - events:PutEvents
             Resource:
               - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-CoreEventBus
-          - Effect: Allow,
+          - Effect: Allow
             Action:
               - geo-places:Geocode
             Resource:
