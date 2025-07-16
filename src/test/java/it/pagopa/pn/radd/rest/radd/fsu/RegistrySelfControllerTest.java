@@ -42,7 +42,7 @@ class RegistrySelfControllerTest {
     public static final String EXTERNALCODE = "externalCode";
     public static final String PARTNER_ID = "12345678901";
 
-    private final String CREATE_PATH = "/radd-net/api/v2/registry/{partnerId}";
+    private final String CREATE_PATH = "/radd-bo/api/v2/registry/{partnerId}";
 
     private CreateRegistryRequestV2 buildValidRequest() {
         AddressV2 address = new AddressV2();
