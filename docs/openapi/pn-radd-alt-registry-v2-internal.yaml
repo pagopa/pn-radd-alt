@@ -29,7 +29,7 @@ tags:
   - name: Registry
 
 paths:
-  /radd-net/api/v2/registry/{partnerId}:
+  /radd-bo/api/v2/registry/{partnerId}:
     get:
       tags:
         - Registry
@@ -39,7 +39,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
       responses:
         200:
@@ -87,7 +87,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
       requestBody:
         content:
@@ -134,7 +134,7 @@ paths:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
 
 
-  /radd-net/api/v2/registry/{partnerId}/{locationId}:
+  /radd-bo/api/v2/registry/{partnerId}/{locationId}:
     patch:
       tags:
         - Registry
@@ -144,7 +144,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       requestBody:
@@ -205,7 +205,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       responses:
@@ -368,11 +368,39 @@ components:
             - biasPoint
           properties:
             biasPoint:
-              description: Percentuale di affidabilitá della geolocalizzazione
-              type: integer
-              format: int32
-              maximum: 100
-              minimum: 0
+              description: Punti di bias per la normalizzazione dell'indirizzo restituiti dal servizio di geocoding in valori compresi tra 0 e 1.
+              type: object
+              properties:
+                addressNumber:
+                  type: number
+                  description: Numero civico dell’indirizzo
+                  minimum: 0
+                  maximum: 1
+                country:
+                  type: number
+                  description: Stato
+                  minimum: 0
+                  maximum: 1
+                locality:
+                  type: number
+                  description: Località o città
+                  minimum: 0
+                  maximum: 1
+                postalCode:
+                  type: number
+                  description: CAP
+                  minimum: 0
+                  maximum: 1
+                subRegion:
+                  type: number
+                  description: Provincia o regione
+                  minimum: 0
+                  maximum: 1
+                overall:
+                  type: number
+                  description: Valore complessivo del bias point
+                  minimum: 0
+                  maximum: 1
 
     UpdateRegistryRequestV2:
       type: object

@@ -22,6 +22,7 @@ import java.util.List;
 
 import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
 import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
+import static it.pagopa.pn.radd.utils.OpeningHoursParser.validateOpenHours;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +30,31 @@ import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
 public class RegistrySelfService {
 
     private final RaddRegistryV2DAO raddRegistryDAO;
+    private final AwsGeoService awsGeoService;
     private  final RaddRegistryMapper raddRegistryMapper;
+
+    public Mono<RegistryV2> addRegistry(String partnerId, String locationId, String uid, CreateRegistryRequestV2 request) {
+        checkCreateRegistryRequest(request);
+        log.info("Creating registry entity for partnerId: {} and locationId: {}", partnerId, locationId);
+        AddressV2 inputAddress = request.getAddress();
+        return validateExternalCodes(partnerId, locationId, request.getExternalCodes())
+                .then(Mono.defer(() -> awsGeoService.getCoordinatesForAddress(
+                        inputAddress.getAddressRow(),
+                        inputAddress.getProvince(),
+                        inputAddress.getCap(),
+                        inputAddress.getCity(),
+                        inputAddress.getCountry()))
+                )
+                .map(coordinatesResult -> buildRaddRegistryEntity(partnerId, locationId, uid, request, coordinatesResult))
+                .flatMap(raddRegistryDAO::putItemIfAbsent)
+                .doOnNext(result -> log.debug("Registry entity with partnerId: {} and locationId: {} created successfully", partnerId, locationId))
+                .map(raddRegistryMapper::toDto);
+    }
+
+    private void checkCreateRegistryRequest(CreateRegistryRequestV2 request) {
+        verifyDates(request.getStartValidity(), request.getEndValidity());
+        validateOpenHours(request.getOpeningTime());
+    }
 
     public Mono<RegistryV2> updateRegistry(String partnerId, String locationId, UpdateRegistryRequestV2 request) {
         checkUpdateRegistryRequest(request);
@@ -84,6 +109,26 @@ public class RegistrySelfService {
         return registryEntity;
     }
 
+    private void verifyDates(String startValidity, String endValidity) {
+        try {
+            Instant today = getStartOfDayToday();
+            Instant startValidityInstant = startValidity != null ? convertDateToInstantAtStartOfDay(startValidity) : today;
+
+            if (startValidityInstant.isBefore(today)) {
+                throw new RaddGenericException(ExceptionTypeEnum.START_VALIDITY_IN_THE_PAST, HttpStatus.BAD_REQUEST);
+            }
+
+            if (endValidity != null) {
+                Instant endValidityInstant = convertDateToInstantAtStartOfDay(endValidity);
+                if (endValidityInstant.isBefore(startValidityInstant)) {
+                    throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
+                }
+            }
+        } catch (DateTimeParseException e) {
+            throw new RaddGenericException(ExceptionTypeEnum.DATE_INVALID_ERROR, HttpStatus.BAD_REQUEST);
+        }
+    }
+
     private Instant verifyDatesForUpdate(Instant startValidity, String endValidity) {
         Instant endValidityInstant = null;
         try {
@@ -104,18 +149,18 @@ public class RegistrySelfService {
         }
 
         return raddRegistryDAO.findByPartnerId(partnerId)
-                              .filter(entity -> !entity.getLocationId().equals(locationId))
-                              .flatMap(entity ->
-                                               Flux.fromIterable(entity.getExternalCodes())
-                                                   .filter(externalCodes::contains)
-                                                   .next()
-                                      )
-                              .filter(externalCodes::contains)
-                              .next() // Prende il primo codice esterno duplicato trovato, se esiste
-                              .flatMap(duplicate -> Mono.error(new RaddGenericException(ExceptionTypeEnum.DUPLICATE_EXT_CODE,
-                                                                                        String.format("L'externalCode '%s' è già associato ad un'altra sede", duplicate),
-                                                                                        HttpStatus.CONFLICT)))
-                              .then();
+                .filter(entity -> !entity.getLocationId().equals(locationId))
+                .flatMap(entity ->
+                        Flux.fromIterable(entity.getExternalCodes())
+                                .filter(externalCodes::contains)
+                                .next()
+                )
+                .filter(externalCodes::contains)
+                .next() // Prende il primo codice esterno duplicato trovato, se esiste
+                .flatMap(duplicate -> Mono.error(new RaddGenericException(ExceptionTypeEnum.DUPLICATE_EXT_CODE,
+                        String.format("L'externalCode '%s' è già associato ad un'altra sede", duplicate),
+                        HttpStatus.CONFLICT)))
+                .then();
     }
 
 }
