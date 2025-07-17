@@ -1,12 +1,12 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
-import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
-import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.NormalizedAddressMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
+import it.pagopa.pn.radd.mapper.RaddRegistryPageMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
+import it.pagopa.pn.radd.pojo.RaddRegistryPage;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,22 +15,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ContextConfiguration;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import software.amazon.awssdk.services.geoplaces.model.AddressComponentMatchScores;
-import software.amazon.awssdk.services.geoplaces.model.MatchScoreDetails;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
-import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,144 +30,66 @@ class RegistrySelfServiceTest {
 
     @Mock
     private RaddRegistryV2DAO raddRegistryDAO;
-    @Mock
-    private AwsGeoService awsGeoService;
+
     private RegistrySelfService registrySelfService;
 
-    private static final String PATTERN_FORMAT = "yyyy-MM-dd";
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(PATTERN_FORMAT).withZone(ZoneId.systemDefault());
-
-    private final String PARTNER_ID = "partnerId";
-    private final String LOCATION_ID = "locationId";
-    private final String UID = UUID.randomUUID().toString();
-
+    public static final String PN_PAGOPA_CX_ID = "x-pagopa-pn-cx-id";
+    public static final String PN_PAGOPA_UID = "uid";
+    public static final Integer LIMIT = 10;
+    public static final String LAST_KEY = "lastKey";
+    public static final String PARTNER_ID = "partnerId";
 
     @BeforeEach
     void setUp() {
         registrySelfService = new RegistrySelfService(
                 raddRegistryDAO,
-                awsGeoService,
-                new RaddRegistryMapper(new NormalizedAddressMapper())
+                new RaddRegistryPageMapper(new RaddRegistryMapper(new NormalizedAddressMapper()))
         );
     }
 
-    private CreateRegistryRequestV2 createValidRegistryRequest() {
-        CreateRegistryRequestV2 request = new CreateRegistryRequestV2();
+    private GetRegistryResponseV2 getRegistryResponseV2() {
 
-        AddressV2 address = new AddressV2();
-        address.setAddressRow("Via Roma 123");
-        address.setCap("00100");
-        address.setCity("Roma");
-        address.setProvince("RM");
-        address.setCountry("Italia");
-        request.setAddress(address);
+        RegistryV2 registry = new RegistryV2();
+        registry.setPartnerId(PARTNER_ID);
 
-        Instant now = Instant.now();
-        formatter.format(now);
-        request.setStartValidity(formatter.format(now));
-        request.setEndValidity(formatter.format(now.plus(1, ChronoUnit.DAYS)));
-        request.setPartnerId(PARTNER_ID);
-        request.setLocationId("loc-1");
-        request.setDescription("Sportello Test");
-        request.setPhoneNumbers(List.of("+390123456789"));
-        request.setExternalCodes(List.of("EXT1"));
-        request.setEmail("mail@esempio.it");
-        request.setOpeningTime("Lun-Ven 08:00-12:00, 14:00-18:00; Sab 09:00-12:00; Dom 10:00-11:00");
-        request.setAppointmentRequired(true);
-        request.setWebsite("https://test.it");
-        request.setPartnerType("CAF");
-        return request;
+        List<RegistryV2> listRegistry = new ArrayList<>();
+        listRegistry.add(registry);
+
+        GetRegistryResponseV2 res = new GetRegistryResponseV2();
+        res.setItems(listRegistry);
+        res.setLastKey(LAST_KEY);
+
+        return res;
     }
 
-    private AwsGeoService.CoordinatesResult buildCoordinatesResult() {
-        AwsGeoService.CoordinatesResult coordinatesResult = new AwsGeoService.CoordinatesResult();
-        coordinatesResult.setAwsAddressRow("Via Roma 123");
-        coordinatesResult.setAwsSubRegion("Roma");
-        coordinatesResult.setAwsPostalCode("00100");
-        coordinatesResult.setAwsLocality("RM");
-        coordinatesResult.setAwsCountry("Italia");
-        AddressComponentMatchScores addressComponents = AddressComponentMatchScores.builder()
-                .addressNumber(1.0)
-                .locality(1.0)
-                .subRegion(1.0)
-                .postalCode(1.0)
-                .country(1.0)
-                .build();
-        coordinatesResult.setAwsMatchScore(MatchScoreDetails.builder()
-                .overall(1.0)
-                .components(builder -> builder.address(addressComponents))
-                .build());
-        coordinatesResult.setAwsLatitude("12.34567");
-        coordinatesResult.setAwsLongitude("100.00000");
-        return coordinatesResult;
+    private RaddRegistryPage raddRegistryPage() {
+
+        RaddRegistryEntityV2 registry = new RaddRegistryEntityV2();
+        registry.setPartnerId(PARTNER_ID);
+
+        List<RaddRegistryEntityV2> listRegistry = new ArrayList<>();
+        listRegistry.add(registry);
+
+        RaddRegistryPage page = new RaddRegistryPage();
+        page.setItems(listRegistry);
+        page.setLastKey(LAST_KEY);
+
+        return page;
     }
 
     @Test
-    public void shouldAddRegistrySuccessfully() {
-        CreateRegistryRequestV2 request = createValidRegistryRequest();
-        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+    void testRetrieveRegistry_success() {
 
-        when(raddRegistryDAO.findByPartnerId(PARTNER_ID)).thenReturn(Flux.empty());
-        when(raddRegistryDAO.putItemIfAbsent(any())).thenReturn(Mono.just(entity));
-        when(awsGeoService.getCoordinatesForAddress(any(), any(), any(), any(), any()))
-                .thenReturn(Mono.just(buildCoordinatesResult()));
+        RaddRegistryPage page = raddRegistryPage();
 
-        Mono<RegistryV2> result = registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request);
+        when(raddRegistryDAO.findPaginatedByPartnerId(PARTNER_ID, LIMIT, LAST_KEY))
+                .thenReturn(Mono.just(page));
+
+        Mono<GetRegistryResponseV2> result = registrySelfService.retrieveRegistry(PARTNER_ID, LIMIT, LAST_KEY);
 
         StepVerifier.create(result)
-                .assertNext(Assertions::assertNotNull)
-                .verifyComplete();
-    }
-
-    @Test
-    public void shouldAddRegistryFailsForInvalidIntervalDates() {
-        CreateRegistryRequestV2 request = createValidRegistryRequest();
-        request.setEndValidity(formatter.format(convertDateToInstantAtStartOfDay(request.getStartValidity()).minus(1, ChronoUnit.DAYS)));
-
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request));
-        assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
-    }
-
-    @Test
-    public void shouldAddRegistryFailsForInvalidDateFormat() {
-        CreateRegistryRequestV2 request = createValidRegistryRequest();
-        request.setStartValidity("10/02/2022");
-
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request));
-        assertEquals(ExceptionTypeEnum.DATE_INVALID_ERROR, ex.getExceptionType());
-    }
-
-    @Test
-    public void shouldAddRegistryFailsForStartValidityInThePast() {
-        CreateRegistryRequestV2 request = createValidRegistryRequest();
-        request.setStartValidity("2022-10-21");
-
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request));
-        assertEquals(ExceptionTypeEnum.START_VALIDITY_IN_THE_PAST, ex.getExceptionType());
-    }
-
-    @Test
-    public void shouldAddRegistryFailsForDuplicatedExternalCode() {
-        CreateRegistryRequestV2 request = createValidRegistryRequest();
-        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
-        entity.setLocationId(UUID.randomUUID().toString());
-        entity.setExternalCodes(List.of("EXT1", "EXT2", "EXT3"));
-        when(raddRegistryDAO.findByPartnerId(PARTNER_ID)).thenReturn(Flux.just(entity));
-
-        request.setExternalCodes(List.of("EXT1"));
-        StepVerifier.create(registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request))
-                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
-                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DUPLICATE_EXT_CODE)
-                .verify();
-    }
-
-    @Test
-    public void shouldAddRegistryFailsForInvalidOpeningTime() {
-        CreateRegistryRequestV2 request = createValidRegistryRequest();
-        request.setOpeningTime("Lun-Lun 08:70-25:00; Invalid 09:00-12:00");
-
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry(PARTNER_ID, LOCATION_ID, UID, request));
-        assertEquals(ExceptionTypeEnum.OPENING_TIME_ERROR, ex.getExceptionType());
+                    .assertNext(Assertions::assertNotNull)
+                    .verifyComplete();
     }
 
 }
