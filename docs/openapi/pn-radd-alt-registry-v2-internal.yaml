@@ -39,7 +39,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
       responses:
         200:
@@ -87,7 +87,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
       requestBody:
         content:
@@ -144,7 +144,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       requestBody:
@@ -205,7 +205,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       responses:
