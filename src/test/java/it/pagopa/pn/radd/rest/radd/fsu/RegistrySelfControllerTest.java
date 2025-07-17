@@ -36,7 +36,7 @@ class RegistrySelfControllerTest {
     @Autowired
     WebTestClient webTestClient;
 
-    private final String PARTNER_ID = "partnerId";
+    private final String PARTNER_ID = "12345678901";
     private final String LOCATION_ID = "locationId";
 
     private final String CREATE_PATH = "/radd-bo/api/v2/registry/{partnerId}";

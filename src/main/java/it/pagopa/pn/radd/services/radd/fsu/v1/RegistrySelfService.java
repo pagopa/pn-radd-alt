@@ -23,6 +23,7 @@ import java.util.List;
 import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
 import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
 import static it.pagopa.pn.radd.utils.OpeningHoursParser.validateOpenHours;
+import static it.pagopa.pn.radd.utils.RaddRegistryUtils.buildRaddRegistryEntity;
 
 @Service
 @RequiredArgsConstructor
