@@ -20,6 +20,7 @@ import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -37,8 +38,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.TO_PROCESS;
-import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
-import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
+import static it.pagopa.pn.radd.utils.DateUtils.*;
 
 @Component
 @RequiredArgsConstructor
@@ -185,6 +185,42 @@ public class RaddRegistryUtils {
                 StringUtils.equals(address.getCity(), normalizedAddress.getCity()) &&
                 StringUtils.equals(address.getProvince(), normalizedAddress.getProvince()) &&
                 StringUtils.equals(address.getCountry(), normalizedAddress.getCountry());
+    }
+
+    public static RaddRegistryEntityV2 mapFieldToUpdate(RaddRegistryEntityV2 registryEntity, UpdateRegistryRequestV2 request) {
+        if (StringUtils.isNotBlank(request.getDescription())) {
+            registryEntity.setDescription(request.getDescription());
+        }
+        if (StringUtils.isNotBlank(request.getEmail())) {
+            registryEntity.setEmail(request.getEmail());
+        }
+
+        if (StringUtils.isNotBlank(request.getOpeningTime())) {
+            registryEntity.setOpeningTime(request.getOpeningTime());
+        }
+        if (!CollectionUtils.isEmpty(request.getExternalCodes())) {
+            registryEntity.setExternalCodes(request.getExternalCodes());
+        }
+        if (!CollectionUtils.isEmpty(request.getPhoneNumbers())) {
+            registryEntity.setPhoneNumbers(request.getPhoneNumbers());
+        }
+
+        if (StringUtils.isNotBlank(request.getWebsite())) {
+            registryEntity.setWebsite(request.getWebsite());
+        }
+        if (StringUtils.isNotBlank(request.getEmail())) {
+            registryEntity.setEmail(request.getEmail());
+        }
+
+        if (request.getAppointmentRequired() != null) {
+            registryEntity.setAppointmentRequired(request.getAppointmentRequired());
+        }
+
+        if (request.getEndValidity() != null) {
+            registryEntity.setEndValidity(convertDateToInstantAtStartOfDay(request.getEndValidity()));
+        }
+
+        return registryEntity;
     }
 
     private static RaddRegistryEntity getRaddRegistryEntity(String registryId, PnAddressManagerEvent.NormalizedAddress normalizedAddress, RaddRegistryRequestEntity registryRequest, RaddRegistryOriginalRequest raddRegistryOriginalRequest) {

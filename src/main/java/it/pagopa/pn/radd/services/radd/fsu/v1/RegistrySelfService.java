@@ -5,25 +5,21 @@ import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
-import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.utils.OpeningHoursParser;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 
-import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
-import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
+import static it.pagopa.pn.radd.utils.DateUtils.*;
 import static it.pagopa.pn.radd.utils.OpeningHoursParser.validateOpenHours;
 import static it.pagopa.pn.radd.utils.RaddRegistryUtils.buildRaddRegistryEntity;
+import static it.pagopa.pn.radd.utils.RaddRegistryUtils.mapFieldToUpdate;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +49,7 @@ public class RegistrySelfService {
     }
 
     private void checkCreateRegistryRequest(CreateRegistryRequestV2 request) {
-        verifyDates(request.getStartValidity(), request.getEndValidity());
+        validateDateInterval(request.getStartValidity(), request.getEndValidity());
         validateOpenHours(request.getOpeningTime());
     }
 
@@ -63,6 +59,7 @@ public class RegistrySelfService {
         return validateExternalCodes(partnerId, locationId, request.getExternalCodes())
                 .then(raddRegistryDAO.find(partnerId, locationId))
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
+                .doOnNext(entity -> validateDateInterval(entity.getStartValidity(), request.getEndValidity()))
                 .flatMap(registryEntity -> raddRegistryDAO.updateRegistryEntity(mapFieldToUpdate(registryEntity, request)))
                 .map(raddRegistryMapper::toDto)
                 .doOnError(throwable -> log.error("Error during update registry request for partnerId: [{}] and locationId: [{}]", partnerId, locationId, throwable));
@@ -74,76 +71,9 @@ public class RegistrySelfService {
         }
     }
 
-    private RaddRegistryEntityV2 mapFieldToUpdate(RaddRegistryEntityV2 registryEntity, UpdateRegistryRequestV2 request) {
-        if (StringUtils.isNotBlank(request.getDescription())) {
-            registryEntity.setDescription(request.getDescription());
-        }
-        if (StringUtils.isNotBlank(request.getEmail())) {
-            registryEntity.setEmail(request.getEmail());
-        }
-
-        if (StringUtils.isNotBlank(request.getOpeningTime())) {
-            registryEntity.setOpeningTime(request.getOpeningTime());
-        }
-        if (!CollectionUtils.isEmpty(request.getExternalCodes())) {
-            registryEntity.setExternalCodes(request.getExternalCodes());
-        }
-        if (!CollectionUtils.isEmpty(request.getPhoneNumbers())) {
-            registryEntity.setPhoneNumbers(request.getPhoneNumbers());
-        }
-
-        if (StringUtils.isNotBlank(request.getWebsite())) {
-            registryEntity.setWebsite(request.getWebsite());
-        }
-        if (StringUtils.isNotBlank(request.getEmail())) {
-            registryEntity.setEmail(request.getEmail());
-        }
-
-        if (request.getAppointmentRequired() != null) {
-            registryEntity.setAppointmentRequired(request.getAppointmentRequired());
-        }
-
-        if (request.getEndValidity() != null) {
-            registryEntity.setEndValidity(verifyDatesForUpdate(registryEntity.getStartValidity(), request.getEndValidity()));
-        }
-
-        return registryEntity;
-    }
-
-    private void verifyDates(String startValidity, String endValidity) {
-        try {
-            Instant today = getStartOfDayToday();
-            Instant startValidityInstant = startValidity != null ? convertDateToInstantAtStartOfDay(startValidity) : today;
-
-            if (startValidityInstant.isBefore(today)) {
-                throw new RaddGenericException(ExceptionTypeEnum.START_VALIDITY_IN_THE_PAST, HttpStatus.BAD_REQUEST);
-            }
-
-            if (endValidity != null) {
-                Instant endValidityInstant = convertDateToInstantAtStartOfDay(endValidity);
-                if (endValidityInstant.isBefore(startValidityInstant)) {
-                    throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
-                }
-            }
-        } catch (DateTimeParseException e) {
-            throw new RaddGenericException(ExceptionTypeEnum.DATE_INVALID_ERROR, HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    private Instant verifyDatesForUpdate(Instant startValidity, String endValidity) {
-        Instant endValidityInstant = null;
-        try {
-            Instant startValidityInstant = startValidity != null ? startValidity : getStartOfDayToday();
-            endValidityInstant = convertDateToInstantAtStartOfDay(endValidity);
-            if (endValidityInstant.isBefore(startValidityInstant)) {
-                throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
-            }
-        } catch (DateTimeParseException e) {
-            throw new RaddGenericException(ExceptionTypeEnum.DATE_INVALID_ERROR, HttpStatus.BAD_REQUEST);
-        }
-        return endValidityInstant;
-    }
-
+    /**
+     * Controlla se i codici esterni forniti sono già associati a un'altra sede dello stesso partner.
+     */
     private Mono<Void> validateExternalCodes(String partnerId, String locationId, List<String> externalCodes) {
         if (externalCodes == null || externalCodes.isEmpty()) {
             return Mono.empty();
