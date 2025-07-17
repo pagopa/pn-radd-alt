@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: 09MoWyTyesFXDY84S3VDDK4Rws2UzpAzRzBwPwNVzDw=
+  version: 0R0aN7LkrhdQ3y8cGGep+FHNaIJ/jGEXjMs9xlYmycI=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -18,7 +18,6 @@ paths:
       description: API utilizzata per il recupero di tutti i punti di ritiro di un partner
       operationId: retrieveRegistry
       parameters:
-        - $ref: '#/components/parameters/uid'
         - $ref: '#/components/parameters/partnerId'
       responses:
         '200':
@@ -84,7 +83,6 @@ paths:
       description: API utilizzata per la richiesta di attivazione nuova anagrafica RADD
       operationId: addRegistry
       parameters:
-        - $ref: '#/components/parameters/uid'
         - $ref: '#/components/parameters/partnerId'
       requestBody:
         content:
@@ -170,7 +168,6 @@ paths:
       description: API utilizzata per la modifica di un'anagrafica RADD
       operationId: updateRegistry
       parameters:
-        - $ref: '#/components/parameters/uid'
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       requestBody:
@@ -250,7 +247,6 @@ paths:
       description: API utilizzata per la cancellazione di un punto di ritiro di un partner
       operationId: deleteRegistry
       parameters:
-        - $ref: '#/components/parameters/uid'
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       responses:
