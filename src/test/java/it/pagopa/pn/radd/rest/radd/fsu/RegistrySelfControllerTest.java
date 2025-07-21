@@ -3,8 +3,8 @@ package it.pagopa.pn.radd.rest.radd.fsu;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.RestExceptionHandler;
 import it.pagopa.pn.radd.exception.CoordinatesNotFoundException;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -24,6 +24,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
+
 
 @ContextConfiguration(classes = {RegistrySelfController.class, RestExceptionHandler.class})
 @ExtendWith(SpringExtension.class)
@@ -38,6 +40,9 @@ class RegistrySelfControllerTest {
 
     private final String PARTNER_ID = "12345678901";
     private final String LOCATION_ID = "locationId";
+    public static final String PN_PAGOPA_CX_ID = "x-pagopa-pn-cx-id";
+    public static final String PN_PAGOPA_CX_TYPE = "x-pagopa-pn-cx-type";
+    public static final String PN_PAGOPA_UID = "uid";
 
     private final String CREATE_PATH = "/radd-bo/api/v2/registry/{partnerId}";
     private final String UPDATE_PATH = "/radd-bo/api/v2/registry/{partnerId}/{locationId}";
@@ -207,6 +212,45 @@ class RegistrySelfControllerTest {
                 .expectStatus()
                 .isBadRequest();
 
+    }
+
+
+    @Test
+    void shouldDeleteRegistryAndReturn204() {
+        String partnerId = "partnerTest";
+        String locationId = "locationTest";
+
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setPartnerId(partnerId);
+        entity.setLocationId(locationId);
+
+        when(registrySelfService.deleteRegistry(partnerId, locationId))
+                .thenReturn(Mono.just(entity));
+
+        webTestClient.delete()
+                     .uri(UPDATE_PATH, partnerId, locationId)
+                     .header(PN_PAGOPA_CX_TYPE, "PA")
+                     .header(PN_PAGOPA_CX_ID, "my-cx-id")
+                     .header(PN_PAGOPA_UID, "my-uid")
+                     .exchange()
+                     .expectStatus().isNoContent();
+    }
+
+    @Test
+    void shouldReturn204WhenRegistryNotFound() {
+        String partnerId = "partnerNotFound";
+        String locationId = "locationNotFound";
+
+        when(registrySelfService.deleteRegistry(partnerId, locationId))
+                .thenReturn(Mono.empty());
+
+        webTestClient.delete()
+                     .uri(UPDATE_PATH, partnerId, locationId)
+                     .header(PN_PAGOPA_CX_TYPE, "PA")
+                     .header(PN_PAGOPA_CX_ID, "my-cx-id")
+                     .header(PN_PAGOPA_UID, "my-uid")
+                     .exchange()
+                     .expectStatus().isNoContent(); // 204
     }
 
 }

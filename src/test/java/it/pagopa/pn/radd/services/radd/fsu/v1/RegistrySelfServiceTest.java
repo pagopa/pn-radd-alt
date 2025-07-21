@@ -16,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ContextConfiguration;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.services.geoplaces.model.AddressComponentMatchScores;
@@ -27,7 +26,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.UUID;
 import java.util.UUID;
 
 import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
@@ -259,5 +257,39 @@ class RegistrySelfServiceTest {
                 .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
                         ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DUPLICATE_EXT_CODE)
                 .verify();
+    }
+
+    @Test
+    void shouldDeleteRegistrySuccessfully() {
+        // Given
+        String partnerId = "partnerTest";
+        String locationId = "locationTest";
+
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setPartnerId(partnerId);
+        entity.setLocationId(locationId);
+
+
+        when(raddRegistryDAO.delete(partnerId, locationId)).thenReturn(Mono.just(entity));
+
+        Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(partnerId, locationId);
+
+        StepVerifier.create(result)
+                .expectNextMatches(deleted -> deleted.getPartnerId().equals(partnerId) && deleted.getLocationId().equals(locationId))
+                .verifyComplete();
+    }
+
+
+    @Test
+    void shouldCompleteDeleteWhenRegistryNotFound() {
+        // Given
+        String partnerId = "partnerTest";
+        String locationId = "locationTest";
+
+        when(raddRegistryDAO.delete(partnerId, locationId)).thenReturn(Mono.empty());
+
+        Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(partnerId, locationId);
+
+        StepVerifier.create(result).verifyComplete();
     }
 }

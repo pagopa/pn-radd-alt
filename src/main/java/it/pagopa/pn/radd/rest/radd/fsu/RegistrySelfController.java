@@ -2,7 +2,6 @@ package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.RegistryApi;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryRequestV2;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistryV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateRegistryRequestV2;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
@@ -31,5 +30,11 @@ public class RegistrySelfController implements RegistryApi {
     public Mono<ResponseEntity<RegistryV2>> updateRegistry(String xPagopaPnCxId, String uid, String partnerId, String locationId, Mono<UpdateRegistryRequestV2> updateRegistryRequestV2, ServerWebExchange exchange) {
         return updateRegistryRequestV2.flatMap(request -> registrySelfService.updateRegistry(partnerId, locationId, request))
                 .map(response -> ResponseEntity.status(HttpStatus.OK).body(response));
+    }
+
+    @Override
+    public Mono<ResponseEntity<Void>> deleteRegistry(String xPagopaPnCxId, String uid, String partnerId, String locationId, ServerWebExchange exchange) {
+        return registrySelfService.deleteRegistry(partnerId, locationId)
+                .thenReturn(ResponseEntity.noContent().build());
     }
 }

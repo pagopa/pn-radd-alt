@@ -5,6 +5,7 @@ import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.utils.OpeningHoursParser;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
@@ -94,5 +95,12 @@ public class RegistrySelfService {
                         HttpStatus.CONFLICT)))
                 .then();
     }
+
+    public Mono<RaddRegistryEntityV2> deleteRegistry(String partnerId, String locationId) {
+        return raddRegistryDAO.delete(partnerId, locationId)
+                                .doOnNext(deletedEntity -> log.info("Registry deleted: partnerId={}, locationId={}", partnerId, locationId))
+                                .doOnError(err -> log.error("Error deleting registry for partnerId={}, locationId={}", partnerId, locationId, err));
+    }
+
 
 }
