@@ -219,7 +219,7 @@ class RegistrySelfServiceTest {
 
         RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
         Instant now = Instant.now();
-        entity.setStartValidity(now);
+        entity.setStartValidity(now.minus(1, ChronoUnit.DAYS));
         entity.setPartnerId(PARTNER_ID);
         entity.setLocationId(LOCATION_ID);
 

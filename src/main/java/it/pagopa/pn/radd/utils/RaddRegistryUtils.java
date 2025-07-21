@@ -217,7 +217,7 @@ public class RaddRegistryUtils {
         }
 
         if (request.getEndValidity() != null) {
-            registryEntity.setEndValidity(convertDateToInstantAtStartOfDay(request.getEndValidity()));
+            registryEntity.setEndValidity(validateEndDate(registryEntity.getStartValidity(), request.getEndValidity()));
         }
         registryEntity.setUpdateTimestamp(Instant.now());
 

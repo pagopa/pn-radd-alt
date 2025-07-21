@@ -61,7 +61,6 @@ public class RegistrySelfService {
         return validateExternalCodes(partnerId, locationId, request.getExternalCodes())
                 .then(raddRegistryDAO.find(partnerId, locationId))
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
-                .doOnNext(entity -> validateDateInterval(entity.getStartValidity(), request.getEndValidity()))
                 .flatMap(registryEntity -> raddRegistryDAO.updateRegistryEntity(mapFieldToUpdate(registryEntity, request)))
                 .map(raddRegistryMapper::toDto)
                 .doOnError(throwable -> log.error("Error during update registry request for partnerId: [{}] and locationId: [{}]", partnerId, locationId, throwable));
