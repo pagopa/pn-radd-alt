@@ -11,29 +11,34 @@ import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.Fil
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileCreationResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
+import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
 import it.pagopa.pn.radd.pojo.*;
+import it.pagopa.pn.radd.services.radd.fsu.v1.AwsGeoService;
 import it.pagopa.pn.radd.services.radd.fsu.v1.SecretService;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.geoplaces.model.AddressComponentMatchScores;
+import software.amazon.awssdk.services.geoplaces.model.ComponentMatchScores;
+import software.amazon.awssdk.services.geoplaces.model.MatchScoreDetails;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.TO_PROCESS;
+import static it.pagopa.pn.radd.utils.DateUtils.*;
 
 @Component
 @RequiredArgsConstructor
@@ -92,6 +97,131 @@ public class RaddRegistryUtils {
         RaddRegistryOriginalRequest raddRegistryOriginalRequest = objectMapperUtil.toObject(registryRequest.getOriginalRequest(), RaddRegistryOriginalRequest.class);
 
         return Mono.just(getRaddRegistryEntity(registryId, normalizedAddress, registryRequest, raddRegistryOriginalRequest));
+    }
+
+    public static RaddRegistryEntityV2 buildRaddRegistryEntity(String partnerId, String locationId, String uid, CreateRegistryRequestV2 request, AwsGeoService.CoordinatesResult coordinatesResult) {
+        RaddRegistryEntityV2 raddRegistryEntityV2 = new RaddRegistryEntityV2();
+
+        raddRegistryEntityV2.setPartnerId(partnerId);
+        raddRegistryEntityV2.setLocationId(locationId);
+        raddRegistryEntityV2.setDescription(request.getDescription());
+        raddRegistryEntityV2.setPhoneNumbers(request.getPhoneNumbers());
+        raddRegistryEntityV2.setOpeningTime(request.getOpeningTime());
+        raddRegistryEntityV2.setExternalCodes(request.getExternalCodes());
+        raddRegistryEntityV2.setStartValidity(request.getStartValidity() != null ? convertDateToInstantAtStartOfDay(request.getStartValidity()) : getStartOfDayToday());
+        raddRegistryEntityV2.setEndValidity(request.getEndValidity() != null ? convertDateToInstantAtStartOfDay(request.getEndValidity()) : null);
+        raddRegistryEntityV2.setEmail(request.getEmail());
+        raddRegistryEntityV2.setAppointmentRequired(request.getAppointmentRequired());
+        raddRegistryEntityV2.setWebsite(request.getWebsite());
+        raddRegistryEntityV2.setPartnerType(request.getPartnerType());
+        raddRegistryEntityV2.setCreationTimestamp(Instant.now());
+        raddRegistryEntityV2.setUpdateTimestamp(Instant.now());
+        raddRegistryEntityV2.setUid(uid);
+
+        NormalizedAddressEntity normalizedAddress = buildNormalizedAddressEntity(coordinatesResult);
+
+        AddressV2 inputAddress = request.getAddress();
+        AddressEntity address = new AddressEntity();
+        address.setAddressRow(inputAddress.getAddressRow());
+        address.setCity(inputAddress.getCity());
+        address.setCap(inputAddress.getCap());
+        address.setProvince(inputAddress.getProvince());
+        address.setCountry(inputAddress.getCountry());
+
+        raddRegistryEntityV2.setNormalizedAddress(normalizedAddress);
+        raddRegistryEntityV2.setAddress(address);
+        raddRegistryEntityV2.setModifiedAddress(!areAddressesEquivalent(address, normalizedAddress));
+
+        return raddRegistryEntityV2;
+    }
+
+    private static NormalizedAddressEntity buildNormalizedAddressEntity(AwsGeoService.CoordinatesResult coordinatesResult) {
+        NormalizedAddressEntity normalizedAddress = new NormalizedAddressEntity();
+        normalizedAddress.setAddressRow(coordinatesResult.getAwsAddressRow());
+        normalizedAddress.setCity(coordinatesResult.getAwsLocality());
+        normalizedAddress.setCap(coordinatesResult.getAwsPostalCode());
+        normalizedAddress.setProvince(coordinatesResult.getAwsSubRegion());
+        normalizedAddress.setCountry(coordinatesResult.getAwsCountry());
+        normalizedAddress.setLongitude(coordinatesResult.getAwsLongitude());
+        normalizedAddress.setLatitude(coordinatesResult.getAwsLatitude());
+        normalizedAddress.setBiasPoint(buildBiasPointEntity(coordinatesResult.getAwsMatchScore()));
+        return normalizedAddress;
+    }
+
+    private static BiasPointEntity buildBiasPointEntity(MatchScoreDetails matchScoreDetails) {
+        BiasPointEntity biasPoint = new BiasPointEntity();
+
+        if (matchScoreDetails == null) {
+            return biasPoint;
+        }
+
+        setBigDecimalIfNotNull(biasPoint::setOverall, matchScoreDetails.overall());
+
+        AddressComponentMatchScores addressComponents =
+                Optional.ofNullable(matchScoreDetails.components())
+                        .map(ComponentMatchScores::address)
+                        .orElse(null);
+
+        if (addressComponents != null) {
+            setBigDecimalIfNotNull(biasPoint::setCountry, addressComponents.country());
+            setBigDecimalIfNotNull(biasPoint::setAddressNumber, addressComponents.addressNumber());
+            setBigDecimalIfNotNull(biasPoint::setLocality, addressComponents.locality());
+            setBigDecimalIfNotNull(biasPoint::setPostalCode, addressComponents.postalCode());
+            setBigDecimalIfNotNull(biasPoint::setSubRegion, addressComponents.subRegion());
+        }
+
+        return biasPoint;
+    }
+
+    private static void setBigDecimalIfNotNull(Consumer<BigDecimal> setter, Double value) {
+        if (value != null) {
+            setter.accept(BigDecimal.valueOf(value));
+        }
+    }
+
+    private static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntity normalizedAddress) {
+        return StringUtils.equals(address.getAddressRow(), normalizedAddress.getAddressRow()) &&
+                StringUtils.equals(address.getCap(), normalizedAddress.getCap()) &&
+                StringUtils.equals(address.getCity(), normalizedAddress.getCity()) &&
+                StringUtils.equals(address.getProvince(), normalizedAddress.getProvince()) &&
+                StringUtils.equals(address.getCountry(), normalizedAddress.getCountry());
+    }
+
+    public static RaddRegistryEntityV2 mapFieldToUpdate(RaddRegistryEntityV2 registryEntity, UpdateRegistryRequestV2 request) {
+        if (StringUtils.isNotBlank(request.getDescription())) {
+            registryEntity.setDescription(request.getDescription());
+        }
+        if (StringUtils.isNotBlank(request.getEmail())) {
+            registryEntity.setEmail(request.getEmail());
+        }
+
+        if (StringUtils.isNotBlank(request.getOpeningTime())) {
+            registryEntity.setOpeningTime(request.getOpeningTime());
+        }
+        if (!CollectionUtils.isEmpty(request.getExternalCodes())) {
+            registryEntity.setExternalCodes(request.getExternalCodes());
+        }
+        if (!CollectionUtils.isEmpty(request.getPhoneNumbers())) {
+            registryEntity.setPhoneNumbers(request.getPhoneNumbers());
+        }
+
+        if (StringUtils.isNotBlank(request.getWebsite())) {
+            registryEntity.setWebsite(request.getWebsite());
+        }
+        if (StringUtils.isNotBlank(request.getEmail())) {
+            registryEntity.setEmail(request.getEmail());
+        }
+
+        if (request.getAppointmentRequired() != null) {
+            registryEntity.setAppointmentRequired(request.getAppointmentRequired());
+        }
+
+        if (request.getEndValidity() != null) {
+            registryEntity.setEndValidity(validateEndDate(registryEntity.getStartValidity(), request.getEndValidity()));
+        }
+        registryEntity.setUpdateTimestamp(Instant.now());
+
+        return registryEntity;
     }
 
     private static RaddRegistryEntity getRaddRegistryEntity(String registryId, PnAddressManagerEvent.NormalizedAddress normalizedAddress, RaddRegistryRequestEntity registryRequest, RaddRegistryOriginalRequest raddRegistryOriginalRequest) {

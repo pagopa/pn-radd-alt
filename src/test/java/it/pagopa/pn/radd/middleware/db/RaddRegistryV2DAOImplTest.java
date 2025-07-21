@@ -2,6 +2,7 @@ package it.pagopa.pn.radd.middleware.db;
 
 import it.pagopa.pn.radd.config.BaseTest;
 import it.pagopa.pn.radd.config.RestExceptionHandler;
+import it.pagopa.pn.radd.middleware.db.entities.BiasPointEntity;
 import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import lombok.CustomLog;
@@ -13,6 +14,7 @@ import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -60,7 +62,16 @@ public class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
         normalizedAddress.setCountry("Italy");
         normalizedAddress.setLongitude("12.345678");
         normalizedAddress.setLatitude("34.567890");
-        normalizedAddress.setBiasPoint(90);
+
+        BiasPointEntity biasPoint = new BiasPointEntity();
+        biasPoint.setOverall(BigDecimal.ONE);
+        biasPoint.setAddressNumber(BigDecimal.ONE);
+        biasPoint.setLocality(BigDecimal.ONE);
+        biasPoint.setSubRegion(BigDecimal.ONE);
+        biasPoint.setPostalCode(BigDecimal.ONE);
+        biasPoint.setCountry(BigDecimal.ONE);
+        normalizedAddress.setBiasPoint(biasPoint);
+
         entity.setNormalizedAddress(normalizedAddress);
 
         entity.setCreationTimestamp(Instant.now());

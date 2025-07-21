@@ -30,6 +30,7 @@ public class RaddRegistryEntityV2 {
     public static final String COL_UPDATE_TIMESTAMP = "updateTimestamp";
     public static final String COL_ADDRESS = "address";
     public static final String COL_NORMALIZED_ADDRESS = "normalizedAddress";
+    public static final String COL_MODIFIED_ADDRESS = "modifiedAddress";
     public static final String COL_DESCRIPTION = "description";
     public static final String COL_OPENING_TIME = "openingTime";
     public static final String COL_START_VALIDITY = "startValidity";
@@ -72,6 +73,9 @@ public class RaddRegistryEntityV2 {
 
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_NORMALIZED_ADDRESS)}))
     private NormalizedAddressEntity normalizedAddress;
+
+    @Getter(onMethod = @__({@DynamoDbAttribute(COL_MODIFIED_ADDRESS)}))
+    private Boolean modifiedAddress;
 
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_DESCRIPTION)}))
     private String description;

@@ -11,26 +11,23 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
+@CustomLog
 public class RegistrySelfController implements RegistryApi {
 
     private final RegistrySelfService registrySelfService;
 
-    /**
-     * DELETE /radd-net/api/v2/registry/{partnerId}/{locationId}
-     * API utilizzata per l'eliminazione puntuale di una sede CAF.
-     * @param xPagopaPnCxType
-     * @param xPagopaPnCxId
-     * @param uid
-     * @param partnerId
-     * @param locationId
-     * @param exchange
-     * @return OK (status code 204)
-     * or Bad Request (status code 400)
-     * or Unauthorized (status code 401)
-     * or Forbidden (status code 403)
-     * or Method not allowed (status code 405)
-     * or Internal Server Error (status code 500)
-     */
+    @Override
+    public Mono<ResponseEntity<RegistryV2>> addRegistry(String xPagopaPnCxId, String uid, String partnerId, Mono<CreateRegistryRequestV2> createRegistryRequestV2, ServerWebExchange exchange) {
+        return createRegistryRequestV2.flatMap(request -> registrySelfService.addRegistry(partnerId, request.getLocationId(), uid, request))
+                .map(createRegistryResponse -> ResponseEntity.status(HttpStatus.OK).body(createRegistryResponse));
+    }
+
+    @Override
+    public Mono<ResponseEntity<RegistryV2>> updateRegistry(String xPagopaPnCxId, String uid, String partnerId, String locationId, Mono<UpdateRegistryRequestV2> updateRegistryRequestV2, ServerWebExchange exchange) {
+        return updateRegistryRequestV2.flatMap(request -> registrySelfService.updateRegistry(partnerId, locationId, request))
+                .map(response -> ResponseEntity.status(HttpStatus.OK).body(response));
+    }
+
     @Override
     public Mono<ResponseEntity<Void>> deleteRegistry(CxTypeAuthFleet xPagopaPnCxType,
                                                      String xPagopaPnCxId,
@@ -39,7 +36,6 @@ public class RegistrySelfController implements RegistryApi {
                                                      String locationId,
                                                      ServerWebExchange exchange) {
         return registrySelfService.deleteRegistry(partnerId, locationId)
-                                  .thenReturn(ResponseEntity.noContent().build());
+                .thenReturn(ResponseEntity.noContent().build());
     }
-
 }

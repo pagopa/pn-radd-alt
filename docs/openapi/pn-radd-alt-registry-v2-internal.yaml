@@ -1,0 +1,638 @@
+openapi: 3.0.1
+info:
+  termsOfService: https://notifichedigitali.pagopa.it/radd/index.html
+  title: 'Piattaforma Notifiche: API B2B per gli operatori RADD'
+  x-summary: 'Piattaforma Notifiche: API B2B per gli operatori RADD'
+  version: '1.0.0'
+  contact:
+    email: pn-supporto-radd@pagopa.it
+  license:
+    name: Licenza di PN
+    url: 'https://notifichedigitali.pagopa.it/radd/index.html'
+  description: >-
+    #Abstract
+    API per la gestione delle richieste di censimento e modifica dei punti di ritiro SEND da parte
+    degli operatori OPS.
+
+    Le API permettono di:
+    - richiedere l'attivazione di un nuovo punto di ritiro SEND
+    - modificare un punto di ritiro SEND
+
+
+servers:
+  - url: https://api.radd.notifichedigitali.it
+    description: Ambiente di produzione
+  - url: https://api.radd.uat.notifichedigitali.it
+    description: Ambiente di collaudo UAT
+
+tags:
+  - name: Registry
+
+paths:
+  /radd-bo/api/v2/registry/{partnerId}:
+    get:
+      tags:
+        - Registry
+      description: >-
+        API utilizzata per il recupero di tutti i punti di ritiro di un partner
+      operationId: retrieveRegistry
+      parameters:
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
+        - $ref: '#/components/parameters/partnerId'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRegistryResponseV2'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+    post:
+      tags:
+        - Registry
+      description: >-
+        API utilizzata per la richiesta di attivazione nuova anagrafica RADD
+      operationId: addRegistry
+      parameters:
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
+        - $ref: '#/components/parameters/partnerId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRegistryRequestV2'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateRegistryResponseV2'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+
+
+  /radd-bo/api/v2/registry/{partnerId}/{locationId}:
+    patch:
+      tags:
+        - Registry
+      description: >-
+        API utilizzata per la modifica di un'anagrafica RADD
+      operationId: updateRegistry
+      parameters:
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
+        - $ref: '#/components/parameters/partnerId'
+        - $ref: '#/components/parameters/locationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRegistryRequestV2'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateRegistryResponseV2'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '404':
+          description: Not found - Punto di ritiro SEND non trovato
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+    delete:
+      tags:
+        - Registry
+      description: >-
+        API utilizzata per la cancellazione di un punto di ritiro di un partner
+      operationId: deleteRegistry
+      parameters:
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
+        - $ref: '#/components/parameters/partnerId'
+        - $ref: '#/components/parameters/locationId'
+      responses:
+        204:
+          description: Ok
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+
+components:
+  schemas:
+    CreateRegistryRequestV2:
+      type: object
+      required:
+        - address
+        - partnerId
+        - locationId
+        - description
+        - phoneNumbers
+        - externalCodes
+      properties:
+        address:
+          $ref: '#/components/schemas/AddressV2'
+        partnerId:
+          type: string
+          description: C.F. del partner erogatore
+          pattern: ^([0-9]{11})$
+        locationId:
+          type: string
+          description: Identificativo univoco della sede del punto di ritiro.
+        description:
+          type: string
+          description: Descrizione del punto di ritiro.
+          example: Sportello ABC.
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example: ["+390123456789","3921573273"]
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$
+        email:
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
+        openingTime:
+          type: string
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
+        startValidity:
+          type: string
+          description: >-
+            Data di inizio di validità del punto di ritiro in formato (yyyy-MM-dd),
+            se non inviata viene considerata la data corrente.
+          example: '2024-03-21'
+        endValidity:
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          example: '2024-03-21'
+        externalCodes:
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
+        appointmentRequired:
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
+        website:
+          type: string
+          description: Link al sito del punto di ritiro
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
+        partnerType:
+          type: string
+          description: Tipologia del punto di ritiro
+          pattern: "CAF"
+
+    AddressV2:
+      type: object
+      required:
+        - addressRow
+        - cap
+        - city
+        - province
+      properties:
+        addressRow:
+          type: string
+          description: Indirizzo completo
+          example: Via Roma 123
+          pattern: ^[a-zA-Z0-9\s\.,''-]{5,100}$  # Permette lettere, numeri, spazi e caratteri comuni negli indirizzi
+        cap:
+          type: string
+          description: CAP (Codice di Avviamento Postale).
+          example: 00100
+          pattern: ^\d{5}$  # Esattamente 5 cifre per il CAP italiano
+        city:
+          type: string
+          description: Città.
+          example: Roma
+        province:
+          type: string
+          description: Provincia.
+          example: RM
+          pattern: ^[A-Z]{2}$  # Esattamente 2 lettere maiuscole per il codice provincia italiano
+        country:
+          type: string
+          description: Paese.
+          example: Italia
+
+    GeoLocation:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: string
+          description: Latitudine della posizione geografica dello sportello.
+          example: "41.9028"
+        longitude:
+          type: string
+          description: Longitudine della posizione geografica dello sportello.
+          example: "12.4964"
+
+    NormalizedAddress:
+      allOf:
+        - $ref: "#/components/schemas/AddressV2"
+        - $ref: "#/components/schemas/GeoLocation"
+        - type: object
+          required:
+            - biasPoint
+          properties:
+            biasPoint:
+              description: Punti di bias per la normalizzazione dell'indirizzo restituiti dal servizio di geocoding in valori compresi tra 0 e 1.
+              type: object
+              properties:
+                addressNumber:
+                  type: number
+                  description: Numero civico dell’indirizzo
+                  minimum: 0
+                  maximum: 1
+                country:
+                  type: number
+                  description: Stato
+                  minimum: 0
+                  maximum: 1
+                locality:
+                  type: number
+                  description: Località o città
+                  minimum: 0
+                  maximum: 1
+                postalCode:
+                  type: number
+                  description: CAP
+                  minimum: 0
+                  maximum: 1
+                subRegion:
+                  type: number
+                  description: Provincia o regione
+                  minimum: 0
+                  maximum: 1
+                overall:
+                  type: number
+                  description: Valore complessivo del bias point
+                  minimum: 0
+                  maximum: 1
+
+    UpdateRegistryRequestV2:
+      type: object
+      properties:
+        externalCodes:
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
+        description:
+          type: string
+          description: Descrizione aggiornata dello sportello.
+          example: "Registro aggiornato dello sportello."
+        openingTime:
+          type: string
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example: ["+390123456789","3921573273"]
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$
+        endValidity:
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          example: '2024-03-21'
+        appointmentRequired:
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
+        website:
+          type: string
+          description: Link al sito del punto di ritiro
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
+        email:
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
+
+    GetRegistryResponseV2:
+      type: object
+      properties:
+        items:
+          type: array
+          description: Lista dei punti di ritiro trovati
+          items:
+            $ref: '#/components/schemas/RegistryV2'
+
+    CreateRegistryResponseV2:
+      $ref: '#/components/schemas/RegistryV2'
+
+    UpdateRegistryResponseV2:
+      $ref: '#/components/schemas/RegistryV2'
+
+    RegistryV2:
+      type: object
+      properties:
+        normalizedAddress:
+          $ref: '#/components/schemas/NormalizedAddress'
+        partnerId:
+          type: string
+          description: C.F. del partner erogatore
+          pattern: ^([0-9]{11})$
+        locationId:
+          type: string
+          description: Identificativo univoco della sede del punto di ritiro.
+        description:
+          type: string
+          description: Descrizione del punto di ritiro.
+          example: Sportello ABC.
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example: [ "+390123456789","3921573273" ]
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$
+        email:
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
+        openingTime:
+          type: string
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
+        startValidity:
+          type: string
+          description: >-
+            Data di inizio di validità del punto di ritiro in formato (yyyy-MM-dd),
+            se non inviata viene considerata la data corrente.
+          example: '2024-03-21'
+        endValidity:
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          example: '2024-03-21'
+        externalCodes:
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
+        appointmentRequired:
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
+        website:
+          type: string
+          description: Link al sito del punto di ritiro
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
+        partnerType:
+          type: string
+          description: Tipologia del punto di ritiro
+          pattern: "CAF"
+        creationTimestamp:
+          type: string
+          description: Istante di creazione del punto di ritiro
+          format: date-time
+        updateTimestamp:
+          type: string
+          description: Istante dell'ultima modifica del punto di ritiro
+          format: date-time
+
+  parameters:
+    registryId:
+      name: registryId
+      description: Identificativo dello sportello RADD
+      in: path
+      required: true
+      schema:
+        type: string
+      example: cxId#uuid
+    locationId:
+      name: locationId
+      description: Identificativo della sede del punto di ritiro
+      in: path
+      required: true
+      schema:
+        type: string
+    partnerId:
+      name: partnerId
+      description: C.F. del partner erogatore
+      in: path
+      required: true
+      schema:
+        type: string
+    endDate:
+      name: endDate
+      description: Data fine validità sportello
+      in: query
+      required: true
+      schema:
+        type: string
+      example: 2024-06-21
+    uid:
+      name: uid
+      description: Identificativo pseudo-anonimizzato dell'operatore RADD
+      in: header
+      required: true
+      schema:
+        type: string
+    requestId:
+      name: requestId
+      description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
+      in: header
+      required: true
+      schema:
+        type: string
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 10
+    lastKey:
+      name: lastKey
+      in: query
+      required: false
+      schema:
+        type: string
+    cap:
+      name: cap
+      description: CAP
+      in: query
+      required: false
+      schema:
+        type: string
+    city:
+      name: city
+      description: Città
+      in: query
+      required: false
+      schema:
+        type: string
+    pr:
+      name: pr
+      description: Provincia
+      in: query
+      required: false
+      schema:
+        type: string
+    externalCode:
+      name: externalCode
+      description: Identificativo punto ritiro SEND indicato dal client
+      in: query
+      required: false
+      schema:
+        type: string
+
+  responses:
+    Forbidden:
+      description: Forbidden
+    NotFound:
+      description: Not found
+    Invalid:
+      description: Bad Request
+    NotAllowed:
+      description: Method not allowed
+    InternalError:
+      description: Internal Server Error
+    Unauthorized:
+      description: Unauthorized
+
+#  securitySchemes: # ONLY EXTERNAL
+#    bearerAuth: # ONLY EXTERNAL
+#      type: http          # ONLY EXTERNAL
+#      scheme: bearer      # ONLY EXTERNAL
+#      bearerFormat: JWT   # ONLY EXTERNAL
+#
+#security: # ONLY EXTERNAL
+#  - bearerAuth: [ ]     # ONLY EXTERNAL

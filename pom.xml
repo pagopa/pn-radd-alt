@@ -335,7 +335,7 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <templateDirectory>${project.build.directory}/dependency-resources/scripts/openapi/templates/5.4.0/server</templateDirectory>
-                            <inputSpec>${project.basedir}/docs/openapi/pn-radd-alt-registry-internal-v2.yaml</inputSpec>
+                            <inputSpec>${project.basedir}/docs/openapi/pn-radd-alt-registry-v2-internal.yaml</inputSpec>
                             <generatorName>spring</generatorName>
                             <library>spring-boot</library>
                             <generateApiDocumentation>false</generateApiDocumentation>
