@@ -54,14 +54,12 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
 
     @Override
     public Mono<RaddRegistryEntityV2> putItemIfAbsent(RaddRegistryEntityV2 newRegistry) {
-
         Expression condition = Expression.builder()
                                          .expression("attribute_not_exists(partnerId) AND attribute_not_exists(locationId)")
                                          .build();
 
         return this.putItemWithConditions(newRegistry, condition, RaddRegistryEntityV2.class)
                    .onErrorMap(TransactionAlreadyExistsException.class, e -> new RaddRegistryAlreadyExistsException());
-
     }
 
     @Override
@@ -74,7 +72,6 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
 
     @Override
     public Mono<RaddRegistryPage> findPaginatedByPartnerId(String partnerId, Integer limit, String lastKey) {
-
         Key key = Key.builder().partitionValue(partnerId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
 
@@ -89,27 +86,17 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
         }
 
         if (StringUtils.isNotBlank(lastKey)) {
-            lastEvaluatedKey = Map.of(
-                    RaddRegistryEntityV2.COL_PARTNER_ID, AttributeValue.builder().s(partnerId).build(),
-                    RaddRegistryEntityV2.COL_LOCATION_ID, AttributeValue.builder().s(lastKey).build()
-                                     );
+            lastEvaluatedKey = Map.of(RaddRegistryEntityV2.COL_PARTNER_ID, AttributeValue.builder().s(partnerId).build(),RaddRegistryEntityV2.COL_LOCATION_ID, AttributeValue.builder().s(lastKey).build());
         }
 
         return constructAndExecuteQuery(qeRequest, lastEvaluatedKey, null)
                 .map(page -> {
-
                     RaddRegistryPage raddRegistryPage = new RaddRegistryPage();
-
                     raddRegistryPage.setItems(page.items());
-
-                    raddRegistryPage.setLastKey(CollectionUtils.isEmpty(page.lastEvaluatedKey())
-                                                        ? null
-                                                        : page.lastEvaluatedKey().get(RaddRegistryEntityV2.COL_LOCATION_ID).s());
-
+                    raddRegistryPage.setLastKey(CollectionUtils.isEmpty(page.lastEvaluatedKey()) ? null : page.lastEvaluatedKey().get(RaddRegistryEntityV2.COL_LOCATION_ID).s());
                     return raddRegistryPage;
                 });
     }
-
 
     @Override
     public Mono<RaddRegistryEntityV2> delete(String partnerId, String locationId) {
