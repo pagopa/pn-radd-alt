@@ -21,7 +21,7 @@ public class RegistrySelfController implements RegistryApi {
     private final RegistrySelfService registrySelfService;
 
     @Override
-    public Mono<ResponseEntity<RegistryV2>> addRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String partnerId, Mono<CreateRegistryRequestV2> createRegistryRequestV2, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<RegistryV2>> addRegistry(String xPagopaPnCxId, String uid, String partnerId, Mono<CreateRegistryRequestV2> createRegistryRequestV2, ServerWebExchange exchange) {
         return createRegistryRequestV2.flatMap(request -> registrySelfService.addRegistry(partnerId, request.getLocationId(), uid, request))
                 .map(createRegistryResponse -> ResponseEntity.status(HttpStatus.OK).body(createRegistryResponse));
     }

@@ -51,7 +51,9 @@ public class RegistrySelfService {
 
     private void checkCreateRegistryRequest(CreateRegistryRequestV2 request) {
         verifyDates(request.getStartValidity(), request.getEndValidity());
-        validateOpenHours(request.getOpeningTime());
+        if (request.getOpeningTime() != null) {
+            validateOpenHours(request.getOpeningTime());
+        }
     }
 
     private void verifyDates(String startValidity, String endValidity) {
