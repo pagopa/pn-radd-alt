@@ -4,6 +4,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.RestExceptionHandler;
 import it.pagopa.pn.radd.exception.CoordinatesNotFoundException;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -16,6 +17,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -31,20 +36,16 @@ class RegistrySelfControllerTest {
     @Autowired
     WebTestClient webTestClient;
 
-    public static final String PN_PAGOPA_CX_ID = "x-pagopa-pn-cx-id";
-    public static final String PN_PAGOPA_CX_TYPE = "x-pagopa-pn-cx-type";
-    public static final String PN_PAGOPA_UID = "uid";
-    public static final String LIMIT = "limit";
-    public static final String LASTKEY = "lastKey";
-    public static final String CAP = "cap";
-    public static final String CITY = "city";
-    public static final String PR = "pr";
-    public static final String EXTERNALCODE = "externalCode";
-    public static final String PARTNER_ID = "12345678901";
+    private final String PARTNER_ID = "12345678901";
+    private final String LOCATION_ID = "locationId";
 
     private final String CREATE_PATH = "/radd-bo/api/v2/registry/{partnerId}";
+    private final String UPDATE_PATH = "/radd-bo/api/v2/registry/{partnerId}/{locationId}";
 
-    private CreateRegistryRequestV2 buildValidRequest() {
+    private static final String PATTERN_FORMAT = "yyyy-MM-dd";
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(PATTERN_FORMAT).withZone(ZoneId.systemDefault());
+
+    private CreateRegistryRequestV2 buildValidCreateRequest() {
         AddressV2 address = new AddressV2();
         address.setAddressRow("Via Roma 123");
         address.setCap("00100");
@@ -69,9 +70,24 @@ class RegistrySelfControllerTest {
         return req;
     }
 
+    private UpdateRegistryRequestV2 buildValidUpdateRequest() {
+        UpdateRegistryRequestV2 request = new UpdateRegistryRequestV2();
+
+        Instant now = Instant.now();
+        formatter.format(now);
+        request.setEndValidity(formatter.format(now.plus(1, ChronoUnit.DAYS)));
+        request.setDescription("description");
+        request.setPhoneNumbers(List.of("+390123456789"));
+        request.setExternalCodes(List.of("EXT0"));
+        request.setEmail("mail@esempio.it");
+        request.setAppointmentRequired(true);
+        request.setWebsite("https://test.it");
+        return request;
+    }
+
     @Test
     void addRegistry_success() {
-        CreateRegistryRequestV2 request = buildValidRequest();
+        CreateRegistryRequestV2 request = buildValidCreateRequest();
         RegistryV2 response = new RegistryV2();
         response.setPartnerId(PARTNER_ID);
         response.setLocationId(request.getLocationId());
@@ -95,7 +111,7 @@ class RegistrySelfControllerTest {
 
     @Test
     void addRegistry_missingRequiredField() {
-        CreateRegistryRequestV2 request = buildValidRequest();
+        CreateRegistryRequestV2 request = buildValidCreateRequest();
         request.setAddress(null);
 
         webTestClient.post()
@@ -112,7 +128,7 @@ class RegistrySelfControllerTest {
 
     @Test
     void addRegistry_invalidField() {
-        CreateRegistryRequestV2 request = buildValidRequest();
+        CreateRegistryRequestV2 request = buildValidCreateRequest();
         request.setEmail("not-an-email");
 
         webTestClient.post()
@@ -129,7 +145,7 @@ class RegistrySelfControllerTest {
 
     @Test
     void addRegistry_coordinatesNotFound() {
-        CreateRegistryRequestV2 request = buildValidRequest();
+        CreateRegistryRequestV2 request = buildValidCreateRequest();
         RegistryV2 response = new RegistryV2();
         response.setPartnerId(PARTNER_ID);
         response.setLocationId(request.getLocationId());
@@ -147,6 +163,50 @@ class RegistrySelfControllerTest {
                 .exchange()
                 .expectStatus()
                 .isBadRequest();
+    }
+
+    @Test
+    void updateRegistry_success() {
+        UpdateRegistryRequestV2 request = buildValidUpdateRequest();
+
+        RegistryV2 response = new RegistryV2();
+        response.setPartnerId(PARTNER_ID);
+        response.setLocationId(LOCATION_ID);
+
+        Mockito.when(registrySelfService.updateRegistry(eq(PARTNER_ID), eq(LOCATION_ID), any()))
+                .thenReturn(Mono.just(response));
+
+        webTestClient.patch()
+                .uri(UPDATE_PATH, PARTNER_ID,LOCATION_ID)
+                .header("x-pagopa-pn-cx-type", "RADD")
+                .header("x-pagopa-pn-cx-id", "test-cx-id")
+                .header("uid", "test-uid")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.partnerId").isEqualTo(PARTNER_ID)
+                .jsonPath("$.locationId").isEqualTo(LOCATION_ID);
+    }
+
+    @Test
+    void updateRegistry_invalidField() {
+        UpdateRegistryRequestV2 request = buildValidUpdateRequest();
+        request.setWebsite("not-a-website");
+
+        webTestClient.patch()
+                .uri(UPDATE_PATH, PARTNER_ID, LOCATION_ID)
+                .header("x-pagopa-pn-cx-type", "RADD")
+                .header("x-pagopa-pn-cx-id", "test-cx-id")
+                .header("uid", "test-uid")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest();
+
     }
 
 }

@@ -3,24 +3,23 @@ package it.pagopa.pn.radd.services.radd.fsu.v1;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
-import it.pagopa.pn.radd.exception.TransactionAlreadyExistsException;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
+import it.pagopa.pn.radd.utils.OpeningHoursParser;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 
-import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
-import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
+import static it.pagopa.pn.radd.utils.DateUtils.*;
 import static it.pagopa.pn.radd.utils.OpeningHoursParser.validateOpenHours;
 import static it.pagopa.pn.radd.utils.RaddRegistryUtils.buildRaddRegistryEntity;
+import static it.pagopa.pn.radd.utils.RaddRegistryUtils.mapFieldToUpdate;
 
 @Service
 @RequiredArgsConstructor
@@ -50,32 +49,32 @@ public class RegistrySelfService {
     }
 
     private void checkCreateRegistryRequest(CreateRegistryRequestV2 request) {
-        verifyDates(request.getStartValidity(), request.getEndValidity());
+        validateDateInterval(request.getStartValidity(), request.getEndValidity());
         if (request.getOpeningTime() != null) {
             validateOpenHours(request.getOpeningTime());
         }
     }
 
-    private void verifyDates(String startValidity, String endValidity) {
-        try {
-            Instant today = getStartOfDayToday();
-            Instant startValidityInstant = startValidity != null ? convertDateToInstantAtStartOfDay(startValidity) : today;
+    public Mono<RegistryV2> updateRegistry(String partnerId, String locationId, UpdateRegistryRequestV2 request) {
+        checkUpdateRegistryRequest(request);
+        log.info("Start updateRegistry for partnerId [{}] and locationId [{}]", partnerId, locationId);
+        return validateExternalCodes(partnerId, locationId, request.getExternalCodes())
+                .then(raddRegistryDAO.find(partnerId, locationId))
+                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
+                .flatMap(registryEntity -> raddRegistryDAO.updateRegistryEntity(mapFieldToUpdate(registryEntity, request)))
+                .map(raddRegistryMapper::toDto)
+                .doOnError(throwable -> log.error("Error during update registry request for partnerId: [{}] and locationId: [{}]", partnerId, locationId, throwable));
+    }
 
-            if (startValidityInstant.isBefore(today)) {
-                throw new RaddGenericException(ExceptionTypeEnum.START_VALIDITY_IN_THE_PAST, HttpStatus.BAD_REQUEST);
-            }
-
-            if (endValidity != null) {
-                Instant endValidityInstant = convertDateToInstantAtStartOfDay(endValidity);
-                if (endValidityInstant.isBefore(startValidityInstant)) {
-                    throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
-                }
-            }
-        } catch (DateTimeParseException e) {
-            throw new RaddGenericException(ExceptionTypeEnum.DATE_INVALID_ERROR, HttpStatus.BAD_REQUEST);
+    private void checkUpdateRegistryRequest(UpdateRegistryRequestV2 request) {
+        if (StringUtils.isNotBlank(request.getOpeningTime())) {
+            OpeningHoursParser.validateOpenHours(request.getOpeningTime());
         }
     }
 
+    /**
+     * Controlla se i codici esterni forniti sono già associati a un'altra sede dello stesso partner.
+     */
     private Mono<Void> validateExternalCodes(String partnerId, String locationId, List<String> externalCodes) {
         if (externalCodes == null || externalCodes.isEmpty()) {
             return Mono.empty();
