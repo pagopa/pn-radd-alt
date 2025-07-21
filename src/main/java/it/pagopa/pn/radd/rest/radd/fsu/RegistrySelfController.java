@@ -1,9 +1,13 @@
 package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.RegistryApi;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryRequestV2;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistryV2;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateRegistryRequestV2;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
@@ -29,12 +33,7 @@ public class RegistrySelfController implements RegistryApi {
     }
 
     @Override
-    public Mono<ResponseEntity<Void>> deleteRegistry(CxTypeAuthFleet xPagopaPnCxType,
-                                                     String xPagopaPnCxId,
-                                                     String uid,
-                                                     String partnerId,
-                                                     String locationId,
-                                                     ServerWebExchange exchange) {
+    public Mono<ResponseEntity<Void>> deleteRegistry(String xPagopaPnCxId, String uid, String partnerId, String locationId, ServerWebExchange exchange) {
         return registrySelfService.deleteRegistry(partnerId, locationId)
                 .thenReturn(ResponseEntity.noContent().build());
     }

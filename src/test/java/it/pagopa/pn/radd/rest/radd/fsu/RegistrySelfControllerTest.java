@@ -5,8 +5,6 @@ import it.pagopa.pn.radd.config.RestExceptionHandler;
 import it.pagopa.pn.radd.exception.CoordinatesNotFoundException;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -26,7 +24,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
-import reactor.core.publisher.Mono;
 import static org.mockito.Mockito.when;
 
 
@@ -43,6 +40,9 @@ class RegistrySelfControllerTest {
 
     private final String PARTNER_ID = "12345678901";
     private final String LOCATION_ID = "locationId";
+    public static final String PN_PAGOPA_CX_ID = "x-pagopa-pn-cx-id";
+    public static final String PN_PAGOPA_CX_TYPE = "x-pagopa-pn-cx-type";
+    public static final String PN_PAGOPA_UID = "uid";
 
     private final String CREATE_PATH = "/radd-bo/api/v2/registry/{partnerId}";
     private final String UPDATE_PATH = "/radd-bo/api/v2/registry/{partnerId}/{locationId}";
@@ -228,7 +228,7 @@ class RegistrySelfControllerTest {
                 .thenReturn(Mono.just(entity));
 
         webTestClient.delete()
-                     .uri("/radd-net/api/v2/registry/{partnerId}/{locationId}", partnerId, locationId)
+                     .uri(UPDATE_PATH, partnerId, locationId)
                      .header(PN_PAGOPA_CX_TYPE, "PA")
                      .header(PN_PAGOPA_CX_ID, "my-cx-id")
                      .header(PN_PAGOPA_UID, "my-uid")
@@ -245,7 +245,7 @@ class RegistrySelfControllerTest {
                 .thenReturn(Mono.empty());
 
         webTestClient.delete()
-                     .uri("/radd-net/api/v2/registry/{partnerId}/{locationId}", partnerId, locationId)
+                     .uri(UPDATE_PATH, partnerId, locationId)
                      .header(PN_PAGOPA_CX_TYPE, "PA")
                      .header(PN_PAGOPA_CX_ID, "my-cx-id")
                      .header(PN_PAGOPA_UID, "my-uid")
