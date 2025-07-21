@@ -1,6 +1,8 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
+import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.NormalizedAddressMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryPageMapper;
@@ -15,11 +17,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ContextConfiguration;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 
@@ -30,14 +38,19 @@ class RegistrySelfServiceTest {
 
     @Mock
     private RaddRegistryV2DAO raddRegistryDAO;
-
+    @Mock
+    private AwsGeoService awsGeoService;
     private RegistrySelfService registrySelfService;
+
+    private static final String PATTERN_FORMAT = "yyyy-MM-dd";
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(PATTERN_FORMAT).withZone(ZoneId.systemDefault());
 
     public static final String PN_PAGOPA_CX_ID = "x-pagopa-pn-cx-id";
     public static final String PN_PAGOPA_UID = "uid";
     public static final Integer LIMIT = 10;
     public static final String LAST_KEY = "lastKey";
     public static final String PARTNER_ID = "partnerId";
+    private final String LOCATION_ID = "locationId";
 
     private final String OPENING_TIME_Ok1 = """
                                               Lun-Ven 08:00-12:00, 14:00-18:00
@@ -56,9 +69,12 @@ class RegistrySelfServiceTest {
 
     @BeforeEach
     void setUp() {
+        RaddRegistryMapper raddRegistryMapper = new RaddRegistryMapper(new NormalizedAddressMapper());
         registrySelfService = new RegistrySelfService(
                 raddRegistryDAO,
-                new RaddRegistryPageMapper(new RaddRegistryMapper(new NormalizedAddressMapper()))
+                awsGeoService,
+                raddRegistryMapper,
+                new RaddRegistryPageMapper(raddRegistryMapper)
         );
     }
 
@@ -93,14 +109,14 @@ class RegistrySelfServiceTest {
     }
 
     @Test
-    void testRetrieveRegistry_success() {
+    void testRetrieveRegistries_success() {
 
         RaddRegistryPage page = raddRegistryPage();
 
         when(raddRegistryDAO.findPaginatedByPartnerId(PARTNER_ID, LIMIT, LAST_KEY))
                 .thenReturn(Mono.just(page));
 
-        Mono<GetRegistryResponseV2> result = registrySelfService.retrieveRegistry(PARTNER_ID, LIMIT, LAST_KEY);
+        Mono<GetRegistryResponseV2> result = registrySelfService.retrieveRegistries(PARTNER_ID, LIMIT, LAST_KEY);
 
         StepVerifier.create(result)
                     .assertNext(Assertions::assertNotNull)

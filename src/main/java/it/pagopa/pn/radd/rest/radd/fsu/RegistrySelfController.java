@@ -2,7 +2,6 @@ package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.RegistryApi;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.GetRegistryResponseV2;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
 import lombok.CustomLog;
@@ -39,8 +38,8 @@ public class RegistrySelfController implements RegistryApi {
     }
 
     @Override
-    public Mono<ResponseEntity<GetRegistryResponseV2>> retrieveRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String partnerId, Integer limit, String lastKey, ServerWebExchange exchange) {
-        return registrySelfService.retrieveRegistry(partnerId, limit, lastKey)
+    public Mono<ResponseEntity<GetRegistryResponseV2>> retrieveRegistries(String xPagopaPnCxId, String uid, String partnerId, Integer limit, String lastKey, ServerWebExchange exchange) {
+        return registrySelfService.retrieveRegistries(partnerId, limit, lastKey)
                 .map(getRegistryResponseV2 -> ResponseEntity.status(HttpStatus.OK).body(getRegistryResponseV2));
     }
 }

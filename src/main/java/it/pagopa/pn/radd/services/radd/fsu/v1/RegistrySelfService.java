@@ -18,8 +18,10 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+import static it.pagopa.pn.radd.utils.DateUtils.validateDateInterval;
 import static it.pagopa.pn.radd.utils.OpeningHoursParser.validateOpenHours;
 import static it.pagopa.pn.radd.utils.RaddRegistryUtils.buildRaddRegistryEntity;
+import static it.pagopa.pn.radd.utils.RaddRegistryUtils.mapFieldToUpdate;
 
 @Service
 @RequiredArgsConstructor
@@ -102,7 +104,7 @@ public class RegistrySelfService {
                                 .doOnError(err -> log.error("Error deleting registry for partnerId={}, locationId={}", partnerId, locationId, err));
     }
 
-    public Mono<GetRegistryResponseV2> retrieveRegistry(String partnerId, Integer limit, String lastKey) {
+    public Mono<GetRegistryResponseV2> retrieveRegistries(String partnerId, Integer limit, String lastKey) {
         log.info("start retrieveRegistry for partnerId: {}", partnerId);
         return raddRegistryDAO.findPaginatedByPartnerId(partnerId,limit, lastKey)
                 .map(raddRegistryPageMapper::toDto)

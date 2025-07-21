@@ -29,13 +29,13 @@ tags:
   - name: Registry
 
 paths:
-  /radd-net/api/v2/registry/{partnerId}:
+  /radd-bo/api/v2/registry/{partnerId}:
     get:
       tags:
         - Registry
       description: >-
         API utilizzata per il recupero di tutti i punti di ritiro di un partner, con paginazione lato DynamoDB.
-      operationId: retrieveRegistry
+      operationId: retrieveRegistries
       parameters:
 #        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL

@@ -48,7 +48,6 @@ class RegistrySelfControllerTest {
     public static final String PN_PAGOPA_UID = "uid";
     public static final String LAST_KEY = "lastKey";
 
-    private final String GET_PATH = "/radd-net/api/v2/registry/{partnerId}";
     private final String CREATE_PATH = "/radd-bo/api/v2/registry/{partnerId}";
     private final String UPDATE_PATH = "/radd-bo/api/v2/registry/{partnerId}/{locationId}";
 
@@ -276,9 +275,10 @@ class RegistrySelfControllerTest {
     @Test
     void retrieveRegistry_success() {
 
-        Mockito.when(registrySelfService.retrieveRegistry(eq(PARTNER_ID), any(), any()))
+        Mockito.when(registrySelfService.retrieveRegistries(eq(PARTNER_ID), any(), any()))
                 .thenReturn(Mono.just(getRegistryResponseV2()));
 
+        String GET_PATH = "/radd-bo/api/v2/registry/{partnerId}";
         webTestClient.get()
                 .uri(GET_PATH, PARTNER_ID)
                 .header("x-pagopa-pn-cx-type", "RADD")
