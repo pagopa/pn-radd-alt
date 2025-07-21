@@ -39,6 +39,21 @@ class RegistrySelfServiceTest {
     public static final String LAST_KEY = "lastKey";
     public static final String PARTNER_ID = "partnerId";
 
+    private final String OPENING_TIME_Ok1 = """
+                                              Lun-Ven 08:00-12:00, 14:00-18:00
+                                              Sab 09:00-12:00
+                                              Dom 10:00-11:00
+                                              """;
+
+    private final String OPENING_TIME_Ok2 = """
+            Lun 09:00-13:00, 14:00-18:00; mar 09:30-12:30; MER 09:00-18:00
+            """;
+
+    private final String OPENING_TIME_Ko = """
+            Lun-Ven 08:00-12:00
+            Dom off
+            """;
+
     @BeforeEach
     void setUp() {
         registrySelfService = new RegistrySelfService(
@@ -92,4 +107,101 @@ class RegistrySelfServiceTest {
                     .verifyComplete();
     }
 
+    private UpdateRegistryRequestV2 updateRegistryRequestV2() {
+        UpdateRegistryRequestV2 request = new UpdateRegistryRequestV2();
+
+        Instant now = Instant.now();
+        formatter.format(now);
+        request.setEndValidity(formatter.format(now.plus(1, ChronoUnit.DAYS)));
+        request.setDescription("description");
+        request.setPhoneNumbers(List.of("+390123456789"));
+        request.setExternalCodes(List.of("EXT0"));
+        request.setEmail("mail@esempio.it");
+        request.setOpeningTime(OPENING_TIME_Ok2);
+        request.setAppointmentRequired(true);
+        request.setWebsite("https://test.it");
+        return request;
+    }
+
+    @Test
+    void updateRegistry() {
+        UpdateRegistryRequestV2 request = updateRegistryRequestV2();
+
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        Instant now = Instant.now();
+        entity.setStartValidity(now.minus(1, ChronoUnit.DAYS));
+        entity.setPartnerId(PARTNER_ID);
+        entity.setLocationId(LOCATION_ID);
+
+        when(raddRegistryDAO.findByPartnerId(PARTNER_ID)).thenReturn(Flux.empty());
+        when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.just(entity));
+        when(raddRegistryDAO.updateRegistryEntity(entity)).thenReturn(Mono.just(entity));
+
+        StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, request))
+                .expectNextMatches(raddRegistryEntity -> entity.getDescription().equalsIgnoreCase(request.getDescription())
+                        && entity.getEmail().equalsIgnoreCase(request.getEmail()))
+                .verifyComplete();
+    }
+
+    @Test
+    void updateRegistry_NotFound() {
+        UpdateRegistryRequestV2 request = updateRegistryRequestV2();
+
+        when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.empty());
+
+        StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, new UpdateRegistryRequestV2()))
+                .verifyErrorMessage(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    void updateRegistry_DuplicatedExternalCode() {
+        UpdateRegistryRequestV2 request = updateRegistryRequestV2();
+
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setLocationId(UUID.randomUUID().toString());
+        entity.setExternalCodes(List.of("EXT1", "EXT2", "EXT3"));
+
+        when(raddRegistryDAO.findByPartnerId(PARTNER_ID)).thenReturn(Flux.just(entity));
+        when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.just(entity));
+
+        request.setExternalCodes(List.of("EXT1"));
+        StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, request))
+                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
+                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DUPLICATE_EXT_CODE)
+                .verify();
+    }
+
+    @Test
+    void shouldDeleteRegistrySuccessfully() {
+        // Given
+        String partnerId = "partnerTest";
+        String locationId = "locationTest";
+
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setPartnerId(partnerId);
+        entity.setLocationId(locationId);
+
+
+        when(raddRegistryDAO.delete(partnerId, locationId)).thenReturn(Mono.just(entity));
+
+        Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(partnerId, locationId);
+
+        StepVerifier.create(result)
+                .expectNextMatches(deleted -> deleted.getPartnerId().equals(partnerId) && deleted.getLocationId().equals(locationId))
+                .verifyComplete();
+    }
+
+
+    @Test
+    void shouldCompleteDeleteWhenRegistryNotFound() {
+        // Given
+        String partnerId = "partnerTest";
+        String locationId = "locationTest";
+
+        when(raddRegistryDAO.delete(partnerId, locationId)).thenReturn(Mono.empty());
+
+        Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(partnerId, locationId);
+
+        StepVerifier.create(result).verifyComplete();
+    }
 }

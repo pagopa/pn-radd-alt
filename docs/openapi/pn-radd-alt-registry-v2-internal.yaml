@@ -37,9 +37,9 @@ paths:
         API utilizzata per il recupero di tutti i punti di ritiro di un partner, con paginazione lato DynamoDB.
       operationId: retrieveRegistry
       parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/lastKey'
@@ -87,9 +87,9 @@ paths:
         API utilizzata per la richiesta di attivazione nuova anagrafica RADD
       operationId: addRegistry
       parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
       requestBody:
         content:
@@ -136,7 +136,7 @@ paths:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
 
 
-  /radd-net/api/v2/registry/{partnerId}/{locationId}:
+  /radd-bo/api/v2/registry/{partnerId}/{locationId}:
     patch:
       tags:
         - Registry
@@ -144,9 +144,9 @@ paths:
         API utilizzata per la modifica di un'anagrafica RADD
       operationId: updateRegistry
       parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       requestBody:
@@ -205,9 +205,9 @@ paths:
         API utilizzata per la cancellazione di un punto di ritiro di un partner
       operationId: deleteRegistry
       parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       responses:

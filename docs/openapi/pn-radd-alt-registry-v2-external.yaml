@@ -37,7 +37,6 @@ paths:
         API utilizzata per il recupero di tutti i punti di ritiro di un partner
       operationId: retrieveRegistry
       parameters:
-        - $ref: '#/components/parameters/uid'
         - $ref: '#/components/parameters/partnerId'
       responses:
         200:
@@ -83,7 +82,6 @@ paths:
         API utilizzata per la richiesta di attivazione nuova anagrafica RADD
       operationId: addRegistry
       parameters:
-        - $ref: '#/components/parameters/uid'
         - $ref: '#/components/parameters/partnerId'
       requestBody:
         content:
@@ -138,7 +136,6 @@ paths:
         API utilizzata per la modifica di un'anagrafica RADD
       operationId: updateRegistry
       parameters:
-        - $ref: '#/components/parameters/uid'
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       requestBody:
@@ -197,7 +194,6 @@ paths:
         API utilizzata per la cancellazione di un punto di ritiro di un partner
       operationId: deleteRegistry
       parameters:
-        - $ref: '#/components/parameters/uid'
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       responses:

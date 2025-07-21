@@ -20,10 +20,12 @@ import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.geoplaces.model.AddressComponentMatchScores;
+import software.amazon.awssdk.services.geoplaces.model.ComponentMatchScores;
 import software.amazon.awssdk.services.geoplaces.model.MatchScoreDetails;
 
 import java.math.BigDecimal;
@@ -32,11 +34,11 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.TO_PROCESS;
-import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
-import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
+import static it.pagopa.pn.radd.utils.DateUtils.*;
 
 @Component
 @RequiredArgsConstructor
@@ -107,7 +109,7 @@ public class RaddRegistryUtils {
         raddRegistryEntityV2.setOpeningTime(request.getOpeningTime());
         raddRegistryEntityV2.setExternalCodes(request.getExternalCodes());
         raddRegistryEntityV2.setStartValidity(request.getStartValidity() != null ? convertDateToInstantAtStartOfDay(request.getStartValidity()) : getStartOfDayToday());
-        raddRegistryEntityV2.setEndValidity(convertDateToInstantAtStartOfDay(request.getEndValidity()));
+        raddRegistryEntityV2.setEndValidity(request.getEndValidity() != null ? convertDateToInstantAtStartOfDay(request.getEndValidity()) : null);
         raddRegistryEntityV2.setEmail(request.getEmail());
         raddRegistryEntityV2.setAppointmentRequired(request.getAppointmentRequired());
         raddRegistryEntityV2.setWebsite(request.getWebsite());
@@ -148,14 +150,33 @@ public class RaddRegistryUtils {
 
     private static BiasPointEntity buildBiasPointEntity(MatchScoreDetails matchScoreDetails) {
         BiasPointEntity biasPoint = new BiasPointEntity();
-        AddressComponentMatchScores addressComponents = matchScoreDetails.components().address();
-        biasPoint.setOverall(BigDecimal.valueOf(matchScoreDetails.overall()));
-        biasPoint.setCountry(BigDecimal.valueOf(addressComponents.country()));
-        biasPoint.setAddressNumber(BigDecimal.valueOf(addressComponents.addressNumber()));
-        biasPoint.setLocality(BigDecimal.valueOf(addressComponents.locality()));
-        biasPoint.setPostalCode(BigDecimal.valueOf(addressComponents.postalCode()));
-        biasPoint.setSubRegion(BigDecimal.valueOf(addressComponents.subRegion()));
+
+        if (matchScoreDetails == null) {
+            return biasPoint;
+        }
+
+        setBigDecimalIfNotNull(biasPoint::setOverall, matchScoreDetails.overall());
+
+        AddressComponentMatchScores addressComponents =
+                Optional.ofNullable(matchScoreDetails.components())
+                        .map(ComponentMatchScores::address)
+                        .orElse(null);
+
+        if (addressComponents != null) {
+            setBigDecimalIfNotNull(biasPoint::setCountry, addressComponents.country());
+            setBigDecimalIfNotNull(biasPoint::setAddressNumber, addressComponents.addressNumber());
+            setBigDecimalIfNotNull(biasPoint::setLocality, addressComponents.locality());
+            setBigDecimalIfNotNull(biasPoint::setPostalCode, addressComponents.postalCode());
+            setBigDecimalIfNotNull(biasPoint::setSubRegion, addressComponents.subRegion());
+        }
+
         return biasPoint;
+    }
+
+    private static void setBigDecimalIfNotNull(Consumer<BigDecimal> setter, Double value) {
+        if (value != null) {
+            setter.accept(BigDecimal.valueOf(value));
+        }
     }
 
     private static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntity normalizedAddress) {
@@ -164,6 +185,43 @@ public class RaddRegistryUtils {
                 StringUtils.equals(address.getCity(), normalizedAddress.getCity()) &&
                 StringUtils.equals(address.getProvince(), normalizedAddress.getProvince()) &&
                 StringUtils.equals(address.getCountry(), normalizedAddress.getCountry());
+    }
+
+    public static RaddRegistryEntityV2 mapFieldToUpdate(RaddRegistryEntityV2 registryEntity, UpdateRegistryRequestV2 request) {
+        if (StringUtils.isNotBlank(request.getDescription())) {
+            registryEntity.setDescription(request.getDescription());
+        }
+        if (StringUtils.isNotBlank(request.getEmail())) {
+            registryEntity.setEmail(request.getEmail());
+        }
+
+        if (StringUtils.isNotBlank(request.getOpeningTime())) {
+            registryEntity.setOpeningTime(request.getOpeningTime());
+        }
+        if (!CollectionUtils.isEmpty(request.getExternalCodes())) {
+            registryEntity.setExternalCodes(request.getExternalCodes());
+        }
+        if (!CollectionUtils.isEmpty(request.getPhoneNumbers())) {
+            registryEntity.setPhoneNumbers(request.getPhoneNumbers());
+        }
+
+        if (StringUtils.isNotBlank(request.getWebsite())) {
+            registryEntity.setWebsite(request.getWebsite());
+        }
+        if (StringUtils.isNotBlank(request.getEmail())) {
+            registryEntity.setEmail(request.getEmail());
+        }
+
+        if (request.getAppointmentRequired() != null) {
+            registryEntity.setAppointmentRequired(request.getAppointmentRequired());
+        }
+
+        if (request.getEndValidity() != null) {
+            registryEntity.setEndValidity(validateEndDate(registryEntity.getStartValidity(), request.getEndValidity()));
+        }
+        registryEntity.setUpdateTimestamp(Instant.now());
+
+        return registryEntity;
     }
 
     private static RaddRegistryEntity getRaddRegistryEntity(String registryId, PnAddressManagerEvent.NormalizedAddress normalizedAddress, RaddRegistryRequestEntity registryRequest, RaddRegistryOriginalRequest raddRegistryOriginalRequest) {

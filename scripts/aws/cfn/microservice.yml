@@ -42,6 +42,10 @@ Parameters:
   VpcId:
     Type: String
     Description: 'VpcId where the microservice is going to be deployed'
+
+  VpcEgressSubnetsIds:
+    Type: String
+    Description: 'subnets where to install PN-CORE'
   
   EcsDefaultSecurityGroup:
     Type: String
@@ -510,9 +514,9 @@ Resources:
         ContainerEnvEntry48: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
         ContainerEnvEntry49: !Sub 'PN_RADD_MAX_PRINT_REQUESTS=${MaxPrintRequests}'
         ContainerEnvEntry50: !Sub 'AWS_GEO_REGIONCODE=${AwsGeoRegionCode}'
-        MappedPaths: '/radd-net/*,/radd-net-private/*,/radd-alt/*'
+        MappedPaths: '/radd-net/*,/radd-net-private/*,/radd-alt/*,/radd-bo/*'
         ECSClusterName: !Ref ECSClusterName
-        Subnets: !Ref SubnetsIds
+        Subnets: !Ref VpcEgressSubnetsIds
         VpcId: !Ref VpcId
         EcsDefaultSecurityGroup: !Ref EcsDefaultSecurityGroup
         LoadBalancerListenerArn: !Ref ApplicationLoadBalancerListenerArn
@@ -579,6 +583,12 @@ Resources:
               - events:PutEvents
             Resource:
               - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-CoreEventBus
+          - Effect: Allow
+            Action:
+              - geo-places:Geocode
+            Resource:
+              - !Sub arn:aws:geo-places:${AwsGeoRegionCode}::provider/default
+
 
   # Expose PN-Radd-Alt microservice public API with API-GW for RADD usage
   RaddAltMicroservicePublicAPI:
