@@ -109,7 +109,7 @@ public class RaddRegistryUtils {
         raddRegistryEntityV2.setOpeningTime(request.getOpeningTime());
         raddRegistryEntityV2.setExternalCodes(request.getExternalCodes());
         raddRegistryEntityV2.setStartValidity(request.getStartValidity() != null ? convertDateToInstantAtStartOfDay(request.getStartValidity()) : getStartOfDayToday());
-        raddRegistryEntityV2.setEndValidity(convertDateToInstantAtStartOfDay(request.getEndValidity()));
+        raddRegistryEntityV2.setEndValidity(request.getEndValidity() != null ? convertDateToInstantAtStartOfDay(request.getEndValidity()) : null);
         raddRegistryEntityV2.setEmail(request.getEmail());
         raddRegistryEntityV2.setAppointmentRequired(request.getAppointmentRequired());
         raddRegistryEntityV2.setWebsite(request.getWebsite());

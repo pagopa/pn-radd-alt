@@ -37,7 +37,7 @@ paths:
         API utilizzata per il recupero di tutti i punti di ritiro di un partner
       operationId: retrieveRegistry
       parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
@@ -85,7 +85,7 @@ paths:
         API utilizzata per la richiesta di attivazione nuova anagrafica RADD
       operationId: addRegistry
       parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
@@ -142,7 +142,7 @@ paths:
         API utilizzata per la modifica di un'anagrafica RADD
       operationId: updateRegistry
       parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
@@ -203,7 +203,7 @@ paths:
         API utilizzata per la cancellazione di un punto di ritiro di un partner
       operationId: deleteRegistry
       parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'

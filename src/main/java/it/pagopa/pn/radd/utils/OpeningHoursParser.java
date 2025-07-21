@@ -2,6 +2,7 @@ package it.pagopa.pn.radd.utils;
 
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 
 import java.util.HashSet;
@@ -19,6 +20,8 @@ public class OpeningHoursParser {
     private static final Pattern TIME_RANGE_PATTERN = Pattern.compile("(\\d{2}):(\\d{2})-(\\d{2}):(\\d{2})");
 
     public static void validateOpenHours(String input) {
+        if (StringUtils.isBlank(input))
+            throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Orari di apertura non forniti", HttpStatus.BAD_REQUEST);
 
         Set<String> usedDays = new HashSet<>();
         String[] lines = input.strip().split("[\\r?\\n;]+");
@@ -64,7 +67,6 @@ public class OpeningHoursParser {
                 }
             }
         }
-
     }
 
     private static boolean isValidTime(int hour, int minute) {

@@ -50,7 +50,9 @@ public class RegistrySelfService {
 
     private void checkCreateRegistryRequest(CreateRegistryRequestV2 request) {
         validateDateInterval(request.getStartValidity(), request.getEndValidity());
-        validateOpenHours(request.getOpeningTime());
+        if (request.getOpeningTime() != null) {
+            validateOpenHours(request.getOpeningTime());
+        }
     }
 
     public Mono<RegistryV2> updateRegistry(String partnerId, String locationId, UpdateRegistryRequestV2 request) {
