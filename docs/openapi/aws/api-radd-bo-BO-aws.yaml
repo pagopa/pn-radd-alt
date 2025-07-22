@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: 0R0aN7LkrhdQ3y8cGGep+FHNaIJ/jGEXjMs9xlYmycI=
+  version: ykO755j2BSTXfh3ujsvJBLVSB7p+xCvcLcwxJ2iPoI4=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -15,10 +15,14 @@ paths:
     get:
       tags:
         - Registry
-      description: API utilizzata per il recupero di tutti i punti di ritiro di un partner
-      operationId: retrieveRegistry
+      description: >-
+        API utilizzata per il recupero di tutti i punti di ritiro di un partner,
+        con paginazione lato DynamoDB.
+      operationId: retrieveRegistries
       parameters:
         - $ref: '#/components/parameters/partnerId'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/lastKey'
       responses:
         '200':
           description: OK
@@ -342,6 +346,22 @@ components:
       required: true
       schema:
         type: string
+    limit:
+      name: limit
+      description: Numero massimo di elementi da restituire per pagina
+      in: query
+      required: false
+      schema:
+        type: number
+    lastKey:
+      name: lastKey
+      description: >-
+        Chiave dell’ultimo elemento restituito per ottenere la pagina successiva
+        (ExclusiveStartKey DynamoDB)
+      in: query
+      required: false
+      schema:
+        type: string
     endDate:
       name: endDate
       description: Data fine validità sportello
@@ -362,18 +382,6 @@ components:
       description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
       in: header
       required: true
-      schema:
-        type: string
-    limit:
-      name: limit
-      in: query
-      schema:
-        type: number
-        default: 10
-    lastKey:
-      name: lastKey
-      in: query
-      required: false
       schema:
         type: string
     cap:
@@ -614,6 +622,9 @@ components:
           description: Lista dei punti di ritiro trovati
           items:
             $ref: '#/components/schemas/RegistryV2'
+        lastKey:
+          type: string
+          description: Chiave dell’ultimo elemento restituito (LastEvaluatedKey DynamoDB)
     CreateRegistryResponseV2:
       $ref: '#/components/schemas/RegistryV2'
     UpdateRegistryResponseV2:
