@@ -21,11 +21,14 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 @ContextConfiguration(classes = {RegistrySelfController.class, RestExceptionHandler.class})
 @ExtendWith(SpringExtension.class)
@@ -43,6 +46,7 @@ class RegistrySelfControllerTest {
     public static final String PN_PAGOPA_CX_ID = "x-pagopa-pn-cx-id";
     public static final String PN_PAGOPA_CX_TYPE = "x-pagopa-pn-cx-type";
     public static final String PN_PAGOPA_UID = "uid";
+    public static final String LAST_KEY = "lastKey";
 
     private final String CREATE_PATH = "/radd-bo/api/v2/registry/{partnerId}";
     private final String UPDATE_PATH = "/radd-bo/api/v2/registry/{partnerId}/{locationId}";
@@ -251,6 +255,39 @@ class RegistrySelfControllerTest {
                      .header(PN_PAGOPA_UID, "my-uid")
                      .exchange()
                      .expectStatus().isNoContent(); // 204
+    }
+
+    private GetRegistryResponseV2 getRegistryResponseV2() {
+
+        RegistryV2 registry = new RegistryV2();
+        registry.setPartnerId(PARTNER_ID);
+
+        List<RegistryV2> listRegistry = new ArrayList<>();
+        listRegistry.add(registry);
+
+        GetRegistryResponseV2 res = new GetRegistryResponseV2();
+        res.setItems(listRegistry);
+        res.setLastKey(LAST_KEY);
+
+        return res;
+    }
+
+    @Test
+    void retrieveRegistry_success() {
+
+        Mockito.when(registrySelfService.retrieveRegistries(eq(PARTNER_ID), any(), any()))
+                .thenReturn(Mono.just(getRegistryResponseV2()));
+
+        String GET_PATH = "/radd-bo/api/v2/registry/{partnerId}";
+        webTestClient.get()
+                .uri(GET_PATH, PARTNER_ID)
+                .header("x-pagopa-pn-cx-type", "RADD")
+                .header("x-pagopa-pn-cx-id", "test-cx-id")
+                .header("uid", "test-uid")
+                .exchange()
+                .expectStatus()
+                .isOk();
+
     }
 
 }

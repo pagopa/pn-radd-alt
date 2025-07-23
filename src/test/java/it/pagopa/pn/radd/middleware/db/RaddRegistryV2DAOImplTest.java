@@ -6,6 +6,7 @@ import it.pagopa.pn.radd.middleware.db.entities.BiasPointEntity;
 import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import lombok.CustomLog;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -153,6 +154,55 @@ public class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
                     assertThat(list).hasSizeGreaterThanOrEqualTo(2);
                     assertThat(list).extracting(RaddRegistryEntityV2::getPartnerId)
                             .allMatch(pid -> pid.equals(entity1.getPartnerId()));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFindEntitiesPaginatedByPartnerId() {
+        // given
+        RaddRegistryEntityV2 entity1 = buildEntity();
+        RaddRegistryEntityV2 entity2 = buildEntity();
+        entity2.setPartnerId(entity1.getPartnerId());
+
+        StepVerifier.create(
+                raddRegistryDAO.putItemIfAbsent(entity1)
+                        .then(raddRegistryDAO.putItemIfAbsent(entity2))
+                        .then()
+        ).verifyComplete();
+
+        var readPaginatedItems = raddRegistryDAO.findPaginatedByPartnerId(entity1.getPartnerId(), 1, null)
+                .flatMap(page -> raddRegistryDAO.findPaginatedByPartnerId(entity1.getPartnerId(), 1, page.getLastKey()))
+                .flatMap(page -> raddRegistryDAO.findPaginatedByPartnerId(entity1.getPartnerId(), 1, page.getLastKey()));
+
+        // when + then
+        StepVerifier.create(readPaginatedItems)
+                .assertNext(page -> Assertions.assertNull(page.getLastKey()))
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFindAllEntitiesPaginatedByPartnerId() {
+        // given
+        RaddRegistryEntityV2 entity1 = buildEntity();
+        RaddRegistryEntityV2 entity2 = buildEntity();
+        entity2.setPartnerId(entity1.getPartnerId());
+
+        StepVerifier.create(
+                raddRegistryDAO.putItemIfAbsent(entity1)
+                        .then(raddRegistryDAO.putItemIfAbsent(entity2))
+                        .then()
+        ).verifyComplete();
+
+        var readPaginatedItems = raddRegistryDAO.findPaginatedByPartnerId(entity1.getPartnerId(), null, null);
+
+        // when + then
+        StepVerifier.create(readPaginatedItems)
+                .assertNext(page -> {
+                    log.info("Page: {}", page);
+                    Assertions.assertNotNull(page.getItems());
+                    Assertions.assertEquals(2, page.getItems().size());
+                    Assertions.assertNull(page.getLastKey());
                 })
                 .verifyComplete();
     }

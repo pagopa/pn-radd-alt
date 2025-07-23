@@ -1,9 +1,8 @@
 package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.RegistryApi;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryRequestV2;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistryV2;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateRegistryRequestV2;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.GetRegistryResponseV2;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
@@ -36,5 +35,11 @@ public class RegistrySelfController implements RegistryApi {
     public Mono<ResponseEntity<Void>> deleteRegistry(String xPagopaPnCxId, String uid, String partnerId, String locationId, ServerWebExchange exchange) {
         return registrySelfService.deleteRegistry(partnerId, locationId)
                 .thenReturn(ResponseEntity.noContent().build());
+    }
+
+    @Override
+    public Mono<ResponseEntity<GetRegistryResponseV2>> retrieveRegistries(String xPagopaPnCxId, String uid, String partnerId, Integer limit, String lastKey, ServerWebExchange exchange) {
+        return registrySelfService.retrieveRegistries(partnerId, limit, lastKey)
+                .map(getRegistryResponseV2 -> ResponseEntity.status(HttpStatus.OK).body(getRegistryResponseV2));
     }
 }
