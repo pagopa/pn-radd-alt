@@ -52,38 +52,11 @@ components:
         registries:
           type: array
           items:
-            $ref: '#/components/schemas/StoreRegistry'
+            $ref: '#/components/schemas/RegistryV2'
         lastKey:
           type: string
           description: Chiave per la paginazione
-    StoreRegistry:
-      type: object
-      required:
-        - address
-      properties:
-        description:
-          type: string
-          description: Descrizione dello sportello.
-          example: Sportello ABC.
-        address:
-          $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/Address'
-        phoneNumber:
-          type: string
-          description: Numero di telefono dello sportello.
-          example: "+39 0123456789"
-        geoLocation:
-          $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/GeoLocation'
-        openingTime:
-          type: string
-          description: Orario di apertura dello sportello.
-          example: "mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#"
-        externalCode:
-          type: string
-          description: Identificativo punto ritiro SEND
-          example: "123456"
-        capacity:
-          description: Numero massimo di pratiche mensili che il punto di Ritiro SEND può gestire.
-          example: 100
+
   parameters:
     limit:
       name: limit
