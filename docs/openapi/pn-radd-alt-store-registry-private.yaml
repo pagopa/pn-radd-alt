@@ -52,10 +52,20 @@ components:
         registries:
           type: array
           items:
-            $ref: '#/components/schemas/RegistryV2'
+            $ref: '#/components/schemas/StoreRegistry'
         lastKey:
           type: string
           description: Chiave per la paginazione
+    StoreRegistry:
+      allOf:
+        - $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/RegistryV2'
+        - type: object
+          properties:
+            openingTime:
+              type: object
+              additionalProperties:
+                type: string
+              description: "Mappa degli orari di apertura per ciascun giorno (chiave: giorno, valore: orari)"
 
   parameters:
     limit:

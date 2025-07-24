@@ -3,7 +3,7 @@ package it.pagopa.pn.radd.services.radd.fsu.v1;
 import io.micrometer.core.instrument.util.StringUtils;
 import it.pagopa.pn.radd.mapper.NormalizedAddressMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
-import it.pagopa.pn.radd.mapper.StoreRegistriesMapper;
+import it.pagopa.pn.radd.mapper.StoreRegistryMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
@@ -37,7 +37,8 @@ public class StoreRegistryServiceTest {
 
     @BeforeEach
     void setUp() {
-        storeRegistryService = new StoreRegistryService(raddRegistryDAO, new StoreRegistriesMapper(new RaddRegistryMapper(new NormalizedAddressMapper())));
+        NormalizedAddressMapper normalizedAddressMapper = new NormalizedAddressMapper();
+        storeRegistryService = new StoreRegistryService(raddRegistryDAO, new StoreRegistryMapper(new RaddRegistryMapper(normalizedAddressMapper), normalizedAddressMapper));
     }
 
 
