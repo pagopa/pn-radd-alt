@@ -2,14 +2,14 @@ package it.pagopa.pn.radd.utils;
 
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.pojo.OpeningHourEntry;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class OpeningHoursParser {
 
@@ -20,30 +20,15 @@ public class OpeningHoursParser {
     private static final Pattern TIME_RANGE_PATTERN = Pattern.compile("(\\d{2}):(\\d{2})-(\\d{2}):(\\d{2})");
 
     public static void validateOpenHours(String input) {
-        if (StringUtils.isBlank(input))
-            throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Orari di apertura non forniti", HttpStatus.BAD_REQUEST);
-
         Set<String> usedDays = new HashSet<>();
-        String[] lines = input.strip().split("[\\r?\\n;]+");
+        List<OpeningHourEntry> entries = parseEntries(input, true);
 
-        for (String rawLine : lines) {
-            String line = rawLine.trim();
-            if (line.isEmpty()) continue;
+        for (OpeningHourEntry entry : entries) {
+            String day = entry.day();
+            String times = entry.timeRanges();
 
-            Matcher matcher = LINE_PATTERN.matcher(line);
-            if (!matcher.matches()) {
-                throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Formato Opening Hours non valido", HttpStatus.BAD_REQUEST);
-            }
-
-            String startDay = matcher.group(1).toLowerCase();
-            String endDay = matcher.group(2) != null ? matcher.group(2).toLowerCase() : null;
-            String times = matcher.group(3);
-
-            List<String> daysInRange = expandDays(startDay, endDay);
-            for (String day : daysInRange) {
-                if (!usedDays.add(day)) {
-                    throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Giorno duplicato: " + day, HttpStatus.BAD_REQUEST);
-                }
+            if (!usedDays.add(day)) {
+                throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Giorno duplicato: " + day, HttpStatus.BAD_REQUEST);
             }
 
             String[] timeRanges = times.split("\\s*,\\s*");
@@ -67,6 +52,124 @@ public class OpeningHoursParser {
                 }
             }
         }
+    }
+
+    public static Map<String, String> parseOpeningHours(String input) {
+        Map<String, String> result = new LinkedHashMap<>();
+        List<OpeningHourEntry> entries = parseEntries(input, false);
+
+        for (OpeningHourEntry entry : entries) {
+            result.merge(entry.day(), entry.timeRanges(), (oldVal, newVal) -> oldVal + "," + newVal);
+        }
+
+        return result;
+    }
+
+    public static String serializeOpeningHours(Map<String, String> openingTime) {
+        if (openingTime == null || openingTime.isEmpty()) return "";
+
+        // Normalizza chiavi in lowercase
+        Map<String, String> normalized = openingTime.entrySet().stream()
+                .collect(Collectors.toMap(
+                        e -> e.getKey().toLowerCase(),
+                        Map.Entry::getValue,
+                        (v1, v2) -> v1, // in caso di duplicati tiene il primo
+                        LinkedHashMap::new
+                ));
+
+        // Mappa: orari => lista di giorni
+        Map<String, List<String>> timesToDays = new LinkedHashMap<>();
+
+        for (String day : VALID_DAYS_ORDERED) {
+            String times = normalized.get(day);
+            if (times != null) {
+                timesToDays.computeIfAbsent(times, k -> new ArrayList<>()).add(day);
+            }
+        }
+
+        // Ricostruzione finale
+        List<String> resultLines = new ArrayList<>();
+        for (Map.Entry<String, List<String>> entry : timesToDays.entrySet()) {
+            List<String> days = entry.getValue();
+            String time = entry.getKey();
+
+            // Raggruppa giorni consecutivi
+            List<String> groupedDays = groupConsecutiveDays(days);
+
+            for (String dayGroup : groupedDays) {
+                resultLines.add(dayGroup + " " + time);
+            }
+        }
+
+        return String.join("; ", resultLines);
+    }
+
+    private static List<String> groupConsecutiveDays(List<String> days) {
+        List<String> result = new ArrayList<>();
+        if (days.isEmpty()) return result;
+
+        List<Integer> indexes = days.stream()
+                .map(VALID_DAYS_ORDERED::indexOf)
+                .sorted()
+                .toList();
+
+        int start = indexes.get(0);
+        int prev = start;
+
+        for (int i = 1; i < indexes.size(); i++) {
+            int current = indexes.get(i);
+            if (current == prev + 1) {
+                prev = current;
+            } else {
+                result.add(formatDayRange(start, prev));
+                start = current;
+                prev = current;
+            }
+        }
+        result.add(formatDayRange(start, prev));
+
+        return result;
+    }
+
+    private static String formatDayRange(int start, int end) {
+        return start == end ? VALID_DAYS_ORDERED.get(start) : VALID_DAYS_ORDERED.get(start) + "-" + VALID_DAYS_ORDERED.get(end);
+    }
+
+
+    private static List<OpeningHourEntry> parseEntries(String input, boolean validateFormat) {
+        if (StringUtils.isBlank(input)) {
+            if (validateFormat) {
+                throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Orari di apertura non forniti", HttpStatus.BAD_REQUEST);
+            }
+            return Collections.emptyList();
+        }
+
+        List<OpeningHourEntry> entries = new ArrayList<>();
+        String[] lines = input.strip().split("[\\r?\\n;]+");
+
+        for (String rawLine : lines) {
+            String line = rawLine.trim();
+            if (line.isEmpty()) continue;
+
+            Matcher matcher = LINE_PATTERN.matcher(line);
+            if (!matcher.matches()) {
+                if (validateFormat) {
+                    throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Formato Opening Hours non valido", HttpStatus.BAD_REQUEST);
+                }
+                continue; // parse-only mode: ignora righe non valide
+            }
+
+            String startDay = matcher.group(1).toLowerCase();
+            String endDay = matcher.group(2) != null ? matcher.group(2).toLowerCase() : null;
+            String times = matcher.group(3);
+
+            List<String> daysInRange = expandDays(startDay, endDay);
+            for (String day : daysInRange) {
+                entries.add(new OpeningHourEntry(day, times));
+            }
+        }
+
+        return entries;
     }
 
     private static boolean isValidTime(int hour, int minute) {
