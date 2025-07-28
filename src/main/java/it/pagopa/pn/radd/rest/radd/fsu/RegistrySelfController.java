@@ -12,6 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.UUID;
+
+import static it.pagopa.pn.radd.utils.Utils.generateUUIDFromString;
+
 @RestController
 @RequiredArgsConstructor
 @CustomLog
@@ -21,7 +27,10 @@ public class RegistrySelfController implements RegistryApi {
 
     @Override
     public Mono<ResponseEntity<RegistryV2>> addRegistry(String xPagopaPnCxId, String uid, String partnerId, Mono<CreateRegistryRequestV2> createRegistryRequestV2, ServerWebExchange exchange) {
-        return createRegistryRequestV2.flatMap(request -> registrySelfService.addRegistry(partnerId, request.getLocationId(), uid, request))
+        return createRegistryRequestV2.flatMap(request -> registrySelfService.addRegistry(partnerId,
+                        generateUUIDFromString(request.toString() + partnerId),
+                        uid,
+                        request))
                 .map(createRegistryResponse -> ResponseEntity.status(HttpStatus.OK).body(createRegistryResponse));
     }
 
@@ -42,4 +51,5 @@ public class RegistrySelfController implements RegistryApi {
         return registrySelfService.retrieveRegistries(partnerId, limit, lastKey)
                 .map(getRegistryResponseV2 -> ResponseEntity.status(HttpStatus.OK).body(getRegistryResponseV2));
     }
+
 }

@@ -180,11 +180,20 @@ public class RaddRegistryUtils {
     }
 
     private static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntity normalizedAddress) {
-        return StringUtils.equals(address.getAddressRow(), normalizedAddress.getAddressRow()) &&
+        return isAddressRowEquivalent(address.getAddressRow(), normalizedAddress.getAddressRow()) &&
                 StringUtils.equals(address.getCap(), normalizedAddress.getCap()) &&
                 StringUtils.equals(address.getCity(), normalizedAddress.getCity()) &&
                 StringUtils.equals(address.getProvince(), normalizedAddress.getProvince()) &&
                 StringUtils.equals(address.getCountry(), normalizedAddress.getCountry());
+    }
+
+    private static boolean isAddressRowEquivalent(String addressRow, String normalizedAddressRow) {
+        String[] parts = normalizedAddressRow.split(",");
+        String addressAndNumber = normalizedAddressRow.trim();
+        if (parts.length >= 2) {
+            addressAndNumber = parts[0].trim() + " " + parts[1].trim();
+        }
+        return StringUtils.equals(addressRow, addressAndNumber);
     }
 
     public static RaddRegistryEntityV2 mapFieldToUpdate(RaddRegistryEntityV2 registryEntity, UpdateRegistryRequestV2 request) {

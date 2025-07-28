@@ -29,15 +29,17 @@ tags:
   - name: Registry
 
 paths:
-  /radd-bo/api/v2/registry/{partnerId}:
+  /radd-bo/api/v2/registry:
     get:
       tags:
         - Registry
       description: >-
         API utilizzata per il recupero di tutti i punti di ritiro di un partner, con paginazione lato DynamoDB.
       operationId: retrieveRegistries
+      x-api-permissions:
+        - 'radd-registry-read'
       parameters:
-#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'      # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
         - $ref: '#/components/parameters/partnerId'
@@ -86,6 +88,8 @@ paths:
       description: >-
         API utilizzata per la richiesta di attivazione nuova anagrafica RADD
       operationId: addRegistry
+      x-api-permissions:
+        - 'radd-registry-write'
       parameters:
 #        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
@@ -136,13 +140,15 @@ paths:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
 
 
-  /radd-bo/api/v2/registry/{partnerId}/{locationId}:
+  /radd-bo/api/v2/registry/{locationId}:
     patch:
       tags:
         - Registry
       description: >-
         API utilizzata per la modifica di un'anagrafica RADD
       operationId: updateRegistry
+      x-api-permissions:
+        - 'radd-registry-write'
       parameters:
 #        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
@@ -204,6 +210,8 @@ paths:
       description: >-
         API utilizzata per la cancellazione di un punto di ritiro di un partner
       operationId: deleteRegistry
+      x-api-permissions:
+        - 'radd-registry-write'
       parameters:
 #        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
@@ -250,21 +258,12 @@ components:
       type: object
       required:
         - address
-        - partnerId
-        - locationId
         - description
         - phoneNumbers
         - externalCodes
       properties:
         address:
           $ref: '#/components/schemas/AddressV2'
-        partnerId:
-          type: string
-          description: C.F. del partner erogatore
-          pattern: ^([0-9]{11})$
-        locationId:
-          type: string
-          description: Identificativo univoco della sede del punto di ritiro.
         description:
           type: string
           description: Descrizione del punto di ritiro.
@@ -552,7 +551,7 @@ components:
     partnerId:
       name: partnerId
       description: C.F. del partner erogatore
-      in: path
+      in: header
       required: true
       schema:
         type: string

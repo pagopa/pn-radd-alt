@@ -48,8 +48,8 @@ class RegistrySelfControllerTest {
     public static final String PN_PAGOPA_UID = "uid";
     public static final String LAST_KEY = "lastKey";
 
-    private final String CREATE_PATH = "/radd-bo/api/v2/registry/{partnerId}";
-    private final String UPDATE_PATH = "/radd-bo/api/v2/registry/{partnerId}/{locationId}";
+    private final String CREATE_PATH = "/radd-bo/api/v2/registry";
+    private final String UPDATE_PATH = "/radd-bo/api/v2/registry/{locationId}";
 
     private static final String PATTERN_FORMAT = "yyyy-MM-dd";
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(PATTERN_FORMAT).withZone(ZoneId.systemDefault());
@@ -64,8 +64,6 @@ class RegistrySelfControllerTest {
 
         CreateRegistryRequestV2 req = new CreateRegistryRequestV2();
         req.setAddress(address);
-        req.setPartnerId(PARTNER_ID);
-        req.setLocationId("loc-1");
         req.setDescription("Sportello Test");
         req.setPhoneNumbers(List.of("+390123456789"));
         req.setExternalCodes(List.of("EXT1"));
@@ -99,13 +97,13 @@ class RegistrySelfControllerTest {
         CreateRegistryRequestV2 request = buildValidCreateRequest();
         RegistryV2 response = new RegistryV2();
         response.setPartnerId(PARTNER_ID);
-        response.setLocationId(request.getLocationId());
 
-        Mockito.when(registrySelfService.addRegistry(eq(PARTNER_ID), eq(request.getLocationId()), anyString(), any()))
+        Mockito.when(registrySelfService.addRegistry(eq(PARTNER_ID), anyString(), anyString(), any()))
                 .thenReturn(Mono.just(response));
 
         webTestClient.post()
-                .uri(CREATE_PATH, PARTNER_ID)
+                .uri(CREATE_PATH)
+                .header("partnerId", PARTNER_ID)
                 .header("x-pagopa-pn-cx-type", "RADD")
                 .header("x-pagopa-pn-cx-id", "test-cx-id")
                 .header("uid", "test-uid")
@@ -114,8 +112,7 @@ class RegistrySelfControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.partnerId").isEqualTo(PARTNER_ID)
-                .jsonPath("$.locationId").isEqualTo(request.getLocationId());
+                .jsonPath("$.partnerId").isEqualTo(PARTNER_ID);
     }
 
     @Test
@@ -124,7 +121,8 @@ class RegistrySelfControllerTest {
         request.setAddress(null);
 
         webTestClient.post()
-                .uri(CREATE_PATH, PARTNER_ID)
+                .uri(CREATE_PATH)
+                .header("partnerId", PARTNER_ID)
                 .header("x-pagopa-pn-cx-type", "RADD")
                 .header("x-pagopa-pn-cx-id", "test-cx-id")
                 .header("uid", "test-uid")
@@ -141,7 +139,8 @@ class RegistrySelfControllerTest {
         request.setEmail("not-an-email");
 
         webTestClient.post()
-                .uri(CREATE_PATH, PARTNER_ID)
+                .uri(CREATE_PATH)
+                .header("partnerId", PARTNER_ID)
                 .header("x-pagopa-pn-cx-type", "RADD")
                 .header("x-pagopa-pn-cx-id", "test-cx-id")
                 .header("uid", "test-uid")
@@ -157,13 +156,13 @@ class RegistrySelfControllerTest {
         CreateRegistryRequestV2 request = buildValidCreateRequest();
         RegistryV2 response = new RegistryV2();
         response.setPartnerId(PARTNER_ID);
-        response.setLocationId(request.getLocationId());
 
-        Mockito.when(registrySelfService.addRegistry(eq(PARTNER_ID), eq(request.getLocationId()), anyString(), any()))
+        Mockito.when(registrySelfService.addRegistry(eq(PARTNER_ID), anyString(), anyString(), any()))
                 .thenReturn(Mono.error(new CoordinatesNotFoundException("Coordinates not found")));
 
         webTestClient.post()
-                .uri(CREATE_PATH, PARTNER_ID)
+                .uri(CREATE_PATH)
+                .header("partnerId", PARTNER_ID)
                 .header("x-pagopa-pn-cx-type", "RADD")
                 .header("x-pagopa-pn-cx-id", "test-cx-id")
                 .header("uid", "test-uid")
@@ -186,7 +185,8 @@ class RegistrySelfControllerTest {
                 .thenReturn(Mono.just(response));
 
         webTestClient.patch()
-                .uri(UPDATE_PATH, PARTNER_ID,LOCATION_ID)
+                .uri(UPDATE_PATH, LOCATION_ID)
+                .header("partnerId", PARTNER_ID)
                 .header("x-pagopa-pn-cx-type", "RADD")
                 .header("x-pagopa-pn-cx-id", "test-cx-id")
                 .header("uid", "test-uid")
@@ -206,7 +206,8 @@ class RegistrySelfControllerTest {
         request.setWebsite("not-a-website");
 
         webTestClient.patch()
-                .uri(UPDATE_PATH, PARTNER_ID, LOCATION_ID)
+                .uri(UPDATE_PATH, LOCATION_ID)
+                .header("partnerId", PARTNER_ID)
                 .header("x-pagopa-pn-cx-type", "RADD")
                 .header("x-pagopa-pn-cx-id", "test-cx-id")
                 .header("uid", "test-uid")
@@ -232,7 +233,8 @@ class RegistrySelfControllerTest {
                 .thenReturn(Mono.just(entity));
 
         webTestClient.delete()
-                     .uri(UPDATE_PATH, partnerId, locationId)
+                     .uri(UPDATE_PATH, locationId)
+                     .header("partnerId", partnerId)
                      .header(PN_PAGOPA_CX_TYPE, "PA")
                      .header(PN_PAGOPA_CX_ID, "my-cx-id")
                      .header(PN_PAGOPA_UID, "my-uid")
@@ -249,7 +251,8 @@ class RegistrySelfControllerTest {
                 .thenReturn(Mono.empty());
 
         webTestClient.delete()
-                     .uri(UPDATE_PATH, partnerId, locationId)
+                     .uri(UPDATE_PATH, locationId)
+                     .header("partnerId", partnerId)
                      .header(PN_PAGOPA_CX_TYPE, "PA")
                      .header(PN_PAGOPA_CX_ID, "my-cx-id")
                      .header(PN_PAGOPA_UID, "my-uid")
@@ -278,9 +281,10 @@ class RegistrySelfControllerTest {
         Mockito.when(registrySelfService.retrieveRegistries(eq(PARTNER_ID), any(), any()))
                 .thenReturn(Mono.just(getRegistryResponseV2()));
 
-        String GET_PATH = "/radd-bo/api/v2/registry/{partnerId}";
+        String GET_PATH = "/radd-bo/api/v2/registry";
         webTestClient.get()
-                .uri(GET_PATH, PARTNER_ID)
+                .uri(GET_PATH)
+                .header("partnerId", PARTNER_ID)
                 .header("x-pagopa-pn-cx-type", "RADD")
                 .header("x-pagopa-pn-cx-id", "test-cx-id")
                 .header("uid", "test-uid")
