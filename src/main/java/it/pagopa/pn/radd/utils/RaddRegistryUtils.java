@@ -572,38 +572,4 @@ public class RaddRegistryUtils {
         return address;
     }
 
-    public StoreRegistriesResponse mapToStoreRegistriesResponse(Page<RaddRegistryEntity> registries) {
-        StoreRegistriesResponse storeRegistriesResponse = new StoreRegistriesResponse();
-        storeRegistriesResponse.setRegistries(mapRegistryEntityToRegistryStore(registries.items()));
-        if (registries.lastEvaluatedKey() != null) {
-            storeRegistriesResponse.setLastKey(STORE_REGISTRY_LAST_EVALUATED_KEY.apply(registries.lastEvaluatedKey()).serializeInternalLastEvaluatedKey());
-        }
-        log.info("StoreRegistriesResponse created with {} registries", storeRegistriesResponse.getRegistries().size());
-        return storeRegistriesResponse;
-    }
-
-    public List<StoreRegistry> mapRegistryEntityToRegistryStore(List<RaddRegistryEntity> raddRegistryEntities) {
-        return raddRegistryEntities.stream()
-                .map(raddRegistryEntity ->
-                {
-                    StoreRegistry registryStore = new StoreRegistry();
-                    registryStore.setAddress(mapNormalizedAddressToAddress(raddRegistryEntity.getNormalizedAddress()));
-                    registryStore.setDescription(raddRegistryEntity.getDescription());
-                    registryStore.setPhoneNumber(raddRegistryEntity.getPhoneNumber());
-                    try {
-                        if (StringUtils.isNotBlank(raddRegistryEntity.getGeoLocation())) {
-                            GeoLocation geoLocation = objectMapperUtil.toObject(raddRegistryEntity.getGeoLocation(), GeoLocation.class);
-                            geoLocation.setLatitude(geoLocation.getLatitude());
-                            geoLocation.setLongitude(geoLocation.getLongitude());
-                            registryStore.setGeoLocation(geoLocation);
-                        }
-                    } catch (PnInternalException e) {
-                        log.debug("Registry with cxId = {} and registryId = {} has not valid geoLocation", raddRegistryEntity.getCxId(), raddRegistryEntity.getRegistryId(), e);
-                    }
-                    registryStore.setOpeningTime(raddRegistryEntity.getOpeningTime());
-                    registryStore.setExternalCode(raddRegistryEntity.getExternalCode());
-                    registryStore.setCapacity(raddRegistryEntity.getCapacity());
-                    return registryStore;
-                }).toList();
-    }
 }
