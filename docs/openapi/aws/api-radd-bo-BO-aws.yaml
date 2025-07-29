@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: ykO755j2BSTXfh3ujsvJBLVSB7p+xCvcLcwxJ2iPoI4=
+  version: vG/egymjSmCwv9yn68Ml4HLmi4LPmc29uLunbo2RDkA=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -11,7 +11,7 @@ servers:
     x-amazon-apigateway-endpoint-configuration:
       disableExecuteApiEndpoint: true
 paths:
-  /api/v2/registry/{partnerId}:
+  /api/v2/registry:
     get:
       tags:
         - Registry
@@ -19,6 +19,8 @@ paths:
         API utilizzata per il recupero di tutti i punti di ritiro di un partner,
         con paginazione lato DynamoDB.
       operationId: retrieveRegistries
+      x-api-permissions:
+        - radd-registry-read
       parameters:
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/limit'
@@ -60,11 +62,9 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-      security:
-        - pn-auth-fleet_backofficeAuthorizer: []
       x-amazon-apigateway-integration:
         uri: >-
-          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry/{partnerId}
+          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry
         connectionId: ${stageVariables.NetworkLoadBalancerLink}
         httpMethod: ANY
         requestParameters:
@@ -75,8 +75,7 @@ paths:
           integration.request.header.x-pagopa-pn-cx-type: context.authorizer.cx_type
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
-          integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
-          integration.request.path.partnerId: method.request.path.partnerId
+          integration.request.header.x-pagopa-pn-src-ch: context.authorizer.sourceChannel
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
         timeoutInMillis: 29000
@@ -86,6 +85,8 @@ paths:
         - Registry
       description: API utilizzata per la richiesta di attivazione nuova anagrafica RADD
       operationId: addRegistry
+      x-api-permissions:
+        - radd-registry-write
       parameters:
         - $ref: '#/components/parameters/partnerId'
       requestBody:
@@ -100,7 +101,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateRegistryResponseV2'
+                $ref: '#/components/schemas/RegistryV2'
         '400':
           description: Bad Request
           content:
@@ -125,17 +126,21 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '409':
+          description: Conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '500':
           description: Internal error
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-      security:
-        - pn-auth-fleet_backofficeAuthorizer: []
       x-amazon-apigateway-integration:
         uri: >-
-          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry/{partnerId}
+          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry
         connectionId: ${stageVariables.NetworkLoadBalancerLink}
         httpMethod: ANY
         requestParameters:
@@ -146,31 +151,31 @@ paths:
           integration.request.header.x-pagopa-pn-cx-type: context.authorizer.cx_type
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
-          integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
-          integration.request.path.partnerId: method.request.path.partnerId
+          integration.request.header.x-pagopa-pn-src-ch: context.authorizer.sourceChannel
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
         timeoutInMillis: 29000
         type: http_proxy
     options:
-      operationId: Options for /api/v2/registry/{partnerId} API CORS
+      operationId: Options for /api/v2/registry API CORS
       x-amazon-apigateway-integration:
         uri: >-
-          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry/{partnerId}
+          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry
         connectionId: ${stageVariables.NetworkLoadBalancerLink}
         httpMethod: ANY
-        requestParameters:
-          integration.request.path.partnerId: method.request.path.partnerId
+        requestParameters: {}
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
         timeoutInMillis: 29000
         type: http_proxy
-  /api/v2/registry/{partnerId}/{locationId}:
+  /api/v2/registry/{locationId}:
     patch:
       tags:
         - Registry
       description: API utilizzata per la modifica di un'anagrafica RADD
       operationId: updateRegistry
+      x-api-permissions:
+        - radd-registry-write
       parameters:
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
@@ -186,7 +191,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UpdateRegistryResponseV2'
+                $ref: '#/components/schemas/RegistryV2'
         '400':
           description: Bad Request
           content:
@@ -217,17 +222,21 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '409':
+          description: Conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '500':
           description: Internal error
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-      security:
-        - pn-auth-fleet_backofficeAuthorizer: []
       x-amazon-apigateway-integration:
         uri: >-
-          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry/{partnerId}/{locationId}
+          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry/{locationId}
         connectionId: ${stageVariables.NetworkLoadBalancerLink}
         httpMethod: ANY
         requestParameters:
@@ -238,8 +247,7 @@ paths:
           integration.request.header.x-pagopa-pn-cx-type: context.authorizer.cx_type
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
-          integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
-          integration.request.path.partnerId: method.request.path.partnerId
+          integration.request.header.x-pagopa-pn-src-ch: context.authorizer.sourceChannel
           integration.request.path.locationId: method.request.path.locationId
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
@@ -250,6 +258,8 @@ paths:
         - Registry
       description: API utilizzata per la cancellazione di un punto di ritiro di un partner
       operationId: deleteRegistry
+      x-api-permissions:
+        - radd-registry-write
       parameters:
         - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
@@ -286,11 +296,9 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-      security:
-        - pn-auth-fleet_backofficeAuthorizer: []
       x-amazon-apigateway-integration:
         uri: >-
-          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry/{partnerId}/{locationId}
+          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry/{locationId}
         connectionId: ${stageVariables.NetworkLoadBalancerLink}
         httpMethod: ANY
         requestParameters:
@@ -301,22 +309,20 @@ paths:
           integration.request.header.x-pagopa-pn-cx-type: context.authorizer.cx_type
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
-          integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
-          integration.request.path.partnerId: method.request.path.partnerId
+          integration.request.header.x-pagopa-pn-src-ch: context.authorizer.sourceChannel
           integration.request.path.locationId: method.request.path.locationId
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
         timeoutInMillis: 29000
         type: http_proxy
     options:
-      operationId: Options for /api/v2/registry/{partnerId}/{locationId} API CORS
+      operationId: Options for /api/v2/registry/{locationId} API CORS
       x-amazon-apigateway-integration:
         uri: >-
-          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry/{partnerId}/{locationId}
+          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry/{locationId}
         connectionId: ${stageVariables.NetworkLoadBalancerLink}
         httpMethod: ANY
         requestParameters:
-          integration.request.path.partnerId: method.request.path.partnerId
           integration.request.path.locationId: method.request.path.locationId
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
@@ -342,7 +348,7 @@ components:
     partnerId:
       name: partnerId
       description: C.F. del partner erogatore
-      in: path
+      in: header
       required: true
       schema:
         type: string
@@ -417,21 +423,12 @@ components:
       type: object
       required:
         - address
-        - partnerId
-        - locationId
         - description
         - phoneNumbers
         - externalCodes
       properties:
         address:
           $ref: '#/components/schemas/AddressV2'
-        partnerId:
-          type: string
-          description: C.F. del partner erogatore
-          pattern: ^([0-9]{11})$
-        locationId:
-          type: string
-          description: Identificativo univoco della sede del punto di ritiro.
         description:
           type: string
           description: Descrizione del punto di ritiro.
@@ -482,6 +479,60 @@ components:
           type: string
           description: Tipologia del punto di ritiro
           pattern: CAF
+    UpdateRegistryRequestV2:
+      type: object
+      properties:
+        externalCodes:
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
+        description:
+          type: string
+          description: Descrizione aggiornata dello sportello.
+          example: Registro aggiornato dello sportello.
+        openingTime:
+          type: string
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example:
+            - '+390123456789'
+            - '3921573273'
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$
+        endValidity:
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          example: '2024-03-21'
+        appointmentRequired:
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
+        website:
+          type: string
+          description: Link al sito del punto di ritiro
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
+        email:
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
+    GetRegistryResponseV2:
+      type: object
+      properties:
+        items:
+          type: array
+          description: Lista dei punti di ritiro trovati
+          items:
+            $ref: '#/components/schemas/RegistryV2'
+        lastKey:
+          type: string
+          description: Chiave dell’ultimo elemento restituito (LastEvaluatedKey DynamoDB)
     AddressV2:
       type: object
       required:
@@ -571,64 +622,6 @@ components:
                   description: Valore complessivo del bias point
                   minimum: 0
                   maximum: 1
-    UpdateRegistryRequestV2:
-      type: object
-      properties:
-        externalCodes:
-          type: array
-          items:
-            type: string
-            description: Identificativo univoco dell’ufficio/postazione nella sede
-        description:
-          type: string
-          description: Descrizione aggiornata dello sportello.
-          example: Registro aggiornato dello sportello.
-        openingTime:
-          type: string
-          description: Orario di apertura del punto di ritiro nel formato opening_hours
-          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
-        phoneNumbers:
-          type: array
-          description: Lista dei numeri di telefono del punto di ritiro.
-          example:
-            - '+390123456789'
-            - '3921573273'
-          minItems: 1
-          maxItems: 2
-          items:
-            type: string
-            pattern: ^(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$
-        endValidity:
-          type: string
-          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
-          example: '2024-03-21'
-        appointmentRequired:
-          type: boolean
-          description: Variabile booleana per indicare se necessario prendere appuntamento
-        website:
-          type: string
-          description: Link al sito del punto di ritiro
-          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
-        email:
-          type: string
-          description: Indirizzo email del punto di ritiro
-          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
-          example: mail@esempio.it
-    GetRegistryResponseV2:
-      type: object
-      properties:
-        items:
-          type: array
-          description: Lista dei punti di ritiro trovati
-          items:
-            $ref: '#/components/schemas/RegistryV2'
-        lastKey:
-          type: string
-          description: Chiave dell’ultimo elemento restituito (LastEvaluatedKey DynamoDB)
-    CreateRegistryResponseV2:
-      $ref: '#/components/schemas/RegistryV2'
-    UpdateRegistryResponseV2:
-      $ref: '#/components/schemas/RegistryV2'
     RegistryV2:
       type: object
       properties:
@@ -778,33 +771,18 @@ components:
       description: Internal Server Error
     Unauthorized:
       description: Unauthorized
-  securitySchemes:
-    pn-auth-fleet_backofficeAuthorizer:
-      type: apiKey
-      name: Authorization
-      in: header
-      x-amazon-apigateway-authtype: custom
-      x-amazon-apigateway-authorizer:
-        authorizerUri: >-
-          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:pn-backofficeAuthorizerLambda/invocations
-        authorizerResultTtlInSeconds: 300
-        type: token
 tags:
   - name: Registry
 x-amazon-apigateway-gateway-responses:
   DEFAULT_5XX:
     responseParameters:
       gatewayresponse.header.Access-Control-Allow-Origin: '''*'''
-      gatewayresponse.header.Strict-Transport-Security: '''max-age=31536000; includeSubDomains; preload'''
   DEFAULT_4XX:
     responseParameters:
       gatewayresponse.header.Access-Control-Allow-Origin: '''*'''
-      gatewayresponse.header.Strict-Transport-Security: '''max-age=31536000; includeSubDomains; preload'''
   BAD_REQUEST_PARAMETERS:
     responseParameters:
       gatewayresponse.header.Access-Control-Allow-Origin: '''*'''
-      gatewayresponse.header.Access-Control-Expose-Headers: '''x-amzn-trace-id'''
-      gatewayresponse.header.Strict-Transport-Security: '''max-age=31536000; includeSubDomains; preload'''
     responseTemplates:
       application/json: >-
         {"status": 400, "title": "VALIDATION ERROR", "traceId":
@@ -813,8 +791,6 @@ x-amazon-apigateway-gateway-responses:
   BAD_REQUEST_BODY:
     responseParameters:
       gatewayresponse.header.Access-Control-Allow-Origin: '''*'''
-      gatewayresponse.header.Access-Control-Expose-Headers: '''x-amzn-trace-id'''
-      gatewayresponse.header.Strict-Transport-Security: '''max-age=31536000; includeSubDomains; preload'''
     responseTemplates:
       application/json: >-
         {"status": 400, "title": "VALIDATION ERROR", "traceId":
