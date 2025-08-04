@@ -67,6 +67,8 @@ class RegistrySelfServiceTest {
             Dom off
             """;
 
+    private final String OPENING_TIME_Ko2 = "dgefaf";
+
     @BeforeEach
     void setUp() {
         RaddRegistryMapper raddRegistryMapper = new RaddRegistryMapper(new NormalizedAddressMapper());
@@ -133,7 +135,7 @@ class RegistrySelfServiceTest {
         request.setPhoneNumbers(List.of("+390123456789"));
         request.setExternalCodes(List.of("EXT0"));
         request.setEmail("mail@esempio.it");
-        request.setOpeningTime(OPENING_TIME_Ok2);
+        request.setOpeningTime(OPENING_TIME_Ko2);
         request.setAppointmentRequired(true);
         request.setWebsite("https://test.it");
         return request;
