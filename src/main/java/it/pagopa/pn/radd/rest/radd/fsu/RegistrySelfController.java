@@ -26,29 +26,29 @@ public class RegistrySelfController implements RegistryApi {
     private final RegistrySelfService registrySelfService;
 
     @Override
-    public Mono<ResponseEntity<RegistryV2>> addRegistry(String xPagopaPnCxId, String uid, String partnerId, Mono<CreateRegistryRequestV2> createRegistryRequestV2, ServerWebExchange exchange) {
-        return createRegistryRequestV2.flatMap(request -> registrySelfService.addRegistry(partnerId,
-                        generateUUIDFromString(request.toString() + partnerId),
+    public Mono<ResponseEntity<RegistryV2>> addRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, Mono<CreateRegistryRequestV2> createRegistryRequestV2, ServerWebExchange exchange) {
+        return createRegistryRequestV2.flatMap(request -> registrySelfService.addRegistry(xPagopaPnCxId,
+                        UUID.randomUUID().toString(),
                         uid,
                         request))
                 .map(createRegistryResponse -> ResponseEntity.status(HttpStatus.OK).body(createRegistryResponse));
     }
 
     @Override
-    public Mono<ResponseEntity<RegistryV2>> updateRegistry(String xPagopaPnCxId, String uid, String partnerId, String locationId, Mono<UpdateRegistryRequestV2> updateRegistryRequestV2, ServerWebExchange exchange) {
-        return updateRegistryRequestV2.flatMap(request -> registrySelfService.updateRegistry(partnerId, locationId, request))
+    public Mono<ResponseEntity<RegistryV2>> updateRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String locationId, Mono<UpdateRegistryRequestV2> updateRegistryRequestV2, ServerWebExchange exchange) {
+        return updateRegistryRequestV2.flatMap(request -> registrySelfService.updateRegistry(xPagopaPnCxId, locationId, uid, request))
                 .map(response -> ResponseEntity.status(HttpStatus.OK).body(response));
     }
 
     @Override
-    public Mono<ResponseEntity<Void>> deleteRegistry(String xPagopaPnCxId, String uid, String partnerId, String locationId, ServerWebExchange exchange) {
-        return registrySelfService.deleteRegistry(partnerId, locationId)
+    public Mono<ResponseEntity<Void>> deleteRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String locationId, ServerWebExchange exchange) {
+        return registrySelfService.deleteRegistry(xPagopaPnCxId, locationId)
                 .thenReturn(ResponseEntity.noContent().build());
     }
 
     @Override
-    public Mono<ResponseEntity<GetRegistryResponseV2>> retrieveRegistries(String xPagopaPnCxId, String uid, String partnerId, Integer limit, String lastKey, ServerWebExchange exchange) {
-        return registrySelfService.retrieveRegistries(partnerId, limit, lastKey)
+    public Mono<ResponseEntity<GetRegistryResponseV2>> retrieveRegistries(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, Integer limit, String lastKey, ServerWebExchange exchange) {
+        return registrySelfService.retrieveRegistries(xPagopaPnCxId, limit, lastKey)
                 .map(getRegistryResponseV2 -> ResponseEntity.status(HttpStatus.OK).body(getRegistryResponseV2));
     }
 

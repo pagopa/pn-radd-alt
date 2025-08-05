@@ -39,10 +39,9 @@ paths:
       x-api-permissions:
         - 'radd-registry-read'
       parameters:
-#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
         - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
-        - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/lastKey'
       responses:
@@ -91,10 +90,9 @@ paths:
       x-api-permissions:
         - 'radd-registry-write'
       parameters:
-#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
         - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
-        - $ref: '#/components/parameters/partnerId'
       requestBody:
         content:
           application/json:
@@ -156,10 +154,9 @@ paths:
       x-api-permissions:
         - 'radd-registry-write'
       parameters:
-#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
         - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
-        - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       requestBody:
         content:
@@ -225,10 +222,9 @@ paths:
       x-api-permissions:
         - 'radd-registry-write'
       parameters:
-#        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
         - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
-        - $ref: '#/components/parameters/partnerId'
         - $ref: '#/components/parameters/locationId'
       responses:
         204:

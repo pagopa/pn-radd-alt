@@ -22,7 +22,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Mono;
-import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.geoplaces.model.AddressComponentMatchScores;
 import software.amazon.awssdk.services.geoplaces.model.ComponentMatchScores;
@@ -196,7 +195,7 @@ public class RaddRegistryUtils {
         return StringUtils.equals(addressRow, addressAndNumber);
     }
 
-    public static RaddRegistryEntityV2 mapFieldToUpdate(RaddRegistryEntityV2 registryEntity, UpdateRegistryRequestV2 request) {
+    public static RaddRegistryEntityV2 mapFieldToUpdate(RaddRegistryEntityV2 registryEntity, UpdateRegistryRequestV2 request, String uid) {
         if (StringUtils.isNotBlank(request.getDescription())) {
             registryEntity.setDescription(request.getDescription());
         }
@@ -229,6 +228,7 @@ public class RaddRegistryUtils {
             registryEntity.setEndValidity(validateEndDate(registryEntity.getStartValidity(), request.getEndValidity()));
         }
         registryEntity.setUpdateTimestamp(Instant.now());
+        registryEntity.setUid(uid);
 
         return registryEntity;
     }
