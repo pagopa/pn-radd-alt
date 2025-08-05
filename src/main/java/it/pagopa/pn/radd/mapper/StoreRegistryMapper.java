@@ -7,6 +7,8 @@ import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 import static it.pagopa.pn.radd.utils.OpeningHoursParser.parseOpeningHours;
 import static it.pagopa.pn.radd.utils.OpeningHoursParser.serializeOpeningHours;
 
@@ -23,6 +25,10 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
             return null;
         }
         RegistryV2 registryDto = raddRegistryMapper.toDto(entity);
+
+        Map<String, String> parseOt = parseOpeningHours(registryDto.getOpeningTime());
+        Object ot = (parseOt.isEmpty()) ? registryDto.getOpeningTime() : parseOt;
+
         StoreRegistry storeRegistry = new StoreRegistry();
         storeRegistry.setPartnerId(registryDto.getPartnerId());
         storeRegistry.setLocationId(registryDto.getLocationId());
@@ -35,7 +41,7 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
         storeRegistry.setCreationTimestamp(registryDto.getCreationTimestamp());
         storeRegistry.setUpdateTimestamp(registryDto.getUpdateTimestamp());
         storeRegistry.setDescription(registryDto.getDescription());
-        storeRegistry.setOpeningTime(parseOpeningHours(registryDto.getOpeningTime()));
+        storeRegistry.setOpeningTime(ot);
         storeRegistry.setStartValidity(registryDto.getStartValidity());
         storeRegistry.setEndValidity(registryDto.getEndValidity());
         storeRegistry.setNormalizedAddress(normalizedAddressMapper.toDto(entity.getNormalizedAddress()));
@@ -48,6 +54,14 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
             return null;
         }
         RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+
+        String ot;
+        try {
+            ot = serializeOpeningHours((Map<String, String>) storeRegistry.getOpeningTime());
+        } catch (Exception e){
+            ot = storeRegistry.getOpeningTime().toString();
+        }
+
         entity.setPartnerId(storeRegistry.getPartnerId());
         entity.setLocationId(storeRegistry.getLocationId());
         entity.setExternalCodes(storeRegistry.getExternalCodes());
@@ -59,7 +73,7 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
         entity.setCreationTimestamp(toInstant(storeRegistry.getCreationTimestamp()));
         entity.setUpdateTimestamp(toInstant(storeRegistry.getUpdateTimestamp()));
         entity.setDescription(storeRegistry.getDescription());
-        entity.setOpeningTime(serializeOpeningHours(storeRegistry.getOpeningTime()));
+        entity.setOpeningTime(ot);
         entity.setStartValidity(parseDateString(storeRegistry.getStartValidity()));
         entity.setEndValidity(parseDateString(storeRegistry.getEndValidity()));
         entity.setNormalizedAddress(normalizedAddressMapper.toEntity(storeRegistry.getNormalizedAddress()));

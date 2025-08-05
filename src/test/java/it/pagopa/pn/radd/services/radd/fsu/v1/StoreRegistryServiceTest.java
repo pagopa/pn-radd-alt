@@ -41,32 +41,11 @@ public class StoreRegistryServiceTest {
         storeRegistryService = new StoreRegistryService(raddRegistryDAO, new StoreRegistryMapper(new RaddRegistryMapper(normalizedAddressMapper), normalizedAddressMapper));
     }
 
-
-    @Test
-    void retrieveStoreRegistries() {
-        RaddRegistryEntityV2 registryEntity = getRegistryEntity();
-        List<RaddRegistryEntityV2> registryEntities = List.of(registryEntity);
-        Map<String, AttributeValue> lastEvaluetadKey = Map.of("partnerId", AttributeValue.builder()
-                        .s("partnerId")
-                        .build(),
-                "locationId", AttributeValue.builder()
-                        .s("locationId")
-                        .build());
-
-        when(raddRegistryDAO.scanRegistries(any(), any())).thenReturn(Mono.just(Page.create(registryEntities, lastEvaluetadKey)));
-
-        StepVerifier.create(storeRegistryService.retrieveStoreRegistries(1000, "lastKey"))
-                .expectNextMatches(storeRegistriesResponse -> storeRegistriesResponse.getRegistries().size() == 1 &&
-                        StringUtils.isNotEmpty(storeRegistriesResponse.getLastKey()))
-                .verifyComplete();
-    }
-
     private RaddRegistryEntityV2 getRegistryEntity() {
         RaddRegistryEntityV2 registryEntity = new RaddRegistryEntityV2();
         registryEntity.setPartnerId("partnerId");
         registryEntity.setLocationId("locationId");
         registryEntity.setDescription("testDescription");
-        registryEntity.setCapacity("testCapacity");
         registryEntity.setOpeningTime("testOpeningTime");
         NormalizedAddressEntity addressEntity = new NormalizedAddressEntity();
         addressEntity.setCountry("country");
@@ -76,4 +55,24 @@ public class StoreRegistryServiceTest {
         registryEntity.setNormalizedAddress(addressEntity);
         return registryEntity;
     }
+
+    @Test
+    void retrieveStoreRegistries() {
+        RaddRegistryEntityV2 registryEntity = getRegistryEntity();
+        List<RaddRegistryEntityV2> registryEntities = List.of(registryEntity);
+        Map<String, AttributeValue> lastEvaluetadKey = Map.of("partnerId", AttributeValue.builder()
+                                                                                         .s("partnerId")
+                                                                                         .build(),
+                                                              "locationId", AttributeValue.builder()
+                                                                                          .s("locationId")
+                                                                                          .build());
+
+        when(raddRegistryDAO.scanRegistries(any(), any())).thenReturn(Mono.just(Page.create(registryEntities, lastEvaluetadKey)));
+
+        StepVerifier.create(storeRegistryService.retrieveStoreRegistries(1000, "lastKey"))
+                    .expectNextMatches(storeRegistriesResponse -> storeRegistriesResponse.getRegistries().size() == 1 &&
+                                                                  StringUtils.isNotEmpty(storeRegistriesResponse.getLastKey()))
+                    .verifyComplete();
+    }
+
 }

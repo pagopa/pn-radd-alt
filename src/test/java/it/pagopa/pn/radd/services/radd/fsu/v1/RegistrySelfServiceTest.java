@@ -154,9 +154,9 @@ class RegistrySelfServiceTest {
         when(raddRegistryDAO.updateRegistryEntity(entity)).thenReturn(Mono.just(entity));
 
         StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, request))
-                .expectNextMatches(raddRegistryEntity -> entity.getDescription().equalsIgnoreCase(request.getDescription())
-                        && entity.getEmail().equalsIgnoreCase(request.getEmail()))
-                .verifyComplete();
+                    .expectNextMatches(raddRegistryEntity -> entity.getDescription().equalsIgnoreCase(request.getDescription())
+                                                             && entity.getEmail().equalsIgnoreCase(request.getEmail()))
+                    .verifyComplete();
     }
 
     @Test
@@ -166,7 +166,7 @@ class RegistrySelfServiceTest {
         when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.empty());
 
         StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, new UpdateRegistryRequestV2()))
-                .verifyErrorMessage(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND.getMessage());
+                    .verifyErrorMessage(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -182,9 +182,9 @@ class RegistrySelfServiceTest {
 
         request.setExternalCodes(List.of("EXT1"));
         StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, request))
-                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
-                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DUPLICATE_EXT_CODE)
-                .verify();
+                    .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
+                                                     ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DUPLICATE_EXT_CODE)
+                    .verify();
     }
 
     @Test
@@ -203,8 +203,8 @@ class RegistrySelfServiceTest {
         Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(partnerId, locationId);
 
         StepVerifier.create(result)
-                .expectNextMatches(deleted -> deleted.getPartnerId().equals(partnerId) && deleted.getLocationId().equals(locationId))
-                .verifyComplete();
+                    .expectNextMatches(deleted -> deleted.getPartnerId().equals(partnerId) && deleted.getLocationId().equals(locationId))
+                    .verifyComplete();
     }
 
 
