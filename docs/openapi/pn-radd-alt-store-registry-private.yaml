@@ -63,6 +63,8 @@ components:
           properties:
             openingTime:
               type: object
+              additionalProperties:
+                type: string
               description: "Mappa degli orari di apertura per ciascun giorno (chiave: giorno, valore: orari)"
 
   parameters:

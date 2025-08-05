@@ -71,7 +71,7 @@ public class RegistrySelfService {
 
     private void checkUpdateRegistryRequest(UpdateRegistryRequestV2 request) {
         if (StringUtils.isNotBlank(request.getOpeningTime())) {
-            validateOpenHours(request.getOpeningTime());
+            OpeningHoursParser.validateOpenHours(request.getOpeningTime());
         }
     }
 
