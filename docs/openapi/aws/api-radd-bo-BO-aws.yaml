@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: vG/egymjSmCwv9yn68Ml4HLmi4LPmc29uLunbo2RDkA=
+  version: s1t/mJGg8gVU4+XY7yxL3z2PgBt45LDPKWABp7o0Prk=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -22,7 +22,7 @@ paths:
       x-api-permissions:
         - radd-registry-read
       parameters:
-        - $ref: '#/components/parameters/partnerId'
+        - $ref: '#/components/parameters/cxIdAuthFleet'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/lastKey'
       responses:
@@ -62,6 +62,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - pn-auth-fleet_backofficeAuthorizer: []
       x-amazon-apigateway-integration:
         uri: >-
           http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry
@@ -75,7 +77,7 @@ paths:
           integration.request.header.x-pagopa-pn-cx-type: context.authorizer.cx_type
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
-          integration.request.header.x-pagopa-pn-src-ch: context.authorizer.sourceChannel
+          integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
         timeoutInMillis: 29000
@@ -88,7 +90,7 @@ paths:
       x-api-permissions:
         - radd-registry-write
       parameters:
-        - $ref: '#/components/parameters/partnerId'
+        - $ref: '#/components/parameters/cxIdAuthFleet'
       requestBody:
         content:
           application/json:
@@ -138,6 +140,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - pn-auth-fleet_backofficeAuthorizer: []
       x-amazon-apigateway-integration:
         uri: >-
           http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry
@@ -151,7 +155,7 @@ paths:
           integration.request.header.x-pagopa-pn-cx-type: context.authorizer.cx_type
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
-          integration.request.header.x-pagopa-pn-src-ch: context.authorizer.sourceChannel
+          integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
         timeoutInMillis: 29000
@@ -177,7 +181,7 @@ paths:
       x-api-permissions:
         - radd-registry-write
       parameters:
-        - $ref: '#/components/parameters/partnerId'
+        - $ref: '#/components/parameters/cxIdAuthFleet'
         - $ref: '#/components/parameters/locationId'
       requestBody:
         content:
@@ -234,6 +238,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - pn-auth-fleet_backofficeAuthorizer: []
       x-amazon-apigateway-integration:
         uri: >-
           http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry/{locationId}
@@ -247,7 +253,7 @@ paths:
           integration.request.header.x-pagopa-pn-cx-type: context.authorizer.cx_type
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
-          integration.request.header.x-pagopa-pn-src-ch: context.authorizer.sourceChannel
+          integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
           integration.request.path.locationId: method.request.path.locationId
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
@@ -261,7 +267,7 @@ paths:
       x-api-permissions:
         - radd-registry-write
       parameters:
-        - $ref: '#/components/parameters/partnerId'
+        - $ref: '#/components/parameters/cxIdAuthFleet'
         - $ref: '#/components/parameters/locationId'
       responses:
         '204':
@@ -296,6 +302,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
+      security:
+        - pn-auth-fleet_backofficeAuthorizer: []
       x-amazon-apigateway-integration:
         uri: >-
           http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v2/registry/{locationId}
@@ -309,7 +317,7 @@ paths:
           integration.request.header.x-pagopa-pn-cx-type: context.authorizer.cx_type
           integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
           integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
-          integration.request.header.x-pagopa-pn-src-ch: context.authorizer.sourceChannel
+          integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
           integration.request.path.locationId: method.request.path.locationId
         passthroughBehavior: when_no_match
         connectionType: VPC_LINK
@@ -418,6 +426,15 @@ components:
       required: false
       schema:
         type: string
+    cxIdAuthFleet:
+      name: x-pagopa-pn-cx-id
+      in: header
+      description: Customer/Receiver Identifier
+      required: true
+      schema:
+        type: string
+        pattern: ^[ -~]*$
+        maxLength: 64
   schemas:
     CreateRegistryRequestV2:
       type: object
@@ -771,18 +788,33 @@ components:
       description: Internal Server Error
     Unauthorized:
       description: Unauthorized
+  securitySchemes:
+    pn-auth-fleet_backofficeAuthorizer:
+      type: apiKey
+      name: Authorization
+      in: header
+      x-amazon-apigateway-authtype: custom
+      x-amazon-apigateway-authorizer:
+        authorizerUri: >-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:pn-backofficeAuthorizerLambda/invocations
+        authorizerResultTtlInSeconds: 300
+        type: token
 tags:
   - name: Registry
 x-amazon-apigateway-gateway-responses:
   DEFAULT_5XX:
     responseParameters:
       gatewayresponse.header.Access-Control-Allow-Origin: '''*'''
+      gatewayresponse.header.Strict-Transport-Security: '''max-age=31536000; includeSubDomains; preload'''
   DEFAULT_4XX:
     responseParameters:
       gatewayresponse.header.Access-Control-Allow-Origin: '''*'''
+      gatewayresponse.header.Strict-Transport-Security: '''max-age=31536000; includeSubDomains; preload'''
   BAD_REQUEST_PARAMETERS:
     responseParameters:
       gatewayresponse.header.Access-Control-Allow-Origin: '''*'''
+      gatewayresponse.header.Access-Control-Expose-Headers: '''x-amzn-trace-id'''
+      gatewayresponse.header.Strict-Transport-Security: '''max-age=31536000; includeSubDomains; preload'''
     responseTemplates:
       application/json: >-
         {"status": 400, "title": "VALIDATION ERROR", "traceId":
@@ -791,6 +823,8 @@ x-amazon-apigateway-gateway-responses:
   BAD_REQUEST_BODY:
     responseParameters:
       gatewayresponse.header.Access-Control-Allow-Origin: '''*'''
+      gatewayresponse.header.Access-Control-Expose-Headers: '''x-amzn-trace-id'''
+      gatewayresponse.header.Strict-Transport-Security: '''max-age=31536000; includeSubDomains; preload'''
     responseTemplates:
       application/json: >-
         {"status": 400, "title": "VALIDATION ERROR", "traceId":

@@ -39,7 +39,7 @@ paths:
       x-api-permissions:
         - 'radd-registry-read'
       parameters:
-        - $ref: '#/components/parameters/partnerId'
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/lastKey'
       responses:
@@ -88,7 +88,7 @@ paths:
       x-api-permissions:
         - 'radd-registry-write'
       parameters:
-        - $ref: '#/components/parameters/partnerId'
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
       requestBody:
         content:
           application/json:
@@ -150,7 +150,7 @@ paths:
       x-api-permissions:
         - 'radd-registry-write'
       parameters:
-        - $ref: '#/components/parameters/partnerId'
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
         - $ref: '#/components/parameters/locationId'
       requestBody:
         content:
@@ -216,7 +216,7 @@ paths:
       x-api-permissions:
         - 'radd-registry-write'
       parameters:
-        - $ref: '#/components/parameters/partnerId'
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
         - $ref: '#/components/parameters/locationId'
       responses:
         204:
