@@ -41,7 +41,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
-        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/lastKey'
       responses:
@@ -92,7 +92,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
-        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
       requestBody:
         content:
           application/json:
@@ -156,7 +156,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
-        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
         - $ref: '#/components/parameters/locationId'
       requestBody:
         content:
@@ -224,7 +224,7 @@ paths:
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
-        - $ref: '#/components/parameters/uid'                                   # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
         - $ref: '#/components/parameters/locationId'
       responses:
         204:
@@ -420,13 +420,6 @@ components:
       schema:
         type: string
       example: 2024-06-21
-    uid:
-      name: uid
-      description: Identificativo pseudo-anonimizzato dell'operatore RADD
-      in: header
-      required: true
-      schema:
-        type: string
     requestId:
       name: requestId
       description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
