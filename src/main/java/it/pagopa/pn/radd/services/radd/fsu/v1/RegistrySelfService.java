@@ -58,13 +58,13 @@ public class RegistrySelfService {
         }
     }
 
-    public Mono<RegistryV2> updateRegistry(String partnerId, String locationId, UpdateRegistryRequestV2 request) {
+    public Mono<RegistryV2> updateRegistry(String partnerId, String locationId, String uid, UpdateRegistryRequestV2 request) {
         checkUpdateRegistryRequest(request);
         log.info("Start updateRegistry for partnerId [{}] and locationId [{}]", partnerId, locationId);
         return validateExternalCodes(partnerId, locationId, request.getExternalCodes())
                 .then(raddRegistryDAO.find(partnerId, locationId))
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
-                .flatMap(registryEntity -> raddRegistryDAO.updateRegistryEntity(mapFieldToUpdate(registryEntity, request)))
+                .flatMap(registryEntity -> raddRegistryDAO.updateRegistryEntity(mapFieldToUpdate(registryEntity, request, uid)))
                 .map(raddRegistryMapper::toDto)
                 .doOnError(throwable -> log.error("Error during update registry request for partnerId: [{}] and locationId: [{}]", partnerId, locationId, throwable));
     }

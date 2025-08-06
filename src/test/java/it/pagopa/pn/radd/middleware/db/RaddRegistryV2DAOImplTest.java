@@ -53,7 +53,6 @@ public class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
         entity.setDescription("Test description");
         entity.setEmail("test@example.com");
         entity.setPhoneNumbers(List.of("123456789"));
-        entity.setCapacity("100");
         entity.setOpeningTime("08:00-18:00");
         entity.setStartValidity(Instant.now());
         entity.setEndValidity(Instant.now().plusSeconds(3600));

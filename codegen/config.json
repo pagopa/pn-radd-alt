@@ -11,6 +11,9 @@
         },
         {
             "intendedUsage": "BO",
+            "commonFiles": [
+                "schemas-pn-radd-alt-registry.yaml"
+            ],
             "openapiFiles": [
                 "pn-radd-alt-registry-v2-internal.yaml"
             ],
