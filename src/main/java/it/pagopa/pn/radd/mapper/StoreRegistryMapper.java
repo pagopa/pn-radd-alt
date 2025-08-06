@@ -26,8 +26,8 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
         }
         RegistryV2 registryDto = raddRegistryMapper.toDto(entity);
 
-        Map<String, String> parseOt = parseOpeningHours(registryDto.getOpeningTime());
-        Object ot = (parseOt.isEmpty()) ? registryDto.getOpeningTime() : parseOt;
+        Map<String, String> parseOpeningTime = parseOpeningHours(registryDto.getOpeningTime());
+        Object openingTime = (parseOpeningTime.isEmpty()) ? registryDto.getOpeningTime() : parseOpeningTime;
 
         StoreRegistry storeRegistry = new StoreRegistry();
         storeRegistry.setPartnerId(registryDto.getPartnerId());
@@ -41,7 +41,7 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
         storeRegistry.setCreationTimestamp(registryDto.getCreationTimestamp());
         storeRegistry.setUpdateTimestamp(registryDto.getUpdateTimestamp());
         storeRegistry.setDescription(registryDto.getDescription());
-        storeRegistry.setOpeningTime(ot);
+        storeRegistry.setOpeningTime(openingTime);
         storeRegistry.setStartValidity(registryDto.getStartValidity());
         storeRegistry.setEndValidity(registryDto.getEndValidity());
         storeRegistry.setNormalizedAddress(normalizedAddressMapper.toDto(entity.getNormalizedAddress()));
@@ -55,11 +55,11 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
         }
         RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
 
-        String ot;
+        String openingTime;
         try {
-            ot = serializeOpeningHours((Map<String, String>) storeRegistry.getOpeningTime());
+            openingTime = serializeOpeningHours((Map<String, String>) storeRegistry.getOpeningTime());
         } catch (Exception e){
-            ot = storeRegistry.getOpeningTime().toString();
+            openingTime = storeRegistry.getOpeningTime().toString();
         }
 
         entity.setPartnerId(storeRegistry.getPartnerId());
@@ -73,7 +73,7 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
         entity.setCreationTimestamp(toInstant(storeRegistry.getCreationTimestamp()));
         entity.setUpdateTimestamp(toInstant(storeRegistry.getUpdateTimestamp()));
         entity.setDescription(storeRegistry.getDescription());
-        entity.setOpeningTime(ot);
+        entity.setOpeningTime(openingTime);
         entity.setStartValidity(parseDateString(storeRegistry.getStartValidity()));
         entity.setEndValidity(parseDateString(storeRegistry.getEndValidity()));
         entity.setNormalizedAddress(normalizedAddressMapper.toEntity(storeRegistry.getNormalizedAddress()));
