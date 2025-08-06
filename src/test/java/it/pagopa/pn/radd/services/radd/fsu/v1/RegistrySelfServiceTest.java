@@ -153,7 +153,7 @@ class RegistrySelfServiceTest {
         when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.just(entity));
         when(raddRegistryDAO.updateRegistryEntity(entity)).thenReturn(Mono.just(entity));
 
-        StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, request))
+        StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
                 .expectNextMatches(raddRegistryEntity -> entity.getDescription().equalsIgnoreCase(request.getDescription())
                         && entity.getEmail().equalsIgnoreCase(request.getEmail()))
                 .verifyComplete();
@@ -165,7 +165,7 @@ class RegistrySelfServiceTest {
 
         when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.empty());
 
-        StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, new UpdateRegistryRequestV2()))
+        StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, new UpdateRegistryRequestV2()))
                 .verifyErrorMessage(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND.getMessage());
     }
 
@@ -181,7 +181,7 @@ class RegistrySelfServiceTest {
         when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.just(entity));
 
         request.setExternalCodes(List.of("EXT1"));
-        StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, request))
+        StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
                 .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
                         ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DUPLICATE_EXT_CODE)
                 .verify();

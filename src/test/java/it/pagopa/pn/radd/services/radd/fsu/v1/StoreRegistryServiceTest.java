@@ -66,7 +66,6 @@ public class StoreRegistryServiceTest {
         registryEntity.setPartnerId("partnerId");
         registryEntity.setLocationId("locationId");
         registryEntity.setDescription("testDescription");
-        registryEntity.setCapacity("testCapacity");
         registryEntity.setOpeningTime("testOpeningTime");
         NormalizedAddressEntity addressEntity = new NormalizedAddressEntity();
         addressEntity.setCountry("country");

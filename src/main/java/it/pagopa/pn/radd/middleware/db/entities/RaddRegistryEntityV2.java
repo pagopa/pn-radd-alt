@@ -35,7 +35,6 @@ public class RaddRegistryEntityV2 {
     public static final String COL_OPENING_TIME = "openingTime";
     public static final String COL_START_VALIDITY = "startValidity";
     public static final String COL_END_VALIDITY = "endValidity";
-    public static final String COL_CAPACITY = "capacity";
     public static final String COL_UID = "uid";
 
     @Getter(onMethod = @__({@DynamoDbPartitionKey, @DynamoDbAttribute(COL_PARTNER_ID)}))
@@ -88,9 +87,6 @@ public class RaddRegistryEntityV2 {
 
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_END_VALIDITY)}))
     private Instant endValidity;
-
-    @Getter(onMethod = @__({@DynamoDbAttribute(COL_CAPACITY)}))
-    private String capacity;
 
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_UID)}))
     private String uid;
