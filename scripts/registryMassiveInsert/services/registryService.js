@@ -1,38 +1,68 @@
 const axios = require('axios');
-const { convertToRegistryRequest } = require('../utils/registryUtils');
+const { convertToRegistryRequest, mapFieldsToUpdate } = require('../utils/registryUtils');
 
 class RegistryService {
   constructor(apiBaseUrl) {
     this.apiBaseUrl = apiBaseUrl;
   }
 
-  async getRegistriesByPartnerId(partnerId, headers) {
+  // Private helper to add the partnerId header
+  #prepareHeaders(partnerId, headers = {}) {
+    return {
+      ...headers,
+      'x-pagopa-pn-cx-id': partnerId,
+    };
+  }
+
+  // Private helper to extract error message
+  #getErrorMessage(error) {
+    return error?.response?.data?.detail || error.message;
+  }
+
+  async getRegistriesByPartnerId(partnerId, headers = {}) {
     try {
-      const res = await axios.get(`${this.apiBaseUrl}/radd-bo/api/v2/registry/${partnerId}`, { headers });
+      const finalHeaders = this.#prepareHeaders(partnerId, headers);
+      const res = await axios.get(`${this.apiBaseUrl}/radd-bo/api/v2/registry`, { headers: finalHeaders });
       return res.data.items || [];
     } catch (err) {
-      throw new Error(`Errore lettura sedi da API: ${err.response?.data?.detail || err.message}`);
+      throw new Error(`Errore lettura sedi da API: ${this.#getErrorMessage(err)}`);
     }
   }
 
-  async deleteRegistry(partnerId, locationId, headers) {
+  async deleteRegistry(partnerId, locationId, headers = {}) {
     try {
-      await axios.delete(`${this.apiBaseUrl}/radd-bo/api/v2/registry/${partnerId}/${locationId}`, { headers });
+      const finalHeaders = this.#prepareHeaders(partnerId, headers);
+      await axios.delete(`${this.apiBaseUrl}/radd-bo/api/v2/registry/${locationId}`, { headers: finalHeaders });
       console.log(`✅ Eliminata sede ${locationId}`);
     } catch (err) {
-      console.error(`❌ Errore eliminazione sede ${locationId}: ${err.response?.data?.detail || err.message}`);
+      console.error(`❌ Errore eliminazione sede ${locationId}: ${this.#getErrorMessage(err)}`);
     }
   }
 
-  async createRegistry(partnerId, csvRegistry, headers) {
-    const registry = convertToRegistryRequest(csvRegistry);
+  async createRegistry(partnerId, csvRegistry, headers = {}) {
     try {
-      const res = await axios.post(`${this.apiBaseUrl}/radd-bo/api/v2/registry/${partnerId}`, registry, { headers });
-      console.log(`➕ Aggiunta sede ${registry.locationId}`);
+      const finalHeaders = this.#prepareHeaders(partnerId, headers);
+      const registry = convertToRegistryRequest(csvRegistry, partnerId);
+      const res = await axios.post(`${this.apiBaseUrl}/radd-bo/api/v2/registry`, registry, { headers: finalHeaders });
+      console.log(`➕ Aggiunta sede ${res.data.locationId}`);
       return { ...csvRegistry, status: 'OK', result: JSON.stringify(res.data) };
     } catch (err) {
-      const reason = err.response?.data?.detail || err.message;
-      console.error(`⚠️ Inserimento KO: ${registry.locationId} - ${reason}`);
+      const reason = this.#getErrorMessage(err);
+      console.error(`⚠️ Inserimento KO: ${reason}`);
+      return { ...csvRegistry, status: 'KO', error: reason };
+    }
+  }
+
+  async updateRegistry(partnerId, locationId, csvRegistry, headers = {}) {
+    try {
+      const finalHeaders = this.#prepareHeaders(partnerId, headers);
+      const updateRequest = mapFieldsToUpdate(csvRegistry);
+      const res = await axios.patch(`${this.apiBaseUrl}/radd-bo/api/v2/registry/${locationId}`, updateRequest, { headers: finalHeaders });
+      console.log(`📝 Aggiornata sede ${res.data.locationId}`);
+      return { ...csvRegistry, status: 'OK', result: JSON.stringify(res.data) };
+    } catch (err) {
+      const reason = this.#getErrorMessage(err);
+      console.error(`⚠️ Aggiornamento KO: ${locationId} - ${reason}`);
       return { ...csvRegistry, status: 'KO', error: reason };
     }
   }

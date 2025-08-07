@@ -1,6 +1,6 @@
 const path = require('path');
 const { readCsv, writeReport } = require('./utils/csvUtils');
-const { findLocationId } = require('./utils/registryUtils');
+const { findLocationId, isFieldEmpty } = require('./utils/registryUtils');
 const { getRegistriesByPartnerId, deleteRegistry, createRegistry } = require('./services/registryService');
 const { Authenticator } = require('./libs/authenticator');
 const { HEADERS } = require('./config');
@@ -34,21 +34,30 @@ const RegistryService = require('./services/registryService');
   const usedLocationIds = new Set();
   const report = [];
 
-  for (const csvRegistry of csvRegistries) {
-    const locationId = findLocationId(apiRegistries, csvRegistry);
-    if (locationId) {
-      await registryService.deleteRegistry(partnerId, locationId, headers);
-      usedLocationIds.add(locationId);
-    }
-    const result = await registryService.createRegistry(partnerId, csvRegistry, headers);
-    report.push(result);
-  }
+    for (const csvRegistry of csvRegistries) {
+      const { locationId } = csvRegistry;
 
-  for (const registry of apiRegistries) {
-    if (!usedLocationIds.has(registry.locationId)) {
-      await deleteRegistry(partnerId, registry.locationId, headers);
+      if (locationId && locationId.trim() !== '') {
+        // Aggiorna sede
+        const result = await registryService.updateRegistry(partnerId, locationId, csvRegistry, headers);
+        usedLocationIds.add(locationId);
+        report.push(result);
+      } else {
+        // Crea nuova sede
+        const result = await registryService.createRegistry(partnerId, csvRegistry, headers);
+        if (result?.locationId) {
+          usedLocationIds.add(result.locationId);
+        }
+        report.push(result);
+      }
     }
-  }
+
+    // Elimina sedi non presenti nel CSV
+    for (const registry of apiRegistries) {
+      if (!usedLocationIds.has(registry.locationId)) {
+        await registryService.deleteRegistry(partnerId, registry.locationId, headers);
+      }
+    }
 
   await writeReport(report, partnerId);
 })();

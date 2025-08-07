@@ -22,8 +22,37 @@ function convertToRegistryRequest(csvRow) {
   };
 }
 
+function mapFieldsToUpdate(csvRow) {
+  const mappings = {
+    description: v => v,
+    phoneNumbers: v => v.split('|'),
+    email: v => v,
+    openingTime: v => v,
+    endValidity: v => v,
+    externalCodes: v => v.split('|'),
+    appointmentRequired: v => isBoolean(v) ? v === 'true' : v,
+    website: v => v
+  };
+
+  return Object.entries(mappings).reduce((acc, [key, transform]) => {
+    const value = csvRow[key];
+    if (!isFieldEmpty(value)) {
+      acc[key] = transform(value);
+    }
+    return acc;
+  }, {});
+}
+
+function isFieldEmpty(value) {
+  return value === undefined || value === null || value.toString().trim() === '';
+}
+
+function isBoolean(value) {
+  return value === 'true' || value === 'false';
+}
+
 function findLocationId(apiRegistries, csvRegistry) {
   return apiRegistries.find(r => r.locationId === csvRegistry.locationId)?.locationId;
 }
 
-module.exports = { convertToRegistryRequest, findLocationId };
+module.exports = { convertToRegistryRequest, mapFieldsToUpdate, findLocationId, isFieldEmpty };
