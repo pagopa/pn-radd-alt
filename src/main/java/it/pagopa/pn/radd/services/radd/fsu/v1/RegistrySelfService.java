@@ -22,6 +22,7 @@ import static it.pagopa.pn.radd.utils.DateUtils.validateDateInterval;
 import static it.pagopa.pn.radd.utils.OpeningHoursParser.validateOpenHours;
 import static it.pagopa.pn.radd.utils.RaddRegistryUtils.buildRaddRegistryEntity;
 import static it.pagopa.pn.radd.utils.RaddRegistryUtils.mapFieldToUpdate;
+import static it.pagopa.pn.radd.utils.UrlSanitizer.sanitizeUrl;
 
 @Service
 @RequiredArgsConstructor
@@ -56,6 +57,9 @@ public class RegistrySelfService {
         if (request.getOpeningTime() != null) {
             validateOpenHours(request.getOpeningTime());
         }
+        if (request.getWebsite() != null) {
+            request.setWebsite(sanitizeUrl(request.getWebsite()));
+        }
     }
 
     public Mono<RegistryV2> updateRegistry(String partnerId, String locationId, String uid, UpdateRegistryRequestV2 request) {
@@ -72,6 +76,9 @@ public class RegistrySelfService {
     private void checkUpdateRegistryRequest(UpdateRegistryRequestV2 request) {
         if (StringUtils.isNotBlank(request.getOpeningTime())) {
             OpeningHoursParser.validateOpenHours(request.getOpeningTime());
+        }
+        if (request.getWebsite() != null) {
+            request.setWebsite(sanitizeUrl(request.getWebsite()));
         }
     }
 
