@@ -6,7 +6,7 @@ import it.pagopa.pn.commons.log.PnAuditLog;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.ResponseCheckAarDtoDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.SentNotificationV25Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.NotificationHistoryResponseDto;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.NotificationStatusV26Dto;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.NotificationStatusV28Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.*;
@@ -447,7 +447,7 @@ class ActServiceTest  {
         when(pnRaddFsuConfig.getMaxPrintRequests()).thenReturn(0);
 
         NotificationHistoryResponseDto notificationHistoryResponseDto = new NotificationHistoryResponseDto();
-        notificationHistoryResponseDto.setNotificationStatus(NotificationStatusV26Dto.CANCELLED);
+        notificationHistoryResponseDto.setNotificationStatus(NotificationStatusV28Dto.CANCELLED);
         when(pnDeliveryPushClient.getNotificationHistory(any())).thenReturn(Mono.just(notificationHistoryResponseDto));
         ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "").block();
         assertNotNull(monoResponse);
@@ -468,7 +468,7 @@ class ActServiceTest  {
         when(pnRaddFsuConfig.getMaxPrintRequests()).thenReturn(0);
 
         NotificationHistoryResponseDto notificationHistoryResponseDto = new NotificationHistoryResponseDto();
-        notificationHistoryResponseDto.setNotificationStatus(NotificationStatusV26Dto.DELIVERED);
+        notificationHistoryResponseDto.setNotificationStatus(NotificationStatusV28Dto.DELIVERED);
         when(pnDeliveryPushClient.getNotificationHistory(any())).thenReturn(Mono.just(notificationHistoryResponseDto));
 
         SentNotificationV25Dto sentNotificationV23Dto = new SentNotificationV25Dto();
