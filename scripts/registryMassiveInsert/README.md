@@ -55,9 +55,9 @@ node index.js test myuser mypass abc123 ./csv/12345678901.csv
 3. Autentica l’utente tramite il client Cognito e ottiene un JWT.
 4. Recupera i registri esistenti del partner.
 5. Per ogni registro nel CSV:
-    - Se esiste già un registro con stesso `locationId`, lo elimina.
-    - Crea un nuovo registro con i dati aggiornati.~~~~
-6. Elimina tutti i registri esistenti non presenti nel CSV.
+    - Se esiste già un registro con stesso `locationId`, lo aggiorna con le informazioni fornite nel CSV.
+    - Altrimenti crea un nuovo registro con i dati aggiornati.
+6. Elimina tutti i registri esistenti non presenti nel CSV per lo stesso partnerId.
 7. Salva un report dell’operazione in un file CSV.
 
 ## Output
