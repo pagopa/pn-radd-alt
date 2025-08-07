@@ -133,12 +133,12 @@ class ActServiceStartTransactionTest {
         return sentNotificationDto;
     }
 
-    private Stream<LegalFactListElementV20Dto> createLegalFactListElementDto(){
+    private Stream<LegalFactListElementV28Dto> createLegalFactListElementDto(){
 
-        LegalFactsIdV20Dto legalFactsIdDto = new LegalFactsIdV20Dto();
-        legalFactsIdDto.setCategory(LegalFactCategoryV20Dto.SENDER_ACK);
+        LegalFactsIdV28Dto legalFactsIdDto = new LegalFactsIdV28Dto();
+        legalFactsIdDto.setCategory(LegalFactCategoryV28Dto.SENDER_ACK);
         legalFactsIdDto.setKey("Key");
-        LegalFactListElementV20Dto legalFactListElementDto = new LegalFactListElementV20Dto();
+        LegalFactListElementV28Dto legalFactListElementDto = new LegalFactListElementV28Dto();
         legalFactListElementDto.setTaxId("recTaxId");
         legalFactListElementDto.setLegalFactsId(legalFactsIdDto);
 
