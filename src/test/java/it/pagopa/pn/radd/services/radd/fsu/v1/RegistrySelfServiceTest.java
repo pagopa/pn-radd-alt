@@ -203,8 +203,8 @@ class RegistrySelfServiceTest {
         Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(partnerId, locationId);
 
         StepVerifier.create(result)
-                .expectNextMatches(deleted -> deleted.getPartnerId().equals(partnerId) && deleted.getLocationId().equals(locationId))
-                .verifyComplete();
+                    .expectNextMatches(deleted -> deleted.getPartnerId().equals(partnerId) && deleted.getLocationId().equals(locationId))
+                    .verifyComplete();
     }
 
 

@@ -1,16 +1,16 @@
 package it.pagopa.pn.radd.utils;
 
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
-import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.pojo.OpeningHourEntry;
+import lombok.CustomLog;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpStatus;
 
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@CustomLog
 public class OpeningHoursParser {
 
     private static final List<String> VALID_DAYS_ORDERED = List.of("lun", "mar", "mer", "gio", "ven", "sab", "dom");
@@ -19,36 +19,41 @@ public class OpeningHoursParser {
                                                                );
     private static final Pattern TIME_RANGE_PATTERN = Pattern.compile("(\\d{2}):(\\d{2})-(\\d{2}):(\\d{2})");
 
+    private static final String ERRORE = ExceptionTypeEnum.OPENING_TIME_ERROR.getTitle();
+
     public static void validateOpenHours(String input) {
         Set<String> usedDays = new HashSet<>();
         List<OpeningHourEntry> entries = parseEntries(input, true);
 
-        for (OpeningHourEntry entry : entries) {
-            String day = entry.day();
-            String times = entry.timeRanges();
+        if (!entries.isEmpty()) {
+            for (OpeningHourEntry entry : entries) {
+                String day = entry.day();
+                String times = entry.timeRanges();
 
-            if (!usedDays.add(day)) {
-                throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Giorno duplicato: " + day, HttpStatus.BAD_REQUEST);
-            }
-
-            String[] timeRanges = times.split("\\s*,\\s*");
-            for (String range : timeRanges) {
-                Matcher timeMatcher = TIME_RANGE_PATTERN.matcher(range);
-                if (!timeMatcher.matches()) {
-                    throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Orario non riconosciuto: " + range, HttpStatus.BAD_REQUEST);
+                if (!usedDays.add(day)) {
+                    log.debug("{}: Giorno duplicato: {}", ERRORE, day);
                 }
 
-                int startH = Integer.parseInt(timeMatcher.group(1));
-                int startM = Integer.parseInt(timeMatcher.group(2));
-                int endH = Integer.parseInt(timeMatcher.group(3));
-                int endM = Integer.parseInt(timeMatcher.group(4));
+                String[] timeRanges = times.split("\\s*,\\s*");
+                for (String range : timeRanges) {
+                    Matcher timeMatcher = TIME_RANGE_PATTERN.matcher(range);
+                    if (!timeMatcher.matches()) {
+                        log.debug("{}: Orario non riconosciuto: {}", ERRORE, range);
 
-                if (!isValidTime(startH, startM) || !isValidTime(endH, endM)) {
-                    throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Orario non valido: " + range, HttpStatus.BAD_REQUEST);
-                }
+                    }
 
-                if (startH > endH || (startH == endH && startM >= endM)) {
-                    throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Intervallo orario non valido: " + range, HttpStatus.BAD_REQUEST);
+                    int startH = Integer.parseInt(timeMatcher.group(1));
+                    int startM = Integer.parseInt(timeMatcher.group(2));
+                    int endH = Integer.parseInt(timeMatcher.group(3));
+                    int endM = Integer.parseInt(timeMatcher.group(4));
+
+                    if (!isValidTime(startH, startM) || !isValidTime(endH, endM)) {
+                        log.debug("{}: Orario non valido: {}", ERRORE, range);
+                    }
+
+                    if (startH > endH || (startH == endH && startM >= endM)) {
+                        log.debug("{}: Intervallo orario non valido: {}", ERRORE, range);
+                    }
                 }
             }
         }
@@ -139,7 +144,7 @@ public class OpeningHoursParser {
     private static List<OpeningHourEntry> parseEntries(String input, boolean validateFormat) {
         if (StringUtils.isBlank(input)) {
             if (validateFormat) {
-                throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Orari di apertura non forniti", HttpStatus.BAD_REQUEST);
+                log.debug("{}: Orari di apertura non forniti", ERRORE);
             }
             return Collections.emptyList();
         }
@@ -154,7 +159,7 @@ public class OpeningHoursParser {
             Matcher matcher = LINE_PATTERN.matcher(line);
             if (!matcher.matches()) {
                 if (validateFormat) {
-                    throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Formato Opening Hours non valido", HttpStatus.BAD_REQUEST);
+                    log.debug("{}: Formato Opening Hours non valido", ERRORE);
                 }
                 continue; // parse-only mode: ignora righe non valide
             }
@@ -177,9 +182,10 @@ public class OpeningHoursParser {
     }
 
     private static List<String> expandDays(String start, String end) {
+        List<String> expandDays = List.of();
         int startIndex = VALID_DAYS_ORDERED.indexOf(start);
         if (startIndex == -1) {
-            throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Intervallo giorni non valido: " + start, HttpStatus.BAD_REQUEST);
+            log.debug("{}: Intervallo giorni non valido: {}", ERRORE, start);
         }
 
         if (end == null) {
@@ -188,10 +194,13 @@ public class OpeningHoursParser {
 
         int endIndex = VALID_DAYS_ORDERED.indexOf(end);
         if (endIndex == -1 || endIndex < startIndex) {
-            throw new RaddGenericException(ExceptionTypeEnum.OPENING_TIME_ERROR, "Intervallo giorni invalido o fuori ordine: " + end, HttpStatus.BAD_REQUEST);
+            log.debug("{}: Intervallo giorni invalido o fuori ordine: {}", ERRORE, end);
+        }
+        else{
+            expandDays = VALID_DAYS_ORDERED.subList(startIndex, endIndex + 1);
         }
 
-        return VALID_DAYS_ORDERED.subList(startIndex, endIndex + 1);
+        return expandDays;
     }
 
 }
