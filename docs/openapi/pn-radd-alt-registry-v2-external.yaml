@@ -307,7 +307,7 @@ components:
         website:
           type: string
           description: Link al sito del punto di ritiro
-          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
         partnerType:
           type: string
           description: Tipologia del punto di ritiro
@@ -348,7 +348,7 @@ components:
         website:
           type: string
           description: Link al sito del punto di ritiro
-          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/[^\s]*)?$
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
         email:
           type: string
           description: Indirizzo email del punto di ritiro
@@ -412,13 +412,6 @@ components:
       schema:
         type: string
       example: 2024-06-21
-    uid:
-      name: uid
-      description: Identificativo pseudo-anonimizzato dell'operatore RADD
-      in: header
-      required: true
-      schema:
-        type: string
     requestId:
       name: requestId
       description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
