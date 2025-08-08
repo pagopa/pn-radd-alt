@@ -45,6 +45,7 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
         storeRegistry.setStartValidity(registryDto.getStartValidity());
         storeRegistry.setEndValidity(registryDto.getEndValidity());
         storeRegistry.setNormalizedAddress(normalizedAddressMapper.toDto(entity.getNormalizedAddress()));
+        storeRegistry.setAddress(registryDto.getAddress());
 
         return storeRegistry;
     }

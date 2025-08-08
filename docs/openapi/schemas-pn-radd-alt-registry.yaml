@@ -123,6 +123,8 @@ components:
     RegistryV2:
       type: object
       properties:
+        Address:
+          $ref: '#/components/schemas/Address'
         normalizedAddress:
           $ref: '#/components/schemas/NormalizedAddress'
         partnerId:
