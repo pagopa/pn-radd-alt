@@ -19,6 +19,7 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
 
     private final RaddRegistryMapper raddRegistryMapper;
     private final NormalizedAddressMapper normalizedAddressMapper;
+    private final AddressMapper addressMapper;
 
     public StoreRegistry toDto(RaddRegistryEntityV2 entity) {
         if (entity == null) {
@@ -45,6 +46,7 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
         storeRegistry.setStartValidity(registryDto.getStartValidity());
         storeRegistry.setEndValidity(registryDto.getEndValidity());
         storeRegistry.setNormalizedAddress(normalizedAddressMapper.toDto(entity.getNormalizedAddress()));
+        storeRegistry.setAddress(addressMapper.toDto(entity.getAddress()));
 
         return storeRegistry;
     }
@@ -77,6 +79,7 @@ public class StoreRegistryMapper extends AbstractRegistryMapper {
         entity.setStartValidity(parseDateString(storeRegistry.getStartValidity()));
         entity.setEndValidity(parseDateString(storeRegistry.getEndValidity()));
         entity.setNormalizedAddress(normalizedAddressMapper.toEntity(storeRegistry.getNormalizedAddress()));
+        entity.setAddress(addressMapper.toEntity(storeRegistry.getAddress()));
 
         return entity;
     }
