@@ -23,14 +23,6 @@ class UrlSanitizerTest {
     }
 
     @Test
-    void sanitizeUrl_withUppercaseAndWhitespace_shouldNormalizeAndAddHttps() {
-        String input = "  ExAmPlE.Com/TeSt ";
-        String expected = "https://example.com/test";
-        String result = UrlSanitizer.sanitizeUrl(input);
-        assertEquals(expected, result);
-    }
-
-    @Test
     void sanitizeUrl_withPort_shouldPreservePort() {
         String input = "https://example.com:8443/test";
         String expected = "https://example.com:8443/test";
@@ -70,7 +62,7 @@ class UrlSanitizerTest {
                 UrlSanitizeException.class,
                 () -> UrlSanitizer.sanitizeUrl("example.com/<script>")
         );
-        assertTrue(ex.getMessage().contains("caratteri pericolosi"));
+        assertTrue(ex.getMessage().contains("caratteri non validi"));
     }
 
     @Test

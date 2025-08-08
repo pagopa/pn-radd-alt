@@ -315,7 +315,7 @@ components:
         website:
           type: string
           description: Link al sito del punto di ritiro
-          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d{1,5})?(\/[^\s]*)?$
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
         partnerType:
           type: string
           description: Tipologia del punto di ritiro
@@ -356,7 +356,7 @@ components:
         website:
           type: string
           description: Link al sito del punto di ritiro
-          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d{1,5})?(\/[^\s]*)?$
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
         email:
           type: string
           description: Indirizzo email del punto di ritiro
