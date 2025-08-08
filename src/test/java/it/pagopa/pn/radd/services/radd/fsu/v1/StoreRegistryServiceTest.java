@@ -1,10 +1,12 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
 import io.micrometer.core.instrument.util.StringUtils;
+import it.pagopa.pn.radd.mapper.AddressMapper;
 import it.pagopa.pn.radd.mapper.NormalizedAddressMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.mapper.StoreRegistryMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
+import it.pagopa.pn.radd.middleware.db.entities.AddressEntity;
 import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +40,7 @@ public class StoreRegistryServiceTest {
     @BeforeEach
     void setUp() {
         NormalizedAddressMapper normalizedAddressMapper = new NormalizedAddressMapper();
-        storeRegistryService = new StoreRegistryService(raddRegistryDAO, new StoreRegistryMapper(new RaddRegistryMapper(normalizedAddressMapper), normalizedAddressMapper));
+        storeRegistryService = new StoreRegistryService(raddRegistryDAO, new StoreRegistryMapper(new RaddRegistryMapper(normalizedAddressMapper), normalizedAddressMapper, new AddressMapper()));
     }
 
     private RaddRegistryEntityV2 getRegistryEntity() {
@@ -47,12 +49,22 @@ public class StoreRegistryServiceTest {
         registryEntity.setLocationId("locationId");
         registryEntity.setDescription("testDescription");
         registryEntity.setOpeningTime("testOpeningTime");
-        NormalizedAddressEntity addressEntity = new NormalizedAddressEntity();
+
+        NormalizedAddressEntity normalizedAddressEntity = new NormalizedAddressEntity();
+        normalizedAddressEntity.setCountry("country");
+        normalizedAddressEntity.setProvince("pr");
+        normalizedAddressEntity.setCity("city");
+        normalizedAddressEntity.setCap("cap");
+        registryEntity.setNormalizedAddress(normalizedAddressEntity);
+
+        AddressEntity addressEntity = new AddressEntity();
         addressEntity.setCountry("country");
         addressEntity.setProvince("pr");
         addressEntity.setCity("city");
         addressEntity.setCap("cap");
-        registryEntity.setNormalizedAddress(addressEntity);
+        addressEntity.setAddressRow("addressRow");
+        registryEntity.setAddress(addressEntity);
+
         return registryEntity;
     }
 
