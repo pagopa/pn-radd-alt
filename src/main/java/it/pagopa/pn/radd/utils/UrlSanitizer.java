@@ -12,6 +12,7 @@ public class UrlSanitizer {
 
     private static final Pattern SAFE_CHARS = Pattern.compile("^[a-zA-Z0-9:/?#\\[\\]@!$&'()*+,;=_\\-.~%]*$");
     private static final Pattern SCHEME_REGEX = Pattern.compile("^[a-z][a-z0-9+.-]*://.*");
+    private static final Pattern VALID_TLD_PATTERN = Pattern.compile("^.*\\.(com|org|net|it|gov|edu|info|io|dev|biz|eu|us|uk)$");
 
     public static String sanitizeUrl(String inputUrl) {
         log.debug("Sanitizing URL: {}", inputUrl);
@@ -40,6 +41,12 @@ public class UrlSanitizer {
     private static String normalizeUrl(String url) {
         try {
             URI uri = new URI(url).normalize();
+            String host = uri.getHost();
+
+            if (host == null || !VALID_TLD_PATTERN.matcher(host).matches()) {
+                throw new UrlSanitizeException("URL contiene un TLD non valido: " + host);
+            }
+
             String sanitizedUrl = uri.toString();
             log.debug("URL sanitizzato: {}", sanitizedUrl);
             return sanitizedUrl;
