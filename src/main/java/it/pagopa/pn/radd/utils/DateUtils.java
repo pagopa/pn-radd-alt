@@ -61,7 +61,7 @@ public class DateUtils {
     public static Instant convertDateToInstantAtStartOfDay(String date) {
         try{
             return LocalDate.parse(date).atStartOfDay(ZoneOffset.UTC).toInstant();
-        } catch (Exception e) {
+        } catch (DateTimeParseException e) {
             throw new RaddGenericException(ExceptionTypeEnum.DATE_VALIDATION_ERROR, "La data non è valida (" + date + ")", HttpStatus.BAD_REQUEST);
         }
     }
