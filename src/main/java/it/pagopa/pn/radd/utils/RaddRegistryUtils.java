@@ -11,6 +11,8 @@ import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.Fil
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileCreationResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
+import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
+import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
 import it.pagopa.pn.radd.pojo.*;
@@ -19,6 +21,7 @@ import it.pagopa.pn.radd.services.radd.fsu.v1.SecretService;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Mono;
@@ -35,6 +38,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.TO_PROCESS;
 import static it.pagopa.pn.radd.utils.DateUtils.*;
@@ -47,6 +51,7 @@ public class RaddRegistryUtils {
     private final ObjectMapperUtil objectMapperUtil;
     private final PnRaddFsuConfig pnRaddFsuConfig;
     private final SecretService secretService;
+    private final static String PARTNER_ID_REGEX = "^([0-9]{11})$";
 
     private final static Function<Map<String, AttributeValue>, PnLastEvaluatedKey> STORE_REGISTRY_LAST_EVALUATED_KEY = (stringAttributeValueMap) -> {
         PnLastEvaluatedKey pageLastEvaluatedKey = new PnLastEvaluatedKey();
@@ -581,4 +586,9 @@ public class RaddRegistryUtils {
         return address;
     }
 
+    public static void validatePartnerId(String partnerId) {
+        if (!Pattern.matches(PARTNER_ID_REGEX, partnerId)) {
+            throw new RaddGenericException(ExceptionTypeEnum.INVALID_PARTNER_ID, HttpStatus.BAD_REQUEST);
+        }
+    }
 }
