@@ -299,10 +299,12 @@ components:
           description: >-
             Data di inizio di validità del punto di ritiro in formato (yyyy-MM-dd),
             se non inviata viene considerata la data corrente.
+          pattern: '^\d{4}-\d{2}-\d{2}$'
           example: '2024-03-21'
         endValidity:
           type: string
           description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          pattern: '^\d{4}-\d{2}-\d{2}$'
           example: '2024-03-21'
         externalCodes:
           type: array
@@ -349,6 +351,7 @@ components:
         endValidity:
           type: string
           description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          pattern: '^\d{4}-\d{2}-\d{2}$'
           example: '2024-03-21'
         appointmentRequired:
           type: boolean
