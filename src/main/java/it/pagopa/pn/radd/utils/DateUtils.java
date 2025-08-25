@@ -59,7 +59,11 @@ public class DateUtils {
     }
 
     public static Instant convertDateToInstantAtStartOfDay(String date) {
-        return LocalDate.parse(date).atStartOfDay(ZoneOffset.UTC).toInstant();
+        try{
+            return LocalDate.parse(date).atStartOfDay(ZoneOffset.UTC).toInstant();
+        } catch (Exception e) {
+            throw new RaddGenericException(ExceptionTypeEnum.DATE_VALIDATION_ERROR, "La data non è valida (" + date + ")", HttpStatus.BAD_REQUEST);
+        }
     }
 
     /**
@@ -104,8 +108,8 @@ public class DateUtils {
         Instant end = convertDateToInstantAtStartOfDay(endDateStr);
         if (end.isBefore(startDate)) {
             throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR,
-                    "La data di fine validità è precedente a quella di inizio validità (" + startDate + ")",
-                    HttpStatus.BAD_REQUEST);
+                                           "La data di fine validità è precedente a quella di inizio validità (" + startDate + ")",
+                                           HttpStatus.BAD_REQUEST);
         }
         return end;
     }
