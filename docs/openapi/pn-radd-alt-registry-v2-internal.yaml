@@ -284,7 +284,7 @@ components:
           maxItems: 2
           items:
             type: string
-            pattern: ^(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$
+            pattern: ^(\+?\d{1,3}[-.]?)?\(?\d{3}\)?[-.]?\d{3}[-.]?\d{4}$
         email:
           type: string
           description: Indirizzo email del punto di ritiro
@@ -345,7 +345,7 @@ components:
           maxItems: 2
           items:
             type: string
-            pattern: ^(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$
+            pattern: ^(\+?\d{1,3}[-.]?)?\(?\d{3}\)?[-.]?\d{3}[-.]?\d{4}$
         endValidity:
           type: string
           description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
