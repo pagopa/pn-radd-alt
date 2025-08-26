@@ -35,6 +35,7 @@ import static org.mockito.ArgumentMatchers.eq;
 @WebFluxTest(controllers = {RegistrySelfController.class})
 class RegistrySelfControllerTest {
 
+    public static final String INVALID_PARTNER_ID = "invalidPartnerId";
     @MockBean
     private RegistrySelfService registrySelfService;
 
@@ -112,6 +113,22 @@ class RegistrySelfControllerTest {
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.partnerId").isEqualTo(PARTNER_ID);
+    }
+
+    @Test
+    void addRegistry_invaliPartnerId() {
+        CreateRegistryRequestV2 request = buildValidCreateRequest();
+
+        webTestClient.post()
+                .uri(CREATE_PATH)
+                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                .header("x-pagopa-pn-cx-id", INVALID_PARTNER_ID)
+                .header(PN_PAGOPA_UID, "test-uid")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest();
     }
 
     @Test
@@ -196,6 +213,22 @@ class RegistrySelfControllerTest {
     }
 
     @Test
+    void updateRegistry_invalidPartnerId() {
+        UpdateRegistryRequestV2 request = buildValidUpdateRequest();
+
+        webTestClient.patch()
+                .uri(UPDATE_PATH, LOCATION_ID)
+                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                .header("x-pagopa-pn-cx-id", INVALID_PARTNER_ID)
+                .header(PN_PAGOPA_UID, "test-uid")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest();
+    }
+
+    @Test
     void updateRegistry_invalidField() {
         UpdateRegistryRequestV2 request = buildValidUpdateRequest();
         request.setWebsite("not-a-website");
@@ -216,21 +249,19 @@ class RegistrySelfControllerTest {
 
     @Test
     void shouldDeleteRegistryAndReturn204() {
-        String partnerId = "partnerTest";
         String locationId = "locationTest";
 
         RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
-        entity.setPartnerId(partnerId);
+        entity.setPartnerId(PARTNER_ID);
         entity.setLocationId(locationId);
 
-        when(registrySelfService.deleteRegistry(partnerId, locationId))
+        when(registrySelfService.deleteRegistry(PARTNER_ID, locationId))
                 .thenReturn(Mono.just(entity));
 
         webTestClient.delete()
                      .uri(UPDATE_PATH, locationId)
-                     .header("partnerId", partnerId)
                      .header(PN_PAGOPA_CX_TYPE, CxTypeAuthFleet.BO.getValue())
-                     .header(PN_PAGOPA_CX_ID, partnerId)
+                     .header(PN_PAGOPA_CX_ID, PARTNER_ID)
                      .header(PN_PAGOPA_UID, "my-uid")
                      .exchange()
                      .expectStatus().isNoContent();
@@ -238,19 +269,35 @@ class RegistrySelfControllerTest {
 
     @Test
     void shouldReturn204WhenRegistryNotFound() {
-        String partnerId = "partnerNotFound";
         String locationId = "locationNotFound";
 
-        when(registrySelfService.deleteRegistry(partnerId, locationId))
+        when(registrySelfService.deleteRegistry(PARTNER_ID, locationId))
                 .thenReturn(Mono.empty());
 
         webTestClient.delete()
                      .uri(UPDATE_PATH, locationId)
                      .header(PN_PAGOPA_CX_TYPE, CxTypeAuthFleet.BO.getValue())
-                     .header(PN_PAGOPA_CX_ID, partnerId)
+                     .header(PN_PAGOPA_CX_ID, PARTNER_ID)
                      .header(PN_PAGOPA_UID, "my-uid")
                      .exchange()
                      .expectStatus().isNoContent(); // 204
+    }
+
+    @Test
+    void shouldReturn400WhenPartnerIdIsInvalid() {
+        String locationId = "locationNotFound";
+
+        when(registrySelfService.deleteRegistry(PARTNER_ID, locationId))
+                .thenReturn(Mono.empty());
+
+        webTestClient.delete()
+                .uri(UPDATE_PATH, locationId)
+                .header(PN_PAGOPA_CX_TYPE, CxTypeAuthFleet.BO.getValue())
+                .header(PN_PAGOPA_CX_ID, INVALID_PARTNER_ID)
+                .header(PN_PAGOPA_UID, "my-uid")
+                .exchange()
+                .expectStatus()
+                .isBadRequest();
     }
 
     private GetRegistryResponseV2 getRegistryResponseV2() {
@@ -283,6 +330,20 @@ class RegistrySelfControllerTest {
                 .exchange()
                 .expectStatus()
                 .isOk();
+
+    }
+
+    @Test
+    void retrieveRegistry_invalidPartnerId() {
+        String GET_PATH = "/radd-bo/api/v2/registry";
+        webTestClient.get()
+                .uri(GET_PATH)
+                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                .header("x-pagopa-pn-cx-id", INVALID_PARTNER_ID)
+                .header(PN_PAGOPA_UID, "test-uid")
+                .exchange()
+                .expectStatus()
+                .isBadRequest();
 
     }
 
