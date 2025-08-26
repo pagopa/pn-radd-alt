@@ -43,7 +43,7 @@ class UrlSanitizerTest {
         UrlSanitizeException ex = assertThrows(
                 UrlSanitizeException.class,
                 () -> UrlSanitizer.sanitizeUrl(null)
-        );
+                                              );
         assertTrue(ex.getMessage().contains("vuoto o nullo"));
     }
 
@@ -52,7 +52,7 @@ class UrlSanitizerTest {
         UrlSanitizeException ex = assertThrows(
                 UrlSanitizeException.class,
                 () -> UrlSanitizer.sanitizeUrl("   ")
-        );
+                                              );
         assertTrue(ex.getMessage().contains("vuoto o nullo"));
     }
 
@@ -61,7 +61,7 @@ class UrlSanitizerTest {
         UrlSanitizeException ex = assertThrows(
                 UrlSanitizeException.class,
                 () -> UrlSanitizer.sanitizeUrl("example.com/<script>")
-        );
+                                              );
         assertTrue(ex.getMessage().contains("caratteri non validi"));
     }
 
@@ -70,7 +70,7 @@ class UrlSanitizerTest {
         UrlSanitizeException ex = assertThrows(
                 UrlSanitizeException.class,
                 () -> UrlSanitizer.sanitizeUrl("http://example.com")
-        );
+                                              );
         assertTrue(ex.getMessage().contains("Protocollo non supportato"));
     }
 
@@ -79,8 +79,17 @@ class UrlSanitizerTest {
         UrlSanitizeException ex = assertThrows(
                 UrlSanitizeException.class,
                 () -> UrlSanitizer.sanitizeUrl("https://")
-        );
+                                              );
         assertTrue(ex.getMessage().contains("Errore nella sanitizzazione"));
+    }
+
+    @Test
+    void sanitizeUrl_withoutTLD_shouldThrowException() {
+        UrlSanitizeException ex = assertThrows(
+                UrlSanitizeException.class,
+                () -> UrlSanitizer.sanitizeUrl("www.esempio")
+                                              );
+        assertTrue(ex.getMessage().contains("TLD non valido"));
     }
 
 }
