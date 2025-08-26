@@ -132,10 +132,13 @@ components:
         locationId:
           type: string
           description: Identificativo univoco della sede del punto di ritiro.
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+          example: "123e4567-e89b-12d3-a456-426614174000"
         description:
           type: string
           description: Descrizione del punto di ritiro.
           example: Sportello ABC.
+          maxLength: 200
         phoneNumbers:
           type: array
           description: Lista dei numeri di telefono del punto di ritiro.
