@@ -147,7 +147,7 @@ components:
           maxItems: 2
           items:
             type: string
-            pattern: ^(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$
+            pattern: ^(\+?\d{1,3}[-.]?)?\(?\d{3}\)?[-.]?\d{3}[-.]?\d{4}$
         email:
           type: string
           description: Indirizzo email del punto di ritiro
@@ -162,10 +162,12 @@ components:
           description: >-
             Data di inizio di validità del punto di ritiro in formato (yyyy-MM-dd),
             se non inviata viene considerata la data corrente.
+          pattern: ^\d{4}-\d{2}-\d{2}$
           example: '2024-03-21'
         endValidity:
           type: string
           description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          pattern: ^\d{4}-\d{2}-\d{2}$
           example: '2024-03-21'
         externalCodes:
           type: array
