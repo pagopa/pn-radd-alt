@@ -22,7 +22,7 @@
         <awssdk.version>2.29.4</awssdk.version>
         <java.version>17</java.version>
         <jacoco.min.line.cover.ratio>0.01</jacoco.min.line.cover.ratio>
-        <pagopa.codegen.version>v01.05.00</pagopa.codegen.version>
+        <pagopa.codegen.version>v01.14.00</pagopa.codegen.version>
     </properties>
 
     <dependencies>
