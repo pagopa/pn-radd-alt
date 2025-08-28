@@ -3,9 +3,9 @@ package it.pagopa.pn.radd.utils;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.DownloadUrl;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
-import it.pagopa.pn.radd.exception.RaddGenericException;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.UUID;
 
@@ -77,29 +77,16 @@ class UtilsTest {
         assertDoesNotThrow(() -> UUID.fromString(uuid)); // verifica formato UUID valido
     }
 
-    @Test
-    void getFileKeyFromPresignedUrl_shouldExtractFromSafestorageUrl() {
-        String url = "https://example.safestorage/file-key-123?token=abc";
-        String key = Utils.getFileKeyFromPresignedUrl(url);
-
-        assertEquals("file-key-123", key);
+    @ParameterizedTest
+    @CsvSource({
+            "https://example.safestorage/file-key-123?token=abc, file-key-123",
+            "https://host/download/ACT/abc?attachmentId=123, zipUrl",
+            "https://host/download/AOR/abc, coverFileUrl",
+    })
+    void getFileKeyFromPresignedUrl(String url, String expectedKey) {
+        assertEquals(expectedKey, Utils.getFileKeyFromPresignedUrl(url));
     }
 
-    @Test
-    void getFileKeyFromPresignedUrl_shouldReturnZipUrl() {
-        String url = "https://host/download/ACT/abc?attachmentId=123";
-        String key = Utils.getFileKeyFromPresignedUrl(url);
-
-        assertEquals("zipUrl", key);
-    }
-
-    @Test
-    void getFileKeyFromPresignedUrl_shouldReturnCoverFileUrl() {
-        String url = "https://host/download/AOR/abc";
-        String key = Utils.getFileKeyFromPresignedUrl(url);
-
-        assertEquals("coverFileUrl", key);
-    }
 
     @Test
     void getFileKeyFromPresignedUrl_shouldReturnEmptyStringIfNoMatch() {

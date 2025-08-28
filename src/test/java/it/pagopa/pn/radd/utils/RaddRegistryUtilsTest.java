@@ -23,6 +23,8 @@ import it.pagopa.pn.radd.services.radd.fsu.v1.SecretService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -1334,7 +1336,6 @@ class RaddRegistryUtilsTest {
         RegistriesResponse response = raddRegistryUtils.mapRegistryEntityToRegistry(resultPaginationDto);
 
         assertNotNull(response);
-        //assertTrue(response.isMoreResult());
         assertEquals(nextPages, response.getNextPagesKey());
         assertEquals(1, response.getRegistries().size());
 
@@ -1517,8 +1518,9 @@ class RaddRegistryUtilsTest {
         assertDoesNotThrow(() -> RaddRegistryUtils.validatePartnerId(validPartnerId));
     }
 
-    @Test
-    void testInvalidPartnerId_tooShort_throwsException() {
+    @ParameterizedTest
+    @ValueSource(strings = {"12345", "1234567890123", "12345abc901"})
+    void testInvalidPartnerId_throwsException() {
         String invalidPartnerId = "12345";
 
         RaddGenericException exception = assertThrows(RaddGenericException.class, () ->
@@ -1528,31 +1530,6 @@ class RaddRegistryUtilsTest {
         assertEquals(ExceptionTypeEnum.INVALID_PARTNER_ID, exception.getExceptionType());
         assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
     }
-
-    @Test
-    void testInvalidPartnerId_tooLong_throwsException() {
-        String invalidPartnerId = "1234567890123";
-
-        RaddGenericException exception = assertThrows(RaddGenericException.class, () ->
-                                                              RaddRegistryUtils.validatePartnerId(invalidPartnerId)
-                                                     );
-
-        assertEquals(ExceptionTypeEnum.INVALID_PARTNER_ID, exception.getExceptionType());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-    }
-
-    @Test
-    void testInvalidPartnerId_nonNumeric_throwsException() {
-        String invalidPartnerId = "12345abc901"; // contiene caratteri non numerici
-
-        RaddGenericException exception = assertThrows(RaddGenericException.class, () ->
-                                                              RaddRegistryUtils.validatePartnerId(invalidPartnerId)
-                                                     );
-
-        assertEquals(ExceptionTypeEnum.INVALID_PARTNER_ID, exception.getExceptionType());
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-    }
-
 
     @Test
     void testUpdateAllFields() {

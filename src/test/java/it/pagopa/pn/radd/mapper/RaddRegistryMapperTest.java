@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -53,7 +52,6 @@ class RaddRegistryMapperTest {
         assertNotNull(dto);
         assertEquals("partner-1", dto.getPartnerId());
         assertEquals("loc-1", dto.getLocationId());
-        //assertEquals("001", dto.getExternalCodes().get("EX"));
         assertEquals("test@example.com", dto.getEmail());
         assertEquals("https://example.com", dto.getWebsite());
         assertEquals("TYPE1", dto.getPartnerType());
@@ -97,7 +95,6 @@ class RaddRegistryMapperTest {
         assertNotNull(entity);
         assertEquals("partner-2", entity.getPartnerId());
         assertEquals("loc-2", entity.getLocationId());
-        //assertEquals("002", entity.getExternalCodes().get("EXT"));
         assertEquals("email@test.com", entity.getEmail());
         assertEquals("https://test.com", entity.getWebsite());
         assertEquals("TYPE2", entity.getPartnerType());
