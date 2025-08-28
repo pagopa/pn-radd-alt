@@ -16,6 +16,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -24,6 +25,7 @@ import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -212,5 +214,23 @@ class RestExceptionHandlerTests {
                 .expectNextMatches(response -> response.getStatusCode() == HttpStatus.BAD_REQUEST &&
                         response.getBody().getTitle().contains("field defaultMessage"))
                 .verifyComplete();
+    }
+
+    @Test
+    void serverWebInputException() {
+        ServerWebInputException exception = mock(ServerWebInputException.class);
+        List<ObjectError> objectErrors = new ArrayList<>();
+        objectErrors.add(new FieldError("objectName", "field", "defaultMessage"));
+        objectErrors.add(new ObjectError("objectName", "defaultMessage"));
+
+        when(exception.getStatus()).thenReturn(HttpStatus.BAD_REQUEST);
+        when(exception.getMessage()).thenReturn("Validation failed");
+        when(exception.getMostSpecificCause()).thenReturn(exception);
+
+        Mono<ResponseEntity<Problem>> result = restExceptionHandler.serverWebInputException(exception);
+
+        StepVerifier.create(result)
+                    .expectNextMatches(response -> response.getStatusCode() == HttpStatus.BAD_REQUEST)
+                    .verifyComplete();
     }
 }

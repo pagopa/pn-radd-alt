@@ -7,6 +7,7 @@ import it.pagopa.pn.radd.mapper.NormalizedAddressMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryPageMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
+import it.pagopa.pn.radd.middleware.db.entities.AddressEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.pojo.RaddRegistryPage;
 import lombok.CustomLog;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,7 +42,10 @@ class RegistrySelfServiceTest {
     private RaddRegistryV2DAO raddRegistryDAO;
     @Mock
     private AwsGeoService awsGeoService;
+    @Mock
     private RegistrySelfService registrySelfService;
+    @Mock
+    private RaddRegistryMapper raddRegistryMapper;
 
     private static final String PATTERN_FORMAT = "yyyy-MM-dd";
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(PATTERN_FORMAT).withZone(ZoneId.systemDefault());
@@ -123,6 +128,22 @@ class RegistrySelfServiceTest {
                     .verifyComplete();
     }
 
+    private CreateRegistryRequestV2 createRegistryRequestV2() {
+        CreateRegistryRequestV2 request = new CreateRegistryRequestV2();
+
+        Instant now = Instant.now();
+        formatter.format(now);
+        request.setEndValidity(formatter.format(now.plus(1, ChronoUnit.DAYS)));
+        request.setDescription("description");
+        request.setPhoneNumbers(List.of("+390123456789"));
+        request.setExternalCodes(List.of("EXT0"));
+        request.setEmail("mail@esempio.it");
+        request.setOpeningTime(OPENING_TIME_Ok2);
+        request.setAppointmentRequired(true);
+        request.setWebsite("https://test.it");
+        return request;
+    }
+
     private UpdateRegistryRequestV2 updateRegistryRequestV2() {
         UpdateRegistryRequestV2 request = new UpdateRegistryRequestV2();
 
@@ -154,9 +175,9 @@ class RegistrySelfServiceTest {
         when(raddRegistryDAO.updateRegistryEntity(entity)).thenReturn(Mono.just(entity));
 
         StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
-                .expectNextMatches(raddRegistryEntity -> entity.getDescription().equalsIgnoreCase(request.getDescription())
-                        && entity.getEmail().equalsIgnoreCase(request.getEmail()))
-                .verifyComplete();
+                    .expectNextMatches(raddRegistryEntity -> entity.getDescription().equalsIgnoreCase(request.getDescription())
+                                                             && entity.getEmail().equalsIgnoreCase(request.getEmail()))
+                    .verifyComplete();
     }
 
     @Test
@@ -166,7 +187,7 @@ class RegistrySelfServiceTest {
         when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.empty());
 
         StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, new UpdateRegistryRequestV2()))
-                .verifyErrorMessage(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND.getMessage());
+                    .verifyErrorMessage(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND.getMessage());
     }
 
     @Test
@@ -182,9 +203,9 @@ class RegistrySelfServiceTest {
 
         request.setExternalCodes(List.of("EXT1"));
         StepVerifier.create(registrySelfService.updateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
-                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
-                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DUPLICATE_EXT_CODE)
-                .verify();
+                    .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
+                                                     ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DUPLICATE_EXT_CODE)
+                    .verify();
     }
 
     @Test
@@ -220,4 +241,5 @@ class RegistrySelfServiceTest {
 
         StepVerifier.create(result).verifyComplete();
     }
+
 }
