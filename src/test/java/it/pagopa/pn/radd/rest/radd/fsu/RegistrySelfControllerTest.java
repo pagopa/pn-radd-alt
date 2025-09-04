@@ -1,6 +1,6 @@
 package it.pagopa.pn.radd.rest.radd.fsu;
 
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.*;
 import it.pagopa.pn.radd.config.RestExceptionHandler;
 import it.pagopa.pn.radd.exception.CoordinatesNotFoundException;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;

@@ -1,6 +1,9 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.*;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.CreateRegistryRequestV2;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.GetRegistryResponseV2;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.UpdateRegistryRequestV2;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
