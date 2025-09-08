@@ -77,8 +77,7 @@ public class DateUtils {
     public static void validateDateInterval(String startDateStr, String endDateStr) {
         try {
             log.debug("Validating date interval: start={} end={}", startDateStr, endDateStr);
-            // Controllo che startDate non sia nel passato
-            Instant start = validateStartDate(startDateStr);
+            Instant start = startDateStr != null ? convertDateToInstantAtStartOfDay(startDateStr) : getStartOfDayToday();
             // Controllo che endDate non sia nel passato rispetto a startDate
             Instant end = null;
             if (StringUtils.isNotBlank(endDateStr))
