@@ -88,20 +88,6 @@ public class DateUtils {
         }
     }
 
-    public static Instant validateStartDate(@NotNull String startDateStr) {
-        try {
-            log.debug("Validating start date: {}", startDateStr);
-            Instant today = getStartOfDayToday();
-            Instant start = startDateStr != null ? convertDateToInstantAtStartOfDay(startDateStr) : today;
-            if (start.isBefore(today)) {
-                throw new RaddGenericException(ExceptionTypeEnum.START_VALIDITY_IN_THE_PAST, HttpStatus.BAD_REQUEST);
-            }
-            return start;
-        } catch (DateTimeParseException e) {
-            throw new RaddGenericException(ExceptionTypeEnum.DATE_INVALID_ERROR, HttpStatus.BAD_REQUEST);
-        }
-    }
-
     public static Instant validateEndDate(@NotNull Instant startDate, @NotNull String endDateStr) {
         log.debug("Validating end date: start={} end={}", startDate, endDateStr);
         Instant end = convertDateToInstantAtStartOfDay(endDateStr);
