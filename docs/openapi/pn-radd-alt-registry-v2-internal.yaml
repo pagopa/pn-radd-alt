@@ -276,6 +276,7 @@ components:
           type: string
           description: Descrizione del punto di ritiro.
           example: Sportello ABC.
+          maxLength: 200
         phoneNumbers:
           type: array
           description: Lista dei numeri di telefono del punto di ritiro.
@@ -284,7 +285,7 @@ components:
           maxItems: 2
           items:
             type: string
-            pattern: ^(\+?\d{1,3}[-.]?)?\(?\d{3}\)?[-.]?\d{3}[-.]?\d{4}$
+            pattern: ^(?:\+39|0039)?(3\d{9}|0[1-9]\d{1,2}\d{6,7})$
         email:
           type: string
           description: Indirizzo email del punto di ritiro
