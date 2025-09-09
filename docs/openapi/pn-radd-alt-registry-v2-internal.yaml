@@ -323,6 +323,7 @@ components:
           type: string
           description: Tipologia del punto di ritiro
           pattern: "CAF"
+          default: "CAF"
 
     UpdateRegistryRequestV2:
       type: object

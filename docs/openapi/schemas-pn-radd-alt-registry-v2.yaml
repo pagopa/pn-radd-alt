@@ -13,7 +13,6 @@ components:
           type: string
           description: Indirizzo completo
           example: Via Roma 123
-          pattern: ^[a-zA-Z0-9\s\.,''-]{5,100}$  # Permette lettere, numeri, spazi e caratteri comuni negli indirizzi
         cap:
           type: string
           description: CAP (Codice di Avviamento Postale).
@@ -157,6 +156,7 @@ components:
           type: string
           description: Tipologia del punto di ritiro
           pattern: "CAF"
+          default: "CAF"
         creationTimestamp:
           type: string
           description: Istante di creazione del punto di ritiro
