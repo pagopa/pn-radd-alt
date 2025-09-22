@@ -374,14 +374,6 @@ components:
           description: Chiave dell’ultimo elemento restituito (LastEvaluatedKey DynamoDB)
 
   parameters:
-    registryId:
-      name: registryId
-      description: Identificativo dello sportello RADD
-      in: path
-      required: true
-      schema:
-        type: string
-      example: cxId#uuid
     locationId:
       name: locationId
       description: Identificativo della sede del punto di ritiro
@@ -409,49 +401,6 @@ components:
     lastKey:
       name: lastKey
       description: Chiave dell’ultimo elemento restituito per ottenere la pagina successiva (ExclusiveStartKey DynamoDB)
-      in: query
-      required: false
-      schema:
-        type: string
-    endDate:
-      name: endDate
-      description: Data fine validità sportello
-      in: query
-      required: true
-      schema:
-        type: string
-      example: 2024-06-21
-    requestId:
-      name: requestId
-      description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
-      in: header
-      required: true
-      schema:
-        type: string
-    cap:
-      name: cap
-      description: CAP
-      in: query
-      required: false
-      schema:
-        type: string
-    city:
-      name: city
-      description: Città
-      in: query
-      required: false
-      schema:
-        type: string
-    pr:
-      name: pr
-      description: Provincia
-      in: query
-      required: false
-      schema:
-        type: string
-    externalCode:
-      name: externalCode
-      description: Identificativo punto ritiro SEND indicato dal client
       in: query
       required: false
       schema:

@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: Uyf8bc+MnRzGzXgQm8++UdYld962dIrD6MnYIvJaiVI=
+  version: 1MrhfNeI/sfwTbErN98A5wZcwBN/1UWk2IT54SsfSoA=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -954,7 +954,7 @@ components:
       required: true
       schema:
         type: string
-      example: '2024-06-21T00:00:00.000Z'
+      example: '2024-06-21'
     uid:
       name: uid
       description: Identificativo pseudo-anonimizzato dell'operatore RADD
@@ -1027,7 +1027,7 @@ components:
     requestId:
       name: requestId
       description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
-      in: header
+      in: path
       required: true
       schema:
         type: string
