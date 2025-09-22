@@ -399,7 +399,7 @@ components:
     requestId:
       $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/requestId'
     limit:
-      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/limit'
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/limitV1'
     lastKey:
       $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/lastKey'
 
