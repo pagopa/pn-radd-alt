@@ -26,6 +26,8 @@ servers:
 
 tags:
   - name: Import
+  - name: ImportBo
+    description: API per il BackOffice (radd-bo)
 
 paths:
   /radd-net/api/v1/registry/import/upload:
@@ -155,6 +157,184 @@ paths:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/requestId'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/lastKey'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '404':
+          description: Not Found - Richiesta di import non trovata
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+
+  # ========================================
+  # API BACKOFFICE (radd-bo)
+  # ========================================
+
+  /radd-bo/api/v1/registry/import/upload:
+    post:
+      tags:
+        - ImportBo
+      description: >-
+        API utilizzata per la richiesta della presigned URL utilizzata per il caricamento del file CSV contenente la lista
+        di sportelli di un soggetto RADD.
+      operationId: uploadRegistryRequestsBo
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
+        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistryUploadRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistryUploadResponse'
+        '400':
+          description: Bad Request - Non è permesso l'upload di un nuovo file CSV se esiste già una richiesta di import in corso
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '409':
+          description: Conflict - Non è permesso l'upload dello stesso file CSV più volte
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+  /radd-bo/api/v1/registry/import/{requestId}/verify:
+    get:
+      tags:
+        - ImportBo
+      description: >-
+        API utilizzata per la verifica dello stato di una richiesta di censimento indirizzi (CSV)
+      operationId: verifyRequestBo
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
+        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
+        - $ref: '#/components/parameters/requestId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyRequestResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '404':
+          description: Not Found - Richiesta di import non trovata
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+  /radd-bo/api/v1/registry/import/{requestId}:
+    get:
+      tags:
+        - ImportBo
+      description: >-
+        API utilizzata per il recupero della lista paginata di tutte le richieste di inserimento in anagrafica associate alla richiesta di import
+      operationId: retrieveRequestItemsBo
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
+        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
         - $ref: '#/components/parameters/requestId'
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/lastKey'

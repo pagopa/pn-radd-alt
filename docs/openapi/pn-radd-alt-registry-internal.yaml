@@ -29,6 +29,8 @@ servers:
 
 tags:
   - name: Registry
+  - name: RegistryBo
+    description: API per il BackOffice (radd-bo)
 
 paths:
   /radd-net/api/v1/registry:
@@ -205,6 +207,226 @@ paths:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: '#/components/parameters/uid'
+        - $ref: '#/components/parameters/registryId'
+        - $ref: '#/components/parameters/endDate'
+      responses:
+        204:
+          description: OK
+        '400':
+          description: Bad Request - Data di fine validità non valida, in quanto non rispetta il preavviso di cancellazione
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '404':
+          description: Not found - Punto di ritiro SEND non trovato
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+
+  # ========================================
+  # API BACKOFFICE (radd-bo)
+  # ========================================
+
+  /radd-bo/api/v1/registry:
+    post:
+      tags:
+        - RegistryBo
+      description: >-
+        API utilizzata per la richiesta di attivazione nuova anagrafica RADD
+      operationId: addRegistryBo
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
+        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRegistryRequest'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateRegistryResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+    get:
+      tags:
+        - RegistryBo
+      operationId: retrieveRegistriesBo
+      description: API utilizzata per recuperare la lista paginata di anagrafiche RADD dato il cxId
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
+        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/lastKey'
+        - $ref: '#/components/parameters/cap'
+        - $ref: '#/components/parameters/city'
+        - $ref: '#/components/parameters/pr'
+        - $ref: '#/components/parameters/externalCode'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistriesResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+  /radd-bo/api/v1/registry/{registryId}:
+    patch:
+      tags:
+        - RegistryBo
+      description: >-
+        API utilizzata per la modifica di un'anagrafica RADD
+      operationId: updateRegistryBo
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
+        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
+        - $ref: '#/components/parameters/registryId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRegistryRequest'
+        required: true
+      responses:
+        204:
+          description: OK
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '404':
+          description: Not found - Punto di ritiro SEND non trovato
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+  /radd-bo/api/v1/registry/{registryId}/dismiss:
+    patch:
+      tags:
+        - RegistryBo
+      description: >-
+        API utilizzata per la cancellazione di un'anagrafica RADD
+      operationId: deleteRegistryBo
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
+        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
         - $ref: '#/components/parameters/registryId'
         - $ref: '#/components/parameters/endDate'
       responses:
