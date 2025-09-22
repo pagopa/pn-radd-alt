@@ -1,7 +1,6 @@
 package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.RegistryApi;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.RegistryBoApi;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryRequest;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryResponse;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
@@ -17,7 +16,7 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
-public class RegistrySelfController implements RegistryApi, RegistryBoApi {
+public class RegistrySelfController implements RegistryApi {
 
     private final RegistrySelfService registrySelfService;
 

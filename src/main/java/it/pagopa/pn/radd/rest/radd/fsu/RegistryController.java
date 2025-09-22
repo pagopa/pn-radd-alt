@@ -1,7 +1,6 @@
 package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.ImportApi;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.ImportBoApi;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistryService;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +13,7 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
-public class RegistryController implements ImportApi, ImportBoApi {
+public class RegistryController implements ImportApi {
 
     private final RegistryService registryService;
 

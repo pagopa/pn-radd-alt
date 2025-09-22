@@ -29,8 +29,6 @@ servers:
 
 tags:
   - name: Registry
-  - name: RegistryBo
-    description: API per il BackOffice (radd-bo)
 
 paths:
   /radd-net/api/v1/registry:
@@ -256,7 +254,7 @@ paths:
   /radd-bo/api/v1/registry:
     post:
       tags:
-        - RegistryBo
+        - Registry
       description: >-
         API utilizzata per la richiesta di attivazione nuova anagrafica RADD
       operationId: addRegistryBo
@@ -309,7 +307,7 @@ paths:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
     get:
       tags:
-        - RegistryBo
+        - Registry
       operationId: retrieveRegistriesBo
       description: API utilizzata per recuperare la lista paginata di anagrafiche RADD dato il cxId
       parameters:
@@ -362,7 +360,7 @@ paths:
   /radd-bo/api/v1/registry/{registryId}:
     patch:
       tags:
-        - RegistryBo
+        - Registry
       description: >-
         API utilizzata per la modifica di un'anagrafica RADD
       operationId: updateRegistryBo
@@ -419,7 +417,7 @@ paths:
   /radd-bo/api/v1/registry/{registryId}/dismiss:
     patch:
       tags:
-        - RegistryBo
+        - Registry
       description: >-
         API utilizzata per la cancellazione di un'anagrafica RADD
       operationId: deleteRegistryBo
@@ -471,198 +469,38 @@ paths:
 components:
   schemas:
     CreateRegistryRequest:
-      type: object
-      required:
-        - address
-        - description
-        - phoneNumber
-      properties:
-        address:
-          $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/Address'
-        description:
-          type: string
-          description: Descrizione dello sportello.
-          example: Sportello ABC.
-        phoneNumber:
-          type: string
-          description: Numero di telefono dello sportello.
-          example: "+39 0123456789"
-        geoLocation:
-          $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/GeoLocation'
-        capacity:
-          type: string
-          description: Numero massimo di pratiche mensili che il punto di Ritiro SEND può gestire.
-          example: 100
-        openingTime:
-          type: string
-          description: Orario di apertura dello sportello.
-          example: "mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#"
-        startValidity:
-          type: string
-          description: Data di inizio di validità dello sportello in formato (yyyy-MM-dd), se non inviata viene considerata la data corrente.
-          example: "2024-03-21"
-        endValidity:
-          type: string
-          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
-          example: "2024-03-21"
-        externalCode:
-          type: string
-          description: Identificativo punto ritiro SEND
-
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/CreateRegistryRequest'
     UpdateRegistryRequest:
-      type: object
-      properties:
-        description:
-          type: string
-          description: Descrizione aggiornata dello sportello.
-          example: "Registro aggiornato dello sportello."
-        openingTime:
-          type: string
-          description: Orario di apertura aggiornato dello sportello.
-          example: "mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#"
-        phoneNumber:
-          type: string
-          description: Numero di telefono della sede
-          example: "+39 0123456789"
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/UpdateRegistryRequest'
     CreateRegistryResponse:
-      type: object
-      properties:
-        requestId:
-          type: string
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/CreateRegistryResponse'
     RegistriesResponse:
-      type: object
-      properties:
-        registries:
-          type: array
-          items:
-            $ref: '#/components/schemas/Registry'
-        moreResult:
-          description: Indica se sono presenti ulteriori pagine di risultati oltre a quelle restituite dalle chiavi contenute nel campo __nextPagesKey__.
-          type: boolean
-        nextPagesKey:
-          description: >-
-            Elenco delle chiavi da utilizzare per richiedere le pagine di risultati successive a quella corrente. 
-            L'ordine delle chiavi restituite equivale all'ordine delle pagine di risultati.
-            Se __moreResult__ è true, sono presenti ulteriori pagine di risultati oltre a quelle restituite dalle chiavi contenute in questo campo.
-          type: array
-          items:
-            type: string
-
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/RegistriesResponse'
     Registry:
-      type: object
-      properties:
-        registryId:
-          type: string
-          description: identificativo univoco della sede RADD popolato solo in caso di record in stato ACCEPTED
-        requestId:
-          type: string
-          description: ID della richiesta di import.
-          example: "987654"
-        address:
-          $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/Address'
-        description:
-          type: string
-          description: Descrizione dello sportello.
-          example: Sportello ABC.
-        phoneNumber:
-          type: string
-          description: Numero di telefono dello sportello.
-          example: "+39 0123456789"
-        geoLocation:
-          $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/GeoLocation'
-        openingTime:
-          type: string
-          description: Orario di apertura dello sportello.
-          example: "mon=10:00-13:00_14:00-20:00#tue=10:00-20:00#"
-        startValidity:
-          type: string
-          format: date-time
-          description: Data e ora di inizio di validità dello sportello.
-          example: "2024-03-21T09:00:00Z"
-        endValidity:
-          type: string
-          format: date-time
-          description: Data e ora di fine di validità dello sportello.
-          example: "2024-03-21T17:00:00Z"
-        externalCode:
-          type: string
-          description: Identificativo punto ritiro SEND
-          example: "123456"
-        capacity:
-          description: Numero massimo di pratiche mensili che il punto di Ritiro SEND può gestire.
-          example: 100
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/schemas/Registry'
+
 
   parameters:
     registryId:
-      name: registryId
-      description: Identificativo dello sportello RADD
-      in: path
-      required: true
-      schema:
-        type: string
-      example: cxId#uuid
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/registryId'
     endDate:
-      name: endDate
-      description: Data fine validità sportello
-      in: query
-      required: true
-      schema:
-        type: string
-      example: 2024-06-21
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/endDate'
     uid:
-      name: uid
-      description: Identificativo pseudo-anonimizzato dell'operatore RADD
-      in: header
-      required: true
-      schema:
-        type: string
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/uid'
     requestId:
-      name: requestId
-      description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
-      in: header
-      required: true
-      schema:
-        type: string
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/headerRequestId'
     limit:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        default: 10
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/limit'
     lastKey:
-      name: lastKey
-      in: query
-      required: false
-      schema:
-        type: string
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/lastKey'
     cap:
-      name: cap
-      description: CAP
-      in: query
-      required: false
-      schema:
-        type: string
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/cap'
     city:
-      name: city
-      description: Città
-      in: query
-      required: false
-      schema:
-        type: string
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/city'
     pr:
-      name: pr
-      description: Provincia
-      in: query
-      required: false
-      schema:
-        type: string
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/pr'
     externalCode:
-      name: externalCode
-      description: Identificativo punto ritiro SEND indicato dal client
-      in: query
-      required: false
-      schema:
-        type: string
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/externalCode'
 
   responses:
     Forbidden:
