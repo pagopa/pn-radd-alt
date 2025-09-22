@@ -397,7 +397,7 @@ components:
     uid:
       $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/uid'
     requestId:
-      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/pathRequestId'
+      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/requestId'
     limit:
       $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/limit'
     lastKey:

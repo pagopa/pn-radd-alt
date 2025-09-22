@@ -487,8 +487,6 @@ components:
       $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/endDate'
     uid:
       $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/uid'
-    requestId:
-      $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/headerRequestId'
     limit:
       $ref: 'schemas-pn-radd-alt-registry.yaml#/components/parameters/limit'
     lastKey:

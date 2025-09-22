@@ -344,17 +344,10 @@ components:
       required: false
       schema:
         type: string
-    pathRequestId:
+    requestId:
       name: requestId
       description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
       in: path
-      required: true
-      schema:
-        type: string
-    headerRequestId:
-      name: requestId
-      description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
-      in: header
       required: true
       schema:
         type: string
