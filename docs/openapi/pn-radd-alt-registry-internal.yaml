@@ -258,6 +258,8 @@ paths:
       description: >-
         API utilizzata per la richiesta di attivazione nuova anagrafica RADD
       operationId: addRegistryBo
+      x-api-permissions:
+        - 'radd-registry-write'
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
@@ -309,6 +311,8 @@ paths:
       tags:
         - Registry
       operationId: retrieveRegistriesBo
+      x-api-permissions:
+        - 'radd-registry-read'
       description: API utilizzata per recuperare la lista paginata di anagrafiche RADD dato il cxId
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
@@ -364,6 +368,8 @@ paths:
       description: >-
         API utilizzata per la modifica di un'anagrafica RADD
       operationId: updateRegistryBo
+      x-api-permissions:
+        - 'radd-registry-write'
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
@@ -421,6 +427,8 @@ paths:
       description: >-
         API utilizzata per la cancellazione di un'anagrafica RADD
       operationId: deleteRegistryBo
+      x-api-permissions:
+        - 'radd-registry-write'
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'

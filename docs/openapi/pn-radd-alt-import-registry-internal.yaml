@@ -214,6 +214,8 @@ paths:
         API utilizzata per la richiesta della presigned URL utilizzata per il caricamento del file CSV contenente la lista
         di sportelli di un soggetto RADD.
       operationId: uploadRegistryRequestsBo
+      x-api-permissions:
+        - 'radd-registry-write'
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
@@ -274,6 +276,8 @@ paths:
       description: >-
         API utilizzata per la verifica dello stato di una richiesta di censimento indirizzi (CSV)
       operationId: verifyRequestBo
+      x-api-permissions:
+        - 'radd-registry-read'
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
@@ -329,6 +333,8 @@ paths:
       description: >-
         API utilizzata per il recupero della lista paginata di tutte le richieste di inserimento in anagrafica associate alla richiesta di import
       operationId: retrieveRequestItemsBo
+      x-api-permissions:
+        - 'radd-registry-read'
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
