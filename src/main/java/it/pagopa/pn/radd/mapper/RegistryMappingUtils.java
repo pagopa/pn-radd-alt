@@ -1,21 +1,31 @@
 package it.pagopa.pn.radd.mapper;
 
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.GeoLocation;
 import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.utils.Const;
-
+import it.pagopa.pn.radd.utils.ObjectMapperUtil;
+import lombok.CustomLog;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 import java.util.List;
 
+@Component
+@CustomLog
+@RequiredArgsConstructor
 public class RegistryMappingUtils {
 
-    public static RaddRegistryEntity mappingToV1(RaddRegistryEntityV2 v2) {
+    private final ObjectMapperUtil objectMapperUtil;
+
+    public RaddRegistryEntity mappingToV1(RaddRegistryEntityV2 v2, String partnerId) {
         RaddRegistryEntity v1 = new RaddRegistryEntity();
 
         if (v2 == null) {
             return null;
         }
 
+        v1.setCxId(partnerId);
         v1.setRegistryId(v2.getLocationId());
         //phoneNumbers per v2 è una lista
         v1.setPhoneNumber(v2.getPhoneNumbers().get(0));
@@ -26,6 +36,7 @@ public class RegistryMappingUtils {
         v1.setOpeningTime(v2.getOpeningTime());
         v1.setStartValidity(v2.getStartValidity());
         v1.setEndValidity(v2.getEndValidity());
+        v1.setZipCode(v2.getNormalizedAddress().getCap());
 
         //mapping Address
         NormalizedAddressEntity address = new NormalizedAddressEntity();
@@ -40,12 +51,17 @@ public class RegistryMappingUtils {
         address.setLongitude(v2.getNormalizedAddress().getLongitude());
         v1.setNormalizedAddress(address);
 
-        v1.setCapacity(null);//v2 non ha capacity
+        GeoLocation geoLocation = new GeoLocation();
+        geoLocation.setLatitude(v2.getNormalizedAddress().getLatitude());
+        geoLocation.setLongitude(v2.getNormalizedAddress().getLongitude());
+
+
+        v1.setGeoLocation(objectMapperUtil.toJson(geoLocation));
 
         return v1;
     }
 
-    public static RaddRegistryEntityV2 mappingToV2(RaddRegistryEntity v1, String uid) {
+    public RaddRegistryEntityV2 mappingToV2(RaddRegistryEntity v1, String uid) {
 
         if (v1 == null || uid == null) {
             return null;
@@ -76,10 +92,7 @@ public class RegistryMappingUtils {
             address.setLongitude(v1.getNormalizedAddress().getLongitude());
             v2.setNormalizedAddress(address);
 
-        v2.setAppointmentRequired(false); //default a false
         v2.setPartnerType(Const.PARTNERTYPE_CAF); //default a CAF
-        v2.setCreationTimestamp(v2.getCreationTimestamp());
-        v2.setUpdateTimestamp(v2.getUpdateTimestamp());
 
         return v2;
     }

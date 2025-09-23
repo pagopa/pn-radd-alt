@@ -4,6 +4,7 @@ import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
 import it.pagopa.pn.radd.utils.Const;
+import it.pagopa.pn.radd.utils.ObjectMapperUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,9 +18,13 @@ class RegistryMappingUtilsTest {
     private RaddRegistryEntityV2 v2;
     private RaddRegistryEntity v1;
     private String uid;
+    private ObjectMapperUtil objectMapperUtil;
+    private RegistryMappingUtils registryMappingUtils;
 
     @BeforeEach
     void setUp() {
+        objectMapperUtil = new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper());
+        registryMappingUtils = new RegistryMappingUtils(objectMapperUtil);
         uid = "UID123";
         v2 = new RaddRegistryEntityV2();
         v2.setLocationId("loc-123");
@@ -63,7 +68,7 @@ class RegistryMappingUtilsTest {
 
     @Test
     void testMappingToV1_success() {
-        RaddRegistryEntity v1 = RegistryMappingUtils.mappingToV1(v2);
+        RaddRegistryEntity v1 = registryMappingUtils.mappingToV1(v2, "partner-001");
 
         assertNotNull(v1);
         assertEquals("loc-123", v1.getRegistryId());
@@ -81,18 +86,20 @@ class RegistryMappingUtilsTest {
         assertEquals("Italia", v1.getNormalizedAddress().getCountry());
         assertEquals("41.9028", v1.getNormalizedAddress().getLatitude());
         assertEquals("12.4964", v1.getNormalizedAddress().getLongitude());
+        assertEquals("00100", v1.getZipCode());
+        assertNotNull(v1.getGeoLocation());
 
         assertNull(v1.getCapacity(), "Capacity deve essere null perché in V2 non esiste");
     }
 
     @Test
     void testMappingToV1_withNullInput() {
-        assertNull(RegistryMappingUtils.mappingToV1(null));
+        assertNull(registryMappingUtils.mappingToV1(null, "partner-001"));
     }
 
     @Test
     void testMappingToV2_withNullInput() {
-        assertNull(RegistryMappingUtils.mappingToV2(null, null));
+        assertNull(registryMappingUtils.mappingToV2(null, null));
     }
 
     @Test
@@ -100,14 +107,14 @@ class RegistryMappingUtilsTest {
         v2.setPhoneNumbers(List.of());
         v2.setExternalCodes(List.of());
 
-        assertThrows(IndexOutOfBoundsException.class, () -> RegistryMappingUtils.mappingToV1(v2));
+        assertThrows(IndexOutOfBoundsException.class, () -> registryMappingUtils.mappingToV1(v2, "partner-001"));
     }
 
     @Test
     void testMappingToV1_withEmptyAddress() {
         v2.setNormalizedAddress(new NormalizedAddressEntity());
 
-        RaddRegistryEntity v1 = RegistryMappingUtils.mappingToV1(v2);
+        RaddRegistryEntity v1 = registryMappingUtils.mappingToV1(v2, "partner-001");
         assertNotNull(v1);
         assertNotNull(v1.getNormalizedAddress());
         assertNull(v1.getNormalizedAddress().getAddressRow());
@@ -121,7 +128,7 @@ class RegistryMappingUtilsTest {
 
     @Test
     void testMappingToV2_success() {
-        RaddRegistryEntityV2 v2Mapped = RegistryMappingUtils.mappingToV2(v1, uid);
+        RaddRegistryEntityV2 v2Mapped = registryMappingUtils.mappingToV2(v1, uid);
 
         assertNotNull(v2Mapped);
         assertEquals("loc-123", v2Mapped.getLocationId());
@@ -141,7 +148,6 @@ class RegistryMappingUtilsTest {
         assertEquals("Italia", v2Mapped.getNormalizedAddress().getCountry());
         assertEquals("41.9028", v2Mapped.getNormalizedAddress().getLatitude());
         assertEquals("12.4964", v2Mapped.getNormalizedAddress().getLongitude());
-        assertFalse(v2Mapped.getAppointmentRequired());
         assertEquals(Const.PARTNERTYPE_CAF, v2Mapped.getPartnerType());
     }
 
@@ -156,7 +162,7 @@ class RegistryMappingUtilsTest {
         v1.setDescription("");
         v1.setOpeningTime("");
 
-        RaddRegistryEntityV2 v2Mapped = RegistryMappingUtils.mappingToV2(v1, uid);
+        RaddRegistryEntityV2 v2Mapped = registryMappingUtils.mappingToV2(v1, uid);
 
         assertNotNull(v2Mapped);
         assertEquals("", v2Mapped.getLocationId());
