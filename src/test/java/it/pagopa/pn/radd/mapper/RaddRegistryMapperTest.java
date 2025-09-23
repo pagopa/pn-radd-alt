@@ -4,7 +4,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.AddressV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.NormalizedAddress;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.RegistryV2;
 import it.pagopa.pn.radd.middleware.db.entities.AddressEntity;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
+import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.utils.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +46,7 @@ class RaddRegistryMapperTest {
         entity.setOpeningTime("MO:09-12");
         entity.setStartValidity(Instant.parse("2025-01-01T15:00:00Z"));
         entity.setEndValidity(Instant.parse("2025-02-01T15:00:00Z"));
-        entity.setNormalizedAddress(new NormalizedAddressEntity());
+        entity.setNormalizedAddress(new NormalizedAddressEntityV2());
 
         NormalizedAddress normalizedAddress = new NormalizedAddress();
         when(normalizedAddressMapper.toDto(any())).thenReturn(normalizedAddress);
@@ -93,7 +93,7 @@ class RaddRegistryMapperTest {
         dto.setEndValidity("2025-10-01");
         dto.setNormalizedAddress(new NormalizedAddress());
 
-        NormalizedAddressEntity normalizedAddressEntity = new NormalizedAddressEntity();
+        NormalizedAddressEntityV2 normalizedAddressEntity = new NormalizedAddressEntityV2();
         when(normalizedAddressMapper.toEntity(any())).thenReturn(normalizedAddressEntity);
         when(addressMapper.toEntity(any())).thenReturn(new AddressEntity());
 

@@ -1,18 +1,20 @@
 package it.pagopa.pn.radd.mapper;
 
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import it.pagopa.pn.radd.middleware.db.entities.*;
+import it.pagopa.pn.radd.pojo.RaddRegistryOriginalRequest;
+import it.pagopa.pn.radd.services.radd.fsu.v1.AwsGeoService;
 import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.ObjectMapperUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import java.time.Instant;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+//@TestInstance(TestInstance.Lifecycle.PER_METHOD)
 class RegistryMappingUtilsTest {
 
     private RaddRegistryEntityV2 v2;
@@ -20,55 +22,129 @@ class RegistryMappingUtilsTest {
     private String uid;
     private ObjectMapperUtil objectMapperUtil;
     private RegistryMappingUtils registryMappingUtils;
+    private AddressEntity originalAddress;
+    private String partnerId = "partner-001";
+    private String registryId;
+    private AwsGeoService.CoordinatesResult coordinateResult = new AwsGeoService.CoordinatesResult();
+    private RaddRegistryRequestEntity registryRequest = new RaddRegistryRequestEntity();
+    private RaddRegistryOriginalRequest originalRequest = new RaddRegistryOriginalRequest();
 
     @BeforeEach
     void setUp() {
-        objectMapperUtil = new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper());
+        objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
         registryMappingUtils = new RegistryMappingUtils(objectMapperUtil);
+
         uid = "UID123";
-        v2 = new RaddRegistryEntityV2();
-        v2.setLocationId("loc-123");
-        v2.setPhoneNumbers(List.of("123456789"));
-        v2.setExternalCodes(List.of("ext-001"));
-        v2.setDescription("Test description");
-        v2.setOpeningTime("08:00-18:00");
-        v2.setStartValidity(Instant.parse("2025-01-01T00:00:00Z"));
-        v2.setEndValidity(Instant.parse("2025-12-31T23:59:59Z"));
+        registryId = "loc-123";
+        partnerId = "partner-001";
 
-        NormalizedAddressEntity addressV2 = new NormalizedAddressEntity();
-        addressV2.setAddressRow("Via Roma 1");
-        addressV2.setCap("00100");
-        addressV2.setCity("Roma");
-        addressV2.setProvince("RM");
-        addressV2.setCountry("Italia");
-        addressV2.setLatitude("41.9028");
-        addressV2.setLongitude("12.4964");
-        v2.setNormalizedAddress(addressV2);
+        // Costruzione v2
+        v2 = buildRegistryEntityV2();
 
-        v1 = new RaddRegistryEntity();
-        v1.setRegistryId("loc-123");
-        v1.setCxId("partner-001");
-        v1.setPhoneNumber("123456789");
-        v1.setExternalCode("ext-001");
-        v1.setDescription("Test description");
-        v1.setOpeningTime("08:00-18:00");
-        v1.setStartValidity(Instant.parse("2025-01-01T00:00:00Z"));
-        v1.setEndValidity(Instant.parse("2025-12-31T23:59:59Z"));
+        // Costruzione v1
+        v1 = buildRegistryEntityV1();
 
-        NormalizedAddressEntity addressV1 = new NormalizedAddressEntity();
-        addressV1.setAddressRow("Via Roma 1");
-        addressV1.setCap("00100");
-        addressV1.setCity("Roma");
-        addressV1.setProvince("RM");
-        addressV1.setCountry("Italia");
-        addressV1.setLatitude("41.9028");
-        addressV1.setLongitude("12.4964");
-        v1.setNormalizedAddress(addressV1);
+        // Request entities
+        registryRequest = new RaddRegistryRequestEntity();
+        registryRequest.setCxId(partnerId);
+        registryRequest.setZipCode("00100");
+
+        originalRequest = buildOriginalRequest();
+
+        // Coordinate AWS
+        coordinateResult = buildCoordinatesResult();
     }
+
+    private RaddRegistryEntityV2 buildRegistryEntityV2() {
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setLocationId(registryId);
+        entity.setPartnerId(partnerId);
+        entity.setPhoneNumbers(List.of("123456789"));
+        entity.setExternalCodes(List.of("ext-001"));
+        entity.setDescription("Test description");
+        entity.setOpeningTime("08:00-18:00");
+        entity.setStartValidity(Instant.parse("2025-01-01T00:00:00Z"));
+        entity.setEndValidity(Instant.parse("2025-12-31T23:59:59Z"));
+        entity.setUid(uid);
+        entity.setPartnerType(Const.PARTNERTYPE_CAF);
+
+        AddressEntity address = new AddressEntity();
+        address.setCap("00100");
+        address.setCity("Roma");
+        address.setProvince("RM");
+        address.setCountry("Italia");
+        address.setAddressRow("Via Roma 1");
+        entity.setAddress(address);
+
+        NormalizedAddressEntityV2 normalized = new NormalizedAddressEntityV2();
+        normalized.setAddressRow("Via Roma 1");
+        normalized.setCap("00100");
+        normalized.setCity("Roma");
+        normalized.setProvince("RM");
+        normalized.setCountry("Italia");
+        normalized.setLatitude("41.9028");
+        normalized.setLongitude("12.4964");
+        entity.setNormalizedAddress(normalized);
+
+        return entity;
+    }
+
+    private RaddRegistryEntity buildRegistryEntityV1() {
+        RaddRegistryEntity entity = new RaddRegistryEntity();
+        entity.setRegistryId(registryId);
+        entity.setCxId(partnerId);
+        entity.setPhoneNumber("123456789");
+        entity.setExternalCode("ext-001");
+        entity.setDescription("Test description");
+        entity.setOpeningTime("08:00-18:00");
+        entity.setStartValidity(Instant.parse("2025-01-01T00:00:00Z"));
+        entity.setEndValidity(Instant.parse("2025-12-31T23:59:59Z"));
+
+        NormalizedAddressEntity address = new NormalizedAddressEntity();
+        address.setAddressRow("Via Roma 1");
+        address.setCap("00100");
+        address.setCity("Roma");
+        address.setPr("RM");
+        address.setCountry("Italia");
+        entity.setNormalizedAddress(address);
+
+        entity.setGeoLocation("{\"latitude\":\"41.9028\", \"longitude\":\"12.4964\"}");
+
+        return entity;
+    }
+
+    private RaddRegistryOriginalRequest buildOriginalRequest() {
+        RaddRegistryOriginalRequest request = new RaddRegistryOriginalRequest();
+        request.setCity("Roma");
+        request.setPr("RM");
+        request.setCountry("Italia");
+        request.setAddressRow("Via Roma 1");
+        request.setCap("00100");
+        request.setPhoneNumber("123456789");
+        request.setExternalCode("ext-001");
+        request.setDescription("Test description");
+        request.setOpeningTime("08:00-18:00");
+        request.setStartValidity("2025-01-01T00:00:00Z");
+        request.setEndValidity("2025-12-31T23:59:59Z");
+        return request;
+    }
+
+    private AwsGeoService.CoordinatesResult buildCoordinatesResult() {
+        AwsGeoService.CoordinatesResult result = new AwsGeoService.CoordinatesResult();
+        result.setAwsLatitude("41.9028");
+        result.setAwsLongitude("12.4964");
+        result.setAwsCountry("Italia");
+        result.setAwsAddressRow("Via Roma 1");
+        result.setAwsPostalCode("00100");
+        result.setAwsLocality("Roma");
+        result.setAwsSubRegion("RM");
+        return result;
+    }
+
 
     @Test
     void testMappingToV1_success() {
-        RaddRegistryEntity v1 = registryMappingUtils.mappingToV1(v2, "partner-001");
+        RaddRegistryEntity v1 = registryMappingUtils.mappingToV1(v2, partnerId);
 
         assertNotNull(v1);
         assertEquals("loc-123", v1.getRegistryId());
@@ -81,11 +157,11 @@ class RegistryMappingUtilsTest {
         assertNotNull(v1.getNormalizedAddress());
         assertEquals("Via Roma 1", v1.getNormalizedAddress().getAddressRow());
         assertEquals("00100", v1.getNormalizedAddress().getCap());
+        assertEquals("00100", v1.getZipCode());
         assertEquals("Roma", v1.getNormalizedAddress().getCity());
-        assertEquals("RM", v1.getNormalizedAddress().getProvince());
+        assertEquals("RM", v1.getNormalizedAddress().getPr());
         assertEquals("Italia", v1.getNormalizedAddress().getCountry());
-        assertEquals("41.9028", v1.getNormalizedAddress().getLatitude());
-        assertEquals("12.4964", v1.getNormalizedAddress().getLongitude());
+        assertEquals("{\"latitude\":\"41.9028\",\"longitude\":\"12.4964\"}", v1.getGeoLocation());
         assertEquals("00100", v1.getZipCode());
         assertNotNull(v1.getGeoLocation());
 
@@ -94,12 +170,17 @@ class RegistryMappingUtilsTest {
 
     @Test
     void testMappingToV1_withNullInput() {
-        assertNull(registryMappingUtils.mappingToV1(null, "partner-001"));
+        assertNull(registryMappingUtils.mappingToV1(null, partnerId));
     }
 
     @Test
     void testMappingToV2_withNullInput() {
-        assertNull(registryMappingUtils.mappingToV2(null, null));
+        assertNull(registryMappingUtils.mappingToV2(null, null, null, null, null));
+    }
+
+    @Test
+    void testMappingToV2_updateWithNullInput() {
+        assertNull(registryMappingUtils.mappingToV2(null, null, null, null));
     }
 
     @Test
@@ -107,28 +188,30 @@ class RegistryMappingUtilsTest {
         v2.setPhoneNumbers(List.of());
         v2.setExternalCodes(List.of());
 
-        assertThrows(IndexOutOfBoundsException.class, () -> registryMappingUtils.mappingToV1(v2, "partner-001"));
+        assertThrows(IndexOutOfBoundsException.class, () -> registryMappingUtils.mappingToV1(v2, partnerId));
     }
 
     @Test
     void testMappingToV1_withEmptyAddress() {
-        v2.setNormalizedAddress(new NormalizedAddressEntity());
+        v2.setNormalizedAddress(new NormalizedAddressEntityV2());
+        v2.getNormalizedAddress().setLatitude("");
+        v2.getNormalizedAddress().setLongitude("");
 
-        RaddRegistryEntity v1 = registryMappingUtils.mappingToV1(v2, "partner-001");
+        RaddRegistryEntity v1 = registryMappingUtils.mappingToV1(v2, partnerId);
         assertNotNull(v1);
         assertNotNull(v1.getNormalizedAddress());
         assertNull(v1.getNormalizedAddress().getAddressRow());
         assertNull(v1.getNormalizedAddress().getCap());
         assertNull(v1.getNormalizedAddress().getCity());
-        assertNull(v1.getNormalizedAddress().getProvince());
+        assertNull(v1.getNormalizedAddress().getPr());
         assertNull(v1.getNormalizedAddress().getCountry());
-        assertNull(v1.getNormalizedAddress().getLatitude());
-        assertNull(v1.getNormalizedAddress().getLongitude());
+        assertEquals("{\"latitude\":\"\",\"longitude\":\"\"}", v1.getGeoLocation());
+        assertNull(v1.getZipCode());
     }
 
     @Test
     void testMappingToV2_success() {
-        RaddRegistryEntityV2 v2Mapped = registryMappingUtils.mappingToV2(v1, uid);
+        RaddRegistryEntityV2 v2Mapped = registryMappingUtils.mappingToV2( registryId, uid, coordinateResult, registryRequest, originalRequest);
 
         assertNotNull(v2Mapped);
         assertEquals("loc-123", v2Mapped.getLocationId());
@@ -146,6 +229,11 @@ class RegistryMappingUtilsTest {
         assertEquals("Roma", v2Mapped.getNormalizedAddress().getCity());
         assertEquals("RM", v2Mapped.getNormalizedAddress().getProvince());
         assertEquals("Italia", v2Mapped.getNormalizedAddress().getCountry());
+        assertEquals("Via Roma 1", v2Mapped.getAddress().getAddressRow());
+        assertEquals("00100", v2Mapped.getAddress().getCap());
+        assertEquals("Roma", v2Mapped.getAddress().getCity());
+        assertEquals("RM", v2Mapped.getAddress().getProvince());
+        assertEquals("Italia", v2Mapped.getAddress().getCountry());
         assertEquals("41.9028", v2Mapped.getNormalizedAddress().getLatitude());
         assertEquals("12.4964", v2Mapped.getNormalizedAddress().getLongitude());
         assertEquals(Const.PARTNERTYPE_CAF, v2Mapped.getPartnerType());
@@ -155,14 +243,13 @@ class RegistryMappingUtilsTest {
 
     @Test
     void testMappingToV2_withEmptyStrings() {
-        v1.setRegistryId("");
-        v1.setCxId("");
-        v1.setPhoneNumber("");
-        v1.setExternalCode("");
-        v1.setDescription("");
-        v1.setOpeningTime("");
-
-        RaddRegistryEntityV2 v2Mapped = registryMappingUtils.mappingToV2(v1, uid);
+        registryId="";
+        registryRequest.setCxId("");
+        originalRequest.setPhoneNumber("");
+        originalRequest.setExternalCode("");
+        originalRequest.setDescription("");
+        originalRequest.setOpeningTime("");
+        RaddRegistryEntityV2 v2Mapped = registryMappingUtils.mappingToV2(registryId, uid, coordinateResult, registryRequest, originalRequest);
 
         assertNotNull(v2Mapped);
         assertEquals("", v2Mapped.getLocationId());
@@ -173,4 +260,65 @@ class RegistryMappingUtilsTest {
         assertEquals("", v2Mapped.getOpeningTime());
         assertEquals(uid, v2Mapped.getUid());
     }
+
+
+
+    @Test
+    void testMappingToV2_updateWithEmptyStrings() {
+        uid="";
+        registryRequest.setCxId("");
+        originalRequest.setPhoneNumber("");
+        originalRequest.setExternalCode("");
+        originalRequest.setDescription("");
+        originalRequest.setOpeningTime("");
+        registryRequest.setZipCode("");
+        v2.setLocationId("");
+        v2.setPartnerId("");
+        v2.setPhoneNumbers(List.of(""));
+        v2.setExternalCodes(List.of(""));
+        v2.setDescription("");
+        v2.setOpeningTime("");
+
+        RaddRegistryEntityV2 v2Mapped = registryMappingUtils.mappingToV2(uid, v2 , registryRequest, originalRequest);
+
+        assertNotNull(v2Mapped);
+        assertEquals("", v2Mapped.getLocationId());
+        assertEquals("", v2Mapped.getPartnerId());
+        assertEquals(List.of(""), v2Mapped.getPhoneNumbers());
+        assertEquals(List.of(""), v2Mapped.getExternalCodes());
+        assertEquals("", v2Mapped.getDescription());
+        assertEquals("", v2Mapped.getOpeningTime());
+        assertEquals(uid, v2Mapped.getUid());
+    }
+
+    @Test
+    void testMappingToV2_updateSuccess() {
+        RaddRegistryEntityV2 v2Mapped = registryMappingUtils.mappingToV2(uid, v2 , registryRequest, originalRequest);
+
+        assertNotNull(v2Mapped);
+        assertEquals("loc-123", v2Mapped.getLocationId());
+        assertEquals("partner-001", v2Mapped.getPartnerId());
+        assertEquals(List.of("123456789"), v2Mapped.getPhoneNumbers());
+        assertEquals(List.of("ext-001"), v2Mapped.getExternalCodes());
+        assertEquals("Test description", v2Mapped.getDescription());
+        assertEquals("08:00-18:00", v2Mapped.getOpeningTime());
+        assertEquals(Instant.parse("2025-01-01T00:00:00Z"), v2Mapped.getStartValidity());
+        assertEquals(Instant.parse("2025-12-31T23:59:59Z"), v2Mapped.getEndValidity());
+        assertEquals(uid, v2Mapped.getUid());
+        assertNotNull(v2Mapped.getNormalizedAddress());
+        assertEquals("Via Roma 1", v2Mapped.getNormalizedAddress().getAddressRow());
+        assertEquals("00100", v2Mapped.getNormalizedAddress().getCap());
+        assertEquals("Roma", v2Mapped.getNormalizedAddress().getCity());
+        assertEquals("RM", v2Mapped.getNormalizedAddress().getProvince());
+        assertEquals("Italia", v2Mapped.getNormalizedAddress().getCountry());
+        assertEquals("Via Roma 1", v2Mapped.getAddress().getAddressRow());
+        assertEquals("00100", v2Mapped.getAddress().getCap());
+        assertEquals("Roma", v2Mapped.getAddress().getCity());
+        assertEquals("RM", v2Mapped.getAddress().getProvince());
+        assertEquals("Italia", v2Mapped.getAddress().getCountry());
+        assertEquals("41.9028", v2Mapped.getNormalizedAddress().getLatitude());
+        assertEquals("12.4964", v2Mapped.getNormalizedAddress().getLongitude());
+        assertEquals(Const.PARTNERTYPE_CAF, v2Mapped.getPartnerType());
+    }
+
 }

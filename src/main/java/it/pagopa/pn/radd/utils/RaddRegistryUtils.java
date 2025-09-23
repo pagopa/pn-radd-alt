@@ -125,7 +125,7 @@ public class RaddRegistryUtils {
         raddRegistryEntityV2.setUpdateTimestamp(Instant.now());
         raddRegistryEntityV2.setUid(uid);
 
-        NormalizedAddressEntity normalizedAddress = buildNormalizedAddressEntity(coordinatesResult);
+        NormalizedAddressEntityV2 normalizedAddress = buildNormalizedAddressEntity(coordinatesResult);
 
         AddressV2 inputAddress = request.getAddress();
         AddressEntity address = new AddressEntity();
@@ -142,8 +142,8 @@ public class RaddRegistryUtils {
         return raddRegistryEntityV2;
     }
 
-    private static NormalizedAddressEntity buildNormalizedAddressEntity(AwsGeoService.CoordinatesResult coordinatesResult) {
-        NormalizedAddressEntity normalizedAddress = new NormalizedAddressEntity();
+    public static NormalizedAddressEntityV2 buildNormalizedAddressEntity(AwsGeoService.CoordinatesResult coordinatesResult) {
+        NormalizedAddressEntityV2 normalizedAddress = new NormalizedAddressEntityV2();
         normalizedAddress.setAddressRow(coordinatesResult.getAwsAddressRow());
         normalizedAddress.setCity(coordinatesResult.getAwsLocality());
         normalizedAddress.setCap(coordinatesResult.getAwsPostalCode());
@@ -186,7 +186,7 @@ public class RaddRegistryUtils {
         }
     }
 
-    private static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntity normalizedAddress) {
+    private static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntityV2 normalizedAddress) {
         return isAddressRowEquivalent(address.getAddressRow(), normalizedAddress.getAddressRow()) &&
                 StringUtils.equals(address.getCap(), normalizedAddress.getCap()) &&
                 StringUtils.equals(address.getCity(), normalizedAddress.getCity()) &&
@@ -572,7 +572,7 @@ public class RaddRegistryUtils {
         if (Objects.nonNull(normalizedAddress)) {
             address.addressRow(normalizedAddress.getAddressRow());
             address.cap(normalizedAddress.getCap());
-            address.pr(normalizedAddress.getProvince());
+            address.pr(normalizedAddress.getPr());
             address.city(normalizedAddress.getCity());
             address.country(normalizedAddress.getCountry());
         }
@@ -583,7 +583,7 @@ public class RaddRegistryUtils {
         NormalizedAddressEntity address = new NormalizedAddressEntity();
         address.setAddressRow(normalizedAddress.getAddressRow());
         address.setCap(normalizedAddress.getCap());
-        address.setProvince(normalizedAddress.getPr());
+        address.setPr(normalizedAddress.getPr());
         address.setCity(normalizedAddress.getCity());
         address.setCountry(normalizedAddress.getCountry());
         return address;

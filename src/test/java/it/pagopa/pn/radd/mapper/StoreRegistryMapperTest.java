@@ -5,7 +5,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.StoreRegistry;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.NormalizedAddress;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.AddressV2;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
+import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.AddressEntity;
 import it.pagopa.pn.radd.utils.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +37,7 @@ class StoreRegistryMapperTest {
     @Test
     void testToDto_withValidEntity_shouldMapCorrectly() {
         RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
-        entity.setNormalizedAddress(new NormalizedAddressEntity());
+        entity.setNormalizedAddress(new NormalizedAddressEntityV2());
         entity.setAddress(new AddressEntity());
 
         RegistryV2 registryDto = new RegistryV2();
@@ -75,7 +75,7 @@ class StoreRegistryMapperTest {
         dto.setNormalizedAddress(new NormalizedAddress());
         dto.setAddress(new AddressV2());
 
-        when(normalizedAddressMapper.toEntity(any())).thenReturn(new NormalizedAddressEntity());
+        when(normalizedAddressMapper.toEntity(any())).thenReturn(new NormalizedAddressEntityV2());
         when(addressMapper.toEntity(any())).thenReturn(new AddressEntity());
 
         RaddRegistryEntityV2 entity = mapper.toEntity(dto);

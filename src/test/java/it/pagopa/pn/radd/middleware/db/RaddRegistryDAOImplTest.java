@@ -43,7 +43,7 @@ class RaddRegistryDAOImplTest extends BaseTest.WithLocalStack {
         baseEntity.setRequestId("testRequestId");
         NormalizedAddressEntity addressEntity = new NormalizedAddressEntity();
         addressEntity.setCountry("country");
-        addressEntity.setProvince("pr");
+        addressEntity.setPr("pr");
         addressEntity.setCity("city");
         addressEntity.setCap("cap");
         baseEntity.setNormalizedAddress(addressEntity);
@@ -82,7 +82,7 @@ class RaddRegistryDAOImplTest extends BaseTest.WithLocalStack {
         objct.setRequestId("RequestId");
         NormalizedAddressEntity addressEntity = new NormalizedAddressEntity();
         addressEntity.setCountry("country");
-        addressEntity.setProvince("pr");
+        addressEntity.setPr("pr");
         addressEntity.setCity("city");
         addressEntity.setCap("cap");
         objct.setNormalizedAddress(addressEntity);
@@ -142,7 +142,7 @@ class RaddRegistryDAOImplTest extends BaseTest.WithLocalStack {
         entity.setRequestId("testRequestId2");
         NormalizedAddressEntity addressEntity = new NormalizedAddressEntity();
         addressEntity.setCountry("country2");
-        addressEntity.setProvince("pr2");
+        addressEntity.setPr("pr2");
         addressEntity.setCity("city2");
         addressEntity.setCap("cap2");
         entity.setNormalizedAddress(addressEntity);

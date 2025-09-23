@@ -3,7 +3,7 @@ package it.pagopa.pn.radd.mapper;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.NormalizedAddress;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.NormalizedAddressAllOfBiasPoint;
 import it.pagopa.pn.radd.middleware.db.entities.BiasPointEntity;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
+import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +41,7 @@ class NormalizedAddressMapperTest {
 
         dto.setBiasPoint(biasPoint);
 
-        NormalizedAddressEntity entity = mapper.toEntity(dto);
+        NormalizedAddressEntityV2 entity = mapper.toEntity(dto);
 
         assertNotNull(entity);
         assertEquals("Via Roma 1", entity.getAddressRow());
@@ -64,7 +64,7 @@ class NormalizedAddressMapperTest {
 
     @Test
     void testToDto_fullEntity() {
-        NormalizedAddressEntity entity = new NormalizedAddressEntity();
+        NormalizedAddressEntityV2 entity = new NormalizedAddressEntityV2();
         entity.setAddressRow("Via Milano 2");
         entity.setCap("20100");
         entity.setCity("Milano");
@@ -120,7 +120,7 @@ class NormalizedAddressMapperTest {
         dto.setAddressRow("Via Test");
         dto.setBiasPoint(null);
 
-        NormalizedAddressEntity entity = mapper.toEntity(dto);
+        NormalizedAddressEntityV2 entity = mapper.toEntity(dto);
 
         assertNotNull(entity);
         assertNull(entity.getBiasPoint());
@@ -128,7 +128,7 @@ class NormalizedAddressMapperTest {
 
     @Test
     void testToDto_nullBiasPoint() {
-        NormalizedAddressEntity entity = new NormalizedAddressEntity();
+        NormalizedAddressEntityV2 entity = new NormalizedAddressEntityV2();
         entity.setAddressRow("Via Test");
         entity.setBiasPoint(null);
 

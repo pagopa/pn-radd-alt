@@ -71,7 +71,7 @@ public class RaddRegistryEntityV2 {
     private AddressEntity address;
 
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_NORMALIZED_ADDRESS)}))
-    private NormalizedAddressEntity normalizedAddress;
+     private NormalizedAddressEntityV2 normalizedAddress;
 
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_MODIFIED_ADDRESS)}))
     private Boolean modifiedAddress;
