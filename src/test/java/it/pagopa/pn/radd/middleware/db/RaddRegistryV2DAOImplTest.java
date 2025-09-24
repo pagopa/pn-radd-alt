@@ -4,10 +4,8 @@ import it.pagopa.pn.radd.config.BaseTest;
 import it.pagopa.pn.radd.config.RestExceptionHandler;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.middleware.db.entities.BiasPointEntity;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
+import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
-import it.pagopa.pn.radd.pojo.PnLastEvaluatedKey;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -17,12 +15,10 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,7 +55,7 @@ class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
         entity.setWebsite("https://test.it");
         entity.setPartnerType("TYPE1");
 
-        NormalizedAddressEntity normalizedAddress = new NormalizedAddressEntity();
+        NormalizedAddressEntityV2 normalizedAddress = new NormalizedAddressEntityV2();
         normalizedAddress.setAddressRow("123 Test St");
         normalizedAddress.setCity("Test City");
         normalizedAddress.setProvince("TP");

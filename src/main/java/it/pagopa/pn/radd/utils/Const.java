@@ -8,6 +8,8 @@ public class Const {
     public static final String PF = "PF";
     public static final String PG = "PG";
 
+    public static final String PARTNERTYPE_CAF = "CAF";
+
     //Status document
     public static final String DOCUMENT_TYPE = "PN_RADD_ALT_ATTACHMENT";
     public static final String PRELOADED = "PRELOADED";

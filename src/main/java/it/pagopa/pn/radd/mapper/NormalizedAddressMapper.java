@@ -3,7 +3,7 @@ package it.pagopa.pn.radd.mapper;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.NormalizedAddress;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.NormalizedAddressAllOfBiasPoint;
 import it.pagopa.pn.radd.middleware.db.entities.BiasPointEntity;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
+import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -13,11 +13,11 @@ import org.springframework.stereotype.Component;
 @CustomLog
 public class NormalizedAddressMapper {
 
-    public NormalizedAddressEntity toEntity(NormalizedAddress dto) {
+    public NormalizedAddressEntityV2 toEntity(NormalizedAddress dto) {
         if (dto == null) {
             return null;
         }
-        NormalizedAddressEntity entity = new NormalizedAddressEntity();
+        NormalizedAddressEntityV2 entity = new NormalizedAddressEntityV2();
         entity.setAddressRow(dto.getAddressRow());
         entity.setCap(dto.getCap());
         entity.setCity(dto.getCity());
@@ -29,7 +29,7 @@ public class NormalizedAddressMapper {
         return entity;
     }
 
-    public NormalizedAddress toDto(NormalizedAddressEntity entity) {
+    public NormalizedAddress toDto(NormalizedAddressEntityV2 entity) {
         if (entity == null) {
             return null;
         }
