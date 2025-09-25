@@ -2,7 +2,7 @@ package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.RestExceptionHandler;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistrySelfService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +33,7 @@ class RegistrySelfControllerTest {
     public static final String PN_PAGOPA_CX_ID = "x-pagopa-pn-cx-id";
     public static final String PN_PAGOPA_CX_TYPE = "x-pagopa-pn-cx-type";
     public static final String PN_PAGOPA_UID = "uid";
+    public static final String PN_PAGOPA_UID_BO = "x-pagopa-pn-uid";
     public static final String LIMIT = "limit";
     public static final String LASTKEY = "lastKey";
     public static final String CAP = "cap";
@@ -48,7 +49,7 @@ class RegistrySelfControllerTest {
         request.setPhoneNumber("phoneNumber");
         request.setDescription("description");
         request.setOpeningTime("openingTime");
-        when(registrySelfService.updateRegistry(any(), any(), any())).thenReturn(Mono.just(mock(RaddRegistryEntity.class)));
+        when(registrySelfService.updateRegistry(any(), any(), any(),any())).thenReturn(Mono.just(mock(RaddRegistryEntityV2.class)));
 
         webTestClient.patch()
                 .uri(path, "registryId")
@@ -58,6 +59,26 @@ class RegistrySelfControllerTest {
                 .body(Mono.just(request), UpdateRegistryRequest.class)
                 .exchange()
                 .expectStatus().isNoContent();
+    }
+
+    @Test
+    void updateRegistryBO() {
+        String path = "/radd-bo/api/v1/registry/{registryId}";
+
+        UpdateRegistryRequest request = new UpdateRegistryRequest();
+        request.setPhoneNumber("phoneNumber");
+        request.setDescription("description");
+        request.setOpeningTime("openingTime");
+        when(registrySelfService.updateRegistry(any(), any(), any(),any())).thenReturn(Mono.just(mock(RaddRegistryEntityV2.class)));
+
+        webTestClient.patch()
+                     .uri(path, "registryId")
+                     .header(PN_PAGOPA_UID_BO, "myUid")
+                     .header( PN_PAGOPA_CX_ID, "cxId")
+                     .header( PN_PAGOPA_CX_TYPE, "PA")
+                     .body(Mono.just(request), UpdateRegistryRequest.class)
+                     .exchange()
+                     .expectStatus().isNoContent();
     }
 
     @Test

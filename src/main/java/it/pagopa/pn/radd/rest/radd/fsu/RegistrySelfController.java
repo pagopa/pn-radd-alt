@@ -39,7 +39,18 @@ public class RegistrySelfController implements RegistryApi {
      */
     @Override
     public Mono<ResponseEntity<Void>> updateRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String registryId, Mono<UpdateRegistryRequest> updateRegistryRequest,  final ServerWebExchange exchange) {
-        return updateRegistryRequest.flatMap(request -> registrySelfService.updateRegistry(registryId, xPagopaPnCxId, request))
+        return handleUpdateRegistry(xPagopaPnCxId, uid, registryId, updateRegistryRequest);
+    }
+
+    @Override
+    public Mono<ResponseEntity<Void>> _updateRegistryBo(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, String registryId, Mono<UpdateRegistryRequest> updateRegistryRequest, ServerWebExchange exchange) {
+        return handleUpdateRegistry(xPagopaPnCxId, xPagopaPnUid, registryId, updateRegistryRequest);
+    }
+
+
+    private Mono<ResponseEntity<Void>> handleUpdateRegistry(String xPagopaPnCxId, String uid, String registryId, Mono<UpdateRegistryRequest> updateRegistryRequest) {
+        return updateRegistryRequest
+                .flatMap(request -> registrySelfService.updateRegistry(registryId, uid, xPagopaPnCxId, request))
                 .map(raddRegistryEntityMono -> ResponseEntity.noContent().build());
     }
 
