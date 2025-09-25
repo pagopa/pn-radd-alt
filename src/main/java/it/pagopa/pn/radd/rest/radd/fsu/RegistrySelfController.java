@@ -43,9 +43,11 @@ public class RegistrySelfController implements RegistryApi {
     }
 
     @Override
-    public Mono<ResponseEntity<Void>> _updateRegistryBo(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, String registryId, Mono<UpdateRegistryRequest> updateRegistryRequest, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<Void>> updateRegistryBo(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, String registryId, Mono<UpdateRegistryRequest> updateRegistryRequest, ServerWebExchange exchange) {
         return handleUpdateRegistry(xPagopaPnCxId, xPagopaPnUid, registryId, updateRegistryRequest);
     }
+
+
 
 
     private Mono<ResponseEntity<Void>> handleUpdateRegistry(String xPagopaPnCxId, String uid, String registryId, Mono<UpdateRegistryRequest> updateRegistryRequest) {
