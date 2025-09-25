@@ -11,7 +11,9 @@ import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
+import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.queue.producer.CorrelationIdEventsProducer;
 import it.pagopa.pn.radd.pojo.PnLastEvaluatedKey;
@@ -49,6 +51,8 @@ class RegistrySelfServiceTest {
     @Mock
     private RaddRegistryDAO raddRegistryDAO;
     @Mock
+    private RaddRegistryV2DAO raddRegistryV2DAO;
+    @Mock
     private RaddRegistryRequestDAO registryRequestDAO;
     @Mock
     private CorrelationIdEventsProducer correlationIdEventsProducer;
@@ -64,15 +68,15 @@ class RegistrySelfServiceTest {
 
     @BeforeEach
     void setUp() {
-        registrySelfService = new RegistrySelfService(raddRegistryDAO, registryRequestDAO, raddRegistryRequestEntityMapper, correlationIdEventsProducer, raddAltCapCheckerProducer,
+        registrySelfService = new RegistrySelfService(raddRegistryV2DAO,raddRegistryDAO, registryRequestDAO, raddRegistryRequestEntityMapper, correlationIdEventsProducer, raddAltCapCheckerProducer,
                 new RaddRegistryUtils(new ObjectMapperUtil(new ObjectMapper()), pnRaddFsuConfig, secretService), pnRaddFsuConfig);
     }
 
     @Test
     void updateRegistryNotFound() {
         UpdateRegistryRequest updateRegistryRequest = new UpdateRegistryRequest();
-        when(raddRegistryDAO.find("registryId", "cxId")).thenReturn(Mono.empty());
-        StepVerifier.create(registrySelfService.updateRegistry("registryId", "cxId", updateRegistryRequest))
+        when(raddRegistryV2DAO.find("cxId","registryId")).thenReturn(Mono.empty());
+        StepVerifier.create(registrySelfService.updateRegistry("registryId","uid","cxId", updateRegistryRequest))
                 .verifyErrorMessage("Punto di ritiro SEND non trovato");
     }
 
@@ -83,13 +87,13 @@ class RegistrySelfServiceTest {
         UpdateRegistryRequest updateRegistryRequest = new UpdateRegistryRequest();
         updateRegistryRequest.setDescription(newDescription);
         updateRegistryRequest.setPhoneNumber(newPhoneNumber);
-        RaddRegistryEntity entity = new RaddRegistryEntity();
-        entity.setRegistryId("registryId");
-        when(raddRegistryDAO.find("registryId", "cxId")).thenReturn(Mono.just(entity));
-        when(raddRegistryDAO.updateRegistryEntity(entity)).thenReturn(Mono.just(entity));
-        StepVerifier.create(registrySelfService.updateRegistry("registryId", "cxId", updateRegistryRequest))
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setLocationId("registryId");
+        when(raddRegistryV2DAO.find("cxId", "registryId")).thenReturn(Mono.just(entity));
+        when(raddRegistryV2DAO.updateRegistryEntity(entity)).thenReturn(Mono.just(entity));
+        StepVerifier.create(registrySelfService.updateRegistry("registryId", "uid","cxId", updateRegistryRequest))
                 .expectNextMatches(raddRegistryEntity -> entity.getDescription().equalsIgnoreCase(newDescription)
-                        && entity.getPhoneNumber().equalsIgnoreCase(newPhoneNumber))
+                        && entity.getPhoneNumbers().get(0).equalsIgnoreCase(newPhoneNumber))
                 .verifyComplete();
     }
 
