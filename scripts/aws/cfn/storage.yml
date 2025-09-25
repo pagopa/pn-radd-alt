@@ -404,6 +404,10 @@ Outputs:
     Description: Name of dynamodb table containing radd registry
     Value: !Ref RaddRegistryDynamoTableV2
 
+  RaddCoverageDynamoTableName:
+    Description: Name of dynamodb table containing radd coverage
+    Value: !Ref RaddCoverageDynamoTable
+
   RaddRegistryDynamoTableArn:
     Description: ARN of dynamodb table containing radd registry
     Value: !Sub '${RaddRegistryDynamoTable.Arn}'
