@@ -224,7 +224,6 @@ class RegistrySelfServiceTest {
 
         when(raddRegistryV2DAO.find(cxId, registryId)).thenReturn(Mono.just(registryEntity));
         when(raddRegistryV2DAO.updateRegistryEntity(any())).thenReturn(Mono.just(registryEntity));
-//        when(raddAltCapCheckerProducer.sendCapCheckerEvent(any())).thenReturn(Mono.empty());
 
         // When
         Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(cxId, registryId, endDate, uid);

@@ -150,8 +150,6 @@ public class RegistrySelfService {
                                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
                                 .flatMap(registryEntity -> updateRegistryEntityIfValidDate(registryEntity, endDate, registryId, xPagopaPnCxId, uid))
                                 .doOnNext(raddRegistryEntity -> log.info("Registry with id: {} and cap: {} updated successfully", registryId, raddRegistryEntity.getNormalizedAddress().getCap()))
-                                //.flatMap(raddRegistryEntity -> raddAltCapCheckerProducer.sendCapCheckerEvent(raddRegistryEntity.getAddress().getCap())
-                                                                                       // .thenReturn(raddRegistryEntity))
                                 .doOnError(throwable -> log.error("Error during delete registry request for registryId: [{}] and cxId: [{}]", registryId, xPagopaPnCxId, throwable));
     }
 
