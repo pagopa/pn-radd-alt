@@ -1,23 +1,14 @@
 package it.pagopa.pn.radd.mapper;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.Coverage;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.AddressV2;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.NormalizedAddress;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.RegistryV2;
-import it.pagopa.pn.radd.middleware.db.entities.AddressEntity;
 import it.pagopa.pn.radd.middleware.db.entities.CoverageEntity;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
-import it.pagopa.pn.radd.utils.DateUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class CoverageMapperTest {
 
