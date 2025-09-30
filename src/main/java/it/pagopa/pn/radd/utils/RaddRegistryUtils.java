@@ -16,6 +16,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.UpdateRegistryReque
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
 import it.pagopa.pn.radd.pojo.*;
@@ -54,6 +55,7 @@ public class RaddRegistryUtils {
     private final ObjectMapperUtil objectMapperUtil;
     private final PnRaddFsuConfig pnRaddFsuConfig;
     private final SecretService secretService;
+    private final RegistryMappingUtils mapper;
     private final static String PARTNER_ID_REGEX = "^([0-9]{11})$";
 
     private final static Function<Map<String, AttributeValue>, PnLastEvaluatedKey> STORE_REGISTRY_LAST_EVALUATED_KEY = (stringAttributeValueMap) -> {
@@ -100,10 +102,11 @@ public class RaddRegistryUtils {
         return registryEntity;
     }
 
-    public Mono<RaddRegistryEntity> constructRaddRegistryEntity(String registryId, PnAddressManagerEvent.NormalizedAddress normalizedAddress, RaddRegistryRequestEntity registryRequest) {
+    public Mono<RaddRegistryEntityV2> constructRaddRegistryEntity(String registryId, AwsGeoService.CoordinatesResult coordinatesResult, RaddRegistryRequestEntity registryRequest) {
         RaddRegistryOriginalRequest raddRegistryOriginalRequest = objectMapperUtil.toObject(registryRequest.getOriginalRequest(), RaddRegistryOriginalRequest.class);
 
-        return Mono.just(getRaddRegistryEntity(registryId, normalizedAddress, registryRequest, raddRegistryOriginalRequest));
+        //TODO valorizzare UID.
+        return Mono.just(mapper.mappingToV2(registryId, null, coordinatesResult, registryRequest, raddRegistryOriginalRequest));
     }
 
     public static RaddRegistryEntityV2 buildRaddRegistryEntity(String partnerId, String locationId, String uid, CreateRegistryRequestV2 request, AwsGeoService.CoordinatesResult coordinatesResult) {
@@ -304,12 +307,14 @@ public class RaddRegistryUtils {
         return request;
     }
 
+    public AddressManagerRequestAddress getRequestAddressFromOriginalRequest(RaddRegistryRequestEntity entity) {
+        AddressManagerRequestAddress request = objectMapperUtil.toObject(entity.getOriginalRequest(), AddressManagerRequestAddress.class);
+        request.setId(RaddRegistryRequestEntity.retrieveIndexFromPk(entity.getPk()));
+        return request;
+    }
+
     public List<AddressManagerRequestAddress> getRequestAddressFromOriginalRequest(List<RaddRegistryRequestEntity> entities) {
-        return entities.stream().map(entity -> {
-            AddressManagerRequestAddress request = objectMapperUtil.toObject(entity.getOriginalRequest(), AddressManagerRequestAddress.class);
-            request.setId(RaddRegistryRequestEntity.retrieveIndexFromPk(entity.getPk()));
-            return request;
-        }).toList();
+        return entities.stream().map(this::getRequestAddressFromOriginalRequest).toList();
     }
 
     public NormalizeItemsRequestDto getNormalizeRequestDtoFromAddressManagerRequest(AddressManagerRequest request) {

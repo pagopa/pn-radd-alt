@@ -2,7 +2,6 @@ package it.pagopa.pn.radd.mapper;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.GeoLocation;
 import it.pagopa.pn.radd.middleware.db.entities.*;
-import it.pagopa.pn.radd.pojo.AddressManagerRequestAddress;
 import it.pagopa.pn.radd.pojo.RaddRegistryOriginalRequest;
 import it.pagopa.pn.radd.services.radd.fsu.v1.AwsGeoService;
 import it.pagopa.pn.radd.utils.Const;
@@ -72,7 +71,7 @@ public class RegistryMappingUtils {
             return null;
         }
 
-        RaddRegistryEntityV2 v2 = buildCommonFields(uid, registryRequest, originalRequest);
+        RaddRegistryEntityV2 v2 = buildCommonFields(uid, originalRequest);
 
         v2.setLocationId(registryId);
         v2.setPartnerId(registryRequest.getCxId());
@@ -102,7 +101,7 @@ public class RegistryMappingUtils {
             return null;
         }
 
-        RaddRegistryEntityV2 v2 = buildCommonFields(uid, registryRequest, originalRequest);
+        RaddRegistryEntityV2 v2 = buildCommonFields(uid, originalRequest);
 
         v2.setLocationId(preExistingRegistryEntity.getLocationId());
         v2.setPartnerId(preExistingRegistryEntity.getPartnerId());
@@ -116,13 +115,12 @@ public class RegistryMappingUtils {
 
     private RaddRegistryEntityV2 buildCommonFields(
             String uid,
-            RaddRegistryRequestEntity registryRequest,
             RaddRegistryOriginalRequest originalRequest) {
 
         RaddRegistryEntityV2 v2 = new RaddRegistryEntityV2();
 
-        v2.setPhoneNumbers(List.of(originalRequest.getPhoneNumber()));
-        v2.setExternalCodes(List.of(originalRequest.getExternalCode()));
+        v2.setPhoneNumbers(originalRequest.getPhoneNumber() != null ? List.of(originalRequest.getPhoneNumber()) : List.of());
+        v2.setExternalCodes(originalRequest.getExternalCode() != null ? List.of(originalRequest.getExternalCode()) : List.of());
         v2.setDescription(originalRequest.getDescription());
         v2.setOpeningTime(originalRequest.getOpeningTime());
         v2.setUid(uid);

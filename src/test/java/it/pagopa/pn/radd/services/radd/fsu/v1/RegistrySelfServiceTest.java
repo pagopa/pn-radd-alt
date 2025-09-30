@@ -9,6 +9,7 @@ import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
+import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
@@ -64,8 +65,9 @@ class RegistrySelfServiceTest {
 
     @BeforeEach
     void setUp() {
+        ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
         registrySelfService = new RegistrySelfService(raddRegistryDAO, registryRequestDAO, raddRegistryRequestEntityMapper, correlationIdEventsProducer, raddAltCapCheckerProducer,
-                new RaddRegistryUtils(new ObjectMapperUtil(new ObjectMapper()), pnRaddFsuConfig, secretService), pnRaddFsuConfig);
+                new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, secretService, new RegistryMappingUtils(objectMapperUtil)), pnRaddFsuConfig);
     }
 
     @Test

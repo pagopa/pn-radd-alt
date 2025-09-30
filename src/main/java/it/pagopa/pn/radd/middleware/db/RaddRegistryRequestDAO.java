@@ -24,6 +24,8 @@ public interface RaddRegistryRequestDAO {
 
     Mono<Void> updateRecordsInPending(List<RaddRegistryRequestEntity> addresses);
 
+    Mono<RaddRegistryRequestEntity> updateRecordInPending(RaddRegistryRequestEntity entity);
+
     Flux<RaddRegistryRequestEntity> findByCxIdAndRegistryId(String cxId, String registryId);
 
     Mono<RaddRegistryRequestEntity> putRaddRegistryRequestEntity(RaddRegistryRequestEntity raddRegistryRequestEntity);
