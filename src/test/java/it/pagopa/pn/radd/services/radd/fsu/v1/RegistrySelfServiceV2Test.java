@@ -8,7 +8,7 @@ import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.AddressMapper;
 import it.pagopa.pn.radd.mapper.NormalizedAddressMapper;
-import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
+import it.pagopa.pn.radd.mapper.RaddDateMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryPageMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
@@ -68,7 +68,7 @@ class RegistrySelfServiceV2Test {
 
     @BeforeEach
     void setUp() {
-        RaddRegistryMapper raddRegistryMapper = new RaddRegistryMapper(new NormalizedAddressMapper(), new AddressMapper());
+        RaddDateMapper raddRegistryMapper = new RaddDateMapper(new NormalizedAddressMapper(), new AddressMapper());
         registrySelfServiceV2 = new RegistrySelfServiceV2(
                 raddRegistryDAO,
                 awsGeoService,

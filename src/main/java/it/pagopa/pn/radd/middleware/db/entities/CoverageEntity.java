@@ -9,7 +9,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @DynamoDbBean
 @Setter
@@ -37,9 +37,9 @@ public class CoverageEntity {
     private String cadastralCode;
 
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_START_VALIDITY)}))
-    private Date startValidity;
+    private LocalDate startValidity;
 
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_END_VALIDITY)}))
-    private Date endValidity;
+    private LocalDate endValidity;
 
 }

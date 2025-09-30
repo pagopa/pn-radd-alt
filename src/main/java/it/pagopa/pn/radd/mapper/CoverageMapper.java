@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Component
 @CustomLog
-public class CoverageMapper extends AbstractRegistryMapper {
+public class CoverageMapper extends AbstractDateMapper {
 
     public Coverage toDto(CoverageEntity entity) {
 

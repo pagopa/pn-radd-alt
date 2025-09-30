@@ -19,19 +19,19 @@ import static org.mockito.Mockito.*;
 
 class StoreRegistryMapperTest {
 
-    private StoreRegistryMapper mapper;
+    private StoreDateMapper mapper;
 
-    private RaddRegistryMapper raddRegistryMapper;
+    private RaddDateMapper raddRegistryMapper;
     private NormalizedAddressMapper normalizedAddressMapper;
     private AddressMapper addressMapper;
 
     @BeforeEach
     void setUp() {
-        raddRegistryMapper = mock(RaddRegistryMapper.class);
+        raddRegistryMapper = mock(RaddDateMapper.class);
         normalizedAddressMapper = mock(NormalizedAddressMapper.class);
         addressMapper = mock(AddressMapper.class);
 
-        mapper = new StoreRegistryMapper(raddRegistryMapper, normalizedAddressMapper, addressMapper);
+        mapper = new StoreDateMapper(raddRegistryMapper, normalizedAddressMapper, addressMapper);
     }
 
     @Test

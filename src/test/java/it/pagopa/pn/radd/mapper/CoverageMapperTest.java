@@ -5,8 +5,7 @@ import it.pagopa.pn.radd.middleware.db.entities.CoverageEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
-import java.util.Date;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,8 +24,8 @@ class CoverageMapperTest {
         entity.setLocality("Ciampino");
         entity.setProvince("RM");
         entity.setCadastralCode("M272");
-        entity.setStartValidity(Date.from(Instant.now()));
-        entity.setEndValidity(Date.from(Instant.now().plusSeconds(86400)));
+        entity.setStartValidity(LocalDate.now());
+        entity.setEndValidity(LocalDate.now().plusDays(1L));
         return entity;
     }
 
@@ -36,8 +35,8 @@ class CoverageMapperTest {
         dto.setLocality("Ciampino");
         dto.setProvince("RM");
         dto.setCadastralCode("M272");
-        dto.setStartValidity(Date.from(Instant.now()));
-        dto.setEndValidity(Date.from(Instant.now().plusSeconds(86400)));
+        dto.setStartValidity(LocalDate.now());
+        dto.setEndValidity(LocalDate.now().plusDays(1L));
         return dto;
     }
 

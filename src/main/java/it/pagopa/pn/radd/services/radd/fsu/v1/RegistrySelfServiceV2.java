@@ -6,7 +6,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.GetRegistryResponse
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.UpdateRegistryRequestV2;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
-import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
+import it.pagopa.pn.radd.mapper.RaddDateMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryPageMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
@@ -31,7 +31,7 @@ public class RegistrySelfServiceV2 {
 
     private final RaddRegistryV2DAO raddRegistryDAO;
     private final AwsGeoService awsGeoService;
-    private  final RaddRegistryMapper raddRegistryMapper;
+    private  final RaddDateMapper raddRegistryMapper;
     private  final RaddRegistryPageMapper raddRegistryPageMapper;
 
     public Mono<RegistryV2> addRegistry(String partnerId, String locationId, String uid, CreateRegistryRequestV2 request) {

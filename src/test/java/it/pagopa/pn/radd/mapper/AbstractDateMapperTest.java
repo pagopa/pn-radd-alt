@@ -9,11 +9,11 @@ import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AbstractRegistryMapperTest {
+class AbstractDateMapperTest {
 
-    static class TestRegistryMapper extends AbstractRegistryMapper {}
+    static class TestDateMapper extends AbstractDateMapper {}
 
-    private final AbstractRegistryMapper mapper = new TestRegistryMapper();
+    private final AbstractDateMapper mapper = new TestDateMapper();
 
     @Test
     void testToInstant_withValidDate() {

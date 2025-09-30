@@ -10,7 +10,7 @@ import java.util.Date;
 import java.util.Optional;
 
 @CustomLog
-public abstract class AbstractRegistryMapper {
+public abstract class AbstractDateMapper {
 
     protected Instant toInstant(Date date) {
         return Optional.ofNullable(date)

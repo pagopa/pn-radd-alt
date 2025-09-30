@@ -1,7 +1,9 @@
 package it.pagopa.pn.radd.middleware.db;
 
+import it.pagopa.pn.radd.config.BaseTest;
 import it.pagopa.pn.radd.config.RestExceptionHandler;
 import it.pagopa.pn.radd.middleware.db.entities.CoverageEntity;
+import lombok.CustomLog;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,12 +12,12 @@ import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 
-import java.time.Instant;
-import java.util.Date;
+import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class CoverageDAOImplTest {
+@CustomLog
+class CoverageDAOImplTest extends BaseTest.WithLocalStack {
 
     @Autowired
     @SpyBean
@@ -41,8 +43,8 @@ class CoverageDAOImplTest {
         entity.setLocality("Ciampino");
         entity.setProvince("RM");
         entity.setCadastralCode("M272");
-        entity.setStartValidity(Date.from(Instant.now()));
-        entity.setEndValidity(Date.from(Instant.now().plusSeconds(86400)));
+        entity.setStartValidity(LocalDate.now());
+        entity.setEndValidity(LocalDate.now().plusDays(1L));
         return entity;
     }
 
@@ -79,7 +81,9 @@ class CoverageDAOImplTest {
     void shouldFindCoverageByCap() {
         CoverageEntity entity1 = buildEntity();
         CoverageEntity entity2 = buildEntity();
+        entity1.setCap("random");
         entity2.setCap(entity1.getCap());
+        entity2.setLocality("random");
 
         StepVerifier.create(
                 raddCoverageDAO.putItemIfAbsent(entity1)
