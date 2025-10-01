@@ -132,7 +132,16 @@ public class RegistrySelfController implements RegistryApi {
      */
     @Override
     public  Mono<ResponseEntity<RegistriesResponse>> retrieveRegistries(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, Integer limit, String lastKey, String cap, String city, String pr, String externalCode, final ServerWebExchange exchange) {
+        return handleRetrieveRegistry(xPagopaPnCxType, xPagopaPnCxId, uid, limit, lastKey, cap, city, pr, externalCode, exchange);
+    }
+
+    @Override
+    public Mono<ResponseEntity<RegistriesResponse>> retrieveRegistriesBo(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, Integer limit, String lastKey, String cap, String city, String pr, String externalCode, ServerWebExchange exchange) {
+        return  handleRetrieveRegistry(xPagopaPnCxType, xPagopaPnCxId, xPagopaPnUid, limit, lastKey, cap, city, pr, externalCode, exchange);
+    }
+
+    private Mono<ResponseEntity<RegistriesResponse>> handleRetrieveRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, Integer limit, String lastKey, String cap, String city, String pr, String externalCode, final ServerWebExchange exchange) {
         return registrySelfService.registryListing(xPagopaPnCxId, limit, lastKey, cap, city, pr, externalCode)
-                .map(response -> ResponseEntity.status(HttpStatus.OK).body(response));
+                                  .map(response -> ResponseEntity.status(HttpStatus.OK).body(response));
     }
 }

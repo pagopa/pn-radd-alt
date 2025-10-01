@@ -16,6 +16,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.UpdateRegistryReque
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
 import it.pagopa.pn.radd.pojo.*;
@@ -54,6 +55,7 @@ public class RaddRegistryUtils {
     private final ObjectMapperUtil objectMapperUtil;
     private final PnRaddFsuConfig pnRaddFsuConfig;
     private final SecretService secretService;
+    private final RegistryMappingUtils registryMappingUtils;
     private final static String PARTNER_ID_REGEX = "^([0-9]{11})$";
 
     private final static Function<Map<String, AttributeValue>, PnLastEvaluatedKey> STORE_REGISTRY_LAST_EVALUATED_KEY = (stringAttributeValueMap) -> {
@@ -529,38 +531,11 @@ public class RaddRegistryUtils {
         return address;
     }
 
-    public RegistriesResponse mapRegistryEntityToRegistry(ResultPaginationDto<RaddRegistryEntity, String> resultPaginationDto) {
+    public RegistriesResponse mapRegistryEntityToRegistry(ResultPaginationDto<RaddRegistryEntityV2, String> resultPaginationDto) {
         RegistriesResponse result = new RegistriesResponse();
         if(resultPaginationDto.getResultsPage() != null) {
             result.setRegistries(resultPaginationDto.getResultsPage().stream()
-                    .map(entity -> {
-                        Registry registry = new Registry();
-                        registry.setRegistryId(entity.getRegistryId());
-                        registry.setRequestId(entity.getRequestId());
-                        registry.setAddress(mapNormalizedAddressToAddress(entity.getNormalizedAddress()));
-                        registry.setDescription(entity.getDescription());
-                        registry.setPhoneNumber(entity.getPhoneNumber());
-                        try {
-                            if(StringUtils.isNotBlank(entity.getGeoLocation())) {
-                                GeoLocation geoLocation = objectMapperUtil.toObject(entity.getGeoLocation(), GeoLocation.class);
-                                geoLocation.setLatitude(geoLocation.getLatitude());
-                                geoLocation.setLongitude(geoLocation.getLongitude());
-                                registry.setGeoLocation(geoLocation);
-                            }
-                        } catch (PnInternalException e) {
-                            log.debug("Registry with cxId = {} and registryId = {} has not valid geoLocation", entity.getCxId(), entity.getRegistryId(), e);
-                        }
-                        registry.setOpeningTime(entity.getOpeningTime());
-                        if(entity.getStartValidity() != null) {
-                            registry.setStartValidity(Date.from(entity.getStartValidity()));
-                        }
-                        if (entity.getEndValidity() != null) {
-                            registry.setEndValidity(Date.from(entity.getEndValidity()));
-                        }
-                        registry.setExternalCode(entity.getExternalCode());
-                        registry.setCapacity(entity.getCapacity());
-                        return registry;
-                    })
+                    .map(registryMappingUtils::mappingToV1)
                     .toList());
         }
         result.setNextPagesKey(resultPaginationDto.getNextPagesKey());
