@@ -1,0 +1,11 @@
+openapi: 3.0.1
+info:
+  title: PN RADD Alt Coverage Internal API
+  description: API per la gestione delle coperture RADD.
+  version: 1.0.0
+paths: { }
+
+components:
+  schemas:
+    Coverage:
+      $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/Coverage'

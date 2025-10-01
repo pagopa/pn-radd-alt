@@ -67,6 +67,7 @@ public class PnRaddFsuConfig {
         private String raddRegistryImportTable;
         private String raddRegistryTable;
         private String raddRegistryTableV2;
+        private String raddCoverageTable;
         private String shedlockTableName;
     }
 
