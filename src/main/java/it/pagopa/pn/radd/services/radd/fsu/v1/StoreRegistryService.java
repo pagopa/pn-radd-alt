@@ -2,7 +2,7 @@ package it.pagopa.pn.radd.services.radd.fsu.v1;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.StoreRegistriesResponse;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.StoreRegistry;
-import it.pagopa.pn.radd.mapper.StoreDateMapper;
+import it.pagopa.pn.radd.mapper.StoreRegistryMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.pojo.PnLastEvaluatedKey;
@@ -23,7 +23,7 @@ import java.util.function.Function;
 public class StoreRegistryService {
 
     private final RaddRegistryV2DAO raddRegistryDAO;
-    private final StoreDateMapper mapper;
+    private final StoreRegistryMapper mapper;
 
 
     public Mono<StoreRegistriesResponse> retrieveStoreRegistries(Integer limit, String lastKey) {

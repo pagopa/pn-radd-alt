@@ -15,9 +15,9 @@ import static it.pagopa.pn.radd.utils.OpeningHoursParser.serializeOpeningHours;
 @Component
 @RequiredArgsConstructor
 @CustomLog
-public class StoreDateMapper extends AbstractDateMapper {
+public class StoreRegistryMapper extends AbstractDateMapper {
 
-    private final RaddDateMapper raddRegistryMapper;
+    private final RaddRegistryMapper raddRegistryMapper;
     private final NormalizedAddressMapper normalizedAddressMapper;
     private final AddressMapper addressMapper;
 

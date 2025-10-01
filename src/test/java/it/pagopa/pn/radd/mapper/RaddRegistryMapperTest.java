@@ -18,7 +18,7 @@ import static org.mockito.Mockito.*;
 
 class RaddRegistryMapperTest {
 
-    private RaddDateMapper mapper;
+    private RaddRegistryMapper mapper;
     private NormalizedAddressMapper normalizedAddressMapper;
     private AddressMapper addressMapper;
 
@@ -26,7 +26,7 @@ class RaddRegistryMapperTest {
     void setUp() {
         normalizedAddressMapper = mock(NormalizedAddressMapper.class);
         addressMapper = mock(AddressMapper.class);
-        mapper = new RaddDateMapper(normalizedAddressMapper, addressMapper);
+        mapper = new RaddRegistryMapper(normalizedAddressMapper, addressMapper);
     }
 
     @Test

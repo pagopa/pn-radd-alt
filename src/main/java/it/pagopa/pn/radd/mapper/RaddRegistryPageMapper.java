@@ -15,7 +15,7 @@ import java.util.List;
 @CustomLog
 public class RaddRegistryPageMapper {
 
-    private  final RaddDateMapper raddRegistryMapper;
+    private  final RaddRegistryMapper raddRegistryMapper;
 
     public GetRegistryResponseV2 toDto(RaddRegistryPage page) {
         if (page == null) {
