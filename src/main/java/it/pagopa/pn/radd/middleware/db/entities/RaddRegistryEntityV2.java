@@ -4,10 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 import java.time.Instant;
 import java.util.List;
@@ -36,6 +33,7 @@ public class RaddRegistryEntityV2 {
     public static final String COL_START_VALIDITY = "startValidity";
     public static final String COL_END_VALIDITY = "endValidity";
     public static final String COL_UID = "uid";
+    public static final String COL_REQUEST_ID = "requestId";
 
     @Getter(onMethod = @__({@DynamoDbPartitionKey, @DynamoDbAttribute(COL_PARTNER_ID)}))
     private String partnerId;
@@ -90,6 +88,9 @@ public class RaddRegistryEntityV2 {
 
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_UID)}))
     private String uid;
+
+    @Getter(onMethod = @__({@DynamoDbAttribute(COL_REQUEST_ID)}))
+    private String requestId;
 
 }
 

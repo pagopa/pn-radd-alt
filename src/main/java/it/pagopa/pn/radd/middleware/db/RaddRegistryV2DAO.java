@@ -22,4 +22,8 @@ public interface RaddRegistryV2DAO {
 
     Mono<RaddRegistryEntityV2> delete(String partnerId, String locationId);
 
+    Flux<RaddRegistryEntityV2> findByPartnerIdAndRequestId(String partnerId, String requestId);
+
+    Flux<RaddRegistryEntityV2> findByPartnerIdAndWithoutRequestId(String partnerId);
+
 }

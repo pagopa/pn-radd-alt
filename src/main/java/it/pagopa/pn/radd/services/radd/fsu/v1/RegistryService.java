@@ -12,7 +12,7 @@ import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryImportDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.eventbus.EventBridgeProducer;
@@ -203,15 +203,7 @@ public class RegistryService {
 
     public Mono<Void> handleImportCompletedRequest(ImportCompletedRequestEvent.Payload payload) {
         log.logStartingProcess(PROCESS_SERVICE_IMPORT_COMPLETE);
-        var newRegistryRequest = raddRegistryDAO.findPaginatedByCxIdAndRequestId(payload.getCxId(), payload.getRequestId())
-                .map(RaddRegistryEntity::getZipCode);
-
-        var oldRegistryRequest = deleteOlderRegistriesAndGetZipCodeList(payload.getCxId(), payload.getRequestId());
-
-        return newRegistryRequest.concatWith(oldRegistryRequest)
-                .distinct()
-                .flatMap(zipCode -> raddAltCapCheckerProducer.sendCapCheckerEvent(zipCode)
-                        .doOnError(throwable -> log.error("Failed to send Cap Checker event for zipCode {}: {}", zipCode, throwable.getMessage())))
+        return deleteOlderRegistries(payload.getCxId(), payload.getRequestId())
                 .then()
                 .doOnSuccess(voidValue -> log.info("Completed import completed request processing for cxId {} and requestId {}", payload.getCxId(), payload.getRequestId()))
                 .doOnError(throwable -> log.error("Failed to complete import completed request processing for cxId {} and requestId {}: {}", payload.getCxId(), payload.getRequestId(), throwable.getMessage()));
@@ -226,7 +218,7 @@ public class RegistryService {
      * @return A flux&lt;string&gt with the zip code of the deleted registries;
      *
      */
-    public Flux<String> deleteOlderRegistriesAndGetZipCodeList(String xPagopaPnCxId, String requestId) {
+    public Flux<RaddRegistryEntityV2> deleteOlderRegistries(String xPagopaPnCxId, String requestId) {
         log.info("Start deleteOlderRegistriesAndGetZipCodeList for cxId: {} and requestId: {}", xPagopaPnCxId, requestId);
         return raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE)
                 .collectList()
@@ -250,7 +242,7 @@ public class RegistryService {
      *
      */
     @NotNull
-    private Flux<String> processRegistryImportsInStatusDone(String xPagopaPnCxId, String requestId, List<RaddRegistryImportEntity> raddRegistryImportEntities) {
+    private Flux<RaddRegistryEntityV2> processRegistryImportsInStatusDone(String xPagopaPnCxId, String requestId, List<RaddRegistryImportEntity> raddRegistryImportEntities) {
         return Flux.fromIterable(raddRegistryImportEntities)
                 .single()
                 // If there is only one record we are handling the first import request for a cxId
@@ -263,26 +255,23 @@ public class RegistryService {
 
     /**
      * The handleFirstImportRequest function is called when the first import request for a given CxId arrives.
-     * It checks if there are any previous requests with the same CxId made using CRUD API and deletes them, then returns
-     * the zip code of the deleted registries. If no previous registries were found, it returns an empty string.
+     * It checks if there are any previous requests with the same CxId made using CRUD API and deletes them.
 
      *
      * @param xPagopaPnCxId Identify radd organizations
      * @param newRaddRegistryImportEntity The new import request entity
-     * @return A flux&lt;string&gt; with the zip code of the deleted registries
+     * @return A flux&lt;RaddRegistryEntityV2&gt; with the deleted registries
      *
      */
     @NotNull
-    private Flux<String> handleFirstImportRequest(String xPagopaPnCxId, RaddRegistryImportEntity newRaddRegistryImportEntity) {
+    private Flux<RaddRegistryEntityV2> handleFirstImportRequest(String xPagopaPnCxId, RaddRegistryImportEntity newRaddRegistryImportEntity) {
         // Even if is the first import request for a cxId, we need to check if there are any previous requests with the same CxId made using CRUD API
-        return raddRegistryDAO.findByCxIdAndRequestId(xPagopaPnCxId, REQUEST_ID_PREFIX)
+        return raddRegistryV2DAO.findByPartnerIdAndWithoutRequestId(xPagopaPnCxId)
                 .collectList()
                 .doOnNext(raddRegistryEntities -> log.info("Found {} registries for cxId: {} and requestId starting with: {}", raddRegistryEntities.size(), xPagopaPnCxId, REQUEST_ID_PREFIX))
                 .flatMap(raddRegistryEntity -> deleteOldRegistries(raddRegistryEntity, newRaddRegistryImportEntity)
                         .thenReturn(raddRegistryEntity))
-                .flatMapMany(Flux::fromIterable)
-                .map(RaddRegistryEntity::getZipCode)
-                .distinct();
+                .flatMapMany(Flux::fromIterable);
     }
 
     /**
@@ -296,24 +285,22 @@ public class RegistryService {
      * @param newImportRequestId The new import request id
      * @param raddRegistryImportEntities raddRegistryImportEntities list (should be 2)
      *
-     * @return A flux&lt;string&gt; with the zip code of the deleted registries
+     * @return A flux&lt;RaddRegistryEntityV2&gt; with the deleted registries
      *
      */
     @NotNull
-    private Flux<String> handleSubsequentImportRequest(String xPagopaPnCxId, String newImportRequestId, List<RaddRegistryImportEntity> raddRegistryImportEntities) {
+    private Flux<RaddRegistryEntityV2> handleSubsequentImportRequest(String xPagopaPnCxId, String newImportRequestId, List<RaddRegistryImportEntity> raddRegistryImportEntities) {
         RaddRegistryImportEntity oldRegistryImportEntity = filterByRequestId(newImportRequestId, raddRegistryImportEntities, registryImportWithDifferentRequestId);
         RaddRegistryImportEntity newRegistryImportEntity = filterByRequestId(newImportRequestId, raddRegistryImportEntities, registryImportWithSameRequestId);
-        return raddRegistryDAO.findByCxIdAndRequestId(xPagopaPnCxId, oldRegistryImportEntity.getRequestId())
-                .concatWith(raddRegistryDAO.findByCxIdAndRequestId(xPagopaPnCxId, REQUEST_ID_PREFIX))
+        return raddRegistryV2DAO.findByPartnerIdAndRequestId(xPagopaPnCxId, oldRegistryImportEntity.getRequestId())
+                .concatWith(raddRegistryV2DAO.findByPartnerIdAndWithoutRequestId(xPagopaPnCxId))
                 .collectList()
                 .doOnNext(raddRegistryEntities -> log.info("Found {} registries created using CRUD API and relative to older import request for cxId: {}", raddRegistryEntities.size(), xPagopaPnCxId))
                 .flatMap(raddRegistryEntities -> deleteOldRegistries(raddRegistryEntities, newRegistryImportEntity)
                         .thenReturn(raddRegistryEntities))
                 .flatMap(raddRegistryEntities -> raddRegistryImportDAO.updateStatusAndTtl(oldRegistryImportEntity, getTtlForImportToReplace(), RaddRegistryImportStatus.REPLACED)
                         .thenReturn(raddRegistryEntities))
-                .flatMapMany(Flux::fromIterable)
-                .map(RaddRegistryEntity::getZipCode)
-                .distinct();
+                .flatMapMany(Flux::fromIterable);
     }
 
     private RaddRegistryImportEntity filterByRequestId(String requestId, List<RaddRegistryImportEntity> raddRegistryImportEntities, BiPredicate<RaddRegistryImportEntity, String> predicate) {
@@ -329,19 +316,19 @@ public class RegistryService {
         return Instant.now().plus(pnRaddFsuConfig.getRegistryImportReplacedTtl(), ChronoUnit.HOURS).getEpochSecond();
     }
 
-    private Mono<Void> deleteOldRegistries(List<RaddRegistryEntity> raddRegistryEntities, RaddRegistryImportEntity raddRegistryImportEntity) {
+    private Mono<Void> deleteOldRegistries(List<RaddRegistryEntityV2> raddRegistryEntities, RaddRegistryImportEntity raddRegistryImportEntity) {
         RaddRegistryImportConfig raddRegistryImportConfig = objectMapperUtil.toObject(raddRegistryImportEntity.getConfig(), RaddRegistryImportConfig.class);
         return Flux.fromIterable(raddRegistryEntities)
                 .map(raddRegistryEntity -> setEndValidityAndRequestId(raddRegistryImportEntity, raddRegistryEntity, raddRegistryImportConfig))
-                .flatMap(raddRegistryDAO::updateRegistryEntity)
+                .flatMap(raddRegistryV2DAO::updateRegistryEntity)
                 .filter(raddRegistryEntity -> "DUPLICATE".equalsIgnoreCase(raddRegistryImportConfig.getDeleteRole()))
-                .flatMap(raddRegistryEntity -> raddRegistryRequestDAO.findByCxIdAndRegistryId(raddRegistryEntity.getCxId(), raddRegistryEntity.getRegistryId()))
+                .flatMap(raddRegistryEntity -> raddRegistryRequestDAO.findByCxIdAndRegistryId(raddRegistryEntity.getPartnerId(), raddRegistryEntity.getLocationId()))
                 .map(raddRegistryRequestEntity -> setDeletedStatusAndUpdatePk(raddRegistryImportEntity, raddRegistryRequestEntity))
                 .flatMap(raddRegistryRequestDAO::putRaddRegistryRequestEntity)
                 .then();
     }
 
-    private RaddRegistryEntity setEndValidityAndRequestId(RaddRegistryImportEntity raddRegistryImportEntity, RaddRegistryEntity raddRegistryEntity, RaddRegistryImportConfig raddRegistryImportConfig) {
+    private RaddRegistryEntityV2 setEndValidityAndRequestId(RaddRegistryImportEntity raddRegistryImportEntity, RaddRegistryEntityV2 raddRegistryEntity, RaddRegistryImportConfig raddRegistryImportConfig) {
         raddRegistryEntity.setEndValidity(LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC).plus(raddRegistryImportConfig.getDefaultEndValidity(), ChronoUnit.DAYS));
         raddRegistryEntity.setRequestId(raddRegistryImportEntity.getRequestId());
         return raddRegistryEntity;
@@ -355,23 +342,25 @@ public class RegistryService {
         return raddRegistryRequestEntity;
     }
 
+    //TODO deprecato, si può rimuovere tutta questa logica
     public Mono<Void> handleInternalCapCheckerMessage(PnInternalCapCheckerEvent.Payload response) {
-        log.debug("Handling internal CAP checker message for ZIP code '{}'", response.getZipCode());
-        return raddRegistryDAO.getRegistriesByZipCode(response.getZipCode())
-                .collectList()
-                .doOnNext(raddRegistryEntities -> log.info("Found {} registries for ZIP code: {}", raddRegistryEntities.size(), response.getZipCode()))
-                .map(raddRegistryUtils::getOfficeIntervals)
-                .map(raddRegistryUtils::findActiveIntervals)
-                .flatMap(timeIntervals -> {
-                    if(timeIntervals.isEmpty()) {
-                        log.info("No active intervals found for ZIP code '{}'", response.getZipCode());
-                        return Mono.empty();
-                    }
-                    log.info("Found {} active intervals for ZIP code '{}'", timeIntervals.size(), response.getZipCode());
-                    return eventBridgeProducer.sendEvent(raddRegistryUtils.mapToEventMessage(timeIntervals,
-                            response.getZipCode()));
-                })
-                .then();
+        return null;
+//        log.debug("Handling internal CAP checker message for ZIP code '{}'", response.getZipCode());
+//        return raddRegistryDAO.getRegistriesByZipCode(response.getZipCode())
+//                .collectList()
+//                .doOnNext(raddRegistryEntities -> log.info("Found {} registries for ZIP code: {}", raddRegistryEntities.size(), response.getZipCode()))
+//                .map(raddRegistryUtils::getOfficeIntervals)
+//                .map(raddRegistryUtils::findActiveIntervals)
+//                .flatMap(timeIntervals -> {
+//                    if(timeIntervals.isEmpty()) {
+//                        log.info("No active intervals found for ZIP code '{}'", response.getZipCode());
+//                        return Mono.empty();
+//                    }
+//                    log.info("Found {} active intervals for ZIP code '{}'", timeIntervals.size(), response.getZipCode());
+//                    return eventBridgeProducer.sendEvent(raddRegistryUtils.mapToEventMessage(timeIntervals,
+//                            response.getZipCode()));
+//                })
+//                .then();
     }
 
     public Mono<RequestResponse> retrieveRequestItems(String xPagopaPnCxId, String requestId, Integer limit, String lastKey) {

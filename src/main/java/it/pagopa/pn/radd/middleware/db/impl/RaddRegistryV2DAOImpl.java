@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.ERROR_CODE_PN_RADD_ALT_UNSUPPORTED_LAST_EVALUATED_KEY;
+import static it.pagopa.pn.radd.utils.Const.REQUEST_ID_PREFIX;
 import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
 
 @Repository
@@ -134,5 +135,25 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
     @Override
     public Mono<RaddRegistryEntityV2> delete(String partnerId, String locationId) {
         return deleteItem(Key.builder().partitionValue(partnerId).sortValue(locationId).build());
+    }
+
+    // Questo metodo deve recuperare tutti i registry associati ad un cxId e ad un requestId. Il requestId deve esistere ed essere valorizzato.
+    @Override
+    public Flux<RaddRegistryEntityV2> findByPartnerIdAndRequestId(String partnerId, String requestId) {
+        QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(partnerId).build());
+        String expression = "attribute_exists(" + RaddRegistryEntityV2.COL_REQUEST_ID + ") AND " + RaddRegistryEntityV2.COL_REQUEST_ID + " = :requestIdVal";
+        Map<String, AttributeValue> values = Map.of(":requestIdVal", AttributeValue.builder().s(REQUEST_ID_PREFIX + requestId).build());
+
+        return getByFilter(conditional, null, expression, values, null, null);
+    }
+
+    // Questo metodo deve recuperare tutti i registry associati ad un cxId e che abbiano il requestId nullo.
+    // I record con requestId nullo sono quelli che sono stati creati tramite CRUD.
+    @Override
+    public Flux<RaddRegistryEntityV2> findByPartnerIdAndWithoutRequestId(String partnerId) {
+        QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(partnerId).build());
+        String expression = "attribute_not_exists(" + RaddRegistryEntityV2.COL_REQUEST_ID + ")";
+
+        return getByFilter(conditional, null, expression, null, null, null);
     }
 }

@@ -75,6 +75,7 @@ public class RegistryMappingUtils {
 
         v2.setLocationId(registryId);
         v2.setPartnerId(registryRequest.getCxId());
+        v2.setRequestId(registryRequest.getRequestId());
 
         // mappiamo indirizzo originale
         AddressEntity addressV2 = new AddressEntity();
