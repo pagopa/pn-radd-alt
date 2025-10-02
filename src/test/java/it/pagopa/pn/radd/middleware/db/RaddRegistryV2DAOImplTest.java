@@ -6,12 +6,15 @@ import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.middleware.db.entities.BiasPointEntity;
 import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
+import it.pagopa.pn.radd.pojo.ResultPaginationDto;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.http.HttpStatus;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -33,6 +36,8 @@ class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
     @SpyBean
     private RestExceptionHandler exceptionHandler;
 
+    @Mock
+    ResultPaginationDto resultPaginationDto;
     @Autowired
     private BaseDao<RaddRegistryEntityV2> baseDao;
     @Mock
@@ -228,5 +233,50 @@ class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
 
         Assertions.assertThrows(RaddGenericException.class, () -> raddRegistryDAO.scanRegistries(1, "test"));
     }
+
+
+    @Test
+    void shouldFindByFiltersSuccessfully() {
+        // given
+        RaddRegistryEntityV2 entity = buildEntity();
+        entity.getNormalizedAddress().setCap("00100");
+        entity.getNormalizedAddress().setCity("Roma");
+        entity.getNormalizedAddress().setProvince("RM");
+        entity.setExternalCodes(List.of("EXTCODE"));
+
+        StepVerifier.create(raddRegistryDAO.putItemIfAbsent(entity))
+                    .assertNext(inserted -> assertThat(inserted).isEqualTo(entity))
+                    .verifyComplete();
+
+        // filtro per cap
+        StepVerifier.create(raddRegistryDAO.findByFilters(entity.getPartnerId(), 10, "00100", null, null, null, null))
+                    .assertNext(result -> {
+                        assertThat(result.getResultsPage()).extracting(e -> e.getNormalizedAddress().getCap()).contains("00100");
+                    })
+                    .verifyComplete();
+
+        // filtro per city
+        StepVerifier.create(raddRegistryDAO.findByFilters(entity.getPartnerId(), 10, null, "Roma", null, null, null))
+                    .assertNext(result -> {
+                        assertThat(result.getResultsPage()).extracting(e -> e.getNormalizedAddress().getCity()).contains("Roma");
+                    })
+                    .verifyComplete();
+
+        // filtro per province
+        StepVerifier.create(raddRegistryDAO.findByFilters(entity.getPartnerId(), 10, null, null, "RM", null, null))
+                    .assertNext(result -> {
+                        assertThat(result.getResultsPage()).extracting(e -> e.getNormalizedAddress().getProvince()).contains("RM");
+                    })
+                    .verifyComplete();
+
+        // filtro per externalCode
+        StepVerifier.create(raddRegistryDAO.findByFilters(entity.getPartnerId(), 10, null, null, null, "EXTCODE", null))
+                    .assertNext(result -> {
+                        assertThat(result.getResultsPage()).extracting(RaddRegistryEntityV2::getExternalCodes).anySatisfy(list -> assertThat(list).contains("EXTCODE"));
+                    })
+                    .verifyComplete();
+    }
+
+
 
 }

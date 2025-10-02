@@ -143,8 +143,8 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
 
 
     @Override
-    public Mono<ResultPaginationDto<RaddRegistryEntityV2, String>> findByFilters(String xPagopaPnCxId, Integer limit, String cap, String city, String pr, String externalCode, String lastKey) {
-        log.info("Start findAll RaddRegistryEntity - xPagopaPnCxId={} and limit: [{}] and cap: [{}] and city: [{}] and pr: [{}] and externalCode: [{}].", xPagopaPnCxId, limit, cap, city, pr, externalCode);
+    public Mono<ResultPaginationDto<RaddRegistryEntityV2, String>> findByFilters(String partnerId, Integer limit, String cap, String city, String pr, String externalCode, String lastKey) {
+        log.info("Start findAll RaddRegistryEntity - xPagopaPnCxId={} and limit: [{}] and cap: [{}] and city: [{}] and pr: [{}] and externalCode: [{}].", partnerId, limit, cap, city, pr, externalCode);
 
         PnLastEvaluatedKey lastEvaluatedKey = null;
         if (io.micrometer.core.instrument.util.StringUtils.isNotEmpty(lastKey)) {
@@ -160,7 +160,7 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
         }
 
         //Creazione key per fare la query
-        Key key = Key.builder().partitionValue(xPagopaPnCxId).build();
+        Key key = Key.builder().partitionValue(partnerId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);
 
         //Creazione query filtrata e mappa dei valori per i filtri se presenti
@@ -170,6 +170,7 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
         if (io.micrometer.core.instrument.util.StringUtils.isNotEmpty(cap)) {
             map.put(":" + NormalizedAddressEntityV2.COL_CAP, AttributeValue.builder().s(cap).build());
             names.put("#" + RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS, RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS);
+            names.put("#" + NormalizedAddressEntityV2.COL_CAP, NormalizedAddressEntityV2.COL_CAP);
             query.add(String.format("#%s.#%s = :%s", RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS, NormalizedAddressEntityV2.COL_CAP, NormalizedAddressEntityV2.COL_CAP));        }
         if (io.micrometer.core.instrument.util.StringUtils.isNotEmpty(city)) {
             map.put(":" + NormalizedAddressEntityV2.COL_CITY, AttributeValue.builder().s(city).build());

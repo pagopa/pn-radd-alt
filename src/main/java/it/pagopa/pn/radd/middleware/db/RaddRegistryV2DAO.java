@@ -24,6 +24,6 @@ public interface RaddRegistryV2DAO {
 
     Mono<RaddRegistryEntityV2> delete(String partnerId, String locationId);
 
-    Mono<ResultPaginationDto<RaddRegistryEntityV2, String>> findByFilters(String xPagopaPnCxId, Integer limit, String cap, String city, String pr, String externalCode, String lastEvaluatedKey);
+    Mono<ResultPaginationDto<RaddRegistryEntityV2, String>> findByFilters(String partnerId, Integer limit, String cap, String city, String pr, String externalCode, String lastEvaluatedKey);
 
 }

@@ -7,7 +7,6 @@ import it.pagopa.pn.radd.pojo.PnLastEvaluatedKey;
 import it.pagopa.pn.radd.pojo.ResultPaginationDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -16,7 +15,6 @@ import software.amazon.awssdk.enhanced.dynamodb.model.*;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
-import javax.management.Attribute;
 import java.util.*;
 import java.util.function.Function;
 
@@ -184,7 +182,7 @@ public abstract class BaseDao<T> {
     }
 
 
-    protected <T> Mono<ResultPaginationDto<T, String>> getByFilterPaginated(QueryConditional conditional,
+    protected Mono<ResultPaginationDto<T, String>> getByFilterPaginated(QueryConditional conditional,
                                                                           String index,
                                                                           Map<String, AttributeValue> values,
                                                                           Map<String, String> names,
@@ -212,20 +210,24 @@ public abstract class BaseDao<T> {
                 .map(resultPagination -> prepareGlobalResult(resultPaginationDto.getResultsPage(), resultPaginationDto.isMoreResult(), pageSize, internalKeyMakerFn));
     }
 
-    private <T, K> Mono<ResultPaginationDto<T, K>> query(String index,
-                              QueryEnhancedRequest.Builder queryEnhancedRequestBuilder,
-                              ResultPaginationDto<T, K> resultPaginationDto,
-                              int limit,
-                              Map<String, AttributeValue> lastEvaluatedKey) {
+    private <K> Mono<ResultPaginationDto<T, K>> query(String index,
+                                                         QueryEnhancedRequest.Builder queryEnhancedRequestBuilder,
+                                                         ResultPaginationDto<T, K> resultPaginationDto,
+                                                         int limit,
+                                                         Map<String, AttributeValue> lastEvaluatedKey) {
         if (lastEvaluatedKey != null) {
             queryEnhancedRequestBuilder.exclusiveStartKey(lastEvaluatedKey);
         }
 
-        return Mono.from(this.tableAsync.index(index).query(queryEnhancedRequestBuilder.build()))
-                .flatMap(tPage -> {
+        Mono<Page<T>> pageMono;
+        if (StringUtils.isBlank(index)) {
+            pageMono = Mono.from(this.tableAsync.query(queryEnhancedRequestBuilder.build()));
+        } else pageMono = Mono.from(this.tableAsync.index(index).query(queryEnhancedRequestBuilder.build()));
+
+        return pageMono.flatMap(tPage -> {
                     Map<String, AttributeValue> lastKey = tPage.lastEvaluatedKey();
 
-                    resultPaginationDto.getResultsPage().addAll((Collection<? extends T>) tPage.items());
+                    resultPaginationDto.getResultsPage().addAll(tPage.items());
 
                     if (resultPaginationDto.getResultsPage().size() >= limit || lastKey == null) {
                         resultPaginationDto.setMoreResult(lastKey != null);
