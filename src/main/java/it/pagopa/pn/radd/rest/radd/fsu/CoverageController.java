@@ -2,7 +2,6 @@ package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.CoverageApi;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateCoverageRequest;
 import it.pagopa.pn.radd.services.radd.fsu.v1.CoverageService;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +19,9 @@ public class CoverageController implements CoverageApi {
     private final CoverageService coverageService;
 
     @Override
-    public Mono<ResponseEntity<Coverage>> addCoverage(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, Mono<CreateCoverageRequest> createCoverageRequest, ServerWebExchange exchange) {
-        return createCoverageRequest.flatMap(coverageService::addCoverage)
-                                    .map(response -> ResponseEntity.status(HttpStatus.OK).body(response));
+    public Mono<ResponseEntity<Coverage>> updateCoverage(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, String cap, String locality, Mono<UpdateCoverageRequest> updateCoverageRequest, ServerWebExchange exchange) {
+        return updateCoverageRequest.flatMap(request -> coverageService.updateCoverage(cap, locality, request))
+                                    .map(response -> ResponseEntity.status(HttpStatus.OK).build());
     }
 
 }

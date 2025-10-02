@@ -1,7 +1,8 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.Coverage;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateCoverageRequest;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateCoverageRequest;
+import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
+import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.*;
 import it.pagopa.pn.radd.middleware.db.CoverageDAO;
 import it.pagopa.pn.radd.middleware.db.entities.CoverageEntity;
@@ -18,7 +19,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import static org.mockito.ArgumentMatchers.any;
+import java.time.LocalDate;
+
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,33 +47,72 @@ class CoverageServiceTest {
         );
     }
 
-    private CreateCoverageRequest buildValidCreateRequest() {
+    private UpdateCoverageRequest buildValidUpdateRequest() {
 
-        CreateCoverageRequest req = new CreateCoverageRequest();
+        UpdateCoverageRequest req = new UpdateCoverageRequest();
 
-        req.setCap(CAP);
-        req.setLocality(LOCALITY);
         req.setProvince("RM");
         req.setCadastralCode("A000");
+        req.setStartValidity(LocalDate.now());
+        req.setEndValidity(LocalDate.now().plusDays(1L));
 
         return req;
 
     }
 
     @Test
-    void addRegistry() {
+    void updateCoverage() {
 
-        CreateCoverageRequest request = buildValidCreateRequest();
+        UpdateCoverageRequest request = buildValidUpdateRequest();
+
         CoverageEntity entity = new CoverageEntity();
+        entity.setCap(CAP);
+        entity.setLocality(LOCALITY);
 
         Mockito.lenient().when(coverageDAO.findByCap(CAP)).thenReturn(Flux.empty());
-        when(coverageDAO.putItemIfAbsent(any())).thenReturn(Mono.just(entity));
+        Mockito.lenient().when(coverageDAO.find(CAP, LOCALITY)).thenReturn(Mono.just(entity));
+        when(coverageDAO.updateCoverageEntity(entity)).thenReturn(Mono.just(entity));
 
-        Mono<Coverage> result = coverageService.addCoverage(request);
-
-        StepVerifier.create(result)
-                    .assertNext(Assertions::assertNotNull)
+        StepVerifier.create(coverageService.updateCoverage(CAP, LOCALITY, request))
+                    .expectNextMatches(coverageEntity -> entity.getCadastralCode().equalsIgnoreCase(request.getCadastralCode())
+                                                         && entity.getProvince().equalsIgnoreCase(request.getProvince()))
                     .verifyComplete();
+
+    }
+
+    @Test
+    void updateCoverage_NotFound() {
+
+        when(coverageDAO.find(CAP, LOCALITY)).thenReturn(Mono.empty());
+
+        StepVerifier.create(coverageService.updateCoverage(CAP, LOCALITY, new UpdateCoverageRequest()))
+                    .verifyErrorMessage(ExceptionTypeEnum.COVERAGE_NOT_FOUND.getMessage());
+
+    }
+
+    @Test
+    void updateCoverage_BadRequest() {
+
+        CoverageEntity entity = new CoverageEntity();
+        entity.setCap(CAP);
+        entity.setLocality(LOCALITY);
+        entity.setCadastralCode("");
+
+        when(coverageDAO.find(CAP, LOCALITY)).thenReturn(Mono.just(entity));
+
+        StepVerifier.create(coverageService.updateCoverage(CAP, LOCALITY, new UpdateCoverageRequest()))
+                    .verifyError();
+
+    }
+
+    @Test
+    void updateCoverage_InvalidIntervalDates() {
+
+        UpdateCoverageRequest request = buildValidUpdateRequest();
+        request.setEndValidity(LocalDate.now().minusDays(5L));
+
+        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> coverageService.updateCoverage(CAP, LOCALITY, request));
+        assertEquals(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, ex.getExceptionType());
 
     }
 
