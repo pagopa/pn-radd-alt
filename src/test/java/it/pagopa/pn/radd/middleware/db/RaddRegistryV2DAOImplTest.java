@@ -278,5 +278,12 @@ class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
     }
 
 
-
+    @Test
+    void shouldThrowExceptionOnInvalidLastKey() {
+        RaddRegistryEntityV2 entity = buildEntity();
+        entity.getNormalizedAddress().setCap("00100");
+        Assertions.assertThrows(RaddGenericException.class, () ->
+                                        raddRegistryDAO.findByFilters(entity.getPartnerId(), 10, "00100", null, null, null, "invalid-last-key").block()
+                               );
+    }
 }

@@ -44,9 +44,13 @@ public class RegistryMappingUtils {
         }
         v1.setDescription(v2.getDescription());
         v1.setOpeningTime(v2.getOpeningTime());
-        v1.setStartValidity(Date.from(v2.getStartValidity()));
-        v1.setEndValidity(Date.from(v2.getEndValidity()));
 
+        if (v2.getStartValidity() != null){
+            v1.setStartValidity(Date.from(v2.getStartValidity()));
+        }
+        if (v2.getEndValidity() != null) {
+            v1.setEndValidity(Date.from(v2.getEndValidity()));
+        }
         //mapping Address
         Address address = new Address();
         address.setAddressRow(v2.getNormalizedAddress().getAddressRow());
