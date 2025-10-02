@@ -9,6 +9,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistryUploadReque
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RequestResponse;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryImportDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
@@ -91,13 +92,15 @@ class RegistryServiceTest {
     @Mock
     private ObjectMapperUtil objectMapperUtil;
 
+    @Mock
+    private RegistryMappingUtils registryMappingUtils;
 
     private RegistryService registryService;
 
     @BeforeEach
     void setUp() {
         registryService = new RegistryService(raddRegistryRequestDAO, raddRegistryDAO, raddRegistryImportDAO, pnSafeStorageClient,
-                new RaddRegistryUtils(new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper()), pnRaddFsuConfig, secretService), pnAddressManagerClient,
+                new RaddRegistryUtils(new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper()), pnRaddFsuConfig, secretService,registryMappingUtils), pnAddressManagerClient,
                 raddAltCapCheckerProducer, pnRaddFsuConfig, eventBridgeProducer, new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper()));
     }
 

@@ -8,6 +8,7 @@ import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
+import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
@@ -49,6 +50,7 @@ public class RegistrySelfService {
     private final RaddAltCapCheckerProducer raddAltCapCheckerProducer;
     private final RaddRegistryUtils raddRegistryUtils;
     private final PnRaddFsuConfig pnRaddFsuConfig;
+    private final RegistryMappingUtils registryMappingUtils;
 
     public Mono<RaddRegistryEntityV2> updateRegistry(String registryId, String uid, String xPagopaPnCxId, UpdateRegistryRequest request) {
         log.info("start updateRegistry for registryId [{}] and cxId [{}]", registryId, xPagopaPnCxId);
@@ -179,8 +181,8 @@ public class RegistrySelfService {
     public Mono<RegistriesResponse> registryListing(String xPagopaPnCxId, Integer limit, String lastKey, String
             cap, String city, String pr, String externalCode) {
         log.info("start registryListing for xPagopaPnCxId={} and limit: [{}] and lastKey: [{}] and cap: [{}] and city: [{}] and pr: [{}] and externalCode: [{}].", xPagopaPnCxId, limit, lastKey, cap, city, pr, externalCode);
-        return raddRegistryDAO.findByFilters(xPagopaPnCxId, limit, cap, city, pr, externalCode, lastKey)
-                .map(raddRegistryUtils::mapRegistryEntityToRegistry);
+        return raddRegistryV2DAO.findByFilters(xPagopaPnCxId, limit, cap, city, pr, externalCode, lastKey)
+                 .map(raddRegistryUtils::mapRegistryEntityToRegistry);
     }
 
 }

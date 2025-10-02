@@ -9,6 +9,7 @@ import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
+import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
@@ -51,6 +52,8 @@ class RegistrySelfServiceTest {
     @Mock
     private RaddRegistryDAO raddRegistryDAO;
     @Mock
+    RegistryMappingUtils registryMappingUtils;
+    @Mock
     private RaddRegistryV2DAO raddRegistryV2DAO;
     @Mock
     private RaddRegistryRequestDAO registryRequestDAO;
@@ -69,7 +72,7 @@ class RegistrySelfServiceTest {
     @BeforeEach
     void setUp() {
         registrySelfService = new RegistrySelfService(raddRegistryV2DAO,raddRegistryDAO, registryRequestDAO, raddRegistryRequestEntityMapper, correlationIdEventsProducer, raddAltCapCheckerProducer,
-                new RaddRegistryUtils(new ObjectMapperUtil(new ObjectMapper()), pnRaddFsuConfig, secretService), pnRaddFsuConfig);
+                new RaddRegistryUtils(new ObjectMapperUtil(new ObjectMapper()), pnRaddFsuConfig, secretService, registryMappingUtils), pnRaddFsuConfig, registryMappingUtils);
     }
 
     @Test
@@ -190,7 +193,7 @@ class RegistrySelfServiceTest {
 
     @Test
     void registryListing() {
-        ResultPaginationDto<RaddRegistryEntity, String> paginator = new ResultPaginationDto<RaddRegistryEntity, String>().toBuilder().build();
+        ResultPaginationDto<RaddRegistryEntityV2, String> paginator = new ResultPaginationDto<RaddRegistryEntityV2, String>().toBuilder().build();
         paginator.setResultsPage(List.of());
         PnLastEvaluatedKey lastEvaluatedKeyToSerialize = new PnLastEvaluatedKey();
         lastEvaluatedKeyToSerialize.setExternalLastEvaluatedKey( "SenderId##creationMonth" );
@@ -199,7 +202,7 @@ class RegistrySelfServiceTest {
                         .s( "VALUE" )
                         .build() )  );
         String serializedLEK = lastEvaluatedKeyToSerialize.serializeInternalLastEvaluatedKey();
-        when(raddRegistryDAO.findByFilters(eq("cxId"), eq(1),eq("cap"), eq("city"), eq("pr"), eq("externalCode"), any())).thenReturn(Mono.just(paginator));
+        when(raddRegistryV2DAO.findByFilters(eq("cxId"), eq(1),eq("cap"), eq("city"), eq("pr"), eq("externalCode"), any())).thenReturn(Mono.just(paginator));
         StepVerifier.create(registrySelfService.registryListing("cxId", 1, serializedLEK,"cap", "city", "pr", "externalCode"))
                 .expectNextMatches(registriesResponse -> Boolean.FALSE.equals(registriesResponse.getMoreResult()))
                 .verifyComplete();

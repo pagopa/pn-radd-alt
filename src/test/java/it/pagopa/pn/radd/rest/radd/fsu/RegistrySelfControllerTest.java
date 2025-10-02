@@ -157,4 +157,25 @@ class RegistrySelfControllerTest {
                 .exchange()
                 .expectStatus().isOk();
     }
+
+    @Test
+    void retrieveRegistriesBO() {
+        String path = "/radd-bo/api/v1/registry";
+        RegistriesResponse response = new RegistriesResponse();
+        when(registrySelfService.registryListing(any(), any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(response));
+        webTestClient.get()
+                     .uri(path)
+                     .header( PN_PAGOPA_CX_TYPE, CxTypeAuthFleet.RADD.getValue())
+                     .header( PN_PAGOPA_CX_ID, "xpagopapncxid")
+                     .header( PN_PAGOPA_UID_BO, "uidBo")
+                     .header( LIMIT, "10")
+                     .header( LASTKEY, "lastKey")
+                     .header( CAP, "cap")
+                     .header( CITY, "city")
+                     .header( PR, "pr")
+                     .header( EXTERNALCODE, "externalCode")
+                     .accept(MediaType.APPLICATION_JSON)
+                     .exchange()
+                     .expectStatus().isOk();
+    }
 }
