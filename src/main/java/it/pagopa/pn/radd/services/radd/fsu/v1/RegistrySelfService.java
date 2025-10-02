@@ -144,28 +144,28 @@ public class RegistrySelfService {
         return raddRegistryRequestEntityMapper.retrieveRaddRegistryRequestEntity(cxId, requestId, originalRequest);
     }
 
-    public Mono<RaddRegistryEntity> deleteRegistry(String xPagopaPnCxId, String registryId, String endDate) {
+    public Mono<RaddRegistryEntityV2> deleteRegistry(String xPagopaPnCxId, String registryId, String endDate, String uid) {
         log.info("deleteRegistry called with xPagopaPnCxId: {}, registryId: {}, endDate: {}", xPagopaPnCxId, registryId, endDate);
-        return raddRegistryDAO.find(registryId, xPagopaPnCxId)
-                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
-                .flatMap(registryEntity -> updateRegistryEntityIfValidDate(registryEntity, endDate, registryId, xPagopaPnCxId))
-                .doOnNext(raddRegistryEntity -> log.info("Registry with id: {} and cap: {} updated successfully", registryId, raddRegistryEntity.getZipCode()))
-                .flatMap(raddRegistryEntity -> raddAltCapCheckerProducer.sendCapCheckerEvent(raddRegistryEntity.getZipCode())
-                        .thenReturn(raddRegistryEntity))
-                .doOnError(throwable -> log.error("Error during delete registry request for registryId: [{}] and cxId: [{}]", registryId, xPagopaPnCxId, throwable));
+        return raddRegistryV2DAO.find(xPagopaPnCxId, registryId)
+                                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
+                                .flatMap(registryEntity -> updateRegistryEntityIfValidDate(registryEntity, endDate, registryId, xPagopaPnCxId, uid))
+                                .doOnNext(raddRegistryEntity -> log.info("Registry with id: {} and cap: {} updated successfully", registryId, raddRegistryEntity.getNormalizedAddress().getCap()))
+                                .doOnError(throwable -> log.error("Error during delete registry request for registryId: [{}] and cxId: [{}]", registryId, xPagopaPnCxId, throwable));
     }
 
-    private Mono<RaddRegistryEntity> updateRegistryEntityIfValidDate(RaddRegistryEntity registryEntity, String
-            date, String registryId, String xPagopaPnCxId) {
-            Instant instant = convertDateToInstantAtStartOfDay(date);
-            if (isValidDate(instant)) {
-                log.info("Updating registry with id: {} and cxId: {}", registryId, xPagopaPnCxId);
-                registryEntity.setEndValidity(instant);
-                return raddRegistryDAO.updateRegistryEntity(registryEntity);
-            } else {
-                log.error("not enough notice time for cancellation date: {}", instant);
-                return Mono.error(new RaddGenericException(ExceptionTypeEnum.DATE_NOTICE_ERROR, HttpStatus.BAD_REQUEST));
-            }
+    private Mono<RaddRegistryEntityV2> updateRegistryEntityIfValidDate(RaddRegistryEntityV2 registryEntity, String
+            date, String registryId, String xPagopaPnCxId, String uid) {
+        Instant instant = convertDateToInstantAtStartOfDay(date);
+        if (isValidDate(instant)) {
+            log.info("Updating registry with id: {} and cxId: {}", registryId, xPagopaPnCxId);
+            registryEntity.setEndValidity(instant);
+            registryEntity.setUpdateTimestamp(Instant.now());
+            registryEntity.setUid(uid);
+            return raddRegistryV2DAO.updateRegistryEntity(registryEntity);
+        } else {
+            log.error("not enough notice time for cancellation date: {}", instant);
+            return Mono.error(new RaddGenericException(ExceptionTypeEnum.DATE_NOTICE_ERROR, HttpStatus.BAD_REQUEST));
+        }
     }
 
     private boolean isValidDate(Instant endDate) {
