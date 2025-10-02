@@ -99,17 +99,4 @@ public class DateUtils {
         return end;
     }
 
-    public static void validateCoverageDateInterval(LocalDate startDate, LocalDate endDate) {
-            log.debug("Validating coverage date interval: start={} end={}", startDate, endDate);
-            if (startDate != null && (endDate==null || endDate.equals(startDate) || endDate.isAfter(startDate))){
-                log.debug("Coverage date validation successful: start={} end={}", startDate, endDate);
-            }
-            else if(startDate==null && endDate==null){
-                log.debug("Coverage dates not entered");
-            }
-            else{
-                throw new RaddGenericException(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
-            }
-    }
-
 }

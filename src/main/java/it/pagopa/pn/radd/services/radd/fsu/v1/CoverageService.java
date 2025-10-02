@@ -21,7 +21,6 @@ public class CoverageService {
     public Mono<Coverage> addCoverage(CreateCoverageRequest request) {
         log.info("Creating coverage entity for cap: {} and locality: {}", request.getCap(), request.getLocality());
         return Mono.defer(() -> coverageDAO.putItemIfAbsent(buildCoverageEntity(request)))
-                   .flatMap(coverageDAO::putItemIfAbsent)
                    .map(coverageMapper::toDto)
                    .doOnNext(result -> log.debug("Coverage entity with cap: {} and locality: {} created successfully", request.getCap(), request.getLocality()));
     }
