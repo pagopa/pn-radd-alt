@@ -95,7 +95,18 @@ public class RegistrySelfController implements RegistryApi {
      */
     @Override
     public Mono<ResponseEntity<Void>> deleteRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String registryId,String endDate ,final ServerWebExchange exchange) {
-        return registrySelfService.deleteRegistry(xPagopaPnCxId, registryId, endDate)
+        return handleDeleteRegistry( xPagopaPnCxId, registryId, endDate, uid);
+    }
+
+
+    @Override
+    public Mono<ResponseEntity<Void>> deleteRegistryBo(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, String registryId, String endDate, ServerWebExchange exchange) {
+        return handleDeleteRegistry( xPagopaPnCxId, registryId, endDate, xPagopaPnUid);
+
+    }
+
+    private Mono<ResponseEntity<Void>> handleDeleteRegistry(String xPagopaPnCxId, String registryId, String endDate, String uid) {
+        return registrySelfService.deleteRegistry(xPagopaPnCxId, registryId, endDate, uid)
                 .map(registryUploadResponse -> ResponseEntity.noContent().build());
     }
 

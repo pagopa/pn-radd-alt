@@ -5,6 +5,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryReque
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryResponse;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.GeoLocation;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateRegistryRequest;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.NormalizedAddress;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
@@ -13,6 +14,7 @@ import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
+import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
@@ -211,35 +213,41 @@ class RegistrySelfServiceTest {
     @Test
     void shouldDeleteRegistrySuccessfullyWhenRegistryExistsAndDateIsValid() {
         // Given
+        String uid ="testUid";
         String registryId = "testRegistryId";
         String cxId = "testCxId";
         String endDate = "2023-10-21";
-        RaddRegistryEntity registryEntity = new RaddRegistryEntity();
-        registryEntity.setRegistryId(registryId);
-        registryEntity.setZipCode("testZipCode");
-        when(raddRegistryDAO.find(registryId, cxId)).thenReturn(Mono.just(registryEntity));
-        when(raddRegistryDAO.updateRegistryEntity(any())).thenReturn(Mono.just(registryEntity));
-        when(raddAltCapCheckerProducer.sendCapCheckerEvent(any())).thenReturn(Mono.empty());
+        RaddRegistryEntityV2 registryEntity = new RaddRegistryEntityV2();
+        registryEntity.setLocationId(registryId);
+
+        NormalizedAddressEntityV2 normalizedAddress = new NormalizedAddressEntityV2();
+        normalizedAddress.setCap("testZipCode");
+        registryEntity.setNormalizedAddress(normalizedAddress);
+
+
+        when(raddRegistryV2DAO.find(cxId, registryId)).thenReturn(Mono.just(registryEntity));
+        when(raddRegistryV2DAO.updateRegistryEntity(any())).thenReturn(Mono.just(registryEntity));
 
         // When
-        Mono<RaddRegistryEntity> result = registrySelfService.deleteRegistry(cxId, registryId, endDate);
+        Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(cxId, registryId, endDate, uid);
 
         // Then
         StepVerifier.create(result)
-                .expectNextMatches(raddRegistryEntity -> registryId.equals(raddRegistryEntity.getRegistryId()))
+                .expectNextMatches(raddRegistryEntity -> registryId.equals(raddRegistryEntity.getLocationId()))
                 .verifyComplete();
     }
 
     @Test
     void shouldThrowExceptionWhenRegistryNotFound() {
         // Given
+        String uid ="testUid";
         String registryId = "testRegistryId";
         String cxId = "testCxId";
         String endDate = "2023-10-21";
-        when(raddRegistryDAO.find(registryId, cxId)).thenReturn(Mono.empty());
+        when(raddRegistryV2DAO.find( cxId, registryId)).thenReturn(Mono.empty());
 
         // When
-        Mono<RaddRegistryEntity> result = registrySelfService.deleteRegistry(cxId, registryId, endDate);
+        Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(cxId, registryId, endDate, uid);
 
         // Then
         StepVerifier.create(result)
@@ -251,16 +259,17 @@ class RegistrySelfServiceTest {
     @Test
     void shouldThrowExceptionWhenEndDateIsInvalid() {
         // Given
+        String uid ="testUid";
         String registryId = "testRegistryId";
         String cxId = "testCxId";
         String endDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE); // Invalid date
-        RaddRegistryEntity registryEntity = new RaddRegistryEntity();
-        registryEntity.setRegistryId(registryId);
-        when(raddRegistryDAO.find(registryId, cxId)).thenReturn(Mono.just(registryEntity));
+        RaddRegistryEntityV2 registryEntity = new RaddRegistryEntityV2();
+        registryEntity.setLocationId(registryId);
+        when(raddRegistryV2DAO.find(cxId, registryId)).thenReturn(Mono.just(registryEntity));
         when(pnRaddFsuConfig.getRegistryDefaultEndValidity()).thenReturn(1);
 
         // When
-        Mono<RaddRegistryEntity> result = registrySelfService.deleteRegistry(cxId, registryId, endDate);
+        Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(cxId, registryId, endDate, uid);
 
         // Then
         StepVerifier.create(result)
@@ -272,15 +281,16 @@ class RegistrySelfServiceTest {
     @Test
     void shouldThrowExceptionWhenEndDateHasInvalidFormat() {
         // Given
+        String uid="testUid";
         String registryId = "testRegistryId";
         String cxId = "testCxId";
         String endDate = "20/02/2020"; // Invalid date
-        RaddRegistryEntity registryEntity = new RaddRegistryEntity();
-        registryEntity.setRegistryId(registryId);
-        when(raddRegistryDAO.find(registryId, cxId)).thenReturn(Mono.just(registryEntity));
+        RaddRegistryEntityV2 registryEntity = new RaddRegistryEntityV2();
+        registryEntity.setLocationId(registryId);
+        when(raddRegistryV2DAO.find(cxId, registryId)).thenReturn(Mono.just(registryEntity));
 
         // When
-        Mono<RaddRegistryEntity> result = registrySelfService.deleteRegistry(cxId, registryId, endDate);
+        Mono<RaddRegistryEntityV2> result = registrySelfService.deleteRegistry(cxId, registryId, endDate, uid);
 
         // Then
         StepVerifier.create(result)
