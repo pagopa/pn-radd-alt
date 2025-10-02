@@ -147,13 +147,14 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
         return getByFilter(conditional, null, expression, values, null, null);
     }
 
-    // Questo metodo deve recuperare tutti i registry associati ad un cxId e che abbiano il requestId nullo.
-    // I record con requestId nullo sono quelli che sono stati creati tramite CRUD.
+    // Questo metodo deve recuperare tutti i registry associati ad un cxId e che abbiano il requestId nullo o che inizi con SELF.
+    // I record con requestId nullo o che inizia con SELF sono quelli che sono stati creati tramite CRUD.
     @Override
     public Flux<RaddRegistryEntityV2> findByPartnerIdAndWithoutRequestId(String partnerId) {
         QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(partnerId).build());
-        String expression = "attribute_not_exists(" + RaddRegistryEntityV2.COL_REQUEST_ID + ")";
+        Map<String, AttributeValue> values = Map.of(":selfPrefix", AttributeValue.builder().s(REQUEST_ID_PREFIX).build());
+        String expression = "attribute_not_exists(" + RaddRegistryEntityV2.COL_REQUEST_ID + ") OR begins_with(" + RaddRegistryEntityV2.COL_REQUEST_ID + ", :selfPrefix)";
 
-        return getByFilter(conditional, null, expression, null, null, null);
+        return getByFilter(conditional, null, expression, values, null, null);
     }
 }

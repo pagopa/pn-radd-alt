@@ -241,7 +241,7 @@ class RaddRegistryUtilsTest {
 
     /**
      * Method under test:
-     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, RegistryUploadRequest, FileCreationResponseDto, String)}
+     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, String, RegistryUploadRequest, FileCreationResponseDto, String)}
      */
     @Test
     void testGetPnRaddRegistryImportEntity() {
@@ -264,7 +264,7 @@ class RaddRegistryUtilsTest {
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
-        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42",
+        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42", "testUid",
                                                                                                                     request, new FileCreationResponseDto(), "42");
 
         // Assert
@@ -278,7 +278,7 @@ class RaddRegistryUtilsTest {
 
     /**
      * Method under test:
-     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, RegistryUploadRequest, FileCreationResponseDto, String)}
+     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, String, RegistryUploadRequest, FileCreationResponseDto, String)}
      */
     @Test
     void testGetPnRaddRegistryImportEntity2() throws JsonProcessingException {
@@ -304,7 +304,7 @@ class RaddRegistryUtilsTest {
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
-        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42",
+        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42", "testUid",
                                                                                                                     request, new FileCreationResponseDto(), "42");
 
         // Assert
@@ -319,7 +319,7 @@ class RaddRegistryUtilsTest {
 
     /**
      * Method under test:
-     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, RegistryUploadRequest, FileCreationResponseDto, String)}
+     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, String, RegistryUploadRequest, FileCreationResponseDto, String)}
      */
     @Test
     void testGetPnRaddRegistryImportEntity3() {
@@ -344,7 +344,7 @@ class RaddRegistryUtilsTest {
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
-        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42",
+        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42", "testUid",
                                                                                                                     request, new FileCreationResponseDto(), "42");
 
         // Assert

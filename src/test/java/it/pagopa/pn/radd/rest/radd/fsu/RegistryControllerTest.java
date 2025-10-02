@@ -43,10 +43,10 @@ class RegistryControllerTest {
      */
     @Test
     void testUploadRegistryRequests3() {
-        when(registryService.uploadRegistryRequests(Mockito.<String>any(), Mockito.<Mono<RegistryUploadRequest>>any()))
+        when(registryService.uploadRegistryRequests(Mockito.<String>any(), anyString(), Mockito.<Mono<RegistryUploadRequest>>any()))
                 .thenReturn(mock(Mono.class));
         registryController.uploadRegistryRequests(CxTypeAuthFleet.PA, "42", "1234", null, null);
-        verify(registryService).uploadRegistryRequests(Mockito.<String>any(), Mockito.<Mono<RegistryUploadRequest>>any());
+        verify(registryService).uploadRegistryRequests(Mockito.<String>any(), anyString(), Mockito.<Mono<RegistryUploadRequest>>any());
     }
 
     /**
@@ -54,10 +54,10 @@ class RegistryControllerTest {
      */
     @Test
     void testUploadRegistryRequests4() {
-        when(registryService.uploadRegistryRequests(Mockito.<String>any(), Mockito.<Mono<RegistryUploadRequest>>any()))
+        when(registryService.uploadRegistryRequests(Mockito.<String>any(), anyString(), Mockito.<Mono<RegistryUploadRequest>>any()))
                 .thenReturn(mock(Mono.class));
         registryController.uploadRegistryRequests(CxTypeAuthFleet.PF, "42", "1234", null, null);
-        verify(registryService).uploadRegistryRequests(Mockito.<String>any(), Mockito.<Mono<RegistryUploadRequest>>any());
+        verify(registryService).uploadRegistryRequests(Mockito.<String>any(), anyString(), Mockito.<Mono<RegistryUploadRequest>>any());
     }
 
     /**
@@ -65,10 +65,10 @@ class RegistryControllerTest {
      */
     @Test
     void testUploadRegistryRequests5() {
-        when(registryService.uploadRegistryRequests(Mockito.<String>any(), Mockito.<Mono<RegistryUploadRequest>>any()))
+        when(registryService.uploadRegistryRequests(Mockito.<String>any(), anyString(), Mockito.<Mono<RegistryUploadRequest>>any()))
                 .thenReturn(mock(Mono.class));
         registryController.uploadRegistryRequests(CxTypeAuthFleet.PG, "42", "1234", null, null);
-        verify(registryService).uploadRegistryRequests(Mockito.<String>any(), Mockito.<Mono<RegistryUploadRequest>>any());
+        verify(registryService).uploadRegistryRequests(Mockito.<String>any(), anyString(), Mockito.<Mono<RegistryUploadRequest>>any());
     }
 
     /**
@@ -76,10 +76,10 @@ class RegistryControllerTest {
      */
     @Test
     void testUploadRegistryRequests6() {
-        when(registryService.uploadRegistryRequests(Mockito.<String>any(), Mockito.<Mono<RegistryUploadRequest>>any()))
+        when(registryService.uploadRegistryRequests(Mockito.<String>any(), anyString(), Mockito.<Mono<RegistryUploadRequest>>any()))
                 .thenReturn(mock(Mono.class));
         registryController.uploadRegistryRequests(CxTypeAuthFleet.RADD, "42", "1234", null, null);
-        verify(registryService).uploadRegistryRequests(Mockito.<String>any(), Mockito.<Mono<RegistryUploadRequest>>any());
+        verify(registryService).uploadRegistryRequests(Mockito.<String>any(), anyString(), Mockito.<Mono<RegistryUploadRequest>>any());
     }
 
     @Test
@@ -88,7 +88,7 @@ class RegistryControllerTest {
         RegistryUploadRequest req = new RegistryUploadRequest();
 
         String path = "/radd-net/api/v1/registry/import/upload";
-        Mockito.when(registryService.uploadRegistryRequests(Mockito.any(), Mockito.any()))
+        Mockito.when(registryService.uploadRegistryRequests(Mockito.any(), anyString(), Mockito.any()))
                 .thenReturn(Mono.just(response));
         webTestClient.post()
                 .uri(path)

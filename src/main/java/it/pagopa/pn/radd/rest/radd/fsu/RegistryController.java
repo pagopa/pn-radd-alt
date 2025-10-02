@@ -34,7 +34,7 @@ public class RegistryController implements ImportApi {
      */
     @Override
     public Mono<ResponseEntity<RegistryUploadResponse>> uploadRegistryRequests(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, Mono<RegistryUploadRequest> registryUploadRequest, final ServerWebExchange exchange) {
-        return registryService.uploadRegistryRequests(xPagopaPnCxId, registryUploadRequest)
+        return registryService.uploadRegistryRequests(xPagopaPnCxId, uid, registryUploadRequest)
                 .map(registryUploadResponse -> ResponseEntity.status(HttpStatus.OK).body(registryUploadResponse));
     }
 

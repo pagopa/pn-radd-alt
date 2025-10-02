@@ -69,7 +69,7 @@ public class RegistryService {
 
     public static final String PROCESS_SERVICE_IMPORT_COMPLETE = "[IMPORT_COMPLETE] import complete request service";
 
-    public Mono<RegistryUploadResponse> uploadRegistryRequests(String xPagopaPnCxId, Mono<RegistryUploadRequest> registryUploadRequest) {
+    public Mono<RegistryUploadResponse> uploadRegistryRequests(String xPagopaPnCxId, String uid, Mono<RegistryUploadRequest> registryUploadRequest) {
         String requestId = UUID.randomUUID().toString();
         return registryUploadRequest.flatMap(request ->
                 raddRegistryImportDAO.getRegistryImportByCxId(xPagopaPnCxId)
@@ -84,7 +84,7 @@ public class RegistryService {
                         })
                         .flatMap(fileCreationResponseDto -> {
                             log.info("Saving import request for cxId: {} and requestId: {}", xPagopaPnCxId, requestId);
-                            return saveImportRequest(xPagopaPnCxId, request, fileCreationResponseDto, requestId).thenReturn(fileCreationResponseDto);
+                            return saveImportRequest(xPagopaPnCxId, uid, request, fileCreationResponseDto, requestId).thenReturn(fileCreationResponseDto);
                         })
                         .map(fileCreationResponseDto -> {
                             log.info("Mapping upload response for cxId: {} and requestId: {}", xPagopaPnCxId, requestId);
@@ -118,8 +118,8 @@ public class RegistryService {
         return registryUploadResponse;
     }
 
-    private Mono<RaddRegistryImportEntity> saveImportRequest(String xPagopaPnCxId, RegistryUploadRequest request, FileCreationResponseDto fileCreationResponseDto, String requestId) {
-        RaddRegistryImportEntity pnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity(xPagopaPnCxId, request, fileCreationResponseDto, requestId);
+    private Mono<RaddRegistryImportEntity> saveImportRequest(String xPagopaPnCxId, String uid, RegistryUploadRequest request, FileCreationResponseDto fileCreationResponseDto, String requestId) {
+        RaddRegistryImportEntity pnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity(xPagopaPnCxId, uid, request, fileCreationResponseDto, requestId);
         return raddRegistryImportDAO.putRaddRegistryImportEntity(pnRaddRegistryImportEntity);
     }
 
@@ -330,6 +330,7 @@ public class RegistryService {
 
     private RaddRegistryEntityV2 setEndValidityAndRequestId(RaddRegistryImportEntity raddRegistryImportEntity, RaddRegistryEntityV2 raddRegistryEntity, RaddRegistryImportConfig raddRegistryImportConfig) {
         raddRegistryEntity.setEndValidity(LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC).plus(raddRegistryImportConfig.getDefaultEndValidity(), ChronoUnit.DAYS));
+        raddRegistryEntity.setUpdateTimestamp(Instant.now());
         raddRegistryEntity.setRequestId(raddRegistryImportEntity.getRequestId());
         return raddRegistryEntity;
     }

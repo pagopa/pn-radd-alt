@@ -123,7 +123,7 @@ class RegistryServiceTest {
         when(pnRaddFsuConfig.getRegistryDefaultDeleteRule()).thenReturn("role");
         when(raddRegistryImportDAO.putRaddRegistryImportEntity(any())).thenReturn(Mono.just(pnRaddRegistryImportEntity));
 
-        StepVerifier.create(registryService.uploadRegistryRequests("cxId", Mono.just(request)))
+        StepVerifier.create(registryService.uploadRegistryRequests("cxId", "testUid", Mono.just(request)))
                 .expectNextMatches(registryUploadResponse1 -> registryUploadResponse1.getFileKey().equals("key")).verifyComplete();
     }
 
@@ -137,7 +137,7 @@ class RegistryServiceTest {
         pnRaddRegistryImportEntity.setFileUploadDueDate(Instant.now().plus(10, ChronoUnit.DAYS));
         when(raddRegistryImportDAO.getRegistryImportByCxId(any())).thenReturn(Flux.just(pnRaddRegistryImportEntity));
 
-        StepVerifier.create(registryService.uploadRegistryRequests("cxId", Mono.just(request)))
+        StepVerifier.create(registryService.uploadRegistryRequests("cxId", "testUid", Mono.just(request)))
                 .expectErrorMessage("Richiesta Duplicata. il file inviato è già in fase di elaborazione").verify();
     }
 
@@ -149,7 +149,7 @@ class RegistryServiceTest {
         pnRaddRegistryImportEntity.setStatus(PENDING.name());
         when(raddRegistryImportDAO.getRegistryImportByCxId(any())).thenReturn(Flux.just(pnRaddRegistryImportEntity));
 
-        StepVerifier.create(registryService.uploadRegistryRequests("cxId", Mono.just(request)))
+        StepVerifier.create(registryService.uploadRegistryRequests("cxId", "testUid", Mono.just(request)))
                 .expectErrorMessage("Una precedente richiesta di import è ancora in corso").verify();
     }
 

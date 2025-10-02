@@ -105,8 +105,9 @@ public class RaddRegistryUtils {
     public Mono<RaddRegistryEntityV2> constructRaddRegistryEntity(String registryId, AwsGeoService.CoordinatesResult coordinatesResult, RaddRegistryRequestEntity registryRequest) {
         RaddRegistryOriginalRequest raddRegistryOriginalRequest = objectMapperUtil.toObject(registryRequest.getOriginalRequest(), RaddRegistryOriginalRequest.class);
 
-        //TODO valorizzare UID.
-        return Mono.just(mapper.mappingToV2(registryId, null, coordinatesResult, registryRequest, raddRegistryOriginalRequest));
+        RaddRegistryEntityV2 entityV2 = mapper.mappingToV2(registryId, registryRequest.getUid(), coordinatesResult, registryRequest, raddRegistryOriginalRequest);
+        entityV2.setCreationTimestamp(Instant.now());
+        return Mono.just(entityV2);
     }
 
     public static RaddRegistryEntityV2 buildRaddRegistryEntity(String partnerId, String locationId, String uid, CreateRegistryRequestV2 request, AwsGeoService.CoordinatesResult coordinatesResult) {
@@ -189,7 +190,7 @@ public class RaddRegistryUtils {
         }
     }
 
-    private static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntityV2 normalizedAddress) {
+    public static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntityV2 normalizedAddress) {
         return isAddressRowEquivalent(address.getAddressRow(), normalizedAddress.getAddressRow()) &&
                 StringUtils.equals(address.getCap(), normalizedAddress.getCap()) &&
                 StringUtils.equals(address.getCity(), normalizedAddress.getCity()) &&
@@ -280,7 +281,7 @@ public class RaddRegistryUtils {
         return Mono.just(resultItemOptional.get());
     }
 
-    public RaddRegistryImportEntity getPnRaddRegistryImportEntity(String xPagopaPnCxId, RegistryUploadRequest request, FileCreationResponseDto fileCreationResponseDto, String requestId) {
+    public RaddRegistryImportEntity getPnRaddRegistryImportEntity(String xPagopaPnCxId, String uid, RegistryUploadRequest request, FileCreationResponseDto fileCreationResponseDto, String requestId) {
         RaddRegistryImportEntity pnRaddRegistryImportEntity = new RaddRegistryImportEntity();
         pnRaddRegistryImportEntity.setRequestId(requestId);
         pnRaddRegistryImportEntity.setStatus(TO_PROCESS.name());
@@ -290,6 +291,7 @@ public class RaddRegistryUtils {
         pnRaddRegistryImportEntity.setCreatedAt(Instant.now());
         pnRaddRegistryImportEntity.setUpdatedAt(Instant.now());
         pnRaddRegistryImportEntity.setFileUploadDueDate(Instant.now().plus(pnRaddFsuConfig.getRegistryImportUploadFileTtl(), ChronoUnit.SECONDS));
+        pnRaddRegistryImportEntity.setUid(uid);
 
         RaddRegistryImportConfig raddRegistryImportConfig = new RaddRegistryImportConfig();
         raddRegistryImportConfig.setDeleteRole(pnRaddFsuConfig.getRegistryDefaultDeleteRule());

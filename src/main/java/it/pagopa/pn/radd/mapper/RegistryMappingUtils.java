@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.List;
 
+import static it.pagopa.pn.radd.utils.RaddRegistryUtils.areAddressesEquivalent;
+
 @Component
 @CustomLog
 @RequiredArgsConstructor
@@ -77,17 +79,17 @@ public class RegistryMappingUtils {
         v2.setPartnerId(registryRequest.getCxId());
         v2.setRequestId(registryRequest.getRequestId());
 
-        // mappiamo indirizzo originale
+        NormalizedAddressEntityV2 normalizedAddress = RaddRegistryUtils.buildNormalizedAddressEntity(coordinatesResult);
         AddressEntity addressV2 = new AddressEntity();
         addressV2.setAddressRow(originalRequest.getAddressRow());
         addressV2.setCap(originalRequest.getCap());
         addressV2.setCity(originalRequest.getCity());
         addressV2.setProvince(originalRequest.getPr());
         addressV2.setCountry(originalRequest.getCountry());
-        v2.setAddress(addressV2);
 
-        // Mappiamo indirizzo normalizzato
-        v2.setNormalizedAddress(RaddRegistryUtils.buildNormalizedAddressEntity(coordinatesResult));
+        v2.setAddress(addressV2);
+        v2.setNormalizedAddress(normalizedAddress);
+        v2.setModifiedAddress(!areAddressesEquivalent(addressV2, normalizedAddress));
 
         return v2;
     }
