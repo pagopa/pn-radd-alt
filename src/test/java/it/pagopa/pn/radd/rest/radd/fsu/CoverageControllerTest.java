@@ -4,6 +4,8 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.Coverage;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateCoverageRequest;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.*;
 import it.pagopa.pn.radd.config.RestExceptionHandler;
+import it.pagopa.pn.radd.exception.CoverageAlreadyExistsException;
+import it.pagopa.pn.radd.exception.TransactionAlreadyExistsException;
 import it.pagopa.pn.radd.services.radd.fsu.v1.CoverageService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,11 +13,15 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.COVERAGE_ALREADY_EXISTS;
 
 @ContextConfiguration(classes = {CoverageController.class, RestExceptionHandler.class})
 @ExtendWith(SpringExtension.class)
@@ -110,6 +116,27 @@ class CoverageControllerTest {
                      .exchange()
                      .expectStatus()
                      .isBadRequest();
+
+    }
+
+    @Test
+    void addCoverage_Existing() {
+
+        CreateCoverageRequest request = buildValidCreateRequest();
+
+        Mockito.when(coverageService.addCoverage(request))
+               .thenReturn(Mono.error(new CoverageAlreadyExistsException()));
+
+        webTestClient.post()
+                     .uri(CREATE_PATH)
+                     .header(PN_PAGOPA_CX_TYPE, CxTypeAuthFleet.BO.getValue())
+                     .header(PN_PAGOPA_CX_ID, CF_ENTE)
+                     .header(PN_PAGOPA_UID, U_ID)
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus().isEqualTo(HttpStatus.CONFLICT);
+
     }
 
 }
