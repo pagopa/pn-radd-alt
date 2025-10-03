@@ -105,8 +105,13 @@ public class DateUtils {
 
         log.debug("Starting of date validation:");
 
-        LocalDate start = coverageEntity.getStartValidity() == null ? request.getStartValidity() : null;
-        LocalDate end = coverageEntity.getEndValidity() == null ? request.getStartValidity() : null;
+        LocalDate start = request.getStartValidity();
+        LocalDate end = request.getEndValidity();
+
+        if(coverageEntity != null) {
+            start = coverageEntity.getStartValidity() == null ? request.getStartValidity() : null;
+            end = coverageEntity.getEndValidity() == null ? request.getEndValidity() : null;
+        }
 
         if(start == null && end == null) {
             log.debug("update without dates!");
