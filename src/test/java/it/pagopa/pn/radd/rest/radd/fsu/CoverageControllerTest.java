@@ -5,7 +5,6 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateCoverageReque
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.*;
 import it.pagopa.pn.radd.config.RestExceptionHandler;
 import it.pagopa.pn.radd.exception.CoverageAlreadyExistsException;
-import it.pagopa.pn.radd.exception.TransactionAlreadyExistsException;
 import it.pagopa.pn.radd.services.radd.fsu.v1.CoverageService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,9 +18,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
-
-import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.COVERAGE_ALREADY_EXISTS;
 
 @ContextConfiguration(classes = {CoverageController.class, RestExceptionHandler.class})
 @ExtendWith(SpringExtension.class)
@@ -43,7 +39,7 @@ class CoverageControllerTest {
     private final String CAP = "00000";
     private final String LOCALITY = "locality";
 
-    private final String CREATE_PATH = "/coverages";
+    private final String CREATE_PATH = "/radd-bo/api/v1/coverages";
 
     private CreateCoverageRequest buildValidCreateRequest() {
 

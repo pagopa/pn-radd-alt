@@ -16,7 +16,6 @@ info:
     Le API permettono di:
     - consente la creazione di una nuova copertura RADD per una specifica località
     - permette la modifica di una copertura esistente
-    - verifica se è disponibile la copertura RADD per un determinato indirizzo
 
 servers:
   - url: https://api.radd.notifichedigitali.it
@@ -28,7 +27,7 @@ tags:
   - name: Coverage
 
 paths:
-  /coverages:
+  /radd-bo/api/v1/coverages:
     post:
       tags:
         - Coverage
@@ -66,7 +65,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
-  /coverages/{cap}/{locality}:
+  /radd-bo/api/v1/coverages/{cap}/{locality}:
     patch:
       tags:
         - Coverage
@@ -102,38 +101,6 @@ paths:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
         '404':
           description: Not found - Copertura non trovata
-          content:
-            application/problem+json:
-              schema:
-                $ref: 'remote-refs.yaml#/components/schemas/Problem'
-  /coverages/check:
-    post:
-      tags:
-        - Coverage
-      description: >-
-        API che verifica se è disponibile la copertura RADD per un determinato indirizzo
-      operationId: checkCoverage
-      x-api-permissions:
-        - 'radd-coverage-read'
-      parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CheckCoverageRequest'
-        required: true
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/Coverage'
-        '400':
-          description: Bad Request
           content:
             application/problem+json:
               schema:
@@ -187,45 +154,6 @@ components:
           description: Data di fine validità della copertura in formato (yyyy-MM-dd).
           pattern: '^\d{4}-\d{2}-\d{2}$'
           example: '2024-03-21'
-    CheckCoverageRequest:
-      type: object
-      required:
-        - cap
-        - city
-      properties:
-        nameRow2:
-          type: string
-          description: Destinatario
-          example: 'c/o Rossi Mario'
-        addressRow:
-          type: string
-          description: Indirizzo 1
-          example: 'Via Roma 123'
-        addressRow2:
-          type: string
-          description: Indirizzo 2
-          example: 'Interno 5'
-        cap:
-          type: string
-          description: CAP della località coperta
-          pattern: '^\d{5}$'
-          example: '00000'
-        city:
-          type: string
-          description: Città 1
-          example: 'Roma'
-        city2:
-          type: string
-          description: Città 2
-          example: 'Centro Storico'
-        pr:
-          type: string
-          description: Provincia
-          example: 'RM'
-        country:
-          type: string
-          description: Nazione
-          example: 'ITALIA'
 
   parameters:
     cap:
@@ -243,15 +171,6 @@ components:
       required: true
       schema:
         type: string
-    search_mode:
-      name: search_mode
-      description: modalità con cui l’API ricerca la copertura
-      in: query
-      required: false
-      schema:
-        type: string
-        enum: [ "LIGHT", "COMPLETE" ]
-        example: "LIGHT"
 
   responses:
     Forbidden:

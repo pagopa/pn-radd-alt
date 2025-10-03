@@ -58,7 +58,7 @@ class CoverageServiceTest {
     }
 
     @Test
-    void addRegistry() {
+    void addCoverage() {
 
         CreateCoverageRequest request = buildValidCreateRequest();
         CoverageEntity entity = new CoverageEntity();
