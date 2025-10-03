@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import static it.pagopa.pn.radd.utils.DateUtils.validateCoverageDateInterval;
+
 @Component
 @RequiredArgsConstructor
 @CustomLog
@@ -21,6 +23,8 @@ public class CoverageUtils {
         if (StringUtils.isNotBlank(request.getProvince())) {
             coverageEntity.setProvince(request.getProvince());
         }
+
+        validateCoverageDateInterval(request, coverageEntity);
 
         if (request.getStartValidity() != null) {
             coverageEntity.setStartValidity(request.getStartValidity());

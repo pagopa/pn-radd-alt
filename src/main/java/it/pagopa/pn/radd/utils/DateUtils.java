@@ -1,7 +1,9 @@
 package it.pagopa.pn.radd.utils;
 
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateCoverageRequest;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.middleware.db.entities.CoverageEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
@@ -99,17 +101,23 @@ public class DateUtils {
         return end;
     }
 
-    public static void validateCoverageDateInterval(LocalDate startDate, LocalDate endDate) {
-        log.debug("Validating coverage date interval: start={} end={}", startDate, endDate);
-        if (startDate != null && (endDate==null || endDate.equals(startDate) || endDate.isAfter(startDate))){
-            log.debug("Coverage date validation successful: start={} end={}", startDate, endDate);
+    public static void validateCoverageDateInterval(UpdateCoverageRequest request, CoverageEntity coverageEntity){
+
+        log.debug("Starting of date validation:");
+
+        LocalDate start = coverageEntity.getStartValidity() == null ? request.getStartValidity() : null;
+        LocalDate end = coverageEntity.getEndValidity() == null ? request.getStartValidity() : null;
+
+        if(start == null && end == null) {
+            log.debug("update without dates!");
         }
-        else if(startDate==null && endDate==null){
-            log.debug("Coverage dates not entered");
+        else if(start != null && (end == null || end.equals(start) || end.isAfter(start))) {
+            log.debug("coverage date validation successful: start={} end={}", start, end);
         }
-        else{
+        else {
             throw new RaddGenericException(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
         }
+
     }
 
 }

@@ -23,7 +23,7 @@ public class CoverageService {
     private final CoverageMapper coverageMapper;
 
     public Mono<Coverage> updateCoverage(String cap, String locality, UpdateCoverageRequest request) {
-        validateCoverageDateInterval(request.getStartValidity(), request.getEndValidity());
+        validateCoverageDateInterval(request,null);
         log.info("Start updateCoverage for cap [{}] and locality [{}]", cap, locality);
         return coverageDAO.find(cap, locality)
                           .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.COVERAGE_NOT_FOUND, HttpStatus.NOT_FOUND)))
