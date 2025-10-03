@@ -43,7 +43,7 @@ class CoverageControllerTest {
     private final String CAP = "00000";
     private final String LOCALITY = "locality";
 
-    private final String UPDATE_PATH = "/coverages/{cap}/{locality}";
+    private final String UPDATE_PATH = "/radd-bo/api/v1/coverages/{cap}/{locality}";
 
     private UpdateCoverageRequest buildValidUpdateRequest() {
 
