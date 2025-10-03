@@ -1,7 +1,9 @@
 package it.pagopa.pn.radd.middleware.db;
 
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.pojo.RaddRegistryPage;
+import it.pagopa.pn.radd.pojo.ResultPaginationDto;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
@@ -21,5 +23,7 @@ public interface RaddRegistryV2DAO {
     Mono<Page<RaddRegistryEntityV2>> scanRegistries(Integer limit, String lastKey);
 
     Mono<RaddRegistryEntityV2> delete(String partnerId, String locationId);
+
+    Mono<ResultPaginationDto<RaddRegistryEntityV2, String>> findByFilters(String partnerId, Integer limit, String cap, String city, String pr, String externalCode, String lastEvaluatedKey);
 
 }
