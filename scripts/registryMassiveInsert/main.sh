@@ -59,6 +59,7 @@ else
     done
 fi
 
+echo ""
 export AWS_PROFILE=sso_pn-core-${ENV}
 aws sso login --profile $AWS_PROFILE
 
@@ -87,5 +88,7 @@ echo -e "\nReports and script output available into ./${OUTPUT_FOlDER} folder."
 echo -e "\nCreating a .tar archive containing all generated reports..."
 cd ${OUTPUT_FOlDER}
 tar -cf ${OUTPUT_FOlDER}.tar *.csv
+echo -e "\nRemoving duplicated .csv files..."
+rm -f *.csv
 
 echo -e "\nDone.\n"
