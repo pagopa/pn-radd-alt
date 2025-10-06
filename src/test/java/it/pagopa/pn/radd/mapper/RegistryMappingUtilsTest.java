@@ -1,6 +1,7 @@
 package it.pagopa.pn.radd.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.Registry;
 import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.pojo.RaddRegistryOriginalRequest;
 import it.pagopa.pn.radd.services.radd.fsu.v1.AwsGeoService;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -144,7 +146,13 @@ class RegistryMappingUtilsTest {
 
     @Test
     void testMappingToV1_success() {
-        RaddRegistryEntity v1 = registryMappingUtils.mappingToV1(v2, partnerId);
+        Registry v1 = registryMappingUtils.mappingToV1(v2);
+        Instant instantStart = Instant.parse("2025-01-01T00:00:00Z");
+        Date dateStart = Date.from(instantStart);
+
+        Instant instantEnd = Instant.parse("2025-12-31T23:59:59Z");
+        Date dateEnd = Date.from(instantEnd);
+
 
         assertNotNull(v1);
         assertEquals("loc-123", v1.getRegistryId());
@@ -152,25 +160,23 @@ class RegistryMappingUtilsTest {
         assertEquals("ext-001", v1.getExternalCode());
         assertEquals("Test description", v1.getDescription());
         assertEquals("08:00-18:00", v1.getOpeningTime());
-        assertEquals(Instant.parse("2025-01-01T00:00:00Z"), v1.getStartValidity());
-        assertEquals(Instant.parse("2025-12-31T23:59:59Z"), v1.getEndValidity());
-        assertNotNull(v1.getNormalizedAddress());
-        assertEquals("Via Roma 1", v1.getNormalizedAddress().getAddressRow());
-        assertEquals("00100", v1.getNormalizedAddress().getCap());
-        assertEquals("00100", v1.getZipCode());
-        assertEquals("Roma", v1.getNormalizedAddress().getCity());
-        assertEquals("RM", v1.getNormalizedAddress().getPr());
-        assertEquals("Italia", v1.getNormalizedAddress().getCountry());
-        assertEquals("{\"latitude\":\"41.9028\",\"longitude\":\"12.4964\"}", v1.getGeoLocation());
-        assertEquals("00100", v1.getZipCode());
-        assertNotNull(v1.getGeoLocation());
+        assertEquals(dateStart, v1.getStartValidity());
+        assertEquals(dateEnd, v1.getEndValidity());
+        assertNotNull(v1.getAddress());
+        assertEquals("Via Roma 1", v1.getAddress().getAddressRow());
+        assertEquals("00100", v1.getAddress().getCap());
+        assertEquals("00100", v1.getAddress().getCap());
+        assertEquals("Roma", v1.getAddress().getCity());
+        assertEquals("RM", v1.getAddress().getPr());
+        assertEquals("Italia", v1.getAddress().getCountry());
+        assertEquals("00100", v1.getAddress().getCap());
 
         assertNull(v1.getCapacity(), "Capacity deve essere null perché in V2 non esiste");
     }
 
     @Test
     void testMappingToV1_withNullInput() {
-        assertNull(registryMappingUtils.mappingToV1(null, partnerId));
+        assertNull(registryMappingUtils.mappingToV1(null));
     }
 
     @Test
@@ -187,8 +193,9 @@ class RegistryMappingUtilsTest {
     void testMappingToV1_withEmptyLists() {
         v2.setPhoneNumbers(List.of());
         v2.setExternalCodes(List.of());
-
-        assertThrows(IndexOutOfBoundsException.class, () -> registryMappingUtils.mappingToV1(v2, partnerId));
+        Registry v1 = registryMappingUtils.mappingToV1(v2);
+        assertNull(v1.getPhoneNumber());
+        assertNull(v1.getExternalCode());
     }
 
     @Test
@@ -197,16 +204,15 @@ class RegistryMappingUtilsTest {
         v2.getNormalizedAddress().setLatitude("");
         v2.getNormalizedAddress().setLongitude("");
 
-        RaddRegistryEntity v1 = registryMappingUtils.mappingToV1(v2, partnerId);
+        Registry v1 = registryMappingUtils.mappingToV1(v2);
         assertNotNull(v1);
-        assertNotNull(v1.getNormalizedAddress());
-        assertNull(v1.getNormalizedAddress().getAddressRow());
-        assertNull(v1.getNormalizedAddress().getCap());
-        assertNull(v1.getNormalizedAddress().getCity());
-        assertNull(v1.getNormalizedAddress().getPr());
-        assertNull(v1.getNormalizedAddress().getCountry());
-        assertEquals("{\"latitude\":\"\",\"longitude\":\"\"}", v1.getGeoLocation());
-        assertNull(v1.getZipCode());
+        assertNotNull(v1.getAddress());
+        assertNull(v1.getAddress().getAddressRow());
+        assertNull(v1.getAddress().getCap());
+        assertNull(v1.getAddress().getCity());
+        assertNull(v1.getAddress().getPr());
+        assertNull(v1.getAddress().getCountry());
+        assertNull(v1.getAddress().getCap());
     }
 
     @Test

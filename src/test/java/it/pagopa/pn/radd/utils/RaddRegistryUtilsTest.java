@@ -1305,34 +1305,50 @@ class RaddRegistryUtilsTest {
 
     @Test
     void testMapRegistryEntityToRegistry_success() {
-        RaddRegistryEntity entity = new RaddRegistryEntity();
-        entity.setRegistryId("reg123");
-        entity.setRequestId("req123");
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setPartnerId("partner123");
+        entity.setLocationId("reg123");
         entity.setDescription("Descrizione test");
-        entity.setPhoneNumber("1234567890");
+        entity.setPhoneNumbers(List.of("1234567890"));
         entity.setOpeningTime("9-13");
         entity.setStartValidity(Instant.parse("2023-01-01T00:00:00Z"));
         entity.setEndValidity(Instant.parse("2023-12-31T23:59:59Z"));
-        entity.setExternalCode("EXT123");
-        entity.setCapacity("10");
-        entity.setCxId("CXID001");
+        entity.setExternalCodes(List.of("EXT123"));
 
-        NormalizedAddressEntity address = new NormalizedAddressEntity();
+
+        NormalizedAddressEntityV2 address = new NormalizedAddressEntityV2();
         address.setAddressRow("Via Roma 1");
         address.setCap("00100");
-        address.setPr("RM");
+        address.setProvince("RM");
         address.setCity("Roma");
         address.setCountry("IT");
         entity.setNormalizedAddress(address);
 
-        GeoLocation geoLocation = new GeoLocation();
-        geoLocation.setLatitude("41.9028");
-        geoLocation.setLongitude("12.4964");
-        when(objectMapperUtil.toObject(anyString(), eq(GeoLocation.class))).thenReturn(geoLocation);
 
-        entity.setGeoLocation("{\"latitude\": \"41.9028\", \"longitude\": \"12.4964\"}");
+        Registry registryTest = new Registry();
+        registryTest.setRegistryId("reg123");
+        registryTest.setRequestId("req123");
+        registryTest.setDescription("Descrizione test");
+        registryTest.setPhoneNumber("1234567890");
+        registryTest.setOpeningTime("9-13");
+        registryTest.setStartValidity(Date.from(Instant.parse("2023-01-01T00:00:00Z")));
+        registryTest.setEndValidity(Date.from(Instant.parse("2023-12-31T23:59:59Z")));
+        registryTest.setExternalCode("EXT123");
 
-        ResultPaginationDto<RaddRegistryEntity, String> resultPaginationDto = new ResultPaginationDto<>();
+        Address registryAddress = new Address();
+        registryAddress.setAddressRow("Via Roma 1");
+        registryAddress.setCap("00100");
+        registryAddress.setCity("Roma");
+        registryAddress.setPr("RM");
+        registryAddress.setCountry("IT");
+
+        registryTest.setAddress(registryAddress);
+
+        when(registryMappingUtils.mappingToV1(Mockito.any())).thenReturn(registryTest);
+
+
+
+        ResultPaginationDto<RaddRegistryEntityV2, String> resultPaginationDto = new ResultPaginationDto<>();
         resultPaginationDto.setResultsPage(List.of(entity));
         List<String> nextPages = new ArrayList<>();
         nextPages.add("NEXT_PAGE");
@@ -1346,6 +1362,7 @@ class RaddRegistryUtilsTest {
         assertEquals(1, response.getRegistries().size());
 
         Registry registry = response.getRegistries().get(0);
+
         assertEquals("reg123", registry.getRegistryId());
         assertEquals("req123", registry.getRequestId());
         assertEquals("Descrizione test", registry.getDescription());
@@ -1354,11 +1371,6 @@ class RaddRegistryUtilsTest {
         assertEquals(Date.from(Instant.parse("2023-01-01T00:00:00Z")), registry.getStartValidity());
         assertEquals(Date.from(Instant.parse("2023-12-31T23:59:59Z")), registry.getEndValidity());
         assertEquals("EXT123", registry.getExternalCode());
-        assertEquals("10", registry.getCapacity());
-
-        assertNotNull(registry.getGeoLocation());
-        assertEquals("41.9028", registry.getGeoLocation().getLatitude());
-        assertEquals("12.4964", registry.getGeoLocation().getLongitude());
 
         assertNotNull(registry.getAddress());
         assertEquals("Via Roma 1", registry.getAddress().getAddressRow());

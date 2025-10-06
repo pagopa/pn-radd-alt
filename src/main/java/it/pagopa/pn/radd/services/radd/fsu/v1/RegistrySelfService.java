@@ -8,9 +8,12 @@ import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
+import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
+import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.queue.producer.CorrelationIdEventsProducer;
 import it.pagopa.pn.radd.middleware.queue.producer.RaddAltCapCheckerProducer;
@@ -27,6 +30,7 @@ import reactor.core.publisher.Mono;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 import static it.pagopa.pn.radd.utils.Const.*;
@@ -38,6 +42,7 @@ import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
 @CustomLog
 public class RegistrySelfService {
 
+    private final RaddRegistryV2DAO raddRegistryV2DAO;
     private final RaddRegistryDAO raddRegistryDAO;
     private final RaddRegistryRequestDAO registryRequestDAO;
     private final RaddRegistryRequestEntityMapper raddRegistryRequestEntityMapper;
@@ -45,13 +50,14 @@ public class RegistrySelfService {
     private final RaddAltCapCheckerProducer raddAltCapCheckerProducer;
     private final RaddRegistryUtils raddRegistryUtils;
     private final PnRaddFsuConfig pnRaddFsuConfig;
+    private final RegistryMappingUtils registryMappingUtils;
 
-    public Mono<RaddRegistryEntity> updateRegistry(String registryId, String xPagopaPnCxId, UpdateRegistryRequest request) {
+    public Mono<RaddRegistryEntityV2> updateRegistry(String registryId, String uid, String xPagopaPnCxId, UpdateRegistryRequest request) {
         log.info("start updateRegistry for registryId [{}] and cxId [{}]", registryId, xPagopaPnCxId);
         checkUpdateRegistryRequest(request);
-        return raddRegistryDAO.find(registryId, xPagopaPnCxId)
+        return raddRegistryV2DAO.find(xPagopaPnCxId,registryId)
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
-                .flatMap(registryEntity -> raddRegistryDAO.updateRegistryEntity(mapFieldToUpdate(registryEntity, request)))
+                .flatMap(registryEntity -> raddRegistryV2DAO.updateRegistryEntity(mapFieldToUpdate(registryEntity, request, uid)))
                 .doOnError(throwable -> log.error("Error during update registry request for registryId: [{}] and cxId: [{}]", registryId, xPagopaPnCxId, throwable));
     }
 
@@ -60,7 +66,7 @@ public class RegistrySelfService {
         Utils.matchRegex(REGEX_OPENINGTIME, request.getOpeningTime(), ExceptionTypeEnum.OPENING_TIME_ERROR);
     }
 
-    private RaddRegistryEntity mapFieldToUpdate(RaddRegistryEntity registryEntity, UpdateRegistryRequest request) {
+    private RaddRegistryEntityV2 mapFieldToUpdate(RaddRegistryEntityV2 registryEntity, UpdateRegistryRequest request, String uid) {
         if (StringUtils.isNotBlank(request.getDescription())) {
             registryEntity.setDescription(request.getDescription());
         }
@@ -68,8 +74,14 @@ public class RegistrySelfService {
             registryEntity.setOpeningTime(request.getOpeningTime());
         }
         if (StringUtils.isNotBlank(request.getPhoneNumber())) {
-            registryEntity.setPhoneNumber(request.getPhoneNumber());
+            registryEntity.setPhoneNumbers(List.of(request.getPhoneNumber()));
         }
+        if (StringUtils.isNotBlank(uid)) {
+            registryEntity.setUid(uid);
+        }
+
+        registryEntity.setUpdateTimestamp(Instant.now());
+
         return registryEntity;
     }
 
@@ -134,28 +146,28 @@ public class RegistrySelfService {
         return raddRegistryRequestEntityMapper.retrieveRaddRegistryRequestEntity(cxId, requestId, originalRequest);
     }
 
-    public Mono<RaddRegistryEntity> deleteRegistry(String xPagopaPnCxId, String registryId, String endDate) {
+    public Mono<RaddRegistryEntityV2> deleteRegistry(String xPagopaPnCxId, String registryId, String endDate, String uid) {
         log.info("deleteRegistry called with xPagopaPnCxId: {}, registryId: {}, endDate: {}", xPagopaPnCxId, registryId, endDate);
-        return raddRegistryDAO.find(registryId, xPagopaPnCxId)
-                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
-                .flatMap(registryEntity -> updateRegistryEntityIfValidDate(registryEntity, endDate, registryId, xPagopaPnCxId))
-                .doOnNext(raddRegistryEntity -> log.info("Registry with id: {} and cap: {} updated successfully", registryId, raddRegistryEntity.getZipCode()))
-                .flatMap(raddRegistryEntity -> raddAltCapCheckerProducer.sendCapCheckerEvent(raddRegistryEntity.getZipCode())
-                        .thenReturn(raddRegistryEntity))
-                .doOnError(throwable -> log.error("Error during delete registry request for registryId: [{}] and cxId: [{}]", registryId, xPagopaPnCxId, throwable));
+        return raddRegistryV2DAO.find(xPagopaPnCxId, registryId)
+                                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
+                                .flatMap(registryEntity -> updateRegistryEntityIfValidDate(registryEntity, endDate, registryId, xPagopaPnCxId, uid))
+                                .doOnNext(raddRegistryEntity -> log.info("Registry with id: {} and cap: {} updated successfully", registryId, raddRegistryEntity.getNormalizedAddress().getCap()))
+                                .doOnError(throwable -> log.error("Error during delete registry request for registryId: [{}] and cxId: [{}]", registryId, xPagopaPnCxId, throwable));
     }
 
-    private Mono<RaddRegistryEntity> updateRegistryEntityIfValidDate(RaddRegistryEntity registryEntity, String
-            date, String registryId, String xPagopaPnCxId) {
-            Instant instant = convertDateToInstantAtStartOfDay(date);
-            if (isValidDate(instant)) {
-                log.info("Updating registry with id: {} and cxId: {}", registryId, xPagopaPnCxId);
-                registryEntity.setEndValidity(instant);
-                return raddRegistryDAO.updateRegistryEntity(registryEntity);
-            } else {
-                log.error("not enough notice time for cancellation date: {}", instant);
-                return Mono.error(new RaddGenericException(ExceptionTypeEnum.DATE_NOTICE_ERROR, HttpStatus.BAD_REQUEST));
-            }
+    private Mono<RaddRegistryEntityV2> updateRegistryEntityIfValidDate(RaddRegistryEntityV2 registryEntity, String
+            date, String registryId, String xPagopaPnCxId, String uid) {
+        Instant instant = convertDateToInstantAtStartOfDay(date);
+        if (isValidDate(instant)) {
+            log.info("Updating registry with id: {} and cxId: {}", registryId, xPagopaPnCxId);
+            registryEntity.setEndValidity(instant);
+            registryEntity.setUpdateTimestamp(Instant.now());
+            registryEntity.setUid(uid);
+            return raddRegistryV2DAO.updateRegistryEntity(registryEntity);
+        } else {
+            log.error("not enough notice time for cancellation date: {}", instant);
+            return Mono.error(new RaddGenericException(ExceptionTypeEnum.DATE_NOTICE_ERROR, HttpStatus.BAD_REQUEST));
+        }
     }
 
     private boolean isValidDate(Instant endDate) {
@@ -169,8 +181,8 @@ public class RegistrySelfService {
     public Mono<RegistriesResponse> registryListing(String xPagopaPnCxId, Integer limit, String lastKey, String
             cap, String city, String pr, String externalCode) {
         log.info("start registryListing for xPagopaPnCxId={} and limit: [{}] and lastKey: [{}] and cap: [{}] and city: [{}] and pr: [{}] and externalCode: [{}].", xPagopaPnCxId, limit, lastKey, cap, city, pr, externalCode);
-        return raddRegistryDAO.findByFilters(xPagopaPnCxId, limit, cap, city, pr, externalCode, lastKey)
-                .map(raddRegistryUtils::mapRegistryEntityToRegistry);
+        return raddRegistryV2DAO.findByFilters(xPagopaPnCxId, limit, cap, city, pr, externalCode, lastKey)
+                 .map(raddRegistryUtils::mapRegistryEntityToRegistry);
     }
 
 }

@@ -1,6 +1,8 @@
 package it.pagopa.pn.radd.mapper;
 
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.Address;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.GeoLocation;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.Registry;
 import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.pojo.RaddRegistryOriginalRequest;
 import it.pagopa.pn.radd.services.radd.fsu.v1.AwsGeoService;
@@ -13,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 
 import static it.pagopa.pn.radd.utils.RaddRegistryUtils.areAddressesEquivalent;
@@ -24,40 +27,40 @@ public class RegistryMappingUtils {
 
     private final ObjectMapperUtil objectMapperUtil;
 
-    public RaddRegistryEntity mappingToV1(RaddRegistryEntityV2 v2, String partnerId) {
-        RaddRegistryEntity v1 = new RaddRegistryEntity();
+    public Registry mappingToV1(RaddRegistryEntityV2 v2) {
+        Registry v1 = new Registry();
 
         if (v2 == null) {
             return null;
         }
 
-        v1.setCxId(partnerId);
         v1.setRegistryId(v2.getLocationId());
         //phoneNumbers per v2 è una lista
-        v1.setPhoneNumber(v2.getPhoneNumbers().get(0));
+        if(null != v2.getPhoneNumbers() && !v2.getPhoneNumbers().isEmpty()){
+            v1.setPhoneNumber(v2.getPhoneNumbers().get(0));
+        }
         //externalCode per v2 è una lista
-        v1.setExternalCode(v2.getExternalCodes().get(0));
-
+        if(null!= v2.getExternalCodes() && !v2.getExternalCodes().isEmpty()){
+            v1.setExternalCode(v2.getExternalCodes().get(0));
+        }
         v1.setDescription(v2.getDescription());
         v1.setOpeningTime(v2.getOpeningTime());
-        v1.setStartValidity(v2.getStartValidity());
-        v1.setEndValidity(v2.getEndValidity());
-        v1.setZipCode(v2.getNormalizedAddress().getCap());
 
+        if (v2.getStartValidity() != null){
+            v1.setStartValidity(Date.from(v2.getStartValidity()));
+        }
+        if (v2.getEndValidity() != null) {
+            v1.setEndValidity(Date.from(v2.getEndValidity()));
+        }
         //mapping Address
-        NormalizedAddressEntity address = new NormalizedAddressEntity();
+        Address address = new Address();
         address.setAddressRow(v2.getNormalizedAddress().getAddressRow());
         address.setCap(v2.getNormalizedAddress().getCap());
         address.setCity(v2.getNormalizedAddress().getCity());
         address.setPr(v2.getNormalizedAddress().getProvince());
         address.setCountry(v2.getNormalizedAddress().getCountry());
-        v1.setNormalizedAddress(address);
+        v1.setAddress(address);
 
-        //geolocalizzazione
-        GeoLocation geoLocation = new GeoLocation();
-        geoLocation.setLatitude(v2.getNormalizedAddress().getLatitude());
-        geoLocation.setLongitude(v2.getNormalizedAddress().getLongitude());
-        v1.setGeoLocation(objectMapperUtil.toJson(geoLocation));
 
         return v1;
     }

@@ -536,38 +536,11 @@ public class RaddRegistryUtils {
         return address;
     }
 
-    public RegistriesResponse mapRegistryEntityToRegistry(ResultPaginationDto<RaddRegistryEntity, String> resultPaginationDto) {
+    public RegistriesResponse mapRegistryEntityToRegistry(ResultPaginationDto<RaddRegistryEntityV2, String> resultPaginationDto) {
         RegistriesResponse result = new RegistriesResponse();
         if(resultPaginationDto.getResultsPage() != null) {
             result.setRegistries(resultPaginationDto.getResultsPage().stream()
-                    .map(entity -> {
-                        Registry registry = new Registry();
-                        registry.setRegistryId(entity.getRegistryId());
-                        registry.setRequestId(entity.getRequestId());
-                        registry.setAddress(mapNormalizedAddressToAddress(entity.getNormalizedAddress()));
-                        registry.setDescription(entity.getDescription());
-                        registry.setPhoneNumber(entity.getPhoneNumber());
-                        try {
-                            if(StringUtils.isNotBlank(entity.getGeoLocation())) {
-                                GeoLocation geoLocation = objectMapperUtil.toObject(entity.getGeoLocation(), GeoLocation.class);
-                                geoLocation.setLatitude(geoLocation.getLatitude());
-                                geoLocation.setLongitude(geoLocation.getLongitude());
-                                registry.setGeoLocation(geoLocation);
-                            }
-                        } catch (PnInternalException e) {
-                            log.debug("Registry with cxId = {} and registryId = {} has not valid geoLocation", entity.getCxId(), entity.getRegistryId(), e);
-                        }
-                        registry.setOpeningTime(entity.getOpeningTime());
-                        if(entity.getStartValidity() != null) {
-                            registry.setStartValidity(Date.from(entity.getStartValidity()));
-                        }
-                        if (entity.getEndValidity() != null) {
-                            registry.setEndValidity(Date.from(entity.getEndValidity()));
-                        }
-                        registry.setExternalCode(entity.getExternalCode());
-                        registry.setCapacity(entity.getCapacity());
-                        return registry;
-                    })
+                    .map(mapper::mappingToV1)
                     .toList());
         }
         result.setNextPagesKey(resultPaginationDto.getNextPagesKey());
