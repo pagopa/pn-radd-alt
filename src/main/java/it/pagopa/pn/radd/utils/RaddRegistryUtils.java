@@ -508,11 +508,11 @@ public class RaddRegistryUtils {
         originalRequest.setOpeningTime(raddRegistryOriginalRequest.getOpeningTime());
         if (StringUtils.isNotBlank(raddRegistryOriginalRequest.getStartValidity())) {
             Instant instant = Instant.parse(raddRegistryOriginalRequest.getStartValidity());
-            originalRequest.setStartValidity(Date.from(instant));
+            originalRequest.setStartValidity(instant.atOffset(ZoneOffset.UTC));
         }
         if (StringUtils.isNotBlank(raddRegistryOriginalRequest.getEndValidity())) {
             Instant instant = Instant.parse(raddRegistryOriginalRequest.getEndValidity());
-            originalRequest.setEndValidity(Date.from(instant));
+            originalRequest.setEndValidity(instant.atOffset(ZoneOffset.UTC));
         }
         originalRequest.setCapacity(raddRegistryOriginalRequest.getCapacity());
         originalRequest.setExternalCode(raddRegistryOriginalRequest.getExternalCode());
@@ -552,10 +552,10 @@ public class RaddRegistryUtils {
                         }
                         registry.setOpeningTime(entity.getOpeningTime());
                         if(entity.getStartValidity() != null) {
-                            registry.setStartValidity(Date.from(entity.getStartValidity()));
+                            registry.setStartValidity(entity.getStartValidity().atOffset(ZoneOffset.UTC));
                         }
                         if (entity.getEndValidity() != null) {
-                            registry.setEndValidity(Date.from(entity.getEndValidity()));
+                            registry.setEndValidity(entity.getEndValidity().atOffset(ZoneOffset.UTC));
                         }
                         registry.setExternalCode(entity.getExternalCode());
                         registry.setCapacity(entity.getCapacity());

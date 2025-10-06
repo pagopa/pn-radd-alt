@@ -24,6 +24,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -225,8 +226,8 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
     }
 
     @Override
-    public Flux<RaddTransactionEntity> getTransactionsFromFiscalCode(String ensureFiscalCode, Date from, Date to) {
-        if (from != null && to != null && from.after(to)){
+    public Flux<RaddTransactionEntity> getTransactionsFromFiscalCode(String ensureFiscalCode, OffsetDateTime from, OffsetDateTime to) {
+        if (from != null && to != null && from.toInstant().isAfter(to.toInstant())){
             return Flux.error(new RaddGenericException(DATE_VALIDATION_ERROR));
         }
 

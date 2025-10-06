@@ -5,8 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +20,7 @@ public class TransactionData {
     private String qrCode;
     private String operationId;
     private String fileKey;
-    private Date operationDate;
+    private OffsetDateTime operationDate;
     private String checksum;
     private String recipientId;
     private String recipientType;

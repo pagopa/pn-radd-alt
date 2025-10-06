@@ -11,7 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
-import java.util.Date;
+import java.time.OffsetDateTime;
 
 // TODO: Test disabilitati da riparare in fase di aggiornamento rispettiva API
 
@@ -63,7 +63,7 @@ class ActPrivateRestV1ControllerTest {
 
         CompleteTransactionRequest req = new CompleteTransactionRequest();
         req.setOperationId("123");
-        req.setOperationDate(new Date());
+        req.setOperationDate(OffsetDateTime.now());
 
         String path = "/radd-net/api/v1/act/transaction/complete";
         Mockito.when(actService
@@ -90,7 +90,7 @@ class ActPrivateRestV1ControllerTest {
 
         AbortTransactionRequest req = new AbortTransactionRequest();
         req.setOperationId("123");
-        req.setOperationDate(new Date());
+        req.setOperationDate(OffsetDateTime.now());
 
         String path = "/radd-net/api/v1/act/transaction/abort";
         Mockito.when(actService.abortTransaction(Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any())
@@ -122,7 +122,7 @@ class ActPrivateRestV1ControllerTest {
         req.setRecipientTaxId("TNTGTR76E21H751S");
         req.setRecipientType(ActStartTransactionRequest.RecipientTypeEnum.PG);
         req.setChecksum("YTlkZGRkNzgyZWM0NzkyODdjNmQ0NGE5ZDM2YTg4ZjQ5OTE1ZGM2NjliYjgzNzViMTZhMmE5ZmE3NmE4ZDQzNwo");
-        req.setOperationDate(new Date());
+        req.setOperationDate(OffsetDateTime.now());
 
         String path = "/radd-net/api/v1/act/transaction/start";
         Mockito.when(actService

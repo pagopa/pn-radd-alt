@@ -28,7 +28,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
-import java.util.Date;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.TRANSACTIONS_NOT_FOUND_FOR_CF;
@@ -80,8 +80,8 @@ class OperationServiceTest{
         entity.setDelegateId("delegateId");
         entity.setUid("uidTest");
         entity.setStatus("COMPLETED");
-        entity.setOperationStartDate(DateUtils.formatDate(new Date()));
-        entity.setOperationEndDate(DateUtils.formatDate(new Date()));
+        entity.setOperationStartDate(DateUtils.formatDate(OffsetDateTime.now()));
+        entity.setOperationEndDate(DateUtils.formatDate(OffsetDateTime.now()));
         entity.setVersionToken("VersionTokenOK");
         entity.setErrorReason("errorReadon");
 
@@ -181,8 +181,8 @@ class OperationServiceTest{
         entity.setUid("uidTest");
         entity.setStatus("COMPLETED");
         entity.setOperationType(OperationTypeEnum.AOR.name());
-        entity.setOperationStartDate(DateUtils.formatDate(new Date()));
-        entity.setOperationEndDate(DateUtils.formatDate(new Date()));
+        entity.setOperationStartDate(DateUtils.formatDate(OffsetDateTime.now()));
+        entity.setOperationEndDate(DateUtils.formatDate(OffsetDateTime.now()));
         entity.setVersionToken("VersionTokenOK");
         entity.setErrorReason("errorReason");
         OperationsIunsEntity operationsIunsEntity = new OperationsIunsEntity();
@@ -213,8 +213,8 @@ class OperationServiceTest{
         entity.setUid("uidTest");
         entity.setStatus("COMPLETED");
         entity.setOperationType(OperationTypeEnum.AOR.name());
-        entity.setOperationStartDate(DateUtils.formatDate(new Date()));
-        entity.setOperationEndDate(DateUtils.formatDate(new Date()));
+        entity.setOperationStartDate(DateUtils.formatDate(OffsetDateTime.now()));
+        entity.setOperationEndDate(DateUtils.formatDate(OffsetDateTime.now()));
         entity.setVersionToken("VersionTokenOK");
         entity.setErrorReason("errorReason");
 
@@ -254,7 +254,7 @@ class OperationServiceTest{
 
         Mockito.when(transactionDAO.getTransactionsFromFiscalCode(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(Flux.fromStream(List.of(entity1, entity2).stream()));
-        operationService.getAllActTransactionFromFiscalCode(fiscalCode, new Date(), new Date())
+        operationService.getAllActTransactionFromFiscalCode(fiscalCode, OffsetDateTime.now(), OffsetDateTime.now())
                 .map(response -> {
                     assertEquals(true, response.getResult());
                     assertEquals(OperationResponseStatus.CodeEnum.NUMBER_0, response.getStatus().getCode());
@@ -271,7 +271,7 @@ class OperationServiceTest{
         Mockito.when(transactionDAO.getTransactionsFromFiscalCode(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(Flux.empty());
 
-        operationService.getAllActTransactionFromFiscalCode(fiscalCode, new Date(), new Date())
+        operationService.getAllActTransactionFromFiscalCode(fiscalCode, OffsetDateTime.now(), OffsetDateTime.now())
                 .map(response -> {
                     assertEquals(false, response.getResult());
                     assertEquals(OperationResponseStatus.CodeEnum.NUMBER_1, response.getStatus().getCode());
@@ -288,7 +288,7 @@ class OperationServiceTest{
         Mockito.when(transactionDAO.getTransactionsFromFiscalCode(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(Flux.error(new NullPointerException()));
 
-        operationService.getAllActTransactionFromFiscalCode(fiscalCode, new Date(), new Date())
+        operationService.getAllActTransactionFromFiscalCode(fiscalCode, OffsetDateTime.now(), OffsetDateTime.now())
                 .map(operation -> {
                     assertEquals(false, operation.getResult());
                     assertEquals(OperationResponseStatus.CodeEnum.NUMBER_99, operation.getStatus().getCode());
@@ -314,7 +314,7 @@ class OperationServiceTest{
         operationsIunsEntity.setIun("[iunTest, testIun]");
         Mockito.when(operationsIunsDAO.getAllIunsFromTransactionId(Mockito.any())).thenReturn(Flux.just(operationsIunsEntity));
 
-        operationService.getAllAorTransactionFromFiscalCode(fiscalCode, new Date(), new Date())
+        operationService.getAllAorTransactionFromFiscalCode(fiscalCode, OffsetDateTime.now(),  OffsetDateTime.now())
                 .map(response -> {
                     assertEquals(true, response.getResult());
                     assertEquals(OperationResponseStatus.CodeEnum.NUMBER_0, response.getStatus().getCode());
@@ -331,7 +331,7 @@ class OperationServiceTest{
         Mockito.when(transactionDAO.getTransactionsFromFiscalCode(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(Flux.empty());
 
-        operationService.getAllAorTransactionFromFiscalCode(fiscalCode, new Date(), new Date())
+        operationService.getAllAorTransactionFromFiscalCode(fiscalCode, OffsetDateTime.now(), OffsetDateTime.now())
                 .map(response -> {
                     assertEquals(false, response.getResult());
                     assertEquals(OperationResponseStatus.CodeEnum.NUMBER_1, response.getStatus().getCode());
@@ -348,7 +348,7 @@ class OperationServiceTest{
         Mockito.when(transactionDAO.getTransactionsFromFiscalCode(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(Flux.error(new NullPointerException()));
 
-        operationService.getAllAorTransactionFromFiscalCode(fiscalCode, new Date(), new Date())
+        operationService.getAllAorTransactionFromFiscalCode(fiscalCode, OffsetDateTime.now(), OffsetDateTime.now())
                 .map(operation -> {
                     assertEquals(false, operation.getResult());
                     assertEquals(OperationResponseStatus.CodeEnum.NUMBER_99, operation.getStatus().getCode());
