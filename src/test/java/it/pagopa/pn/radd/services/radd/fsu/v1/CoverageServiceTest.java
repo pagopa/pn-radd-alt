@@ -21,7 +21,6 @@ import reactor.test.StepVerifier;
 
 import java.time.LocalDate;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -112,7 +111,7 @@ class CoverageServiceTest {
         request.setEndValidity(LocalDate.now().minusDays(5L));
 
         RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> coverageService.updateCoverage(CAP, LOCALITY, request));
-        assertEquals(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, ex.getExceptionType());
+        Assertions.assertEquals(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, ex.getExceptionType());
 
     }
 

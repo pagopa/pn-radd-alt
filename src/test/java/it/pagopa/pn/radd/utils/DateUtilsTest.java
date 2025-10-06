@@ -2,7 +2,6 @@ package it.pagopa.pn.radd.utils;
 
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
-import it.pagopa.pn.radd.middleware.db.entities.CoverageEntity;
 import org.junit.jupiter.api.Test;
 
 import java.time.*;

@@ -1,9 +1,7 @@
 package it.pagopa.pn.radd.utils;
 
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateCoverageRequest;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
-import it.pagopa.pn.radd.middleware.db.entities.CoverageEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
@@ -40,8 +38,6 @@ public class DateUtils {
         return Date.from(time.toInstant());
 
     }
-
-
 
     public static OffsetDateTime getOffsetDateTime(String date){
         return LocalDateTime.parse(date, DateTimeFormatter.ISO_LOCAL_DATE_TIME).atOffset(ZoneOffset.UTC);
