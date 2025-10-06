@@ -101,27 +101,20 @@ public class DateUtils {
         return end;
     }
 
-    public static void validateCoverageDateInterval(UpdateCoverageRequest request, CoverageEntity coverageEntity){
+    public static void validateCoverageDateInterval(LocalDate startEntity, LocalDate endEntity, LocalDate startRequest, LocalDate endRequest){
 
-        log.debug("Starting of date validation:");
+            log.debug("Starting of date validation:");
 
-        LocalDate start = request.getStartValidity();
-        LocalDate end = request.getEndValidity();
+            LocalDate start = (startRequest != null) ? startRequest : startEntity;
+            LocalDate end = (endRequest != null) ? endRequest : endEntity;
 
-        if(coverageEntity != null) {
-            start = coverageEntity.getStartValidity() == null ? request.getStartValidity() : null;
-            end = coverageEntity.getEndValidity() == null ? request.getEndValidity() : null;
-        }
-
-        if(start == null && end == null) {
-            log.debug("update without dates!");
-        }
-        else if(start != null && (end == null || end.equals(start) || end.isAfter(start))) {
-            log.debug("coverage date validation successful: start={} end={}", start, end);
-        }
-        else {
-            throw new RaddGenericException(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
-        }
+            if (start == null || end == null) {
+                log.debug("update without dates!");
+            } else if (end.equals(start) || end.isAfter(start)) {
+                log.debug("coverage date validation successful: start={} end={}", start, end);
+            } else {
+                throw new RaddGenericException(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
+            }
 
     }
 

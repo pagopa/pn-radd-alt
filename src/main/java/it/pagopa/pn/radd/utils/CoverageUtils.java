@@ -24,7 +24,7 @@ public class CoverageUtils {
             coverageEntity.setProvince(request.getProvince());
         }
 
-        validateCoverageDateInterval(request, coverageEntity);
+        validateCoverageDateInterval(coverageEntity.getStartValidity(),coverageEntity.getEndValidity(), request.getStartValidity(), request.getEndValidity());
 
         if (request.getStartValidity() != null) {
             coverageEntity.setStartValidity(request.getStartValidity());
