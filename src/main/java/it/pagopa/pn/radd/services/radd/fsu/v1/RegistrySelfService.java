@@ -8,15 +8,11 @@ import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
-import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
-import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.queue.producer.CorrelationIdEventsProducer;
-import it.pagopa.pn.radd.middleware.queue.producer.RaddAltCapCheckerProducer;
 import it.pagopa.pn.radd.pojo.RaddRegistryOriginalRequest;
 import it.pagopa.pn.radd.utils.RaddRegistryUtils;
 import it.pagopa.pn.radd.utils.Utils;
@@ -43,14 +39,11 @@ import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
 public class RegistrySelfService {
 
     private final RaddRegistryV2DAO raddRegistryV2DAO;
-    private final RaddRegistryDAO raddRegistryDAO;
     private final RaddRegistryRequestDAO registryRequestDAO;
     private final RaddRegistryRequestEntityMapper raddRegistryRequestEntityMapper;
     private final CorrelationIdEventsProducer correlationIdEventsProducer;
-    private final RaddAltCapCheckerProducer raddAltCapCheckerProducer;
     private final RaddRegistryUtils raddRegistryUtils;
     private final PnRaddFsuConfig pnRaddFsuConfig;
-    private final RegistryMappingUtils registryMappingUtils;
 
     public Mono<RaddRegistryEntityV2> updateRegistry(String registryId, String uid, String xPagopaPnCxId, UpdateRegistryRequest request) {
         log.info("start updateRegistry for registryId [{}] and cxId [{}]", registryId, xPagopaPnCxId);
