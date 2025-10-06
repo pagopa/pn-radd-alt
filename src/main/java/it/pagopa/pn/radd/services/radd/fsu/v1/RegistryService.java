@@ -266,7 +266,7 @@ public class RegistryService {
     @NotNull
     private Flux<RaddRegistryEntityV2> handleFirstImportRequest(String xPagopaPnCxId, RaddRegistryImportEntity newRaddRegistryImportEntity) {
         // Even if is the first import request for a cxId, we need to check if there are any previous requests with the same CxId made using CRUD API
-        return raddRegistryV2DAO.findByPartnerIdAndWithoutRequestId(xPagopaPnCxId)
+        return raddRegistryV2DAO.findCrudRegistriesByPartnerId(xPagopaPnCxId)
                 .collectList()
                 .doOnNext(raddRegistryEntities -> log.info("Found {} registries for cxId: {} and requestId starting with: {}", raddRegistryEntities.size(), xPagopaPnCxId, REQUEST_ID_PREFIX))
                 .flatMap(raddRegistryEntity -> deleteOldRegistries(raddRegistryEntity, newRaddRegistryImportEntity)
@@ -293,7 +293,7 @@ public class RegistryService {
         RaddRegistryImportEntity oldRegistryImportEntity = filterByRequestId(newImportRequestId, raddRegistryImportEntities, registryImportWithDifferentRequestId);
         RaddRegistryImportEntity newRegistryImportEntity = filterByRequestId(newImportRequestId, raddRegistryImportEntities, registryImportWithSameRequestId);
         return raddRegistryV2DAO.findByPartnerIdAndRequestId(xPagopaPnCxId, oldRegistryImportEntity.getRequestId())
-                .concatWith(raddRegistryV2DAO.findByPartnerIdAndWithoutRequestId(xPagopaPnCxId))
+                .concatWith(raddRegistryV2DAO.findCrudRegistriesByPartnerId(xPagopaPnCxId))
                 .collectList()
                 .doOnNext(raddRegistryEntities -> log.info("Found {} registries created using CRUD API and relative to older import request for cxId: {}", raddRegistryEntities.size(), xPagopaPnCxId))
                 .flatMap(raddRegistryEntities -> deleteOldRegistries(raddRegistryEntities, newRegistryImportEntity)

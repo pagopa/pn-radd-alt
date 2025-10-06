@@ -223,7 +223,7 @@ class RegistryServiceTest {
                     .thenReturn(Flux.just(raddRegistryImportEntity, raddRegistryImportEntityOld));
             when(raddRegistryV2DAO.findByPartnerIdAndRequestId(any(), any()))
                     .thenReturn(Flux.just(raddRegistryEntity));
-            when(raddRegistryV2DAO.findByPartnerIdAndWithoutRequestId(any()))
+            when(raddRegistryV2DAO.findCrudRegistriesByPartnerId(any()))
                     .thenReturn(Flux.just(raddRegistryEntity));
             when(raddRegistryImportDAO.updateStatusAndTtl(any(), any(), any()))
                     .thenReturn(Mono.just(raddRegistryImportEntity));
@@ -258,7 +258,7 @@ class RegistryServiceTest {
 
             when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(any(), any(), any()))
                     .thenReturn(Flux.just(raddRegistryImportEntity));
-            when(raddRegistryV2DAO.findByPartnerIdAndWithoutRequestId(xPagopaPnCxId))
+            when(raddRegistryV2DAO.findCrudRegistriesByPartnerId(xPagopaPnCxId))
                     .thenReturn(Flux.just(raddRegistryEntity));
             when(raddRegistryV2DAO.updateRegistryEntity(raddRegistryEntity))
                     .thenReturn(Mono.just(raddRegistryEntity));
@@ -288,7 +288,7 @@ class RegistryServiceTest {
 
             when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE))
                     .thenReturn(Flux.just(raddRegistryImportEntity));
-            when(raddRegistryV2DAO.findByPartnerIdAndWithoutRequestId(xPagopaPnCxId))
+            when(raddRegistryV2DAO.findCrudRegistriesByPartnerId(xPagopaPnCxId))
                     .thenReturn(Flux.just(raddRegistryEntity));
             when(raddRegistryV2DAO.updateRegistryEntity(raddRegistryEntity))
                     .thenReturn(Mono.just(raddRegistryEntity));
@@ -300,7 +300,7 @@ class RegistryServiceTest {
                     .verifyComplete();
 
             verify(raddRegistryImportDAO, times(1)).getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE);
-            verify(raddRegistryV2DAO, times(1)).findByPartnerIdAndWithoutRequestId(xPagopaPnCxId);
+            verify(raddRegistryV2DAO, times(1)).findCrudRegistriesByPartnerId(xPagopaPnCxId);
             verify(raddRegistryV2DAO, times(1)).updateRegistryEntity(raddRegistryEntity);
         }
 
@@ -336,7 +336,7 @@ class RegistryServiceTest {
                     .thenReturn(Flux.just(newRaddRegistryImportEntity, oldRaddRegistryImportEntity));
             when(raddRegistryV2DAO.findByPartnerIdAndRequestId(xPagopaPnCxId, oldRequestId))
                     .thenReturn(Flux.just(raddRegistryEntityMadeByOldImport));
-            when(raddRegistryV2DAO.findByPartnerIdAndWithoutRequestId(xPagopaPnCxId))
+            when(raddRegistryV2DAO.findCrudRegistriesByPartnerId(xPagopaPnCxId))
                     .thenReturn(Flux.just(raddRegistryEntityMadeByCrud));
             when(raddRegistryImportDAO.updateStatusAndTtl(any(), any(), any()))
                     .thenReturn(Mono.just(newRaddRegistryImportEntity));
@@ -350,7 +350,7 @@ class RegistryServiceTest {
                     .verifyComplete();
 
             verify(raddRegistryImportDAO, times(1)).getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE);
-            verify(raddRegistryV2DAO, times(1)).findByPartnerIdAndWithoutRequestId(xPagopaPnCxId);
+            verify(raddRegistryV2DAO, times(1)).findCrudRegistriesByPartnerId(xPagopaPnCxId);
             verify(raddRegistryV2DAO, times(1)).findByPartnerIdAndRequestId(xPagopaPnCxId, oldRequestId);
             verify(raddRegistryV2DAO, times(2)).updateRegistryEntity(any());
             verify(raddRegistryRequestDAO, times(0)).findByCxIdAndRegistryId(anyString(), anyString());
@@ -372,7 +372,7 @@ class RegistryServiceTest {
                     .verify();
 
             verify(raddRegistryImportDAO, times(1)).getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE);
-            verify(raddRegistryV2DAO, times(0)).findByPartnerIdAndWithoutRequestId(xPagopaPnCxId);
+            verify(raddRegistryV2DAO, times(0)).findCrudRegistriesByPartnerId(xPagopaPnCxId);
         }
 
         @Test
