@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+
 import static it.pagopa.pn.radd.utils.DateUtils.validateCoverageDateInterval;
 
 @Component
@@ -14,7 +16,11 @@ import static it.pagopa.pn.radd.utils.DateUtils.validateCoverageDateInterval;
 @CustomLog
 public class CoverageUtils {
 
-    public static CoverageEntity mapFieldToUpdate(CoverageEntity coverageEntity, UpdateCoverageRequest request) {
+    public static CoverageEntity mapFieldToUpdate(String xPagopaPnUid, CoverageEntity coverageEntity, UpdateCoverageRequest request) {
+
+        if (StringUtils.isNotBlank(xPagopaPnUid)) {
+            coverageEntity.setUid(xPagopaPnUid);
+        }
 
         if (StringUtils.isNotBlank(request.getCadastralCode())) {
             coverageEntity.setCadastralCode(request.getCadastralCode());
@@ -33,6 +39,8 @@ public class CoverageUtils {
         if (request.getEndValidity() != null) {
             coverageEntity.setEndValidity(request.getEndValidity());
         }
+
+        coverageEntity.setUpdateTimestamp(Instant.now());
 
         return coverageEntity;
 

@@ -20,6 +20,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 
@@ -33,6 +34,8 @@ class CoverageServiceTest {
 
     @Mock
     private CoverageService coverageService;
+
+    private final String U_ID = UUID.randomUUID().toString();
 
     private final String CAP = "00000";
     private final String LOCALITY = "locality";
@@ -72,7 +75,7 @@ class CoverageServiceTest {
         Mockito.lenient().when(coverageDAO.find(CAP, LOCALITY)).thenReturn(Mono.just(entity));
         when(coverageDAO.updateCoverageEntity(entity)).thenReturn(Mono.just(entity));
 
-        StepVerifier.create(coverageService.updateCoverage(CAP, LOCALITY, request))
+        StepVerifier.create(coverageService.updateCoverage(U_ID, CAP, LOCALITY, request))
                     .expectNextMatches(coverageEntity -> entity.getCadastralCode().equalsIgnoreCase(request.getCadastralCode())
                                                          && entity.getProvince().equalsIgnoreCase(request.getProvince()))
                     .verifyComplete();
@@ -84,7 +87,7 @@ class CoverageServiceTest {
 
         when(coverageDAO.find(CAP, LOCALITY)).thenReturn(Mono.empty());
 
-        StepVerifier.create(coverageService.updateCoverage(CAP, LOCALITY, new UpdateCoverageRequest()))
+        StepVerifier.create(coverageService.updateCoverage(U_ID, CAP, LOCALITY, new UpdateCoverageRequest()))
                     .verifyErrorMessage(ExceptionTypeEnum.COVERAGE_NOT_FOUND.getMessage());
 
     }
@@ -99,7 +102,7 @@ class CoverageServiceTest {
 
         when(coverageDAO.find(CAP, LOCALITY)).thenReturn(Mono.just(entity));
 
-        StepVerifier.create(coverageService.updateCoverage(CAP, LOCALITY, new UpdateCoverageRequest()))
+        StepVerifier.create(coverageService.updateCoverage(U_ID, CAP, LOCALITY, new UpdateCoverageRequest()))
                     .verifyError();
 
     }
@@ -110,7 +113,7 @@ class CoverageServiceTest {
         UpdateCoverageRequest request = buildValidUpdateRequest();
         request.setEndValidity(LocalDate.now().minusDays(5L));
 
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> coverageService.updateCoverage(CAP, LOCALITY, request));
+        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> coverageService.updateCoverage(U_ID, CAP, LOCALITY, request));
         Assertions.assertEquals(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, ex.getExceptionType());
 
     }

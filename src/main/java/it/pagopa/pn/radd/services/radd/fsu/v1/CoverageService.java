@@ -22,12 +22,12 @@ public class CoverageService {
     private final CoverageDAO coverageDAO;
     private final CoverageMapper coverageMapper;
 
-    public Mono<Coverage> updateCoverage(String cap, String locality, UpdateCoverageRequest request) {
+    public Mono<Coverage> updateCoverage(String xPagopaPnUid, String cap, String locality, UpdateCoverageRequest request) {
         validateCoverageDateInterval(null, null, request.getStartValidity(), request.getEndValidity());
         log.info("Start updateCoverage for cap [{}] and locality [{}]", cap, locality);
         return coverageDAO.find(cap, locality)
                           .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.COVERAGE_NOT_FOUND, HttpStatus.NOT_FOUND)))
-                          .flatMap(coverageEntity -> coverageDAO.updateCoverageEntity(mapFieldToUpdate(coverageEntity, request)))
+                          .flatMap(coverageEntity -> coverageDAO.updateCoverageEntity(mapFieldToUpdate(xPagopaPnUid, coverageEntity, request)))
                           .map(coverageMapper::toDto)
                           .doOnError(throwable -> log.error("Error during update coverage request", throwable));
     }

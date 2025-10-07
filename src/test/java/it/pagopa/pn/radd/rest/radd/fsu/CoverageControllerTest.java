@@ -19,6 +19,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
@@ -38,7 +39,7 @@ class CoverageControllerTest {
     public static final String PN_PAGOPA_CX_TYPE = "x-pagopa-pn-cx-type";
     public static final String PN_PAGOPA_UID = "x-pagopa-pn-uid";
     private final String CF_ENTE = "LLLLLLNNLNNLNNNL";
-    private final String U_ID = "UID";
+    private final String U_ID = UUID.randomUUID().toString();
 
     private final String CAP = "00000";
     private final String LOCALITY = "locality";
@@ -67,7 +68,7 @@ class CoverageControllerTest {
         response.setCap(CAP);
         response.setLocality(LOCALITY);
 
-        when(coverageService.updateCoverage(CAP, LOCALITY, request))
+        when(coverageService.updateCoverage(U_ID, CAP, LOCALITY, request))
                 .thenReturn(Mono.just(response));
 
         webTestClient.patch()
@@ -88,7 +89,7 @@ class CoverageControllerTest {
 
         UpdateCoverageRequest request = buildValidUpdateRequest();
 
-        when(coverageService.updateCoverage(anyString(), anyString(), eq(request)))
+        when(coverageService.updateCoverage(anyString(), anyString(), anyString(), eq(request)))
                 .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.COVERAGE_NOT_FOUND, HttpStatus.NOT_FOUND)));
 
         webTestClient.patch()
@@ -110,7 +111,7 @@ class CoverageControllerTest {
         UpdateCoverageRequest request = buildValidUpdateRequest();
         request.setCadastralCode("");
 
-        when(coverageService.updateCoverage(anyString(), anyString(), eq(request)))
+        when(coverageService.updateCoverage(anyString(), anyString(), anyString(), eq(request)))
                 .thenReturn(Mono.empty());
 
         webTestClient.patch()
