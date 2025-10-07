@@ -505,11 +505,11 @@ class RegistryServiceTest {
             verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
             verify(raddRegistryRequestDAO).updateRecordInPending(any(RaddRegistryRequestEntity.class));
             verify(awsGeoService).getCoordinatesForAddress(
-                    eq("Via Roma 1"),
-                    eq("RM"),
-                    eq("00100"),
-                    eq("Roma"),
-                    eq("IT")
+                    "Via Roma 1",
+                    "RM",
+                    "00100",
+                    "Roma",
+                    "IT"
             );
             verify(raddRegistryV2DAO).putItemIfAbsent(any(RaddRegistryEntityV2.class));
             verify(raddRegistryRequestDAO).updateRegistryRequestData(any(RaddRegistryRequestEntity.class));
@@ -530,7 +530,7 @@ class RegistryServiceTest {
                     .verify();
 
             // Verify only first method was called
-            verify(raddRegistryRequestDAO).getAllFromCorrelationId(eq("test-correlation-id"), eq(RegistryRequestStatus.NOT_WORKED.name()));
+            verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
             verify(raddRegistryRequestDAO, never()).updateRecordInPending(any());
             verify(awsGeoService, never()).getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString());
         }

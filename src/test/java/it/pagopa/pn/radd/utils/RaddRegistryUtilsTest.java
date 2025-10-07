@@ -133,8 +133,6 @@ class RaddRegistryUtilsTest {
 
     @Test
     void testConstructRaddRegistryEntity() {
-//        ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
-//        RegistryMappingUtils registryMappingUtils = new RegistryMappingUtils(objectMapperUtil);
         // Arrange
         AwsGeoService.CoordinatesResult coordinatesResult = mock(AwsGeoService.CoordinatesResult.class);
         doNothing().when(coordinatesResult).setAwsAddressRow(Mockito.any());

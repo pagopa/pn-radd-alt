@@ -7,10 +7,7 @@ import it.pagopa.pn.radd.exception.RaddRegistryAlreadyExistsException;
 import it.pagopa.pn.radd.exception.TransactionAlreadyExistsException;
 import it.pagopa.pn.radd.middleware.db.BaseDao;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
+import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.pojo.PnLastEvaluatedKey;
 import it.pagopa.pn.radd.pojo.RaddRegistryPage;
 import it.pagopa.pn.radd.pojo.ResultPaginationDto;
@@ -42,6 +39,8 @@ import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
 @Repository
 @CustomLog
 public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> implements RaddRegistryV2DAO {
+
+    public static final String EQUALS_FORMAT = "#%s.#%s = :%s";
 
     public RaddRegistryV2DAOImpl(DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient,
                                  DynamoDbAsyncClient dynamoDbAsyncClient,
@@ -169,21 +168,21 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
         Map<String, String> names = new HashMap<>();
         StringJoiner query = new StringJoiner(" AND ");
         if (io.micrometer.core.instrument.util.StringUtils.isNotEmpty(cap)) {
-            map.put(":" + NormalizedAddressEntityV2.COL_CAP, AttributeValue.builder().s(cap).build());
+            map.put(":" + AddressEntity.COL_CAP, AttributeValue.builder().s(cap).build());
             names.put("#" + RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS, RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS);
-            names.put("#" + NormalizedAddressEntityV2.COL_CAP, NormalizedAddressEntityV2.COL_CAP);
-            query.add(String.format("#%s.#%s = :%s", RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS, NormalizedAddressEntityV2.COL_CAP, NormalizedAddressEntityV2.COL_CAP));        }
+            names.put("#" + AddressEntity.COL_CAP, AddressEntity.COL_CAP);
+            query.add(String.format(EQUALS_FORMAT, RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS, AddressEntity.COL_CAP, AddressEntity.COL_CAP));        }
         if (io.micrometer.core.instrument.util.StringUtils.isNotEmpty(city)) {
-            map.put(":" + NormalizedAddressEntityV2.COL_CITY, AttributeValue.builder().s(city).build());
+            map.put(":" + AddressEntity.COL_CITY, AttributeValue.builder().s(city).build());
             names.put("#" + RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS, RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS);
-            names.put("#" + NormalizedAddressEntityV2.COL_CITY, NormalizedAddressEntityV2.COL_CITY);
-            query.add(String.format("#%s.#%s = :%s", RaddRegistryEntity.COL_NORMALIZED_ADDRESS, NormalizedAddressEntity.COL_CITY, NormalizedAddressEntity.COL_CITY));
+            names.put("#" + AddressEntity.COL_CITY, AddressEntity.COL_CITY);
+            query.add(String.format(EQUALS_FORMAT, RaddRegistryEntity.COL_NORMALIZED_ADDRESS, AddressEntity.COL_CITY, AddressEntity.COL_CITY));
         }
         if (io.micrometer.core.instrument.util.StringUtils.isNotEmpty(pr)) {
-            map.put(":" + NormalizedAddressEntityV2.COL_PROVINCE, AttributeValue.builder().s(pr).build());
-            names.put("#" + NormalizedAddressEntityV2.COL_PROVINCE, NormalizedAddressEntityV2.COL_PROVINCE);
+            map.put(":" + AddressEntity.COL_PROVINCE, AttributeValue.builder().s(pr).build());
+            names.put("#" + AddressEntity.COL_PROVINCE, AddressEntity.COL_PROVINCE);
             names.put("#" + RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS, RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS);
-            query.add(String.format("#%s.#%s = :%s", RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS, NormalizedAddressEntityV2.COL_PROVINCE, NormalizedAddressEntityV2.COL_PROVINCE));
+            query.add(String.format(EQUALS_FORMAT, RaddRegistryEntityV2.COL_NORMALIZED_ADDRESS, AddressEntity.COL_PROVINCE, AddressEntity.COL_PROVINCE));
         }
         if (StringUtils.isNotEmpty(externalCode)) {
             map.put(":"+ RaddRegistryEntityV2.COL_EXTERNAL_CODES, AttributeValue.builder().s(externalCode).build());
@@ -195,7 +194,7 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
 
     }
 
-    private final static Function<RaddRegistryEntityV2, PnLastEvaluatedKey> SELF_REGISTRY_REQUEST_LAST_EVALUATED_KEY_MAKER = (keyEntity) -> {
+    private static final Function<RaddRegistryEntityV2, PnLastEvaluatedKey> SELF_REGISTRY_REQUEST_LAST_EVALUATED_KEY_MAKER = keyEntity -> {
         PnLastEvaluatedKey pageLastEvaluatedKey = new PnLastEvaluatedKey();
         pageLastEvaluatedKey.setExternalLastEvaluatedKey(keyEntity.getLocationId());
         pageLastEvaluatedKey.setInternalLastEvaluatedKey(Map.of(
