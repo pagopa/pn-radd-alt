@@ -5,33 +5,21 @@ components:
       type: object
       properties:
         cap:
-          type: string
-          description: CAP della località coperta da RADD
-          pattern: ^([0-9]{5})$
-          example: "00043"
+          $ref: '#/components/schemas/Cap'
         locality:
-          type: string
-          description: Località coperta da RADD
-          example: "Ciampino"
-        province:
-          type: string
-          description: Provincia della località coperta da RADD
-          #pattern: ^([a-zA-Z]{2})$
-          example: "RM"
+          $ref: '#/components/schemas/Locality'
         cadastralCode:
-          type: string
-          description: Codice catastale del comune associato alla località
-          pattern: ^([a-zA-Z0-9]{4})$
-          example: "M272"
+          $ref: '#/components/schemas/CadastralCode'
+        province:
+          $ref: '#/components/schemas/Province'
         startValidity:
-          type: string
-          format: date
-          description: >-
-            Data di inizio validità copertura
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di inizio validità copertura
         endValidity:
-          type: string
-          format: date
-          description: Data fine validità copertura
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di fine validità copertura
 
     Cap:
       type: string
