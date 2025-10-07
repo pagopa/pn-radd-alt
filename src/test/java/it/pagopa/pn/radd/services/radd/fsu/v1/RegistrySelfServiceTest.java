@@ -111,7 +111,7 @@ class RegistrySelfServiceTest {
         when(registryRequestDAO.createEntity(any())).thenReturn(Mono.just(entity));
         doNothing().when(correlationIdEventsProducer).sendCorrelationIdEvent(any());
 
-        Mono<CreateRegistryResponse> result = registrySelfService.addRegistry("cxId", request);
+        Mono<CreateRegistryResponse> result = registrySelfService.addRegistry("cxId", "testUid", request);
 
         StepVerifier.create(result)
                 .assertNext(response -> {
@@ -135,7 +135,7 @@ class RegistrySelfServiceTest {
 
         RaddRegistryRequestEntity entity = new RaddRegistryRequestEntity();
         entity.setRequestId("testRequestId");
-        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId", request));
+        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId", "testUid", request));
 
     }
 
@@ -147,7 +147,7 @@ class RegistrySelfServiceTest {
         request.setStartValidity("2024-03-01");
         request.setEndValidity("2023-10-21");
 
-        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId", request));
+        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId", "testUid", request));
     }
 
     @Test
@@ -155,7 +155,7 @@ class RegistrySelfServiceTest {
         CreateRegistryRequest request = new CreateRegistryRequest();
         request.setStartValidity("10/02/2022");
 
-        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId", request));
+        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId", "testUid", request));
     }
 
     @Test
@@ -166,7 +166,7 @@ class RegistrySelfServiceTest {
         geoLocation.setLongitude("10,0");
         request.setGeoLocation(geoLocation);
 
-        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId", request));
+        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId", "testUid", request));
     }
 
     @Test
@@ -174,7 +174,7 @@ class RegistrySelfServiceTest {
         CreateRegistryRequest request = new CreateRegistryRequest();
         request.setOpeningTime("10:00");
 
-        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId", request));
+        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId", "testUid", request));
     }
 
     @Test
@@ -182,7 +182,7 @@ class RegistrySelfServiceTest {
         CreateRegistryRequest request = new CreateRegistryRequest();
         request.setCapacity("10a");
 
-        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId", request));
+        Assertions.assertThrows(RaddGenericException.class, () -> registrySelfService.addRegistry("cxId","testUid", request));
     }
 
     @Test
