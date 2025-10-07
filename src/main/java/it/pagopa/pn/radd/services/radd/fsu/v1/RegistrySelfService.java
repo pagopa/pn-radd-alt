@@ -78,9 +78,9 @@ public class RegistrySelfService {
         return registryEntity;
     }
 
-    public Mono<CreateRegistryResponse> addRegistry(String xPagopaPnCxId, CreateRegistryRequest request) {
+    public Mono<CreateRegistryResponse> addRegistry(String xPagopaPnCxId, String uid, CreateRegistryRequest request) {
         checkCreateRegistryRequest(request);
-        RaddRegistryRequestEntity raddRegistryRequestEntity = createRaddRegistryRequestEntity(request, xPagopaPnCxId);
+        RaddRegistryRequestEntity raddRegistryRequestEntity = createRaddRegistryRequestEntity(request, xPagopaPnCxId, uid);
         log.info("Creating registry request entity for cxId: {} and requestId: {}", xPagopaPnCxId, raddRegistryRequestEntity.getRequestId());
         return registryRequestDAO.createEntity(raddRegistryRequestEntity)
                 .flatMap(entity -> {
@@ -133,10 +133,10 @@ public class RegistrySelfService {
     }
 
     private RaddRegistryRequestEntity createRaddRegistryRequestEntity(CreateRegistryRequest
-                                                                              createRegistryRequest, String cxId) {
+                                                                              createRegistryRequest, String cxId, String uid) {
         String requestId = REQUEST_ID_PREFIX + UUID.randomUUID();
         RaddRegistryOriginalRequest originalRequest = raddRegistryRequestEntityMapper.retrieveOriginalRequest(createRegistryRequest);
-        return raddRegistryRequestEntityMapper.retrieveRaddRegistryRequestEntity(cxId, requestId, originalRequest);
+        return raddRegistryRequestEntityMapper.retrieveRaddRegistryRequestEntity(cxId, requestId, uid, originalRequest);
     }
 
     public Mono<RaddRegistryEntityV2> deleteRegistry(String xPagopaPnCxId, String registryId, String endDate, String uid) {
