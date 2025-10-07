@@ -23,7 +23,6 @@ import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
 import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
 import it.pagopa.pn.radd.middleware.queue.event.PnRaddAltNormalizeRequestEvent;
-import it.pagopa.pn.radd.middleware.queue.producer.RaddAltCapCheckerProducer;
 import it.pagopa.pn.radd.pojo.*;
 import it.pagopa.pn.radd.utils.ObjectMapperUtil;
 import it.pagopa.pn.radd.utils.RaddRegistryUtils;
@@ -86,9 +85,6 @@ class RegistryServiceTest {
     private PnAddressManagerClient pnAddressManagerClient;
 
     @Mock
-    private RaddAltCapCheckerProducer raddAltCapCheckerProducer;
-
-    @Mock
     private PnRaddAltNormalizeRequestEvent.Payload payload;
 
     @Mock
@@ -105,7 +101,7 @@ class RegistryServiceTest {
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper());
         registryService = new RegistryService(raddRegistryRequestDAO, raddRegistryDAO, raddRegistryV2DAO, raddRegistryImportDAO, pnSafeStorageClient,
                 new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, secretService, new RegistryMappingUtils(objectMapperUtil)), pnAddressManagerClient,
-                raddAltCapCheckerProducer, pnRaddFsuConfig, eventBridgeProducer, objectMapperUtil, awsGeoService);
+                pnRaddFsuConfig, eventBridgeProducer, objectMapperUtil, awsGeoService);
     }
 
     @Test

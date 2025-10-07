@@ -20,9 +20,7 @@ import it.pagopa.pn.radd.middleware.msclient.PnAddressManagerClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
 import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
-import it.pagopa.pn.radd.middleware.queue.event.PnInternalCapCheckerEvent;
 import it.pagopa.pn.radd.middleware.queue.event.PnRaddAltNormalizeRequestEvent;
-import it.pagopa.pn.radd.middleware.queue.producer.RaddAltCapCheckerProducer;
 import it.pagopa.pn.radd.pojo.AddressManagerRequest;
 import it.pagopa.pn.radd.pojo.RaddRegistryImportConfig;
 import it.pagopa.pn.radd.pojo.RaddRegistryImportStatus;
@@ -61,7 +59,6 @@ public class RegistryService {
     private final PnSafeStorageClient pnSafeStorageClient;
     private final RaddRegistryUtils raddRegistryUtils;
     private final PnAddressManagerClient pnAddressManagerClient;
-    private final RaddAltCapCheckerProducer raddAltCapCheckerProducer;
     private final PnRaddFsuConfig pnRaddFsuConfig;
     private final EventBridgeProducer<PnEvaluatedZipCodeEvent> eventBridgeProducer;
     private final ObjectMapperUtil objectMapperUtil;
@@ -341,27 +338,6 @@ public class RegistryService {
         raddRegistryRequestEntity.setStatus(RegistryRequestStatus.DELETED.name());
         raddRegistryRequestEntity.setError(REMOVED_FROM_LATEST_IMPORT);
         return raddRegistryRequestEntity;
-    }
-
-    //TODO deprecato, si può rimuovere tutta questa logica
-    public Mono<Void> handleInternalCapCheckerMessage(PnInternalCapCheckerEvent.Payload response) {
-        return null;
-//        log.debug("Handling internal CAP checker message for ZIP code '{}'", response.getZipCode());
-//        return raddRegistryDAO.getRegistriesByZipCode(response.getZipCode())
-//                .collectList()
-//                .doOnNext(raddRegistryEntities -> log.info("Found {} registries for ZIP code: {}", raddRegistryEntities.size(), response.getZipCode()))
-//                .map(raddRegistryUtils::getOfficeIntervals)
-//                .map(raddRegistryUtils::findActiveIntervals)
-//                .flatMap(timeIntervals -> {
-//                    if(timeIntervals.isEmpty()) {
-//                        log.info("No active intervals found for ZIP code '{}'", response.getZipCode());
-//                        return Mono.empty();
-//                    }
-//                    log.info("Found {} active intervals for ZIP code '{}'", timeIntervals.size(), response.getZipCode());
-//                    return eventBridgeProducer.sendEvent(raddRegistryUtils.mapToEventMessage(timeIntervals,
-//                            response.getZipCode()));
-//                })
-//                .then();
     }
 
     public Mono<RequestResponse> retrieveRequestItems(String xPagopaPnCxId, String requestId, Integer limit, String lastKey) {

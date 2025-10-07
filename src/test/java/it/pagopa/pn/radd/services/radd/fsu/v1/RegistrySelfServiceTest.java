@@ -20,7 +20,6 @@ import it.pagopa.pn.radd.middleware.queue.producer.CorrelationIdEventsProducer;
 import it.pagopa.pn.radd.pojo.PnLastEvaluatedKey;
 import it.pagopa.pn.radd.pojo.ResultPaginationDto;
 import it.pagopa.pn.radd.utils.ObjectMapperUtil;
-import it.pagopa.pn.radd.middleware.queue.producer.RaddAltCapCheckerProducer;
 import org.junit.jupiter.api.Assertions;
 import it.pagopa.pn.radd.utils.RaddRegistryUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,8 +62,6 @@ class RegistrySelfServiceTest {
     @Mock
     private SecretService secretService;
     private RegistrySelfService registrySelfService;
-    @Mock
-    private RaddAltCapCheckerProducer raddAltCapCheckerProducer;
     @Mock
     private PnRaddFsuConfig pnRaddFsuConfig;
 
