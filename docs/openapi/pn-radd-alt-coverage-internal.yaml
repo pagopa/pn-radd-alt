@@ -44,7 +44,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateCoverageRequest'
+              $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/CreateCoverageRequest'
         required: true
       responses:
         200:
@@ -84,7 +84,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateCoverageRequest'
+              $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/UpdateCoverageRequest'
         required: true
       responses:
         200:
@@ -107,14 +107,6 @@ paths:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
 
 components:
-  schemas:
-    CreateCoverageRequest:
-      allOf:
-        - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/CreateCoverageRequest'
-    UpdateCoverageRequest:
-      allOf:
-        - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/UpdateCoverageRequest'
-
   parameters:
     cap:
       name: cap
