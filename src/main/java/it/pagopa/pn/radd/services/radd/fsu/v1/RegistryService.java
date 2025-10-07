@@ -8,7 +8,6 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RequestResponse;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.VerifyRequestResponse;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.*;
-import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryImportDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
@@ -51,7 +50,6 @@ import static it.pagopa.pn.radd.utils.Const.*;
 @CustomLog
 public class RegistryService {
     private final RaddRegistryRequestDAO raddRegistryRequestDAO;
-    private final RaddRegistryDAO raddRegistryDAO;
     private final RaddRegistryV2DAO raddRegistryV2DAO;
     private final RaddRegistryImportDAO raddRegistryImportDAO;
     private final PnSafeStorageClient pnSafeStorageClient;
