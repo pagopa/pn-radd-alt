@@ -18,9 +18,9 @@ import java.time.LocalDate;
 @EqualsAndHashCode
 public class CoverageEntity {
 
-    public static final String COL_UID = "cap";
-    public static final String COL_CREATION_TIMESTAMP = "cap";
-    public static final String COL_UPDATE_TIMESTAMP = "cap";
+    public static final String COL_UID = "uid";
+    public static final String COL_CREATION_TIMESTAMP = "creationTimestamp";
+    public static final String COL_UPDATE_TIMESTAMP = "updateTimestamp";
     public static final String COL_CAP = "cap";
     public static final String COL_LOCALITY = "locality";
     public static final String COL_PROVINCE = "province";
