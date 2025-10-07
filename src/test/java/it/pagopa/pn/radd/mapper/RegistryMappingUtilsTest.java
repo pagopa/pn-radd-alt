@@ -9,22 +9,18 @@ import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.ObjectMapperUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-//@TestInstance(TestInstance.Lifecycle.PER_METHOD)
+
 class RegistryMappingUtilsTest {
 
     private RaddRegistryEntityV2 v2;
-    private RaddRegistryEntity v1;
     private String uid;
-    private ObjectMapperUtil objectMapperUtil;
     private RegistryMappingUtils registryMappingUtils;
-    private AddressEntity originalAddress;
     private String partnerId = "partner-001";
     private String registryId;
     private AwsGeoService.CoordinatesResult coordinateResult = new AwsGeoService.CoordinatesResult();
@@ -33,7 +29,7 @@ class RegistryMappingUtilsTest {
 
     @BeforeEach
     void setUp() {
-        objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
+        ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
         registryMappingUtils = new RegistryMappingUtils(objectMapperUtil);
 
         uid = "UID123";
@@ -42,9 +38,6 @@ class RegistryMappingUtilsTest {
 
         // Costruzione v2
         v2 = buildRegistryEntityV2();
-
-        // Costruzione v1
-        v1 = buildRegistryEntityV1();
 
         // Request entities
         registryRequest = new RaddRegistryRequestEntity();
@@ -87,30 +80,6 @@ class RegistryMappingUtilsTest {
         normalized.setLatitude("41.9028");
         normalized.setLongitude("12.4964");
         entity.setNormalizedAddress(normalized);
-
-        return entity;
-    }
-
-    private RaddRegistryEntity buildRegistryEntityV1() {
-        RaddRegistryEntity entity = new RaddRegistryEntity();
-        entity.setRegistryId(registryId);
-        entity.setCxId(partnerId);
-        entity.setPhoneNumber("123456789");
-        entity.setExternalCode("ext-001");
-        entity.setDescription("Test description");
-        entity.setOpeningTime("08:00-18:00");
-        entity.setStartValidity(Instant.parse("2025-01-01T00:00:00Z"));
-        entity.setEndValidity(Instant.parse("2025-12-31T23:59:59Z"));
-
-        NormalizedAddressEntity address = new NormalizedAddressEntity();
-        address.setAddressRow("Via Roma 1");
-        address.setCap("00100");
-        address.setCity("Roma");
-        address.setPr("RM");
-        address.setCountry("Italia");
-        entity.setNormalizedAddress(address);
-
-        entity.setGeoLocation("{\"latitude\":\"41.9028\", \"longitude\":\"12.4964\"}");
 
         return entity;
     }

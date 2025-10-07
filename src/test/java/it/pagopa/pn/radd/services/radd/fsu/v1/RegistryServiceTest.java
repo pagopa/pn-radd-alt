@@ -9,7 +9,6 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RequestResponse;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
-import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryImportDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
@@ -18,12 +17,9 @@ import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import it.pagopa.pn.radd.middleware.eventbus.EventBridgeProducer;
-import it.pagopa.pn.radd.middleware.msclient.PnAddressManagerClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
-import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
 import it.pagopa.pn.radd.middleware.queue.event.PnRaddAltNormalizeRequestEvent;
-import it.pagopa.pn.radd.middleware.queue.producer.RaddAltCapCheckerProducer;
 import it.pagopa.pn.radd.pojo.*;
 import it.pagopa.pn.radd.utils.ObjectMapperUtil;
 import it.pagopa.pn.radd.utils.RaddRegistryUtils;
@@ -64,8 +60,7 @@ class RegistryServiceTest {
 
     @Mock
     private PnRaddFsuConfig pnRaddFsuConfig;
-    @Mock
-    private RaddRegistryDAO raddRegistryDAO;
+
     @Mock
     private RaddRegistryV2DAO raddRegistryV2DAO;
 
@@ -79,14 +74,6 @@ class RegistryServiceTest {
     private PnSafeStorageClient pnSafeStorageClient;
     @Mock
     private RaddRegistryImportDAO raddRegistryImportDAO;
-
-    @Mock
-    private PnAddressManagerEvent message;
-    @Mock
-    private PnAddressManagerClient pnAddressManagerClient;
-
-    @Mock
-    private RaddAltCapCheckerProducer raddAltCapCheckerProducer;
 
     @Mock
     private PnRaddAltNormalizeRequestEvent.Payload payload;
@@ -103,9 +90,9 @@ class RegistryServiceTest {
     @BeforeEach
     void setUp() {
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper());
-        registryService = new RegistryService(raddRegistryRequestDAO, raddRegistryDAO, raddRegistryV2DAO, raddRegistryImportDAO, pnSafeStorageClient,
-                new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, secretService, new RegistryMappingUtils(objectMapperUtil)), pnAddressManagerClient,
-                raddAltCapCheckerProducer, pnRaddFsuConfig, eventBridgeProducer, objectMapperUtil, awsGeoService);
+        registryService = new RegistryService(raddRegistryRequestDAO, raddRegistryV2DAO, raddRegistryImportDAO, pnSafeStorageClient,
+                new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, secretService, new RegistryMappingUtils(objectMapperUtil)),
+                pnRaddFsuConfig, eventBridgeProducer, objectMapperUtil, awsGeoService);
     }
 
     @Test
@@ -419,7 +406,7 @@ class RegistryServiceTest {
 
         private PnRaddAltNormalizeRequestEvent.Payload payload;
         private RaddRegistryRequestEntity mockEntity;
-        private AddressManagerRequestAddress mockAddress;
+        private NormalizationRequestAddress mockAddress;
         private AwsGeoService.CoordinatesResult mockCoordinatesResult;
         private RaddRegistryEntityV2 mockRegistryEntity;
 
@@ -442,7 +429,7 @@ class RegistryServiceTest {
             mockEntity.setUpdatedAt(Instant.now());
 
             // Setup mock address
-            mockAddress = new AddressManagerRequestAddress();
+            mockAddress = new NormalizationRequestAddress();
             mockAddress.setId("1");
             mockAddress.setAddressRow("Via Roma 1");
             mockAddress.setCap("00100");
@@ -518,11 +505,11 @@ class RegistryServiceTest {
             verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
             verify(raddRegistryRequestDAO).updateRecordInPending(any(RaddRegistryRequestEntity.class));
             verify(awsGeoService).getCoordinatesForAddress(
-                    eq("Via Roma 1"),
-                    eq("RM"),
-                    eq("00100"),
-                    eq("Roma"),
-                    eq("IT")
+                    "Via Roma 1",
+                    "RM",
+                    "00100",
+                    "Roma",
+                    "IT"
             );
             verify(raddRegistryV2DAO).putItemIfAbsent(any(RaddRegistryEntityV2.class));
             verify(raddRegistryRequestDAO).updateRegistryRequestData(any(RaddRegistryRequestEntity.class));
@@ -543,7 +530,7 @@ class RegistryServiceTest {
                     .verify();
 
             // Verify only first method was called
-            verify(raddRegistryRequestDAO).getAllFromCorrelationId(eq("test-correlation-id"), eq(RegistryRequestStatus.NOT_WORKED.name()));
+            verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
             verify(raddRegistryRequestDAO, never()).updateRecordInPending(any());
             verify(awsGeoService, never()).getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString());
         }
@@ -730,8 +717,8 @@ class RegistryServiceTest {
         }
 
         @Test
-        @DisplayName("Should verify AddressManagerRequest creation and correlation ID setting")
-        void shouldVerifyAddressManagerRequestCreation() {
+        @DisplayName("Should verify NormalizationRequest creation and correlation ID setting")
+        void shouldVerifyNormalizationRequestCreation() {
             // Arrange
             when(raddRegistryRequestDAO.getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name()))
                     .thenReturn(Flux.empty());
@@ -742,7 +729,7 @@ class RegistryServiceTest {
                     .verify();
 
             // Assert - Verify that the method was called with correct parameters
-            // The AddressManagerRequest creation happens internally and sets the correlationId
+            // The NormalizationRequest creation happens internally and sets the correlationId
             verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
         }
     }

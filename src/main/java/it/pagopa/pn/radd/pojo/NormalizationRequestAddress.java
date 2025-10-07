@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AddressManagerRequestAddress {
+public class NormalizationRequestAddress {
 
     private String id;
     private String addressRow;

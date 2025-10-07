@@ -1,14 +1,8 @@
 #!/bin/bash
 ## Quando viene aggiornato questo file, aggiornare anche il commitId presente nel file initsh-for-testcontainer-sh
 
-echo "### CREATE SECRET FOR ADDRESS-MANAGER APIKEY ###"
-aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
-    secretsmanager create-secret \
-    --name "local/address-manager/apikey" \
-    --secret-string "address-manager-apikey"
-
 echo "### CREATE QUEUES FOR RADD-ALT ###"
-queues="pn-radd_alt_internal_cap_checker pn-radd_alt_input pn-addressmanager_to_raddalt pn-safestore_to_raddalt"
+queues="pn-radd_alt_input pn-safestore_to_raddalt"
 for qn in $(echo $queues | tr " " "\n");do
   echo creating queue $qn ...
   aws --profile default --region us-east-1 --endpoint-url http://localstack:4566 \

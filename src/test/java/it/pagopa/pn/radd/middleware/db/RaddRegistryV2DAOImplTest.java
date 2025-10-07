@@ -8,6 +8,7 @@ import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.pojo.ResultPaginationDto;
 import lombok.CustomLog;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -60,6 +61,17 @@ class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
         entity.setWebsite("https://test.it");
         entity.setPartnerType("TYPE1");
 
+        NormalizedAddressEntityV2 normalizedAddress = getNormalizedAddressEntityV2();
+
+        entity.setNormalizedAddress(normalizedAddress);
+
+        entity.setCreationTimestamp(Instant.now());
+        entity.setUpdateTimestamp(Instant.now());
+        entity.setUpdateTimestamp(Instant.now());
+        return entity;
+    }
+
+    private static @NotNull NormalizedAddressEntityV2 getNormalizedAddressEntityV2() {
         NormalizedAddressEntityV2 normalizedAddress = new NormalizedAddressEntityV2();
         normalizedAddress.setAddressRow("123 Test St");
         normalizedAddress.setCity("Test City");
@@ -76,13 +88,7 @@ class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
         biasPoint.setPostalCode(BigDecimal.ONE);
         biasPoint.setCountry(BigDecimal.ONE);
         normalizedAddress.setBiasPoint(biasPoint);
-
-        entity.setNormalizedAddress(normalizedAddress);
-
-        entity.setCreationTimestamp(Instant.now());
-        entity.setUpdateTimestamp(Instant.now());
-        entity.setUpdateTimestamp(Instant.now());
-        return entity;
+        return normalizedAddress;
     }
 
     @Test

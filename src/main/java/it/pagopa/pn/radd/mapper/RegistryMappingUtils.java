@@ -1,7 +1,6 @@
 package it.pagopa.pn.radd.mapper;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.Address;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.GeoLocation;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.Registry;
 import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.pojo.RaddRegistryOriginalRequest;

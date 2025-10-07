@@ -10,7 +10,6 @@ import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
-import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
@@ -20,7 +19,6 @@ import it.pagopa.pn.radd.middleware.queue.producer.CorrelationIdEventsProducer;
 import it.pagopa.pn.radd.pojo.PnLastEvaluatedKey;
 import it.pagopa.pn.radd.pojo.ResultPaginationDto;
 import it.pagopa.pn.radd.utils.ObjectMapperUtil;
-import it.pagopa.pn.radd.middleware.queue.producer.RaddAltCapCheckerProducer;
 import org.junit.jupiter.api.Assertions;
 import it.pagopa.pn.radd.utils.RaddRegistryUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,8 +48,6 @@ import static org.mockito.Mockito.when;
 class RegistrySelfServiceTest {
 
     @Mock
-    private RaddRegistryDAO raddRegistryDAO;
-    @Mock
     RegistryMappingUtils registryMappingUtils;
     @Mock
     private RaddRegistryV2DAO raddRegistryV2DAO;
@@ -63,8 +59,6 @@ class RegistrySelfServiceTest {
     @Mock
     private SecretService secretService;
     private RegistrySelfService registrySelfService;
-    @Mock
-    private RaddAltCapCheckerProducer raddAltCapCheckerProducer;
     @Mock
     private PnRaddFsuConfig pnRaddFsuConfig;
 
