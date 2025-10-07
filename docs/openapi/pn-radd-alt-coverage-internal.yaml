@@ -109,51 +109,11 @@ paths:
 components:
   schemas:
     CreateCoverageRequest:
-      type: object
-      required:
-        - cap
-        - locality
-      properties:
-        cap:
-          type: string
-          description: CAP della località coperta
-          pattern: '^\d{5}$'
-          example: '00000'
-        locality:
-          type: string
-          description: Località coperta
-        cadastralCode:
-          type: string
-          description: Codice catastale del comune associato alla località
-          pattern: '^[A-Z]\d{3}$'
-          example: 'A000'
-        province:
-          type: string
-          description: Provincia
+      allOf:
+        - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/CreateCoverageRequest'
     UpdateCoverageRequest:
-      type: object
-      properties:
-        cadastralCode:
-          type: string
-          description: Codice catastale del comune associato alla località
-          pattern: '^[A-Z]\d{3}$'
-          example: 'A000'
-        province:
-          type: string
-          description: Provincia
-        startValidity:
-          type: string
-          format: date
-          description: >-
-            Data di inizio validità della copertura in formato (yyyy-MM-dd),
-          pattern: '^\d{4}-\d{2}-\d{2}$'
-          example: '2024-03-21'
-        endValidity:
-          type: string
-          format: date
-          description: Data di fine validità della copertura in formato (yyyy-MM-dd).
-          pattern: '^\d{4}-\d{2}-\d{2}$'
-          example: '2024-03-21'
+      allOf:
+        - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/UpdateCoverageRequest'
 
   parameters:
     cap:

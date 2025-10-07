@@ -18,6 +18,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.UUID;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -31,6 +33,8 @@ class CoverageServiceTest {
 
     @Mock
     private CoverageService coverageService;
+
+    private final String U_ID = UUID.randomUUID().toString();
 
     private final String CAP = "00000";
     private final String LOCALITY = "locality";
@@ -66,7 +70,7 @@ class CoverageServiceTest {
         Mockito.lenient().when(coverageDAO.findByCap(CAP)).thenReturn(Flux.empty());
         when(coverageDAO.putItemIfAbsent(any())).thenReturn(Mono.just(entity));
 
-        Mono<Coverage> result = coverageService.addCoverage(request);
+        Mono<Coverage> result = coverageService.addCoverage(U_ID, request);
 
         StepVerifier.create(result)
                     .assertNext(Assertions::assertNotNull)

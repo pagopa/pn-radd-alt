@@ -19,6 +19,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.util.UUID;
+
 @ContextConfiguration(classes = {CoverageController.class, RestExceptionHandler.class})
 @ExtendWith(SpringExtension.class)
 @WebFluxTest(controllers = {CoverageController.class})
@@ -34,7 +36,7 @@ class CoverageControllerTest {
     public static final String PN_PAGOPA_CX_TYPE = "x-pagopa-pn-cx-type";
     public static final String PN_PAGOPA_UID = "x-pagopa-pn-uid";
     private final String CF_ENTE = "LLLLLLNNLNNLNNNL";
-    private final String U_ID = "UID";
+    private final String U_ID = UUID.randomUUID().toString();
 
     private final String CAP = "00000";
     private final String LOCALITY = "locality";
@@ -60,7 +62,7 @@ class CoverageControllerTest {
         response.setCap(CAP);
         response.setLocality(LOCALITY);
 
-        Mockito.when(coverageService.addCoverage(request))
+        Mockito.when(coverageService.addCoverage(U_ID, request))
                .thenReturn(Mono.just(response));
 
         webTestClient.post()
@@ -120,7 +122,7 @@ class CoverageControllerTest {
 
         CreateCoverageRequest request = buildValidCreateRequest();
 
-        Mockito.when(coverageService.addCoverage(request))
+        Mockito.when(coverageService.addCoverage(U_ID, request))
                .thenReturn(Mono.error(new CoverageAlreadyExistsException()));
 
         webTestClient.post()

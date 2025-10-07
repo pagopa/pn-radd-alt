@@ -5,13 +5,17 @@ import it.pagopa.pn.radd.middleware.db.entities.CoverageEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class CoverageMapperTest {
 
     private CoverageMapper mapper;
+
+    private final String U_ID = UUID.randomUUID().toString();
 
     @BeforeEach
     void setUp() {
@@ -20,6 +24,8 @@ class CoverageMapperTest {
 
     private CoverageEntity buildEntity() {
         CoverageEntity entity = new CoverageEntity();
+        entity.setUid(U_ID);
+        entity.setCreationTimestamp(Instant.now());
         entity.setCap("00043");
         entity.setLocality("Ciampino");
         entity.setProvince("RM");

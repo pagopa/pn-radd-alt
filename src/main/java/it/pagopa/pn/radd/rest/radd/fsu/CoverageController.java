@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.UUID;
+
 @RestController
 @RequiredArgsConstructor
 @CustomLog
@@ -21,7 +23,7 @@ public class CoverageController implements CoverageApi {
 
     @Override
     public Mono<ResponseEntity<Coverage>> addCoverage(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, Mono<CreateCoverageRequest> createCoverageRequest, ServerWebExchange exchange) {
-        return createCoverageRequest.flatMap(coverageService::addCoverage)
+        return createCoverageRequest.flatMap(request -> coverageService.addCoverage(xPagopaPnUid,request))
                                     .map(response -> ResponseEntity.status(HttpStatus.OK).body(response));
     }
 
