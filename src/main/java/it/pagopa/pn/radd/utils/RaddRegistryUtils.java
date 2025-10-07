@@ -55,7 +55,7 @@ public class RaddRegistryUtils {
     private final ObjectMapperUtil objectMapperUtil;
     private final PnRaddFsuConfig pnRaddFsuConfig;
     private final SecretService secretService;
-    private final RegistryMappingUtils registryMappingUtils;
+    private final RegistryMappingUtils mapper;
     private final static String PARTNER_ID_REGEX = "^([0-9]{11})$";
 
     private final static Function<Map<String, AttributeValue>, PnLastEvaluatedKey> STORE_REGISTRY_LAST_EVALUATED_KEY = (stringAttributeValueMap) -> {
@@ -102,10 +102,12 @@ public class RaddRegistryUtils {
         return registryEntity;
     }
 
-    public Mono<RaddRegistryEntity> constructRaddRegistryEntity(String registryId, PnAddressManagerEvent.NormalizedAddress normalizedAddress, RaddRegistryRequestEntity registryRequest) {
+    public Mono<RaddRegistryEntityV2> constructRaddRegistryEntity(String registryId, AwsGeoService.CoordinatesResult coordinatesResult, RaddRegistryRequestEntity registryRequest) {
         RaddRegistryOriginalRequest raddRegistryOriginalRequest = objectMapperUtil.toObject(registryRequest.getOriginalRequest(), RaddRegistryOriginalRequest.class);
 
-        return Mono.just(getRaddRegistryEntity(registryId, normalizedAddress, registryRequest, raddRegistryOriginalRequest));
+        RaddRegistryEntityV2 entityV2 = mapper.mappingToV2(registryId, registryRequest.getUid(), coordinatesResult, registryRequest, raddRegistryOriginalRequest);
+        entityV2.setCreationTimestamp(Instant.now());
+        return Mono.just(entityV2);
     }
 
     public static RaddRegistryEntityV2 buildRaddRegistryEntity(String partnerId, String locationId, String uid, CreateRegistryRequestV2 request, AwsGeoService.CoordinatesResult coordinatesResult) {
@@ -188,7 +190,7 @@ public class RaddRegistryUtils {
         }
     }
 
-    private static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntityV2 normalizedAddress) {
+    public static boolean areAddressesEquivalent(AddressEntity address, NormalizedAddressEntityV2 normalizedAddress) {
         return isAddressRowEquivalent(address.getAddressRow(), normalizedAddress.getAddressRow()) &&
                 StringUtils.equals(address.getCap(), normalizedAddress.getCap()) &&
                 StringUtils.equals(address.getCity(), normalizedAddress.getCity()) &&
@@ -279,7 +281,7 @@ public class RaddRegistryUtils {
         return Mono.just(resultItemOptional.get());
     }
 
-    public RaddRegistryImportEntity getPnRaddRegistryImportEntity(String xPagopaPnCxId, RegistryUploadRequest request, FileCreationResponseDto fileCreationResponseDto, String requestId) {
+    public RaddRegistryImportEntity getPnRaddRegistryImportEntity(String xPagopaPnCxId, String uid, RegistryUploadRequest request, FileCreationResponseDto fileCreationResponseDto, String requestId) {
         RaddRegistryImportEntity pnRaddRegistryImportEntity = new RaddRegistryImportEntity();
         pnRaddRegistryImportEntity.setRequestId(requestId);
         pnRaddRegistryImportEntity.setStatus(TO_PROCESS.name());
@@ -289,6 +291,7 @@ public class RaddRegistryUtils {
         pnRaddRegistryImportEntity.setCreatedAt(Instant.now());
         pnRaddRegistryImportEntity.setUpdatedAt(Instant.now());
         pnRaddRegistryImportEntity.setFileUploadDueDate(Instant.now().plus(pnRaddFsuConfig.getRegistryImportUploadFileTtl(), ChronoUnit.SECONDS));
+        pnRaddRegistryImportEntity.setUid(uid);
 
         RaddRegistryImportConfig raddRegistryImportConfig = new RaddRegistryImportConfig();
         raddRegistryImportConfig.setDeleteRole(pnRaddFsuConfig.getRegistryDefaultDeleteRule());
@@ -306,12 +309,14 @@ public class RaddRegistryUtils {
         return request;
     }
 
+    public AddressManagerRequestAddress getRequestAddressFromOriginalRequest(RaddRegistryRequestEntity entity) {
+        AddressManagerRequestAddress request = objectMapperUtil.toObject(entity.getOriginalRequest(), AddressManagerRequestAddress.class);
+        request.setId(RaddRegistryRequestEntity.retrieveIndexFromPk(entity.getPk()));
+        return request;
+    }
+
     public List<AddressManagerRequestAddress> getRequestAddressFromOriginalRequest(List<RaddRegistryRequestEntity> entities) {
-        return entities.stream().map(entity -> {
-            AddressManagerRequestAddress request = objectMapperUtil.toObject(entity.getOriginalRequest(), AddressManagerRequestAddress.class);
-            request.setId(RaddRegistryRequestEntity.retrieveIndexFromPk(entity.getPk()));
-            return request;
-        }).toList();
+        return entities.stream().map(this::getRequestAddressFromOriginalRequest).toList();
     }
 
     public NormalizeItemsRequestDto getNormalizeRequestDtoFromAddressManagerRequest(AddressManagerRequest request) {
@@ -535,7 +540,7 @@ public class RaddRegistryUtils {
         RegistriesResponse result = new RegistriesResponse();
         if(resultPaginationDto.getResultsPage() != null) {
             result.setRegistries(resultPaginationDto.getResultsPage().stream()
-                    .map(registryMappingUtils::mappingToV1)
+                    .map(mapper::mappingToV1)
                     .toList());
         }
         result.setNextPagesKey(resultPaginationDto.getNextPagesKey());

@@ -36,6 +36,7 @@ import java.util.StringJoiner;
 import java.util.function.Function;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.ERROR_CODE_PN_RADD_ALT_UNSUPPORTED_LAST_EVALUATED_KEY;
+import static it.pagopa.pn.radd.utils.Const.REQUEST_ID_PREFIX;
 import static it.pagopa.pn.radd.utils.DateUtils.getStartOfDayToday;
 
 @Repository
@@ -203,4 +204,22 @@ public class RaddRegistryV2DAOImpl extends BaseDao<RaddRegistryEntityV2> impleme
                 ));
         return pageLastEvaluatedKey;
     };
+
+    @Override
+    public Flux<RaddRegistryEntityV2> findByPartnerIdAndRequestId(String partnerId, String requestId) {
+        QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(partnerId).build());
+        String expression = RaddRegistryEntityV2.COL_REQUEST_ID + " = :requestIdVal";
+        Map<String, AttributeValue> values = Map.of(":requestIdVal", AttributeValue.builder().s(requestId).build());
+
+        return getByFilter(conditional, null, expression, values, null, null);
+    }
+
+    @Override
+    public Flux<RaddRegistryEntityV2> findCrudRegistriesByPartnerId(String partnerId) {
+        QueryConditional conditional = QueryConditional.keyEqualTo(Key.builder().partitionValue(partnerId).build());
+        Map<String, AttributeValue> values = Map.of(":selfPrefix", AttributeValue.builder().s(REQUEST_ID_PREFIX).build());
+        String expression = "attribute_not_exists(" + RaddRegistryEntityV2.COL_REQUEST_ID + ") OR begins_with(" + RaddRegistryEntityV2.COL_REQUEST_ID + ", :selfPrefix)";
+
+        return getByFilter(conditional, null, expression, values, null, null);
+    }
 }

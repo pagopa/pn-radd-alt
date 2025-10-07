@@ -26,4 +26,22 @@ public interface RaddRegistryV2DAO {
 
     Mono<ResultPaginationDto<RaddRegistryEntityV2, String>> findByFilters(String partnerId, Integer limit, String cap, String city, String pr, String externalCode, String lastEvaluatedKey);
 
+    /**
+     * Recupera tutti i registry associati ad un partnerId e ad un requestId.
+     *
+     * @param partnerId l'ID del partner
+     * @param requestId l'ID della richiesta
+     * @return un Flux di RaddRegistryEntityV2 che soddisfano i criteri di ricerca
+     */
+    Flux<RaddRegistryEntityV2> findByPartnerIdAndRequestId(String partnerId, String requestId);
+
+    /**
+     * Recupera tutti i registry associati ad un partnerId e che siano stati creati tramite CRUD.
+     * I record creati tramite CRUD sono quelli con requestId nullo o che inizia con SELF.
+     *
+     * @param partnerId l'ID del partner
+     * @return un Flux di RaddRegistryEntityV2 creati tramite CRUD
+     */
+    Flux<RaddRegistryEntityV2> findCrudRegistriesByPartnerId(String partnerId);
+
 }

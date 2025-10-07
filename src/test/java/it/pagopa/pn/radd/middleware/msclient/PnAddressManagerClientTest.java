@@ -3,7 +3,6 @@
 //import it.pagopa.pn.radd.alt.generated.openapi.msclient.addressmanager.v1.api.NormalizeAddressServiceApi;
 //import it.pagopa.pn.radd.alt.generated.openapi.msclient.addressmanager.v1.dto.AcceptedResponseDto;
 //import it.pagopa.pn.radd.config.PnRaddFsuConfig;
-//import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 //import it.pagopa.pn.radd.pojo.AddressManagerRequest;
 //import it.pagopa.pn.radd.pojo.AddressManagerRequestAddress;
 //import it.pagopa.pn.radd.services.radd.fsu.v1.SecretService;
@@ -28,9 +27,6 @@
 //    private NormalizeAddressServiceApi normalizeAddressServiceApi;
 //
 //    @Mock
-//    private RegistryMappingUtils registryMappingUtils;
-//
-//    @Mock
 //    private PnRaddFsuConfig pnRaddFsuConfig;
 //
 //    @Mock
@@ -41,7 +37,7 @@
 //    @BeforeEach
 //    public void setup() {
 //        MockitoAnnotations.openMocks(this);
-//        pnAddressManagerClient = new PnAddressManagerClient(normalizeAddressServiceApi, new RaddRegistryUtils(new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper()), pnRaddFsuConfig, secretService,registryMappingUtils));
+//        pnAddressManagerClient = new PnAddressManagerClient(normalizeAddressServiceApi, new RaddRegistryUtils(new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper()), pnRaddFsuConfig, secretService));
 //    }
 //
 //    @Test

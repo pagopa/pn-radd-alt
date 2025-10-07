@@ -55,9 +55,6 @@ class RaddRegistryUtilsTest {
     private RaddRegistryUtils raddRegistryUtils;
 
     @Mock
-    private RegistryMappingUtils registryMappingUtils;
-
-    @Mock
     private ObjectMapperUtil objectMapperUtil;
 
     @Mock
@@ -65,6 +62,9 @@ class RaddRegistryUtilsTest {
 
     @Mock
     private SecretService secretService;
+
+    @Mock
+    private RegistryMappingUtils registryMappingUtils;
 
     /**
      * Method under test:
@@ -137,24 +137,20 @@ class RaddRegistryUtilsTest {
 
     @Test
     void testConstructRaddRegistryEntity() {
+//        ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
+//        RegistryMappingUtils registryMappingUtils = new RegistryMappingUtils(objectMapperUtil);
         // Arrange
-        PnAddressManagerEvent.NormalizedAddress normalizedAddress = mock(PnAddressManagerEvent.NormalizedAddress.class);
-        doNothing().when(normalizedAddress).setAddressRow(Mockito.any());
-        doNothing().when(normalizedAddress).setAddressRow2(Mockito.any());
-        doNothing().when(normalizedAddress).setCap(Mockito.any());
-        doNothing().when(normalizedAddress).setCity(Mockito.any());
-        doNothing().when(normalizedAddress).setCity2(Mockito.any());
-        doNothing().when(normalizedAddress).setCountry(Mockito.any());
-        doNothing().when(normalizedAddress).setNameRow2(Mockito.any());
-        doNothing().when(normalizedAddress).setPr(Mockito.any());
-        normalizedAddress.setAddressRow("42 Main St");
-        normalizedAddress.setAddressRow2("42 Main St");
-        normalizedAddress.setCap("Cap");
-        normalizedAddress.setCity("Oxford");
-        normalizedAddress.setCity2("Oxford");
-        normalizedAddress.setCountry("GB");
-        normalizedAddress.setNameRow2("Name Row2");
-        normalizedAddress.setPr("Pr");
+        AwsGeoService.CoordinatesResult coordinatesResult = mock(AwsGeoService.CoordinatesResult.class);
+        doNothing().when(coordinatesResult).setAwsAddressRow(Mockito.any());
+        doNothing().when(coordinatesResult).setAwsPostalCode(Mockito.any());
+        doNothing().when(coordinatesResult).setAwsLocality(Mockito.any());
+        doNothing().when(coordinatesResult).setAwsCountry(Mockito.any());
+        doNothing().when(coordinatesResult).setAwsSubRegion(Mockito.any());
+        coordinatesResult.setAwsAddressRow("42 Main St");
+        coordinatesResult.setAwsPostalCode("Cap");
+        coordinatesResult.setAwsLocality("Oxford");
+        coordinatesResult.setAwsCountry("GB");
+        coordinatesResult.setAwsSubRegion("Pr");
 
         RaddRegistryRequestEntity registryRequest = new RaddRegistryRequestEntity();
         registryRequest.setCorrelationId("42");
@@ -170,19 +166,17 @@ class RaddRegistryUtilsTest {
         registryRequest.setZipCode("21654");
 
         when(objectMapperUtil.toObject(any(), any())).thenReturn(new RaddRegistryOriginalRequest());
-
+        when(registryMappingUtils.mappingToV2(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(new RaddRegistryEntityV2());
         // Act
-        raddRegistryUtils.constructRaddRegistryEntity("registryId", normalizedAddress, registryRequest);
+        raddRegistryUtils.constructRaddRegistryEntity("registryId", coordinatesResult, registryRequest);
 
         // Assert
-        verify(normalizedAddress).setAddressRow(Mockito.any());
-        verify(normalizedAddress).setAddressRow2(Mockito.any());
-        verify(normalizedAddress).setCap(Mockito.any());
-        verify(normalizedAddress).setCity(Mockito.any());
-        verify(normalizedAddress).setCity2(Mockito.any());
-        verify(normalizedAddress).setCountry(Mockito.any());
-        verify(normalizedAddress).setNameRow2(Mockito.any());
-        verify(normalizedAddress).setPr(Mockito.any());
+        verify(coordinatesResult).setAwsAddressRow(Mockito.any());
+        verify(coordinatesResult).setAwsPostalCode(Mockito.any());
+        verify(coordinatesResult).setAwsLocality(Mockito.any());
+        verify(coordinatesResult).setAwsCountry(Mockito.any());
+        verify(coordinatesResult).setAwsSubRegion(Mockito.any());
     }
 
     /**
@@ -247,7 +241,7 @@ class RaddRegistryUtilsTest {
 
     /**
      * Method under test:
-     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, RegistryUploadRequest, FileCreationResponseDto, String)}
+     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, String, RegistryUploadRequest, FileCreationResponseDto, String)}
      */
     @Test
     void testGetPnRaddRegistryImportEntity() {
@@ -265,11 +259,12 @@ class RaddRegistryUtilsTest {
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
         RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))), registryMappingUtils);
+                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
+                new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
-        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42",
+        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42", "testUid",
                                                                                                                     request, new FileCreationResponseDto(), "42");
 
         // Assert
@@ -283,7 +278,7 @@ class RaddRegistryUtilsTest {
 
     /**
      * Method under test:
-     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, RegistryUploadRequest, FileCreationResponseDto, String)}
+     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, String, RegistryUploadRequest, FileCreationResponseDto, String)}
      */
     @Test
     void testGetPnRaddRegistryImportEntity2() throws JsonProcessingException {
@@ -304,11 +299,12 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
         RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))), registryMappingUtils);
+                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
+                                                                    new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
-        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42",
+        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42", "testUid",
                                                                                                                     request, new FileCreationResponseDto(), "42");
 
         // Assert
@@ -323,7 +319,7 @@ class RaddRegistryUtilsTest {
 
     /**
      * Method under test:
-     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, RegistryUploadRequest, FileCreationResponseDto, String)}
+     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, String, RegistryUploadRequest, FileCreationResponseDto, String)}
      */
     @Test
     void testGetPnRaddRegistryImportEntity3() {
@@ -343,11 +339,12 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
         RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),registryMappingUtils);
+                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
+                                                                    new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
-        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42",
+        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42", "testUid",
                                                                                                                     request, new FileCreationResponseDto(), "42");
 
         // Assert
@@ -969,7 +966,8 @@ class RaddRegistryUtilsTest {
         pnRaddFsuConfig.setEvaluatedZipCodeConfigNumber(10);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
         RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),registryMappingUtils);
+                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
+                new RegistryMappingUtils(objectMapperUtil));
 
         // Act and Assert
         assertTrue(raddRegistryUtils.findActiveIntervals(new ArrayList<>()).isEmpty());
@@ -985,7 +983,8 @@ class RaddRegistryUtilsTest {
         pnRaddFsuConfig.setEvaluatedZipCodeConfigNumber(1);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
         RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),registryMappingUtils);
+                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
+                new RegistryMappingUtils(objectMapperUtil));
 
         ArrayList<TimeInterval> timeIntervals = new ArrayList<>();
         Instant start = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
@@ -1616,7 +1615,4 @@ class RaddRegistryUtilsTest {
                              RaddRegistryUtils.mapFieldToUpdate(entity, request, "uid")
                     );
     }
-
-
-
 }

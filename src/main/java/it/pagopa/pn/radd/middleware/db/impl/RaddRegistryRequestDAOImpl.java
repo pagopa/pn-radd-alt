@@ -114,6 +114,13 @@ public class RaddRegistryRequestDAOImpl extends BaseDao<RaddRegistryRequestEntit
     }
 
     @Override
+    public Mono<RaddRegistryRequestEntity> updateRecordInPending(RaddRegistryRequestEntity entity) {
+        entity.setStatus(RegistryRequestStatus.PENDING.name());
+        entity.setUpdatedAt(Instant.now());
+        return this.putItem(entity);
+    }
+
+    @Override
     public Flux<RaddRegistryRequestEntity> findByCxIdAndRequestIdAndStatusNotIn(String cxId, String requestId, List<RegistryRequestStatus> statusList) {
         Key key = Key.builder().partitionValue(cxId).sortValue(requestId).build();
         QueryConditional conditional = QueryConditional.keyEqualTo(key);

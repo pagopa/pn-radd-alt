@@ -5,7 +5,6 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryReque
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryResponse;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.GeoLocation;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateRegistryRequest;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.NormalizedAddress;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
@@ -15,7 +14,6 @@ import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.queue.producer.CorrelationIdEventsProducer;
@@ -64,7 +62,6 @@ class RegistrySelfServiceTest {
     private final RaddRegistryRequestEntityMapper raddRegistryRequestEntityMapper = new RaddRegistryRequestEntityMapper(new ObjectMapperUtil(new ObjectMapper()));
     @Mock
     private SecretService secretService;
-    private RaddRegistryUtils raddRegistryUtils;
     private RegistrySelfService registrySelfService;
     @Mock
     private RaddAltCapCheckerProducer raddAltCapCheckerProducer;
@@ -73,8 +70,9 @@ class RegistrySelfServiceTest {
 
     @BeforeEach
     void setUp() {
-        registrySelfService = new RegistrySelfService(raddRegistryV2DAO,raddRegistryDAO, registryRequestDAO, raddRegistryRequestEntityMapper, correlationIdEventsProducer, raddAltCapCheckerProducer,
-                new RaddRegistryUtils(new ObjectMapperUtil(new ObjectMapper()), pnRaddFsuConfig, secretService, registryMappingUtils), pnRaddFsuConfig, registryMappingUtils);
+        ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
+        registrySelfService = new RegistrySelfService(raddRegistryV2DAO, registryRequestDAO, raddRegistryRequestEntityMapper, correlationIdEventsProducer,
+                new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, secretService, new RegistryMappingUtils(objectMapperUtil)), pnRaddFsuConfig);
     }
 
     @Test
@@ -103,7 +101,7 @@ class RegistrySelfServiceTest {
     }
 
     @Test
-    public void shouldAddRegistrySuccessfully() {
+    void shouldAddRegistrySuccessfully() {
         CreateRegistryRequest request = new CreateRegistryRequest();
         request.setPhoneNumber("+39 0123456");
         request.setCapacity("100");
@@ -130,7 +128,7 @@ class RegistrySelfServiceTest {
     }
 
     @Test
-    public void shouldAddRegistrySuccessfullyWithWrongOpeningTime() {
+    void shouldAddRegistrySuccessfullyWithWrongOpeningTime() {
         CreateRegistryRequest request = new CreateRegistryRequest();
         request.setPhoneNumber("+39 0123456");
         request.setCapacity("100");
@@ -150,7 +148,7 @@ class RegistrySelfServiceTest {
 
 
     @Test
-    public void shouldAddRegistryFailsForInvalidIntervalDates() {
+    void shouldAddRegistryFailsForInvalidIntervalDates() {
         CreateRegistryRequest request = new CreateRegistryRequest();
         request.setStartValidity("2024-03-01");
         request.setEndValidity("2023-10-21");
@@ -159,7 +157,7 @@ class RegistrySelfServiceTest {
     }
 
     @Test
-    public void shouldAddRegistryFailsForInvalidDateFormat() {
+    void shouldAddRegistryFailsForInvalidDateFormat() {
         CreateRegistryRequest request = new CreateRegistryRequest();
         request.setStartValidity("10/02/2022");
 
@@ -167,7 +165,7 @@ class RegistrySelfServiceTest {
     }
 
     @Test
-    public void shouldAddRegistryFailsForGeolocationFormat() {
+    void shouldAddRegistryFailsForGeolocationFormat() {
         CreateRegistryRequest request = new CreateRegistryRequest();
         GeoLocation geoLocation = new GeoLocation();
         geoLocation.setLatitude("10.0");
@@ -178,7 +176,7 @@ class RegistrySelfServiceTest {
     }
 
     @Test
-    public void shouldAddRegistryFailsForOpeningTimeFormat() {
+    void shouldAddRegistryFailsForOpeningTimeFormat() {
         CreateRegistryRequest request = new CreateRegistryRequest();
         request.setOpeningTime("10:00");
 
@@ -186,7 +184,7 @@ class RegistrySelfServiceTest {
     }
 
     @Test
-    public void shouldAddRegistryFailsForCapacityFormat() {
+    void shouldAddRegistryFailsForCapacityFormat() {
         CreateRegistryRequest request = new CreateRegistryRequest();
         request.setCapacity("10a");
 

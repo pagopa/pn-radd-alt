@@ -286,4 +286,127 @@ class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
                                         raddRegistryDAO.findByFilters(entity.getPartnerId(), 10, "00100", null, null, null, "invalid-last-key").block()
                                );
     }
+    @Test
+    void shouldFindEntitiesByPartnerIdAndRequestId() {
+        // given
+        String partnerId = "partner-" + UUID.randomUUID();
+        String requestId = "req-123";
+
+        RaddRegistryEntityV2 entity1 = buildEntity();
+        entity1.setPartnerId(partnerId);
+        entity1.setRequestId(requestId);
+
+        RaddRegistryEntityV2 entity2 = buildEntity();
+        entity2.setPartnerId(partnerId);
+        entity2.setRequestId(requestId);
+
+        RaddRegistryEntityV2 entity3 = buildEntity();
+        entity3.setPartnerId(partnerId);
+        entity3.setRequestId("different-req");
+
+        RaddRegistryEntityV2 entity4 = buildEntity();
+        entity4.setPartnerId(partnerId);
+        entity4.setRequestId(null);
+
+        StepVerifier.create(
+                raddRegistryDAO.putItemIfAbsent(entity1)
+                        .then(raddRegistryDAO.putItemIfAbsent(entity2))
+                        .then(raddRegistryDAO.putItemIfAbsent(entity3))
+                        .then(raddRegistryDAO.putItemIfAbsent(entity4))
+                        .then()
+        ).verifyComplete();
+
+        // when + then
+        StepVerifier.create(raddRegistryDAO.findByPartnerIdAndRequestId(partnerId, requestId).collectList())
+                .assertNext(list -> {
+                    assertThat(list).hasSize(2);
+                    assertThat(list).extracting(RaddRegistryEntityV2::getRequestId)
+                            .allMatch(rid -> rid.equals(requestId));
+                    assertThat(list).extracting(RaddRegistryEntityV2::getPartnerId)
+                            .allMatch(pid -> pid.equals(partnerId));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFindCrudRegistriesByPartnerId() {
+        // given
+        String partnerId = "partner-" + UUID.randomUUID();
+
+        RaddRegistryEntityV2 entityWithoutRequestId = buildEntity();
+        entityWithoutRequestId.setPartnerId(partnerId);
+        entityWithoutRequestId.setRequestId(null);
+
+        RaddRegistryEntityV2 entityWithSelfPrefix = buildEntity();
+        entityWithSelfPrefix.setPartnerId(partnerId);
+        entityWithSelfPrefix.setRequestId("SELF-123");
+
+        RaddRegistryEntityV2 entityWithImportRequestId = buildEntity();
+        entityWithImportRequestId.setPartnerId(partnerId);
+        entityWithImportRequestId.setRequestId("import-req-456");
+
+        StepVerifier.create(
+                raddRegistryDAO.putItemIfAbsent(entityWithoutRequestId)
+                        .then(raddRegistryDAO.putItemIfAbsent(entityWithSelfPrefix))
+                        .then(raddRegistryDAO.putItemIfAbsent(entityWithImportRequestId))
+                        .then()
+        ).verifyComplete();
+
+        // when + then
+        StepVerifier.create(raddRegistryDAO.findCrudRegistriesByPartnerId(partnerId).collectList())
+                .assertNext(list -> {
+                    assertThat(list).hasSize(2);
+                    assertThat(list).extracting(RaddRegistryEntityV2::getPartnerId)
+                            .allMatch(pid -> pid.equals(partnerId));
+                    assertThat(list).extracting(RaddRegistryEntityV2::getRequestId)
+                            .allMatch(rid -> rid == null || rid.startsWith("SELF"));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldNotFindEntitiesWithDifferentRequestId() {
+        // given
+        String partnerId = "partner-" + UUID.randomUUID();
+        String requestId = "req-123";
+
+        RaddRegistryEntityV2 entity = buildEntity();
+        entity.setPartnerId(partnerId);
+        entity.setRequestId("different-req");
+
+        StepVerifier.create(raddRegistryDAO.putItemIfAbsent(entity))
+                .assertNext(inserted -> assertThat(inserted).isEqualTo(entity))
+                .verifyComplete();
+
+        // when + then
+        StepVerifier.create(raddRegistryDAO.findByPartnerIdAndRequestId(partnerId, requestId).collectList())
+                .assertNext(list -> assertThat(list).isEmpty())
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldNotFindCrudRegistriesWhenAllHaveImportRequestId() {
+        // given
+        String partnerId = "partner-" + UUID.randomUUID();
+
+        RaddRegistryEntityV2 entity1 = buildEntity();
+        entity1.setPartnerId(partnerId);
+        entity1.setRequestId("import-req-1");
+
+        RaddRegistryEntityV2 entity2 = buildEntity();
+        entity2.setPartnerId(partnerId);
+        entity2.setRequestId("import-req-2");
+
+        StepVerifier.create(
+                raddRegistryDAO.putItemIfAbsent(entity1)
+                        .then(raddRegistryDAO.putItemIfAbsent(entity2))
+                        .then()
+        ).verifyComplete();
+
+        // when + then
+        StepVerifier.create(raddRegistryDAO.findCrudRegistriesByPartnerId(partnerId).collectList())
+                .assertNext(list -> assertThat(list).isEmpty())
+                .verifyComplete();
+    }
+
 }
