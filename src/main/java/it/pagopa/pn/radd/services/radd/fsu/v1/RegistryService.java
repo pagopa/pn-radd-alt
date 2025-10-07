@@ -16,12 +16,10 @@ import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
 import it.pagopa.pn.radd.middleware.eventbus.EventBridgeProducer;
-import it.pagopa.pn.radd.middleware.msclient.PnAddressManagerClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
-import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
 import it.pagopa.pn.radd.middleware.queue.event.PnRaddAltNormalizeRequestEvent;
-import it.pagopa.pn.radd.pojo.AddressManagerRequest;
+import it.pagopa.pn.radd.pojo.NormalizationRequest;
 import it.pagopa.pn.radd.pojo.RaddRegistryImportConfig;
 import it.pagopa.pn.radd.pojo.RaddRegistryImportStatus;
 import it.pagopa.pn.radd.pojo.RegistryRequestStatus;
@@ -58,7 +56,6 @@ public class RegistryService {
     private final RaddRegistryImportDAO raddRegistryImportDAO;
     private final PnSafeStorageClient pnSafeStorageClient;
     private final RaddRegistryUtils raddRegistryUtils;
-    private final PnAddressManagerClient pnAddressManagerClient;
     private final PnRaddFsuConfig pnRaddFsuConfig;
     private final EventBridgeProducer<PnEvaluatedZipCodeEvent> eventBridgeProducer;
     private final ObjectMapperUtil objectMapperUtil;
@@ -120,10 +117,6 @@ public class RegistryService {
         return raddRegistryImportDAO.putRaddRegistryImportEntity(pnRaddRegistryImportEntity);
     }
 
-    public Mono<Void> handleAddressManagerEvent(PnAddressManagerEvent payload) {
-        return null;
-    }
-
     public Mono<VerifyRequestResponse> verifyRegistriesImportRequest(String xPagopaPnCxId, String requestId) {
         log.info("start verifyRegistriesImportRequest for cxId: {} and requestId: {}", xPagopaPnCxId, requestId);
         return raddRegistryImportDAO.getRegistryImportByCxIdAndRequestId(xPagopaPnCxId, requestId)
@@ -141,7 +134,7 @@ public class RegistryService {
     }
 
     public Mono<Void> handleNormalizeRequestEvent(PnRaddAltNormalizeRequestEvent.Payload payload) {
-        AddressManagerRequest request = new AddressManagerRequest();
+        NormalizationRequest request = new NormalizationRequest();
         request.setCorrelationId(payload.getCorrelationId());
 
         return raddRegistryRequestDAO.getAllFromCorrelationId(payload.getCorrelationId(), RegistryRequestStatus.NOT_WORKED.name())

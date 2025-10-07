@@ -294,7 +294,7 @@ Resources:
         LogGroupRetention: !Ref LogRetention
         LogsKinesisSourceStreamArn: !Ref LogsKinesisSourceStreamArn
 
-  # Coda interna per costruzione evento da inviare ad address manager
+  # Coda interna per normalizzazione indirizzi
   # NB: usati i valori di default per: DeadLetterQueueName, MessageRetentionPeriod, DeadLetterMessageRetentionPeriod
   PnRaddAltInputQueue:
     Type: AWS::CloudFormation::Stack

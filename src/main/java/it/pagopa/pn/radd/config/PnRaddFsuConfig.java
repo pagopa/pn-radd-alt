@@ -33,8 +33,6 @@ public class PnRaddFsuConfig {
     private int registryDefaultEndValidity;
     private String registryDefaultDeleteRule;
     private EventBus eventBus;
-    private String addressManagerApiKeySecret;
-    private String addressManagerBaseUrl;
 
     private HtmlSanitizer.SanitizeMode sanitizeMode;
     private List<DocumentTypeEnum> documentTypeEnumFilter = new ArrayList<>();
@@ -74,7 +72,6 @@ public class PnRaddFsuConfig {
     public static class Sqs {
         private String inputQueueName;
         private String safeStorageQueueName;
-        private String addressManagerQueueName;
     }
 
     @Data

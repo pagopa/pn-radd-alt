@@ -156,10 +156,6 @@ Parameters:
     Type: Number
     Description: 'Max query size'
 
-  AddressManagerToRaddAltQueueARN:
-    Type: String
-    Description: 'AddressManager-to-f24 queue ARN'
-
   SafeStorageToRaddAltQueueARN:
     Type: String
     Description: 'SafeStorage-to-f24 queue ARN'
@@ -344,18 +340,6 @@ Parameters:
     Type: String
     Description: 'Name of SafeStorage queue'
 
-  AddressManagerToRaddAltQueueName:
-    Type: String
-    Description: 'Name of AddressManager queue'
-
-  AddressManagerBaseUrl:
-    Type: String
-    Description: 'Address manager base url'
-
-  AddressManagerApiKeySecret:
-    Type: String
-    Description: 'Address manager api key secret'
-
   VerifyRaddRegistryImportLockAtMost:
     Type: String
     Description: It specifies how long the lock should be kept in case the executing node dies for Recovery batches (milliseconds)
@@ -484,28 +468,24 @@ Resources:
         ContainerEnvEntry25: !Sub 'PN_RADD_REGISTRYDEFAULTDELETERULE=${RegistryDefaultDeleteRule}'
         ContainerEnvEntry26: !Sub 'PN_RADD_REGISTRYIMPORTUPLOADFILETTL=${RegistryImportUploadFileTtl}'
         ContainerEnvEntry27: !Sub 'PN_RADD_SQS_SAFESTORAGEQUEUENAME=${SafeStorageToRaddAltQueueName}'
-        ContainerEnvEntry28: !Sub 'PN_RADD_SQS_ADDRESSMANAGERQUEUENAME=${AddressManagerToRaddAltQueueName}'
-        ContainerEnvEntry29: !Sub 'SPRING_CLOUD_FUNCTIONROUTER_QUEUES_LIST=${PnRaddAltInputQueueName},${SafeStorageToRaddAltQueueName}'
-        ContainerEnvEntry30: !Sub 'PN_RADD_ADDRESSMANAGERBASEURL=${AddressManagerBaseUrl}'
-        ContainerEnvEntry31: !Sub 'PN_RADD_ADDRESSMANAGERAPIKEYSECRET=${AddressManagerApiKeySecret}'
+        ContainerEnvEntry28: !Sub 'PN_RADD_MAX_PRINT_REQUESTS=${MaxPrintRequests}'
+        ContainerEnvEntry29: !Sub 'AWS_GEO_REGIONCODE=${AwsGeoRegionCode}'
+        ContainerEnvEntry30: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
+        ContainerEnvEntry31: !Sub 'SPRING_CLOUD_FUNCTIONROUTER_QUEUES_LIST=${PnRaddAltInputQueueName},${SafeStorageToRaddAltQueueName}'
         ContainerEnvEntry32: !Sub 'PN_RADD_DAO_SHEDLOCKTABLENAME=${ShedLockTableName}'
+        ContainerEnvEntry33: !Sub 'PN_RADD_MAX_PAGE_NUMBER=${PnRaddMaxPageNumber}'
         ContainerEnvEntry34: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_LOCKATMOST=${VerifyRaddRegistryImportLockAtMost}'
         ContainerEnvEntry35: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_LOCKATLEAST=${VerifyRaddRegistryImportLockAtLeast}'
         ContainerEnvEntry36: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_DELAY=${VerifyRaddRegistryImportDelay}'
         ContainerEnvEntry37: !Sub 'PN_RADD_MAXQUERYSIZE=${MaxQuerySize}'
         ContainerEnvEntry38: !Sub 'PN_RADD_REGISTRYIMPORTREPLACEDTTL=${RegistryImportReplacedTtl}'
         ContainerEnvEntry39: !Sub 'PN_RADD_SQS_SAFESTORAGEQUEUENAME=${SafeStorageToRaddAltQueueName}'
-        ContainerEnvEntry40: !Sub 'PN_RADD_SQS_ADDRESSMANAGERQUEUENAME=${AddressManagerToRaddAltQueueName}'
+        ContainerEnvEntry40: !Sub 'PN_CRON_ANALYZER=${PnCronAnalyzer}'
         ContainerEnvEntry41: !Sub 'SPRING_CLOUD_FUNCTIONROUTER_QUEUES_LIST=${PnRaddAltInputQueueName},${SafeStorageToRaddAltQueueName}'
         ContainerEnvEntry42: !Sub 'PN_RADD_EVALUATED_ZIP_CODE_CONFIG_TYPE=${EvaluatedZipCodeConfigType}'
         ContainerEnvEntry43: !Sub 'PN_RADD_EVALUATED_ZIP_CODE_CONFIG_NUMBER=${EvaluatedZipCodeConfigNumber}'
         ContainerEnvEntry44: !Sub 'PN_RADD_EVENTBUS_NAME=arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-CoreEventBus'
         ContainerEnvEntry45: !Sub 'PN_RADD_MAX_DYNAMO_DB_QUERY_SIZE=${PnRaddMaxDynamoDBQuerySize}'
-        ContainerEnvEntry46: !Sub 'PN_RADD_MAX_PAGE_NUMBER=${PnRaddMaxPageNumber}'
-        ContainerEnvEntry47: !Sub 'PN_CRON_ANALYZER=${PnCronAnalyzer}'
-        ContainerEnvEntry48: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
-        ContainerEnvEntry49: !Sub 'PN_RADD_MAX_PRINT_REQUESTS=${MaxPrintRequests}'
-        ContainerEnvEntry50: !Sub 'AWS_GEO_REGIONCODE=${AwsGeoRegionCode}'
         MappedPaths: '/radd-net/*,/radd-net-private/*,/radd-alt/*,/radd-bo/*'
         ECSClusterName: !Ref ECSClusterName
         Subnets: !Ref VpcEgressSubnetsIds
@@ -541,7 +521,6 @@ Resources:
             Resource:
               - !Ref PnRaddAltInputQueueDLQARN
               - !Ref PnRaddAltInputQueueARN
-              - !Ref AddressManagerToRaddAltQueueARN
               - !Ref SafeStorageToRaddAltQueueARN
           - Effect: Allow
             Action:
