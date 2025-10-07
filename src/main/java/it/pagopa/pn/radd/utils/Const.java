@@ -8,6 +8,8 @@ public class Const {
     public static final String PF = "PF";
     public static final String PG = "PG";
 
+    public static final String PARTNERTYPE_CAF = "CAF";
+
     //Status document
     public static final String DOCUMENT_TYPE = "PN_RADD_ALT_ATTACHMENT";
     public static final String PRELOADED = "PRELOADED";
@@ -97,7 +99,6 @@ public class Const {
 
     /* event type */
 
-    public static final String CAP_CHECKER_EVENT = "CAP_CHECKER_EVENT";
     public static final String RADD_NORMALIZE_REQUEST = "RADD_NORMALIZE_REQUEST";
     public static final String IMPORT_COMPLETED = "IMPORT_COMPLETED";
 

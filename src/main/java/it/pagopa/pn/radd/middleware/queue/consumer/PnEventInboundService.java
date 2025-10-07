@@ -74,9 +74,6 @@ public class PnEventInboundService {
         if (Objects.equals(queueName, pnRaddFsuConfig.getSqs().getSafeStorageQueueName())) {
             eventType = "SAFE_STORAGE_EVENTS";
         }
-        else if(Objects.equals(queueName, pnRaddFsuConfig.getSqs().getAddressManagerQueueName())) {
-            eventType = "ADDRESS_MANAGER_EVENTS";
-        }
         else {
             log.error("eventType not present, cannot start scheduled action headers={} payload={}", message.getHeaders(), message.getPayload());
             throw new PnInternalException("eventType not present, cannot start scheduled action", ERROR_CODE_RADD_ALT_EVENTTYPENOTSUPPORTED);

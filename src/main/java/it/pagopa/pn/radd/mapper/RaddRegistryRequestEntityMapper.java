@@ -169,6 +169,7 @@ public class RaddRegistryRequestEntityMapper {
             requestEntity.setCreatedAt(Instant.now());
             requestEntity.setUpdatedAt(Instant.now());
             requestEntity.setOriginalRequest(originalRequestString);
+            requestEntity.setUid(importEntity.getUid());
 
             checkRequiredFieldsAndUpdateError(wrappedRaddRegistryOriginalRequest);
             if (!CollectionUtils.isNullOrEmpty(wrappedRaddRegistryOriginalRequest.getErrors())) {
