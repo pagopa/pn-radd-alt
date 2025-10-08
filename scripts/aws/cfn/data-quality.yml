@@ -87,7 +87,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/cdc-glue.yaml"
       Parameters:
-        DynamoTableName: !Ref RaddRegistryDynamoTableName
+        DynamoTableName: !Ref RaddRegistryDynamoTableV2Name
         GlueTableName: !Ref RaddRegistryV2GlueTableName
         GlueServiceRoleArn: !Ref GlueServiceRoleArn
         LogsBucketName: !Ref LogsBucketName
