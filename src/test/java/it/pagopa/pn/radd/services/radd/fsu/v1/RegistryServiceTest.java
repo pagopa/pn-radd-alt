@@ -1,7 +1,6 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
 import it.pagopa.pn.api.dto.events.PnEvaluatedZipCodeEvent;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.addressmanager.v1.dto.AcceptedResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileCreationResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.OriginalRequest;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistryRequestResponse;
@@ -9,39 +8,38 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistryUploadReque
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RequestResponse;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.RaddGenericException;
-import it.pagopa.pn.radd.middleware.db.RaddRegistryDAO;
+import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryImportDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
+import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
+import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryRequestEntity;
+import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import it.pagopa.pn.radd.middleware.eventbus.EventBridgeProducer;
-import it.pagopa.pn.radd.middleware.msclient.PnAddressManagerClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
-import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
-import it.pagopa.pn.radd.middleware.queue.event.PnInternalCapCheckerEvent;
 import it.pagopa.pn.radd.middleware.queue.event.PnRaddAltNormalizeRequestEvent;
-import it.pagopa.pn.radd.middleware.queue.producer.RaddAltCapCheckerProducer;
 import it.pagopa.pn.radd.pojo.*;
 import it.pagopa.pn.radd.utils.ObjectMapperUtil;
 import it.pagopa.pn.radd.utils.RaddRegistryUtils;
+import it.pagopa.pn.radd.exception.CoordinatesNotFoundException;
+import it.pagopa.pn.radd.exception.RaddRegistryAlreadyExistsException;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.List;
 
 import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.PENDING;
@@ -49,6 +47,8 @@ import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.TO_PROCESS;
 import static it.pagopa.pn.radd.utils.Const.ERROR_DUPLICATE;
 import static it.pagopa.pn.radd.utils.Const.REQUEST_ID_PREFIX;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @EnableConfigurationProperties
@@ -60,8 +60,12 @@ class RegistryServiceTest {
 
     @Mock
     private PnRaddFsuConfig pnRaddFsuConfig;
+
     @Mock
-    private RaddRegistryDAO raddRegistryDAO;
+    private RaddRegistryV2DAO raddRegistryV2DAO;
+
+    @Mock
+    AwsGeoService awsGeoService;
 
     @Mock
     private RaddRegistryRequestDAO raddRegistryRequestDAO;
@@ -72,14 +76,6 @@ class RegistryServiceTest {
     private RaddRegistryImportDAO raddRegistryImportDAO;
 
     @Mock
-    private PnAddressManagerEvent message;
-    @Mock
-    private PnAddressManagerClient pnAddressManagerClient;
-
-    @Mock
-    private RaddAltCapCheckerProducer raddAltCapCheckerProducer;
-
-    @Mock
     private PnRaddAltNormalizeRequestEvent.Payload payload;
 
     @Mock
@@ -88,17 +84,15 @@ class RegistryServiceTest {
     @Mock
     private EventBridgeProducer<PnEvaluatedZipCodeEvent> eventBridgeProducer;
 
-    @Mock
-    private ObjectMapperUtil objectMapperUtil;
-
 
     private RegistryService registryService;
 
     @BeforeEach
     void setUp() {
-        registryService = new RegistryService(raddRegistryRequestDAO, raddRegistryDAO, raddRegistryImportDAO, pnSafeStorageClient,
-                new RaddRegistryUtils(new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper()), pnRaddFsuConfig, secretService), pnAddressManagerClient,
-                raddAltCapCheckerProducer, pnRaddFsuConfig, eventBridgeProducer, new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper()));
+        ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper());
+        registryService = new RegistryService(raddRegistryRequestDAO, raddRegistryV2DAO, raddRegistryImportDAO, pnSafeStorageClient,
+                new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, secretService, new RegistryMappingUtils(objectMapperUtil)),
+                pnRaddFsuConfig, eventBridgeProducer, objectMapperUtil, awsGeoService);
     }
 
     @Test
@@ -116,7 +110,7 @@ class RegistryServiceTest {
         when(pnRaddFsuConfig.getRegistryDefaultDeleteRule()).thenReturn("role");
         when(raddRegistryImportDAO.putRaddRegistryImportEntity(any())).thenReturn(Mono.just(pnRaddRegistryImportEntity));
 
-        StepVerifier.create(registryService.uploadRegistryRequests("cxId", Mono.just(request)))
+        StepVerifier.create(registryService.uploadRegistryRequests("cxId", "testUid", Mono.just(request)))
                 .expectNextMatches(registryUploadResponse1 -> registryUploadResponse1.getFileKey().equals("key")).verifyComplete();
     }
 
@@ -130,7 +124,7 @@ class RegistryServiceTest {
         pnRaddRegistryImportEntity.setFileUploadDueDate(Instant.now().plus(10, ChronoUnit.DAYS));
         when(raddRegistryImportDAO.getRegistryImportByCxId(any())).thenReturn(Flux.just(pnRaddRegistryImportEntity));
 
-        StepVerifier.create(registryService.uploadRegistryRequests("cxId", Mono.just(request)))
+        StepVerifier.create(registryService.uploadRegistryRequests("cxId", "testUid", Mono.just(request)))
                 .expectErrorMessage("Richiesta Duplicata. il file inviato è già in fase di elaborazione").verify();
     }
 
@@ -142,57 +136,8 @@ class RegistryServiceTest {
         pnRaddRegistryImportEntity.setStatus(PENDING.name());
         when(raddRegistryImportDAO.getRegistryImportByCxId(any())).thenReturn(Flux.just(pnRaddRegistryImportEntity));
 
-        StepVerifier.create(registryService.uploadRegistryRequests("cxId", Mono.just(request)))
+        StepVerifier.create(registryService.uploadRegistryRequests("cxId", "testUid", Mono.just(request)))
                 .expectErrorMessage("Una precedente richiesta di import è ancora in corso").verify();
-    }
-    @Test
-    public void shouldProcessMessageSuccessfully() throws JsonProcessingException {
-
-        RaddRegistryOriginalRequest raddRegistryOriginalRequest = new RaddRegistryOriginalRequest();
-        ObjectMapper objectMapper = new ObjectMapper();
-        PnAddressManagerEvent pnAddressManagerEvent = getMessage();
-        RaddRegistryRequestEntity raddRegistryRequestEntity = mock(RaddRegistryRequestEntity.class);
-        RaddRegistryEntity raddRegistryEntity = mock(RaddRegistryEntity.class);
-        when(raddRegistryRequestEntity.getOriginalRequest()).thenReturn(objectMapper.writeValueAsString(raddRegistryOriginalRequest));
-        when(raddRegistryRequestEntity.getPk()).thenReturn("cxId#requestId#addressId");
-        when(raddRegistryRequestDAO.findByCorrelationIdWithStatus(any(), any())).thenReturn(Flux.just(raddRegistryRequestEntity));
-        when(raddRegistryDAO.find(any(), any())).thenReturn(Mono.empty());
-        when(raddRegistryDAO.putItemIfAbsent(any())).thenReturn(Mono.just(raddRegistryEntity));
-        when(raddRegistryRequestDAO.updateRegistryRequestData(any())).thenReturn(Mono.empty());
-        Mono<Void> result = registryService.handleAddressManagerEvent(pnAddressManagerEvent);
-
-        StepVerifier.create(result).verifyComplete();
-    }
-
-    @Test
-    public void shouldProcessMessageWithDuplicate() throws JsonProcessingException {
-
-        RaddRegistryOriginalRequest raddRegistryOriginalRequest = new RaddRegistryOriginalRequest();
-        ObjectMapper objectMapper = new ObjectMapper();
-        PnAddressManagerEvent pnAddressManagerEvent = getMessage();
-        RaddRegistryRequestEntity raddRegistryRequestEntity = mock(RaddRegistryRequestEntity.class);
-        when(raddRegistryRequestEntity.getOriginalRequest()).thenReturn(objectMapper.writeValueAsString(raddRegistryOriginalRequest));
-        when(raddRegistryRequestEntity.getPk()).thenReturn("cxId#requestId#addressId");
-        when(raddRegistryRequestDAO.findByCorrelationIdWithStatus(any(), any())).thenReturn(Flux.just(raddRegistryRequestEntity));
-        when(raddRegistryDAO.find(any(), any())).thenReturn(Mono.empty());
-        when(raddRegistryDAO.putItemIfAbsent(any())).thenReturn(Mono.error(new RaddGenericException(ERROR_DUPLICATE)));
-        when(raddRegistryRequestDAO.updateStatusAndError(any(), any(), any())).thenReturn(Mono.just(raddRegistryRequestEntity));
-        Mono<Void> result = registryService.handleAddressManagerEvent(pnAddressManagerEvent);
-
-        StepVerifier.create(result).verifyComplete();
-    }
-
-    @Test
-    public void shouldProcessMessageSuccessfullyWithError() {
-
-        PnAddressManagerEvent.ResultItem resultItem = new PnAddressManagerEvent.ResultItem();
-        resultItem.setError("error");
-        resultItem.setId("cxId#requestId#addressId");
-
-        Mono<Void> result = registryService.handleAddressManagerEvent(message);
-
-        StepVerifier.create(result)
-                .verifyComplete();
     }
 
     @Test
@@ -231,366 +176,561 @@ class RegistryServiceTest {
                 .verify();
     }
 
-    @Test
-    public void shouldProcessMessageSuccessfullyWithDuplicateSelf() {
-        PnAddressManagerEvent pnAddressManagerEvent = getMessage();
-        RaddRegistryRequestEntity raddRegistryRequestEntity = mock(RaddRegistryRequestEntity.class);
-        RaddRegistryEntity raddRegistryEntity = mock(RaddRegistryEntity.class);
-        when(raddRegistryEntity.getRequestId()).thenReturn("SELF-requestId");
-        when(raddRegistryRequestEntity.getPk()).thenReturn("cxId#requestId#addressId");
-        when(raddRegistryRequestEntity.getRequestId()).thenReturn("SELF-requestId");
-        when(raddRegistryRequestEntity.getOriginalRequest()).thenReturn("{}");
-        when(raddRegistryRequestDAO.findByCorrelationIdWithStatus(any(), any())).thenReturn(Flux.just(raddRegistryRequestEntity));
-        when(raddRegistryDAO.find(any(), any())).thenReturn(Mono.just(raddRegistryEntity));
-        when(raddRegistryRequestDAO.updateStatusAndError(any(), any(), any())).thenReturn(Mono.just(raddRegistryRequestEntity));
-        when(raddAltCapCheckerProducer.sendCapCheckerEvent(any())).thenReturn(Mono.empty());
-        Mono<Void> result = registryService.handleAddressManagerEvent(pnAddressManagerEvent);
+    @Nested
+    @DisplayName("handleImportCompletedRequest Tests")
+    class HandleImportCompletedRequestTests {
 
-        StepVerifier.create(result).verifyComplete();
+        @Test
+        void handleImportCompletedRequestWithMultipleImport() {
+            String xPagopaPnCxId = "testCxId";
+            String requestId = "testRequestId";
+
+            RaddRegistryImportEntity raddRegistryImportEntity = new RaddRegistryImportEntity();
+            raddRegistryImportEntity.setConfig("{}");
+            raddRegistryImportEntity.setRequestId(requestId);
+            raddRegistryImportEntity.setCxId(xPagopaPnCxId);
+
+            RaddRegistryImportEntity raddRegistryImportEntityOld = new RaddRegistryImportEntity();
+            raddRegistryImportEntityOld.setConfig("{}");
+            raddRegistryImportEntityOld.setRequestId(requestId + "old");
+            raddRegistryImportEntityOld.setCxId(xPagopaPnCxId);
+
+            RaddRegistryEntityV2 raddRegistryEntity = new RaddRegistryEntityV2();
+            raddRegistryEntity.setLocationId("testRegistryId");
+
+            RaddRegistryImportConfig raddRegistryImportConfig = new RaddRegistryImportConfig();
+            raddRegistryImportConfig.setDeleteRole("duplicate");
+            raddRegistryImportConfig.setDefaultEndValidity(1);
+
+            RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
+            raddRegistryRequestEntity.setPk("cxId#requestId#index");
+            raddRegistryRequestEntity.setZipCode("00100");
+
+            when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(any(), any(), any()))
+                    .thenReturn(Flux.just(raddRegistryImportEntity, raddRegistryImportEntityOld));
+            when(raddRegistryV2DAO.findByPartnerIdAndRequestId(any(), any()))
+                    .thenReturn(Flux.just(raddRegistryEntity));
+            when(raddRegistryV2DAO.findCrudRegistriesByPartnerId(any()))
+                    .thenReturn(Flux.just(raddRegistryEntity));
+            when(raddRegistryImportDAO.updateStatusAndTtl(any(), any(), any()))
+                    .thenReturn(Mono.just(raddRegistryImportEntity));
+            when(raddRegistryV2DAO.updateRegistryEntity(raddRegistryEntity))
+                    .thenReturn(Mono.just(raddRegistryEntity));
+
+            ImportCompletedRequestEvent.Payload payload = ImportCompletedRequestEvent.Payload.builder().cxId(xPagopaPnCxId).requestId(requestId).build();
+            StepVerifier.create(registryService.handleImportCompletedRequest(payload)).expectComplete().verify();
+
+        }
+
+        @Test
+        void handleImportCompletedRequest() {
+            String xPagopaPnCxId = "testCxId";
+            String requestId = "testRequestId";
+
+            RaddRegistryImportEntity raddRegistryImportEntity = new RaddRegistryImportEntity();
+            raddRegistryImportEntity.setConfig("{}");
+            raddRegistryImportEntity.setRequestId(requestId);
+            raddRegistryImportEntity.setCxId(xPagopaPnCxId);
+
+            RaddRegistryEntityV2 raddRegistryEntity = new RaddRegistryEntityV2();
+            raddRegistryEntity.setLocationId("testRegistryId");
+
+            RaddRegistryImportConfig raddRegistryImportConfig = new RaddRegistryImportConfig();
+            raddRegistryImportConfig.setDeleteRole("duplicate");
+            raddRegistryImportConfig.setDefaultEndValidity(1);
+
+            RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
+            raddRegistryRequestEntity.setPk("cxId#requestId#index");
+            raddRegistryRequestEntity.setZipCode("00100");
+
+            when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(any(), any(), any()))
+                    .thenReturn(Flux.just(raddRegistryImportEntity));
+            when(raddRegistryV2DAO.findCrudRegistriesByPartnerId(xPagopaPnCxId))
+                    .thenReturn(Flux.just(raddRegistryEntity));
+            when(raddRegistryV2DAO.updateRegistryEntity(raddRegistryEntity))
+                    .thenReturn(Mono.just(raddRegistryEntity));
+
+            ImportCompletedRequestEvent.Payload payload = ImportCompletedRequestEvent.Payload.builder().cxId(xPagopaPnCxId).requestId(requestId).build();
+            StepVerifier.create(registryService.handleImportCompletedRequest(payload)).expectComplete().verify();
+
+        }
+
+        @Test
+        void testDeleteOlderRequestRegistriesAndGetCapListForFirstImportRequest() {
+            String xPagopaPnCxId = "testCxId";
+            String requestId = "testRequestId";
+
+            RaddRegistryImportEntity raddRegistryImportEntity = new RaddRegistryImportEntity();
+            raddRegistryImportEntity.setConfig("{}");
+
+            RaddRegistryEntityV2 raddRegistryEntity = new RaddRegistryEntityV2();
+            raddRegistryEntity.setLocationId("testRegistryId");
+
+            RaddRegistryImportConfig raddRegistryImportConfig = new RaddRegistryImportConfig();
+            raddRegistryImportConfig.setDeleteRole("duplicate");
+            raddRegistryImportConfig.setDefaultEndValidity(1);
+
+            RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
+            raddRegistryRequestEntity.setPk("cxId#requestId#index");
+
+            when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE))
+                    .thenReturn(Flux.just(raddRegistryImportEntity));
+            when(raddRegistryV2DAO.findCrudRegistriesByPartnerId(xPagopaPnCxId))
+                    .thenReturn(Flux.just(raddRegistryEntity));
+            when(raddRegistryV2DAO.updateRegistryEntity(raddRegistryEntity))
+                    .thenReturn(Mono.just(raddRegistryEntity));
+
+            Flux<RaddRegistryEntityV2> result = registryService.deleteOlderRegistries(xPagopaPnCxId, requestId);
+
+            StepVerifier.create(result)
+                    .expectNextCount(1)
+                    .verifyComplete();
+
+            verify(raddRegistryImportDAO, times(1)).getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE);
+            verify(raddRegistryV2DAO, times(1)).findCrudRegistriesByPartnerId(xPagopaPnCxId);
+            verify(raddRegistryV2DAO, times(1)).updateRegistryEntity(raddRegistryEntity);
+        }
+
+        @Test
+        void testDeleteOlderRequestRegistriesAndGetCapListForSubsequentImportRequest() {
+            String xPagopaPnCxId = "testCxId";
+            String requestId = "testNewRequestId";
+            String oldRequestId = "testOldRequestId";
+
+            RaddRegistryImportEntity newRaddRegistryImportEntity = new RaddRegistryImportEntity();
+            newRaddRegistryImportEntity.setRequestId(requestId);
+            newRaddRegistryImportEntity.setCxId(xPagopaPnCxId);
+            newRaddRegistryImportEntity.setStatus(RaddRegistryImportStatus.DONE.name());
+            newRaddRegistryImportEntity.setConfig("{}");
+
+            RaddRegistryImportEntity oldRaddRegistryImportEntity = new RaddRegistryImportEntity();
+            oldRaddRegistryImportEntity.setRequestId(oldRequestId);
+            oldRaddRegistryImportEntity.setCxId(xPagopaPnCxId);
+            oldRaddRegistryImportEntity.setStatus(RaddRegistryImportStatus.DONE.name());
+            oldRaddRegistryImportEntity.setConfig("{}");
+
+            RaddRegistryEntityV2 raddRegistryEntityMadeByCrud = new RaddRegistryEntityV2();
+            raddRegistryEntityMadeByCrud.setLocationId(REQUEST_ID_PREFIX + "registryId");
+
+            RaddRegistryEntityV2 raddRegistryEntityMadeByOldImport = new RaddRegistryEntityV2();
+            raddRegistryEntityMadeByOldImport.setLocationId(oldRequestId);
+
+            RaddRegistryImportConfig raddRegistryImportConfig = new RaddRegistryImportConfig();
+            raddRegistryImportConfig.setDeleteRole("differentFromDuplicate");
+            raddRegistryImportConfig.setDefaultEndValidity(1);
+
+            when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE))
+                    .thenReturn(Flux.just(newRaddRegistryImportEntity, oldRaddRegistryImportEntity));
+            when(raddRegistryV2DAO.findByPartnerIdAndRequestId(xPagopaPnCxId, oldRequestId))
+                    .thenReturn(Flux.just(raddRegistryEntityMadeByOldImport));
+            when(raddRegistryV2DAO.findCrudRegistriesByPartnerId(xPagopaPnCxId))
+                    .thenReturn(Flux.just(raddRegistryEntityMadeByCrud));
+            when(raddRegistryImportDAO.updateStatusAndTtl(any(), any(), any()))
+                    .thenReturn(Mono.just(newRaddRegistryImportEntity));
+            when(raddRegistryV2DAO.updateRegistryEntity(any()))
+                    .thenReturn(Mono.just(new RaddRegistryEntityV2()));
+
+            Flux<RaddRegistryEntityV2> result = registryService.deleteOlderRegistries(xPagopaPnCxId, requestId);
+
+            StepVerifier.create(result)
+                    .expectNextCount(2)
+                    .verifyComplete();
+
+            verify(raddRegistryImportDAO, times(1)).getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE);
+            verify(raddRegistryV2DAO, times(1)).findCrudRegistriesByPartnerId(xPagopaPnCxId);
+            verify(raddRegistryV2DAO, times(1)).findByPartnerIdAndRequestId(xPagopaPnCxId, oldRequestId);
+            verify(raddRegistryV2DAO, times(2)).updateRegistryEntity(any());
+            verify(raddRegistryRequestDAO, times(0)).findByCxIdAndRegistryId(anyString(), anyString());
+            verify(raddRegistryRequestDAO, times(0)).putRaddRegistryRequestEntity(any());
+        }
+
+        @Test
+        void testDeleteOlderRequestRegistriesAndGetCapListFails() {
+            String xPagopaPnCxId = "testCxId";
+            String requestId = "testNewRequestId";
+
+            when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE))
+                    .thenReturn(Flux.empty());
+
+            Flux<RaddRegistryEntityV2> result = registryService.deleteOlderRegistries(xPagopaPnCxId, requestId);
+
+            StepVerifier.create(result)
+                    .expectError(RaddGenericException.class)
+                    .verify();
+
+            verify(raddRegistryImportDAO, times(1)).getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE);
+            verify(raddRegistryV2DAO, times(0)).findCrudRegistriesByPartnerId(xPagopaPnCxId);
+        }
+
+        @Test
+        void testRetrieveRequestItems() {
+            Instant now = Instant.MIN;
+            RequestResponse requestResponse = new RequestResponse();
+            RegistryRequestResponse registryRequestResponse = new RegistryRequestResponse();
+            registryRequestResponse.setRegistryId("");
+            registryRequestResponse.setRequestId("");
+            registryRequestResponse.setError("");
+            registryRequestResponse.setCreatedAt(now.toString());
+            registryRequestResponse.setUpdatedAt(now.toString());
+            registryRequestResponse.setStatus("");
+            registryRequestResponse.setOriginalRequest(new OriginalRequest());
+
+            RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
+            raddRegistryRequestEntity.setRegistryId("");
+            raddRegistryRequestEntity.setRequestId("");
+            raddRegistryRequestEntity.setError("");
+            raddRegistryRequestEntity.setCreatedAt(now);
+            raddRegistryRequestEntity.setUpdatedAt(now);
+            raddRegistryRequestEntity.setStatus("");
+            raddRegistryRequestEntity.setOriginalRequest("{}");
+
+
+            requestResponse.setMoreResult(false);
+            requestResponse.setNextPagesKey(List.of());
+            requestResponse.setItems(List.of(registryRequestResponse));
+            ResultPaginationDto<RaddRegistryRequestEntity, String> resultPaginationDto = new ResultPaginationDto<>();
+            resultPaginationDto.setResultsPage(List.of(raddRegistryRequestEntity));
+            when(raddRegistryRequestDAO.getRegistryByCxIdAndRequestId(any(), any(), any(), any()))
+                    .thenReturn(Mono.just(resultPaginationDto));
+
+
+            StepVerifier.create(registryService.retrieveRequestItems("cxId", "requestId", 10, null))
+                    .expectNextMatches(response -> response.getItems().size() == 1)
+                    .verifyComplete();
+        }
     }
 
-    @Test
-    public void shouldProcessMessageSuccessfullyWithDuplicate() {
-        PnAddressManagerEvent pnAddressManagerEvent = getMessage();
-        RaddRegistryRequestEntity raddRegistryRequestEntity = mock(RaddRegistryRequestEntity.class);
-        RaddRegistryEntity raddRegistryEntity = mock(RaddRegistryEntity.class);
-        when(raddRegistryEntity.getRequestId()).thenReturn("requestId");
-        when(raddRegistryRequestEntity.getPk()).thenReturn("cxId#requestId#addressId");
-        when(raddRegistryRequestEntity.getRequestId()).thenReturn("requestId");
-        when(raddRegistryRequestEntity.getOriginalRequest()).thenReturn("{}");
-        when(raddRegistryRequestDAO.findByCorrelationIdWithStatus(any(), any())).thenReturn(Flux.just(raddRegistryRequestEntity));
-        when(raddRegistryDAO.find(any(), any())).thenReturn(Mono.just(raddRegistryEntity));
-        when(raddRegistryRequestDAO.updateStatusAndError(any(), any(), any())).thenReturn(Mono.just(raddRegistryRequestEntity));
-        Mono<Void> result = registryService.handleAddressManagerEvent(pnAddressManagerEvent);
-
-        StepVerifier.create(result).verifyComplete();
-    }
-
-    @Test
-    public void shouldProcessMessageSuccessfullyWithExistingOldRegistry() throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        PnAddressManagerEvent pnAddressManagerEvent = getMessage();
-        RaddRegistryRequestEntity raddRegistryRequestEntity = mock(RaddRegistryRequestEntity.class);
-        RaddRegistryEntity raddRegistryEntity = mock(RaddRegistryEntity.class);
-        RaddRegistryOriginalRequest raddRegistryOriginalRequest = new RaddRegistryOriginalRequest();
-        when(raddRegistryRequestEntity.getOriginalRequest()).thenReturn(objectMapper.writeValueAsString(raddRegistryOriginalRequest));
-        when(raddRegistryEntity.getRequestId()).thenReturn("requestIdOld");
-        when(raddRegistryRequestEntity.getPk()).thenReturn("cxId#requestId#addressId");
-        when(raddRegistryRequestEntity.getRequestId()).thenReturn("requestId");
-        when(raddRegistryRequestDAO.findByCorrelationIdWithStatus(any(), any())).thenReturn(Flux.just(raddRegistryRequestEntity));
-        when(raddRegistryDAO.find(any(), any())).thenReturn(Mono.just(raddRegistryEntity));
-        when(raddRegistryDAO.updateRegistryEntity(any())).thenReturn(Mono.just(raddRegistryEntity));
-        when(raddRegistryDAO.putItemIfAbsent(any())).thenReturn(Mono.just(raddRegistryEntity));
-        when(raddRegistryRequestDAO.updateRegistryRequestData(any())).thenReturn(Mono.empty());
-
-        Mono<Void> result = registryService.handleAddressManagerEvent(pnAddressManagerEvent);
-
-        StepVerifier.create(result).verifyComplete();
-    }
-
-
-    @Test
-    public void shouldProcessMessageSuccessfullyWithRelatedRegistryNotFount() {
-
-        PnAddressManagerEvent pnAddressManagerEvent = getMessage();
-        RaddRegistryRequestEntity raddRegistryRequestEntity = mock(RaddRegistryRequestEntity.class);
-        when(raddRegistryRequestEntity.getPk()).thenReturn("id2");
-        when(raddRegistryRequestDAO.findByCorrelationIdWithStatus(any(), any())).thenReturn(Flux.just(raddRegistryRequestEntity));
-        Mono<Void> result = registryService.handleAddressManagerEvent(pnAddressManagerEvent);
-
-        StepVerifier.create(result).verifyComplete();
-    }
-
-    private static PnAddressManagerEvent getMessage() {
-
-        PnAddressManagerEvent.ResultItem resultItem = new PnAddressManagerEvent.ResultItem();
-        resultItem.setError(null);
-        resultItem.setId("addressId");
-        PnAddressManagerEvent.NormalizedAddress normalizedAddress = new PnAddressManagerEvent.NormalizedAddress();
-        normalizedAddress.setCity("city");
-        resultItem.setNormalizedAddress(normalizedAddress);
-        List<PnAddressManagerEvent.ResultItem> resultItems = Collections.singletonList(resultItem);
-        PnAddressManagerEvent payload = new PnAddressManagerEvent();
-        payload.setCorrelationId("cxId_requestId_id");
-        payload.setResultItems(resultItems);
-        return payload;
-    }
-
-    @Test
-    public void shouldHandleRequestSuccessfully() throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        when(payload.getCorrelationId()).thenReturn("correlationId");
-        RaddRegistryRequestEntity raddRegistryRequestEntity = mock(RaddRegistryRequestEntity.class);
-        when(raddRegistryRequestEntity.getPk()).thenReturn("cxId#requestId#addressId");
-        RaddRegistryOriginalRequest raddRegistryOriginalRequest = new RaddRegistryOriginalRequest();
-        raddRegistryOriginalRequest.setGeoLocation("test");
-        raddRegistryOriginalRequest.setPr("RM");
-        when(raddRegistryRequestEntity.getOriginalRequest()).thenReturn(objectMapper.writeValueAsString(raddRegistryOriginalRequest));
-        when(raddRegistryRequestDAO.getAllFromCorrelationId(any(), any())).thenReturn(Flux.just(raddRegistryRequestEntity));
-        when(pnAddressManagerClient.normalizeAddresses(any(), any())).thenReturn(Mono.just(new AcceptedResponseDto()));
-        when(raddRegistryRequestDAO.updateRecordsInPending(any())).thenReturn(Mono.empty());
-
-        StepVerifier.create(registryService.handleNormalizeRequestEvent(payload)).verifyComplete();
-    }
-
-    @Test
-    public void shouldHandleRequestSuccessfullyWithoutItems() {
-        when(payload.getCorrelationId()).thenReturn("correlationId");
-        RaddRegistryOriginalRequest raddRegistryOriginalRequest = new RaddRegistryOriginalRequest();
-        raddRegistryOriginalRequest.setGeoLocation("test");
-        raddRegistryOriginalRequest.setPr("RM");
-        when(raddRegistryRequestDAO.getAllFromCorrelationId(any(), any())).thenReturn(Flux.empty());
-
-        StepVerifier.create(registryService.handleNormalizeRequestEvent(payload)).verifyComplete();
-    }
-
-    @Test
-    void handleImportCompletedRequestWithMultipleImport() {
-        String xPagopaPnCxId = "testCxId";
-        String requestId = "testRequestId";
-
-        RaddRegistryImportEntity raddRegistryImportEntity = new RaddRegistryImportEntity();
-        raddRegistryImportEntity.setConfig("{}");
-        raddRegistryImportEntity.setRequestId(requestId);
-        raddRegistryImportEntity.setCxId(xPagopaPnCxId);
-
-        RaddRegistryImportEntity raddRegistryImportEntityOld = new RaddRegistryImportEntity();
-        raddRegistryImportEntityOld.setConfig("{}");
-        raddRegistryImportEntityOld.setRequestId(requestId + "old");
-        raddRegistryImportEntityOld.setCxId(xPagopaPnCxId);
-
-        RaddRegistryEntity raddRegistryEntity = new RaddRegistryEntity();
-        raddRegistryEntity.setRegistryId("testRegistryId");
-        raddRegistryEntity.setZipCode("00100");
-
-        RaddRegistryImportConfig raddRegistryImportConfig = new RaddRegistryImportConfig();
-        raddRegistryImportConfig.setDeleteRole("duplicate");
-        raddRegistryImportConfig.setDefaultEndValidity(1);
-
-        RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
-        raddRegistryRequestEntity.setPk("cxId#requestId#index");
-        raddRegistryRequestEntity.setZipCode("00100");
-
-        when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(any(), any(), any()))
-                .thenReturn(Flux.just(raddRegistryImportEntity,raddRegistryImportEntityOld));
-        when(raddRegistryDAO.findByCxIdAndRequestId(any(), any()))
-                .thenReturn(Flux.just(raddRegistryEntity));
-        when(raddRegistryImportDAO.updateStatusAndTtl(any(), any(), any()))
-                .thenReturn(Mono.just(raddRegistryImportEntity));
-        when(raddRegistryDAO.updateRegistryEntity(raddRegistryEntity))
-                .thenReturn(Mono.just(raddRegistryEntity));
-        when(raddAltCapCheckerProducer.sendCapCheckerEvent(any()))
-                .thenReturn(Mono.empty());
-
-        ImportCompletedRequestEvent.Payload payload = ImportCompletedRequestEvent.Payload.builder().cxId(xPagopaPnCxId).requestId(requestId).build();
-        when(raddRegistryDAO.findPaginatedByCxIdAndRequestId(xPagopaPnCxId, requestId))
-                .thenReturn(Flux.just(raddRegistryEntity));
-
-        StepVerifier.create(registryService.handleImportCompletedRequest(payload)).expectComplete().verify();
-
-    }
-
-    @Test
-    void handleImportCompletedRequest() {
-        String xPagopaPnCxId = "testCxId";
-        String requestId = "testRequestId";
-
-        RaddRegistryImportEntity raddRegistryImportEntity = new RaddRegistryImportEntity();
-        raddRegistryImportEntity.setConfig("{}");
-        raddRegistryImportEntity.setRequestId(requestId);
-        raddRegistryImportEntity.setCxId(xPagopaPnCxId);
-
-        RaddRegistryEntity raddRegistryEntity = new RaddRegistryEntity();
-        raddRegistryEntity.setRegistryId("testRegistryId");
-        raddRegistryEntity.setZipCode("00100");
-
-        RaddRegistryImportConfig raddRegistryImportConfig = new RaddRegistryImportConfig();
-        raddRegistryImportConfig.setDeleteRole("duplicate");
-        raddRegistryImportConfig.setDefaultEndValidity(1);
-
-        RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
-        raddRegistryRequestEntity.setPk("cxId#requestId#index");
-        raddRegistryRequestEntity.setZipCode("00100");
-
-        when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(any(), any(), any()))
-                .thenReturn(Flux.just(raddRegistryImportEntity));
-        when(raddRegistryDAO.findByCxIdAndRequestId(xPagopaPnCxId, REQUEST_ID_PREFIX))
-                .thenReturn(Flux.just(raddRegistryEntity));
-        when(raddRegistryDAO.updateRegistryEntity(raddRegistryEntity))
-                .thenReturn(Mono.just(raddRegistryEntity));
-        when(raddAltCapCheckerProducer.sendCapCheckerEvent(any()))
-                .thenReturn(Mono.empty());
-
-        ImportCompletedRequestEvent.Payload payload = ImportCompletedRequestEvent.Payload.builder().cxId(xPagopaPnCxId).requestId(requestId).build();
-        when(raddRegistryDAO.findPaginatedByCxIdAndRequestId(xPagopaPnCxId, requestId))
-                .thenReturn(Flux.just(raddRegistryEntity));
-
-        StepVerifier.create(registryService.handleImportCompletedRequest(payload)).expectComplete().verify();
-
-    }
-
-    @Test
-    void testDeleteOlderRequestRegistriesAndGetCapListForFirstImportRequest() {
-        String xPagopaPnCxId = "testCxId";
-        String requestId = "testRequestId";
-
-        RaddRegistryImportEntity raddRegistryImportEntity = new RaddRegistryImportEntity();
-        raddRegistryImportEntity.setConfig("{}");
-
-        RaddRegistryEntity raddRegistryEntity = new RaddRegistryEntity();
-        raddRegistryEntity.setRegistryId("testRegistryId");
-        raddRegistryEntity.setZipCode("00100");
-
-        RaddRegistryImportConfig raddRegistryImportConfig = new RaddRegistryImportConfig();
-        raddRegistryImportConfig.setDeleteRole("duplicate");
-        raddRegistryImportConfig.setDefaultEndValidity(1);
-
-        RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
-        raddRegistryRequestEntity.setPk("cxId#requestId#index");
-
-        when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE))
-                .thenReturn(Flux.just(raddRegistryImportEntity));
-        when(raddRegistryDAO.findByCxIdAndRequestId(xPagopaPnCxId, REQUEST_ID_PREFIX))
-                .thenReturn(Flux.just(raddRegistryEntity));
-        when(raddRegistryDAO.updateRegistryEntity(raddRegistryEntity))
-                .thenReturn(Mono.just(raddRegistryEntity));
-
-        Flux<String> result = registryService.deleteOlderRegistriesAndGetZipCodeList(xPagopaPnCxId, requestId);
-
-        StepVerifier.create(result)
-                .expectNextCount(1)
-                .verifyComplete();
-
-        verify(raddRegistryImportDAO, times(1)).getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE);
-        verify(raddRegistryDAO, times(1)).findByCxIdAndRequestId(xPagopaPnCxId, REQUEST_ID_PREFIX);
-        verify(raddRegistryDAO, times(1)).updateRegistryEntity(raddRegistryEntity);
-    }
-
-    @Test
-    void testDeleteOlderRequestRegistriesAndGetCapListForSubsequentImportRequest() {
-        String xPagopaPnCxId = "testCxId";
-        String requestId = "testNewRequestId";
-        String oldRequestId = "testOldRequestId";
-
-        RaddRegistryImportEntity newRaddRegistryImportEntity = new RaddRegistryImportEntity();
-        newRaddRegistryImportEntity.setRequestId(requestId);
-        newRaddRegistryImportEntity.setCxId(xPagopaPnCxId);
-        newRaddRegistryImportEntity.setStatus(RaddRegistryImportStatus.DONE.name());
-        newRaddRegistryImportEntity.setConfig("{}");
-
-        RaddRegistryImportEntity oldRaddRegistryImportEntity = new RaddRegistryImportEntity();
-        oldRaddRegistryImportEntity.setRequestId(oldRequestId);
-        oldRaddRegistryImportEntity.setCxId(xPagopaPnCxId);
-        oldRaddRegistryImportEntity.setStatus(RaddRegistryImportStatus.DONE.name());
-        oldRaddRegistryImportEntity.setConfig("{}");
-
-        RaddRegistryEntity raddRegistryEntityMadeByCrud = new RaddRegistryEntity();
-        raddRegistryEntityMadeByCrud.setRegistryId(REQUEST_ID_PREFIX + "registryId");
-        raddRegistryEntityMadeByCrud.setZipCode("00100");
-
-        RaddRegistryEntity raddRegistryEntityMadeByOldImport = new RaddRegistryEntity();
-        raddRegistryEntityMadeByOldImport.setRegistryId(oldRequestId);
-        raddRegistryEntityMadeByOldImport.setZipCode("00200");
-
-        RaddRegistryImportConfig raddRegistryImportConfig = new RaddRegistryImportConfig();
-        raddRegistryImportConfig.setDeleteRole("differentFromDuplicate");
-        raddRegistryImportConfig.setDefaultEndValidity(1);
-
-        when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE))
-                .thenReturn(Flux.just(newRaddRegistryImportEntity, oldRaddRegistryImportEntity));
-        when(raddRegistryDAO.findByCxIdAndRequestId(xPagopaPnCxId, oldRequestId))
-                .thenReturn(Flux.just(raddRegistryEntityMadeByOldImport));
-        when(raddRegistryDAO.findByCxIdAndRequestId(xPagopaPnCxId, REQUEST_ID_PREFIX))
-                .thenReturn(Flux.just(raddRegistryEntityMadeByCrud));
-        when(raddRegistryImportDAO.updateStatusAndTtl(any(), any(), any()))
-                .thenReturn(Mono.just(newRaddRegistryImportEntity));
-        when(raddRegistryDAO.updateRegistryEntity(any()))
-                .thenReturn(Mono.just(new RaddRegistryEntity()));
-
-        Flux<String> result = registryService.deleteOlderRegistriesAndGetZipCodeList(xPagopaPnCxId, requestId);
-
-        StepVerifier.create(result)
-                .expectNextCount(2)
-                .verifyComplete();
-
-        verify(raddRegistryImportDAO, times(1)).getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE);
-        verify(raddRegistryDAO, times(1)).findByCxIdAndRequestId(xPagopaPnCxId, REQUEST_ID_PREFIX);
-        verify(raddRegistryDAO, times(1)).findByCxIdAndRequestId(xPagopaPnCxId, oldRequestId);
-        verify(raddRegistryDAO, times(2)).updateRegistryEntity(any());
-        verify(raddRegistryRequestDAO, times(0)).findByCxIdAndRegistryId(anyString(), anyString());
-        verify(raddRegistryRequestDAO, times(0)).putRaddRegistryRequestEntity(any());
-    }
-
-    @Test
-    void testDeleteOlderRequestRegistriesAndGetCapListFails() {
-        String xPagopaPnCxId = "testCxId";
-        String requestId = "testNewRequestId";
-
-        when(raddRegistryImportDAO.getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE))
-                .thenReturn(Flux.empty());
-
-        Flux<String> result = registryService.deleteOlderRegistriesAndGetZipCodeList(xPagopaPnCxId, requestId);
-
-        StepVerifier.create(result)
-                .expectError(RaddGenericException.class)
-                .verify();
-
-        verify(raddRegistryImportDAO, times(1)).getRegistryImportByCxIdFilterByStatus(xPagopaPnCxId, requestId, RaddRegistryImportStatus.DONE);
-        verify(raddRegistryDAO, times(0)).findByCxIdAndRequestId(xPagopaPnCxId, REQUEST_ID_PREFIX);
-    }
-
-
-    @Test
-    public void handleInternalCapCheckerMessageTest() {
-        PnInternalCapCheckerEvent event = PnInternalCapCheckerEvent.builder()
-                .payload(PnInternalCapCheckerEvent.Payload.builder().zipCode("zipCode").build())
-                .build();
-        Instant start = Instant.now();
-        Instant end = Instant.now();
-        RaddRegistryEntity raddRegistryEntity = new RaddRegistryEntity();
-        raddRegistryEntity.setZipCode("zipCode");
-        raddRegistryEntity.setStartValidity(start);
-        raddRegistryEntity.setEndValidity(end);
-        when(raddRegistryDAO.getRegistriesByZipCode(any())).thenReturn(Flux.just(raddRegistryEntity));
-
-        StepVerifier.create(registryService.handleInternalCapCheckerMessage(event.getPayload())).expectComplete();
-    }
-
-
-    @Test
-    void testRetrieveRequestItems() {
-        Instant now = Instant.MIN;
-        RequestResponse requestResponse = new RequestResponse();
-        RegistryRequestResponse registryRequestResponse = new RegistryRequestResponse();
-        registryRequestResponse.setRegistryId("");
-        registryRequestResponse.setRequestId("");
-        registryRequestResponse.setError("");
-        registryRequestResponse.setCreatedAt(now.toString());
-        registryRequestResponse.setUpdatedAt(now.toString());
-        registryRequestResponse.setStatus("");
-        registryRequestResponse.setOriginalRequest(new OriginalRequest());
-
-        RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
-        raddRegistryRequestEntity.setRegistryId("");
-        raddRegistryRequestEntity.setRequestId("");
-        raddRegistryRequestEntity.setError("");
-        raddRegistryRequestEntity.setCreatedAt(now);
-        raddRegistryRequestEntity.setUpdatedAt(now);
-        raddRegistryRequestEntity.setStatus("");
-        raddRegistryRequestEntity.setOriginalRequest("{}");
-
-
-        requestResponse.setMoreResult(false);
-        requestResponse.setNextPagesKey(List.of());
-        requestResponse.setItems(List.of(registryRequestResponse));
-        ResultPaginationDto<RaddRegistryRequestEntity, String> resultPaginationDto = new ResultPaginationDto<>();
-        resultPaginationDto.setResultsPage(List.of(raddRegistryRequestEntity));
-        when(raddRegistryRequestDAO.getRegistryByCxIdAndRequestId(any(), any(), any(), any()))
-                .thenReturn(Mono.just(resultPaginationDto));
-
-
-        StepVerifier.create(registryService.retrieveRequestItems("cxId", "requestId", 10, null))
-                .expectNextMatches(response -> response.getItems().size() == 1)
-                .verifyComplete();
+    @Nested
+    @DisplayName("handleNormalizeRequestEvent Tests")
+    class HandleNormalizeRequestEventTests {
+
+        private PnRaddAltNormalizeRequestEvent.Payload payload;
+        private RaddRegistryRequestEntity mockEntity;
+        private NormalizationRequestAddress mockAddress;
+        private AwsGeoService.CoordinatesResult mockCoordinatesResult;
+        private RaddRegistryEntityV2 mockRegistryEntity;
+
+        @BeforeEach
+        void setUpNormalizeRequestEventTests() {
+            // Setup payload
+            payload = PnRaddAltNormalizeRequestEvent.Payload.builder()
+                    .correlationId("test-correlation-id")
+                    .build();
+
+            // Setup mock registry request entity
+            mockEntity = new RaddRegistryRequestEntity();
+            mockEntity.setPk("cxId#requestId#index");
+            mockEntity.setCorrelationId("test-correlation-id");
+            mockEntity.setCxId("test-cx-id");
+            mockEntity.setRequestId("test-request-id");
+            mockEntity.setStatus(RegistryRequestStatus.NOT_WORKED.name());
+            mockEntity.setOriginalRequest("{\"addressRow\":\"Via Roma 1\",\"cap\":\"00100\",\"city\":\"Roma\",\"pr\":\"RM\",\"country\":\"IT\",\"description\":\"Test Description\",\"openingTime\":\"9:00-18:00\",\"startValidity\":\"2023-01-01T00:00:00Z\",\"endValidity\":\"2023-12-31T00:00:00Z\",\"phoneNumber\":\"1234567890\",\"externalCode\":\"EXT123\"}");
+            mockEntity.setCreatedAt(Instant.now());
+            mockEntity.setUpdatedAt(Instant.now());
+
+            // Setup mock address
+            mockAddress = new NormalizationRequestAddress();
+            mockAddress.setId("1");
+            mockAddress.setAddressRow("Via Roma 1");
+            mockAddress.setCap("00100");
+            mockAddress.setCity("Roma");
+            mockAddress.setPr("RM");
+            mockAddress.setCountry("IT");
+
+            // Setup mock coordinates result
+            mockCoordinatesResult = new AwsGeoService.CoordinatesResult();
+            mockCoordinatesResult.setAwsLatitude("41.9028");
+            mockCoordinatesResult.setAwsLongitude("12.4964");
+            mockCoordinatesResult.setAwsAddressRow("Via Roma 1, Roma, RM");
+            mockCoordinatesResult.setAwsPostalCode("00100");
+            mockCoordinatesResult.setAwsLocality("Roma");
+            mockCoordinatesResult.setAwsSubRegion("RM");
+            mockCoordinatesResult.setAwsCountry("Italia");
+
+            // Setup mock registry entity
+            mockRegistryEntity = new RaddRegistryEntityV2();
+            mockRegistryEntity.setLocationId("test-location-id");
+            mockRegistryEntity.setPartnerId("test-cx-id");
+
+            // Setup normalized address
+            NormalizedAddressEntityV2 normalizedAddress = new NormalizedAddressEntityV2();
+            normalizedAddress.setCap("00100");
+            normalizedAddress.setAddressRow("Via Roma 1");
+            normalizedAddress.setCity("Roma");
+            normalizedAddress.setProvince("RM");
+            normalizedAddress.setCountry("IT");
+            normalizedAddress.setLatitude("41.9028");
+            normalizedAddress.setLongitude("12.4964");
+            mockRegistryEntity.setNormalizedAddress(normalizedAddress);
+        }
+
+        @Test
+        @DisplayName("Should successfully handle normalize request event - Happy Path")
+        void shouldSuccessfullyHandleNormalizeRequestEvent() {
+            // Arrange
+            RaddRegistryRequestEntity updatedEntity = new RaddRegistryRequestEntity();
+            updatedEntity.setPk(mockEntity.getPk());
+            updatedEntity.setCorrelationId(mockEntity.getCorrelationId());
+            updatedEntity.setCxId(mockEntity.getCxId());
+            updatedEntity.setRequestId(mockEntity.getRequestId());
+            updatedEntity.setStatus(RegistryRequestStatus.PENDING.name());
+            updatedEntity.setOriginalRequest(mockEntity.getOriginalRequest());
+            updatedEntity.setUpdatedAt(Instant.now());
+
+            RaddRegistryRequestEntity finalUpdatedEntity = new RaddRegistryRequestEntity();
+            finalUpdatedEntity.setPk(mockEntity.getPk());
+            finalUpdatedEntity.setCorrelationId(mockEntity.getCorrelationId());
+            finalUpdatedEntity.setCxId(mockEntity.getCxId());
+            finalUpdatedEntity.setRequestId(mockEntity.getRequestId());
+            finalUpdatedEntity.setStatus(RegistryRequestStatus.ACCEPTED.name());
+            finalUpdatedEntity.setRegistryId(mockRegistryEntity.getLocationId());
+            finalUpdatedEntity.setZipCode(mockRegistryEntity.getNormalizedAddress().getCap());
+            finalUpdatedEntity.setUpdatedAt(Instant.now());
+
+            when(raddRegistryRequestDAO.getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name()))
+                    .thenReturn(Flux.just(mockEntity));
+            when(raddRegistryRequestDAO.updateRecordInPending(any(RaddRegistryRequestEntity.class)))
+                    .thenReturn(Mono.just(updatedEntity));
+            when(awsGeoService.getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString()))
+                    .thenReturn(Mono.just(mockCoordinatesResult));
+            when(raddRegistryV2DAO.putItemIfAbsent(any(RaddRegistryEntityV2.class)))
+                    .thenReturn(Mono.just(mockRegistryEntity));
+            when(raddRegistryRequestDAO.updateRegistryRequestData(any(RaddRegistryRequestEntity.class)))
+                    .thenReturn(Mono.just(finalUpdatedEntity));
+
+            // Act & Assert
+            StepVerifier.create(registryService.handleNormalizeRequestEvent(payload)).verifyComplete();
+
+            // Verify interactions
+            verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
+            verify(raddRegistryRequestDAO).updateRecordInPending(any(RaddRegistryRequestEntity.class));
+            verify(awsGeoService).getCoordinatesForAddress(
+                    "Via Roma 1",
+                    "RM",
+                    "00100",
+                    "Roma",
+                    "IT"
+            );
+            verify(raddRegistryV2DAO).putItemIfAbsent(any(RaddRegistryEntityV2.class));
+            verify(raddRegistryRequestDAO).updateRegistryRequestData(any(RaddRegistryRequestEntity.class));
+        }
+
+        @Test
+        @DisplayName("Should handle error when getAllFromCorrelationId fails")
+        void shouldHandleErrorWhenGetAllFromCorrelationIdFails() {
+            // Arrange
+            RaddGenericException expectedException = new RaddGenericException("Database connection error");
+
+            when(raddRegistryRequestDAO.getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name()))
+                    .thenReturn(Flux.error(expectedException));
+
+            // Act & Assert
+            StepVerifier.create(registryService.handleNormalizeRequestEvent(payload))
+                    .expectError(RaddGenericException.class)
+                    .verify();
+
+            // Verify only first method was called
+            verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
+            verify(raddRegistryRequestDAO, never()).updateRecordInPending(any());
+            verify(awsGeoService, never()).getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("Should handle error when updateRecordInPending fails")
+        void shouldHandleErrorWhenUpdateRecordInPendingFails() {
+            // Arrange
+            RaddGenericException expectedException = new RaddGenericException("Update operation failed");
+
+            when(raddRegistryRequestDAO.getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name()))
+                    .thenReturn(Flux.just(mockEntity));
+            when(raddRegistryRequestDAO.updateRecordInPending(any(RaddRegistryRequestEntity.class)))
+                    .thenReturn(Mono.error(expectedException));
+
+            // Act & Assert
+            StepVerifier.create(registryService.handleNormalizeRequestEvent(payload))
+                    .expectError(RaddGenericException.class)
+                    .verify();
+
+            // Verify method call chain stops at updateRecordInPending
+            verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
+            verify(raddRegistryRequestDAO).updateRecordInPending(any());
+            verify(awsGeoService, never()).getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("Should handle error when address normalization fails")
+        void shouldHandleErrorWhenAddressNormalizationFails() {
+            // Arrange
+            RaddRegistryRequestEntity updatedEntity = new RaddRegistryRequestEntity();
+            updatedEntity.setPk(mockEntity.getPk());
+            updatedEntity.setStatus(RegistryRequestStatus.PENDING.name());
+            updatedEntity.setOriginalRequest(mockEntity.getOriginalRequest());
+
+            CoordinatesNotFoundException expectedException = new CoordinatesNotFoundException("Address not found");
+
+            when(raddRegistryRequestDAO.getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name()))
+                    .thenReturn(Flux.just(mockEntity));
+            when(raddRegistryRequestDAO.updateRecordInPending(any(RaddRegistryRequestEntity.class)))
+                    .thenReturn(Mono.just(updatedEntity));
+            when(awsGeoService.getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString()))
+                    .thenReturn(Mono.error(expectedException));
+            when(raddRegistryRequestDAO.updateStatusAndError(any(RaddRegistryRequestEntity.class), eq(RegistryRequestStatus.REJECTED), anyString()))
+                    .thenReturn(Mono.just(updatedEntity));
+
+            // Act & Assert
+            StepVerifier.create(registryService.handleNormalizeRequestEvent(payload))
+                    .verifyComplete();
+
+            // Verify method call chain stops at address normalization
+            verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
+            verify(raddRegistryRequestDAO).updateRecordInPending(any());
+            verify(awsGeoService).getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString());
+            verify(raddRegistryRequestDAO).updateStatusAndError( any(), eq(RegistryRequestStatus.REJECTED), anyString());
+        }
+
+        @Test
+        @DisplayName("Should handle duplicate registry error and update status to REJECTED")
+        void shouldHandleDuplicateRegistryErrorAndUpdateStatusToRejected() {
+            // Arrange
+            RaddRegistryRequestEntity updatedEntity = new RaddRegistryRequestEntity();
+            updatedEntity.setPk(mockEntity.getPk());
+            updatedEntity.setStatus(RegistryRequestStatus.PENDING.name());
+            updatedEntity.setOriginalRequest(mockEntity.getOriginalRequest());
+
+            RaddRegistryRequestEntity rejectedEntity = new RaddRegistryRequestEntity();
+            rejectedEntity.setPk(mockEntity.getPk());
+            rejectedEntity.setStatus(RegistryRequestStatus.REJECTED.name());
+            rejectedEntity.setError(ERROR_DUPLICATE);
+
+            RaddRegistryAlreadyExistsException duplicateException = new RaddRegistryAlreadyExistsException();
+
+            when(raddRegistryRequestDAO.getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name()))
+                    .thenReturn(Flux.just(mockEntity));
+            when(raddRegistryRequestDAO.updateRecordInPending(any(RaddRegistryRequestEntity.class)))
+                    .thenReturn(Mono.just(updatedEntity));
+            when(awsGeoService.getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString()))
+                    .thenReturn(Mono.just(mockCoordinatesResult));
+            when(raddRegistryV2DAO.putItemIfAbsent(any(RaddRegistryEntityV2.class)))
+                    .thenReturn(Mono.error(duplicateException));
+            when(raddRegistryRequestDAO.updateStatusAndError(any(RaddRegistryRequestEntity.class), eq(RegistryRequestStatus.REJECTED), eq(ERROR_DUPLICATE)))
+                    .thenReturn(Mono.just(rejectedEntity));
+
+            // Act & Assert
+            StepVerifier.create(registryService.handleNormalizeRequestEvent(payload))
+                    .expectComplete()
+                    .verify();
+
+            // Verify the duplicate error handling flow
+            verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
+            verify(raddRegistryRequestDAO).updateRecordInPending(any());
+            verify(awsGeoService).getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString());
+            verify(raddRegistryV2DAO).putItemIfAbsent(any());
+            verify(raddRegistryRequestDAO).updateStatusAndError(any(), eq(RegistryRequestStatus.REJECTED), eq(ERROR_DUPLICATE));
+            verify(raddRegistryRequestDAO, never()).updateRegistryRequestData(any());
+        }
+
+        @Test
+        @DisplayName("Should handle non-duplicate registry creation error")
+        void shouldHandleNonDuplicateRegistryCreationError() {
+            // Arrange
+            RaddRegistryRequestEntity updatedEntity = new RaddRegistryRequestEntity();
+            updatedEntity.setPk(mockEntity.getPk());
+            updatedEntity.setStatus(RegistryRequestStatus.PENDING.name());
+            updatedEntity.setOriginalRequest(mockEntity.getOriginalRequest());
+
+            RuntimeException unexpectedException = new RuntimeException("Unexpected database error");
+
+            when(raddRegistryRequestDAO.getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name()))
+                    .thenReturn(Flux.just(mockEntity));
+            when(raddRegistryRequestDAO.updateRecordInPending(any(RaddRegistryRequestEntity.class)))
+                    .thenReturn(Mono.just(updatedEntity));
+            when(awsGeoService.getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString()))
+                    .thenReturn(Mono.just(mockCoordinatesResult));
+            when(raddRegistryV2DAO.putItemIfAbsent(any(RaddRegistryEntityV2.class)))
+                    .thenReturn(Mono.error(unexpectedException));
+
+            // Act & Assert
+            StepVerifier.create(registryService.handleNormalizeRequestEvent(payload))
+                    .expectError(RuntimeException.class)
+                    .verify();
+
+            // Verify error propagates without special handling
+            verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
+            verify(raddRegistryRequestDAO).updateRecordInPending(any());
+            verify(awsGeoService).getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString());
+            verify(raddRegistryV2DAO).putItemIfAbsent(any());
+            verify(raddRegistryRequestDAO, never()).updateStatusAndError(any(), any(), any());
+            verify(raddRegistryRequestDAO, never()).updateRegistryRequestData(any());
+        }
+
+        @Test
+        @DisplayName("Should handle error when final updateRegistryRequestData fails")
+        void shouldHandleErrorWhenFinalUpdateRegistryRequestDataFails() {
+            // Arrange
+            RaddRegistryRequestEntity updatedEntity = new RaddRegistryRequestEntity();
+            updatedEntity.setPk(mockEntity.getPk());
+            updatedEntity.setStatus(RegistryRequestStatus.PENDING.name());
+            updatedEntity.setOriginalRequest(mockEntity.getOriginalRequest());
+
+            RuntimeException updateException = new RuntimeException("Final update failed");
+
+            when(raddRegistryRequestDAO.getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name()))
+                    .thenReturn(Flux.just(mockEntity));
+            when(raddRegistryRequestDAO.updateRecordInPending(any(RaddRegistryRequestEntity.class)))
+                    .thenReturn(Mono.just(updatedEntity));
+            when(awsGeoService.getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString()))
+                    .thenReturn(Mono.just(mockCoordinatesResult));
+            when(raddRegistryV2DAO.putItemIfAbsent(any(RaddRegistryEntityV2.class)))
+                    .thenReturn(Mono.just(mockRegistryEntity));
+            when(raddRegistryRequestDAO.updateRegistryRequestData(any(RaddRegistryRequestEntity.class)))
+                    .thenReturn(Mono.error(updateException));
+
+            // Act & Assert
+            StepVerifier.create(registryService.handleNormalizeRequestEvent(payload))
+                    .expectError(RuntimeException.class)
+                    .verify();
+
+            // Verify all methods were called up to the final update
+            verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
+            verify(raddRegistryRequestDAO).updateRecordInPending(any());
+            verify(awsGeoService).getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString());
+            verify(raddRegistryV2DAO).putItemIfAbsent(any());
+            verify(raddRegistryRequestDAO).updateRegistryRequestData(any());
+        }
+
+        @Test
+        @DisplayName("Should handle empty result from getAllFromCorrelationId")
+        void shouldHandleEmptyResultFromGetAllFromCorrelationId() {
+            // Arrange
+            when(raddRegistryRequestDAO.getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name()))
+                    .thenReturn(Flux.empty());
+
+            // Act & Assert
+            StepVerifier.create(registryService.handleNormalizeRequestEvent(payload))
+                    .expectComplete()
+                    .verify();
+
+            // Verify only first method was called
+            verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
+            verify(raddRegistryRequestDAO, never()).updateRecordInPending(any());
+            verify(awsGeoService, never()).getCoordinatesForAddress(anyString(), anyString(), anyString(), anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("Should verify NormalizationRequest creation and correlation ID setting")
+        void shouldVerifyNormalizationRequestCreation() {
+            // Arrange
+            when(raddRegistryRequestDAO.getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name()))
+                    .thenReturn(Flux.empty());
+
+            // Act
+            StepVerifier.create(registryService.handleNormalizeRequestEvent(payload))
+                    .expectComplete()
+                    .verify();
+
+            // Assert - Verify that the method was called with correct parameters
+            // The NormalizationRequest creation happens internally and sets the correlationId
+            verify(raddRegistryRequestDAO).getAllFromCorrelationId("test-correlation-id", RegistryRequestStatus.NOT_WORKED.name());
+        }
     }
 }

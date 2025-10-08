@@ -27,6 +27,7 @@ public class RaddRegistryRequestEntity {
     public static final String COL_ERROR = "error";
     public static final String COL_CX_ID = "cxId";
     public static final String COL_REGISTRY_ID = "registryId";
+    public static final String COL_UID = "uid";
 
     public static final String CXID_REQUESTID_INDEX = "cxId-requestId-index";
     public static final String CORRELATIONID_INDEX = "correlationId-index";
@@ -59,6 +60,8 @@ public class RaddRegistryRequestEntity {
     private String cxId;
     @Getter(onMethod = @__({@DynamoDbSecondarySortKey(indexNames = CXID_REGISTRYID_INDEX), @DynamoDbAttribute(COL_REGISTRY_ID)}))
     private String registryId;
+    @Getter(onMethod = @__({@DynamoDbAttribute(COL_UID)}))
+    private String uid;
 
 
     @DynamoDbIgnore
