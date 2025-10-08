@@ -15,7 +15,8 @@
                 "schemas-pn-radd-alt-registry.yaml"
             ],
             "openapiFiles": [
-                "pn-radd-alt-registry-v2-internal.yaml"
+                "pn-radd-alt-registry-v2-internal.yaml",
+                "pn-radd-alt-coverage-internal.yaml"
             ],
             "servicePath": "radd-bo"
         }

@@ -16,6 +16,22 @@ import static it.pagopa.pn.radd.utils.DateUtils.validateCoverageDateInterval;
 @CustomLog
 public class CoverageUtils {
 
+    public static CoverageEntity buildCoverageEntity(String xPagopaPnUid, CreateCoverageRequest request) {
+
+        CoverageEntity coverageEntity = new CoverageEntity();
+
+        coverageEntity.setUid(xPagopaPnUid);
+        coverageEntity.setCreationTimestamp(Instant.now());
+        coverageEntity.setCap(request.getCap());
+        coverageEntity.setLocality(request.getLocality());
+        coverageEntity.setProvince(request.getProvince());
+        coverageEntity.setCadastralCode(request.getCadastralCode());
+
+        return coverageEntity;
+
+    }
+
+
     public static CoverageEntity mapFieldToUpdate(String xPagopaPnUid, CoverageEntity coverageEntity, UpdateCoverageRequest request) {
 
         if (StringUtils.isNotBlank(xPagopaPnUid)) {

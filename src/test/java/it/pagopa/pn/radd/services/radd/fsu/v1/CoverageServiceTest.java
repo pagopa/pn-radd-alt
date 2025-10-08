@@ -3,6 +3,8 @@ package it.pagopa.pn.radd.services.radd.fsu.v1;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateCoverageRequest;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.Coverage;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateCoverageRequest;
 import it.pagopa.pn.radd.mapper.*;
 import it.pagopa.pn.radd.middleware.db.CoverageDAO;
 import it.pagopa.pn.radd.middleware.db.entities.CoverageEntity;
@@ -22,6 +24,7 @@ import reactor.test.StepVerifier;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,6 +52,19 @@ class CoverageServiceTest {
         );
     }
 
+    private CreateCoverageRequest buildValidCreateRequest() {
+
+        CreateCoverageRequest req = new CreateCoverageRequest();
+
+        req.setCap(CAP);
+        req.setLocality(LOCALITY);
+        req.setProvince("RM");
+        req.setCadastralCode("A000");
+
+        return req;
+
+    }
+
     private UpdateCoverageRequest buildValidUpdateRequest() {
 
         UpdateCoverageRequest req = new UpdateCoverageRequest();
@@ -59,6 +75,23 @@ class CoverageServiceTest {
         req.setEndValidity(LocalDate.now().plusDays(1L));
 
         return req;
+
+    }
+
+    @Test
+    void addCoverage() {
+
+        CreateCoverageRequest request = buildValidCreateRequest();
+        CoverageEntity entity = new CoverageEntity();
+
+        Mockito.lenient().when(coverageDAO.findByCap(CAP)).thenReturn(Flux.empty());
+        when(coverageDAO.putItemIfAbsent(any())).thenReturn(Mono.just(entity));
+
+        Mono<Coverage> result = coverageService.addCoverage(U_ID, request);
+
+        StepVerifier.create(result)
+                    .assertNext(Assertions::assertNotNull)
+                    .verifyComplete();
 
     }
 

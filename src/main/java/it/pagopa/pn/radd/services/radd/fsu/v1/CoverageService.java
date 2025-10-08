@@ -22,6 +22,13 @@ public class CoverageService {
     private final CoverageDAO coverageDAO;
     private final CoverageMapper coverageMapper;
 
+    public Mono<Coverage> addCoverage(String xPagopaPnUid, CreateCoverageRequest request) {
+        log.info("Creating coverage entity for cap: {} and locality: {}", request.getCap(), request.getLocality());
+        return Mono.defer(() -> coverageDAO.putItemIfAbsent(buildCoverageEntity(xPagopaPnUid, request)))
+                   .map(coverageMapper::toDto)
+                   .doOnNext(result -> log.debug("Coverage entity with cap: {} and locality: {} created successfully", request.getCap(), request.getLocality()));
+    }
+
     public Mono<Coverage> updateCoverage(String xPagopaPnUid, String cap, String locality, UpdateCoverageRequest request) {
         validateCoverageDateInterval(null, null, request.getStartValidity(), request.getEndValidity());
         log.info("Start updateCoverage for cap [{}] and locality [{}]", cap, locality);
