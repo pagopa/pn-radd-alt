@@ -99,4 +99,26 @@ public class DateUtils {
         return end;
     }
 
+    public static boolean isValidityActive(LocalDate startValidity, LocalDate endValidity) {
+        LocalDate today = LocalDate.now();
+        //entrambi null -> false
+        if (startValidity == null && endValidity == null) {
+            return false;
+        }
+        //solo start valorizzata -> controllo se oggi >= start
+        if (startValidity != null && endValidity == null) {
+            return !today.isBefore(startValidity);
+        }
+        // solo end valorizzata -> controllo se oggi <= end
+        if (startValidity == null && endValidity != null) {
+            return !today.isAfter(endValidity);
+        }
+        // entrambe valorizate e uguali -> controllo se oggi == quella data
+        if (startValidity.equals(endValidity)) {
+            return today.equals(startValidity);
+        }
+        // entrambe valorizzate e diverse -> controllo se oggi è tra start e end (inclusi)
+        return !today.isBefore(startValidity) && !today.isAfter(endValidity);
+    }
+
 }
