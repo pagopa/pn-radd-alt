@@ -125,4 +125,104 @@ class DateUtilsTest {
                 DateUtils.validateDateInterval(start, end));
         assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
     }
+
+    /**
+     * Test per util isValidityActive
+     */
+
+    //entrambe le date null -> false
+    @Test
+    void testBothNull() throws Exception {
+        assertFalse(DateUtils.isValidityActive(null, null));
+    }
+
+    //solo start valorizzata -> controllo se oggi >= start
+    @Test
+    void testOnlyStartPast() throws Exception {
+        LocalDate start = LocalDate.now().minusDays(1);
+        assertTrue(DateUtils.isValidityActive(start, null));
+    }
+
+    //solo start valorizzata nel futuro -> torno false
+    @Test
+    void testOnlyStartFuture() throws Exception {
+        LocalDate start = LocalDate.now().plusDays(1);
+        assertFalse(DateUtils.isValidityActive(start, null));
+    }
+
+    //solo end valorizzata nel passato -> torno false
+    @Test
+    void testOnlyEndPast() throws Exception {
+        LocalDate end = LocalDate.now().minusDays(1);
+        assertFalse(DateUtils.isValidityActive(null, end));
+    }
+
+    //solo end valorizzata nel futuro -> torno true
+    @Test
+    void testOnlyEndFuture() throws Exception {
+        LocalDate end = LocalDate.now().plusDays(1);
+        assertTrue(DateUtils.isValidityActive(null, end));
+    }
+
+    // entrambe valorizzate e uguali -> controllo se oggi == quella data
+    @Test
+    void testStartEqualsEndToday() throws Exception {
+        LocalDate date = LocalDate.now();
+        assertFalse(DateUtils.isValidityActive(date, date));
+    }
+
+    // entrambe valorizzate e uguali nel passato -> torno false
+    @Test
+    void testStartEqualsEndPast() throws Exception {
+        LocalDate date = LocalDate.now().minusDays(1);
+        assertFalse(DateUtils.isValidityActive(date, date));
+    }
+
+    // entrambe valorizzate e uguali nel futuro -> torno false
+    @Test
+    void testStartEqualsEndFuture() throws Exception {
+        LocalDate date = LocalDate.now().plusDays(1);
+        assertFalse(DateUtils.isValidityActive(date, date));
+    }
+
+    // entrambe valorizzate e diverse -> controllo se oggi è tra start e end (inclusi)
+    @Test
+    void testRangeIncludesToday() throws Exception {
+        LocalDate start = LocalDate.now().minusDays(1);
+        LocalDate end = LocalDate.now().plusDays(1);
+        assertTrue(DateUtils.isValidityActive(start, end));
+    }
+
+    // entrambe valorizzate e diverse -> oggi non è incluso -> torno false
+    @Test
+    void testRangeBeforeToday() throws Exception {
+        LocalDate start = LocalDate.now().minusDays(5);
+        LocalDate end = LocalDate.now().minusDays(1);
+        assertFalse(DateUtils.isValidityActive(start, end));
+    }
+
+    // entrambe valorizzate nel futuro -> torno false
+    @Test
+    void testRangeAfterToday() throws Exception {
+        LocalDate start = LocalDate.now().plusDays(1);
+        LocalDate end = LocalDate.now().plusDays(5);
+        assertFalse(DateUtils.isValidityActive(start, end));
+    }
+
+    //start oggi, end futuro -> torno true
+    @Test
+    void testRangeStartTodayEndFuture() throws Exception {
+        LocalDate start = LocalDate.now();
+        LocalDate end = LocalDate.now().plusDays(5);
+        assertTrue(DateUtils.isValidityActive(start, end));
+    }
+
+    //start passato, end oggi -> torno true
+    @Test
+    void testRangeStartPastEndToday() throws Exception {
+        LocalDate start = LocalDate.now().minusDays(5);
+        LocalDate end = LocalDate.now();
+        assertTrue(DateUtils.isValidityActive(start, end));
+    }
+
 }
