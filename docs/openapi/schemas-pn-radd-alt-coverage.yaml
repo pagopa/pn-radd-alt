@@ -78,3 +78,20 @@ components:
           allOf:
             - $ref: '#/components/schemas/ValidityDate'
             - description: Data di fine validità copertura
+
+  parameters:
+    capInPath:
+      name: cap
+      description: CAP della località coperta
+      in: path
+      required: true
+      schema:
+        type: string
+      example: 00000
+    localityInPath:
+      name: locality
+      description: Località coperta
+      in: path
+      required: true
+      schema:
+        type: string

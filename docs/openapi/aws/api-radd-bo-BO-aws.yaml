@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: xmJ7vJ64epV5xkDoTKiOAqYBFbIo00i4FMdE+vwM/4g=
+  version: 4OqmeRgCBz9PKQxIvCXXt/ByLWHPWwZsoOMiwX+O0Gg=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -413,8 +413,8 @@ paths:
       x-api-permissions:
         - radd-coverage-write
       parameters:
-        - $ref: '#/components/parameters/cap'
-        - $ref: '#/components/parameters/locality'
+        - $ref: '#/components/parameters/capInPath'
+        - $ref: '#/components/parameters/localityInPath'
       requestBody:
         content:
           application/json:
@@ -536,12 +536,11 @@ components:
         type: string
     cap:
       name: cap
-      description: CAP della località coperta
-      in: path
-      required: true
+      description: CAP
+      in: query
+      required: false
       schema:
         type: string
-      example: 0
     city:
       name: city
       description: Città
@@ -572,7 +571,15 @@ components:
         type: string
         pattern: ^[ -~]*$
         maxLength: 64
-    locality:
+    capInPath:
+      name: cap
+      description: CAP della località coperta
+      in: path
+      required: true
+      schema:
+        type: string
+      example: 0
+    localityInPath:
       name: locality
       description: Località coperta
       in: path
