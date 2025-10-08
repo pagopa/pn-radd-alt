@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import static it.pagopa.pn.radd.utils.CoverageUtils.buildCoverageEntity;
 import static it.pagopa.pn.radd.utils.CoverageUtils.mapFieldToUpdate;
 import static it.pagopa.pn.radd.utils.DateUtils.validateCoverageDateInterval;
 
