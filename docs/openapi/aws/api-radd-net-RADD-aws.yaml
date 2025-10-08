@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: c7Xcn2YhTAGoYhFUKbZwC6NH0X2IDxXWpfgMlQpXz/E=
+  version: q8jS6mCFAV22710pmGlFkd0m+XBeDh4whFYgbq/7rJ0=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -760,7 +760,7 @@ paths:
         il cxId
       parameters:
         - $ref: '#/components/parameters/uid'
-        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/limitV1'
         - $ref: '#/components/parameters/lastKey'
         - $ref: '#/components/parameters/cap'
         - $ref: '#/components/parameters/city'
@@ -1202,7 +1202,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/uid'
         - $ref: '#/components/parameters/requestId'
-        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/limitV1'
         - $ref: '#/components/parameters/lastKey'
       responses:
         '200':
@@ -1389,20 +1389,9 @@ components:
       required: true
       schema:
         type: string
-      example: '2024-06-21T00:00:00.000Z'
-    requestId:
-      name: requestId
-      description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
-      in: path
-      required: true
-      schema:
-        type: string
+      example: '2024-06-21'
     limit:
-      name: limit
-      in: query
-      schema:
-        type: number
-        default: 10
+      $ref: '#/components/parameters/limitV1'
     lastKey:
       name: lastKey
       in: query
@@ -1435,6 +1424,19 @@ components:
       description: Identificativo punto ritiro SEND indicato dal client
       in: query
       required: false
+      schema:
+        type: string
+    limitV1:
+      name: limit
+      in: query
+      schema:
+        type: number
+        default: 10
+    requestId:
+      name: requestId
+      description: Identificativo univoco della richiesta di censimento (CSV o CRUD)
+      in: path
+      required: true
       schema:
         type: string
   schemas:

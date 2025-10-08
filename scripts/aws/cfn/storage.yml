@@ -331,7 +331,7 @@ Resources:
         LogGroupRetention: !Ref LogRetention
         LogsKinesisSourceStreamArn: !Ref LogsKinesisSourceStreamArn
 
-  # Coda interna per costruzione evento da inviare ad address manager
+  # Coda interna per normalizzazione indirizzi
   # NB: usati i valori di default per: DeadLetterQueueName, MessageRetentionPeriod, DeadLetterMessageRetentionPeriod
   PnRaddAltInputQueue:
     Type: AWS::CloudFormation::Stack
@@ -419,16 +419,6 @@ Outputs:
   RaddCoverageDynamoTableArn:
     Description: ARN of dynamodb table containing radd coverage
     Value: !Sub '${RaddCoverageDynamoTable.Arn}'
-
-  # RaddInternalCapCheckerQueue Queue
-  RaddInternalCapCheckerQueueName:
-    Value: !GetAtt RaddInternalCapCheckerQueue.Outputs.QueueName
-  RaddInternalCapCheckerQueueARN:
-    Value: !GetAtt RaddInternalCapCheckerQueue.Outputs.QueueARN
-  RaddInternalCapCheckerDLQName:
-    Value: !GetAtt RaddInternalCapCheckerQueue.Outputs.DeadLetterQueueName
-  RaddInternalCapCheckerDLQARN:
-    Value: !GetAtt RaddInternalCapCheckerQueue.Outputs.DeadLetterQueueARN
 
   # Log group exports
   EcsLogGroup:

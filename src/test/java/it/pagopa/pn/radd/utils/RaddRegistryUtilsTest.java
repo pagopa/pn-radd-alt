@@ -5,9 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.api.dto.events.PnAttachmentsConfigEventItem;
 import it.pagopa.pn.api.dto.events.PnAttachmentsConfigEventPayload;
 import it.pagopa.pn.api.dto.events.PnEvaluatedZipCodeEvent;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.addressmanager.v1.dto.AnalogAddressDto;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.addressmanager.v1.dto.NormalizeItemsRequestDto;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.addressmanager.v1.dto.NormalizeRequestDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileCreationRequestDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileCreationResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
@@ -18,8 +15,8 @@ import it.pagopa.pn.radd.config.CachedSecretsManagerConsumer;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.entities.*;
-import it.pagopa.pn.radd.middleware.queue.event.PnAddressManagerEvent;
 import it.pagopa.pn.radd.pojo.*;
 import it.pagopa.pn.radd.services.radd.fsu.v1.AwsGeoService;
 import it.pagopa.pn.radd.services.radd.fsu.v1.SecretService;
@@ -62,6 +59,9 @@ class RaddRegistryUtilsTest {
     @Mock
     private SecretService secretService;
 
+    @Mock
+    private RegistryMappingUtils registryMappingUtils;
+
     /**
      * Method under test:
      * {@link RaddRegistryUtils#mergeNewRegistryEntity(RaddRegistryEntity, RaddRegistryRequestEntity)}
@@ -88,7 +88,7 @@ class RaddRegistryUtilsTest {
         preExistingRegistryEntity.setGeoLocation("Geo Location");
         NormalizedAddressEntity addressEntity = new NormalizedAddressEntity();
         addressEntity.setCountry("country");
-        addressEntity.setProvince("pr");
+        addressEntity.setPr("pr");
         addressEntity.setCity("city");
         addressEntity.setCap("cap");
         preExistingRegistryEntity.setNormalizedAddress(addressEntity);
@@ -134,23 +134,17 @@ class RaddRegistryUtilsTest {
     @Test
     void testConstructRaddRegistryEntity() {
         // Arrange
-        PnAddressManagerEvent.NormalizedAddress normalizedAddress = mock(PnAddressManagerEvent.NormalizedAddress.class);
-        doNothing().when(normalizedAddress).setAddressRow(Mockito.any());
-        doNothing().when(normalizedAddress).setAddressRow2(Mockito.any());
-        doNothing().when(normalizedAddress).setCap(Mockito.any());
-        doNothing().when(normalizedAddress).setCity(Mockito.any());
-        doNothing().when(normalizedAddress).setCity2(Mockito.any());
-        doNothing().when(normalizedAddress).setCountry(Mockito.any());
-        doNothing().when(normalizedAddress).setNameRow2(Mockito.any());
-        doNothing().when(normalizedAddress).setPr(Mockito.any());
-        normalizedAddress.setAddressRow("42 Main St");
-        normalizedAddress.setAddressRow2("42 Main St");
-        normalizedAddress.setCap("Cap");
-        normalizedAddress.setCity("Oxford");
-        normalizedAddress.setCity2("Oxford");
-        normalizedAddress.setCountry("GB");
-        normalizedAddress.setNameRow2("Name Row2");
-        normalizedAddress.setPr("Pr");
+        AwsGeoService.CoordinatesResult coordinatesResult = mock(AwsGeoService.CoordinatesResult.class);
+        doNothing().when(coordinatesResult).setAwsAddressRow(Mockito.any());
+        doNothing().when(coordinatesResult).setAwsPostalCode(Mockito.any());
+        doNothing().when(coordinatesResult).setAwsLocality(Mockito.any());
+        doNothing().when(coordinatesResult).setAwsCountry(Mockito.any());
+        doNothing().when(coordinatesResult).setAwsSubRegion(Mockito.any());
+        coordinatesResult.setAwsAddressRow("42 Main St");
+        coordinatesResult.setAwsPostalCode("Cap");
+        coordinatesResult.setAwsLocality("Oxford");
+        coordinatesResult.setAwsCountry("GB");
+        coordinatesResult.setAwsSubRegion("Pr");
 
         RaddRegistryRequestEntity registryRequest = new RaddRegistryRequestEntity();
         registryRequest.setCorrelationId("42");
@@ -166,84 +160,22 @@ class RaddRegistryUtilsTest {
         registryRequest.setZipCode("21654");
 
         when(objectMapperUtil.toObject(any(), any())).thenReturn(new RaddRegistryOriginalRequest());
-
+        when(registryMappingUtils.mappingToV2(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(new RaddRegistryEntityV2());
         // Act
-        raddRegistryUtils.constructRaddRegistryEntity("registryId", normalizedAddress, registryRequest);
+        raddRegistryUtils.constructRaddRegistryEntity("registryId", coordinatesResult, registryRequest);
 
         // Assert
-        verify(normalizedAddress).setAddressRow(Mockito.any());
-        verify(normalizedAddress).setAddressRow2(Mockito.any());
-        verify(normalizedAddress).setCap(Mockito.any());
-        verify(normalizedAddress).setCity(Mockito.any());
-        verify(normalizedAddress).setCity2(Mockito.any());
-        verify(normalizedAddress).setCountry(Mockito.any());
-        verify(normalizedAddress).setNameRow2(Mockito.any());
-        verify(normalizedAddress).setPr(Mockito.any());
+        verify(coordinatesResult).setAwsAddressRow(Mockito.any());
+        verify(coordinatesResult).setAwsPostalCode(Mockito.any());
+        verify(coordinatesResult).setAwsLocality(Mockito.any());
+        verify(coordinatesResult).setAwsCountry(Mockito.any());
+        verify(coordinatesResult).setAwsSubRegion(Mockito.any());
     }
 
     /**
      * Method under test:
-     * {@link RaddRegistryUtils#getRelativeItemFromAddressManagerEvent(List, String)}
-     */
-    @Test
-    void testGetRelativeItemFromAddressManagerEvent() {
-        // Arrange
-        PnAddressManagerEvent.ResultItem resultItem = mock(PnAddressManagerEvent.ResultItem.class);
-        when(resultItem.getId()).thenReturn("42");
-
-        ArrayList<PnAddressManagerEvent.ResultItem> resultItems = new ArrayList<>();
-        resultItems.add(resultItem);
-
-        // Act
-        raddRegistryUtils.getRelativeItemFromAddressManagerEvent(resultItems, "42");
-
-        // Assert
-        verify(resultItem).getId();
-    }
-
-    /**
-     * Method under test:
-     * {@link RaddRegistryUtils#getRelativeItemFromAddressManagerEvent(List, String)}
-     */
-    @Test
-    void testGetRelativeItemFromAddressManagerEvent2() {
-        // Arrange
-        PnAddressManagerEvent.ResultItem resultItem = mock(PnAddressManagerEvent.ResultItem.class);
-        when(resultItem.getId()).thenReturn("foo");
-
-        ArrayList<PnAddressManagerEvent.ResultItem> resultItems = new ArrayList<>();
-        resultItems.add(resultItem);
-
-        // Act
-        raddRegistryUtils.getRelativeItemFromAddressManagerEvent(resultItems, "42");
-
-        // Assert
-        verify(resultItem).getId();
-    }
-
-    /**
-     * Method under test:
-     * {@link RaddRegistryUtils#getRelativeItemFromAddressManagerEvent(List, String)}
-     */
-    @Test
-    void testGetRelativeItemFromAddressManagerEvent3() {
-        // Arrange
-        PnAddressManagerEvent.ResultItem resultItem = mock(PnAddressManagerEvent.ResultItem.class);
-        when(resultItem.getId()).thenReturn("42");
-
-        ArrayList<PnAddressManagerEvent.ResultItem> resultItems = new ArrayList<>();
-        resultItems.add(resultItem);
-
-        // Act
-        raddRegistryUtils.getRelativeItemFromAddressManagerEvent(resultItems, "Id");
-
-        // Assert
-        verify(resultItem).getId();
-    }
-
-    /**
-     * Method under test:
-     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, RegistryUploadRequest, FileCreationResponseDto, String)}
+     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, String, RegistryUploadRequest, FileCreationResponseDto, String)}
      */
     @Test
     void testGetPnRaddRegistryImportEntity() {
@@ -261,11 +193,12 @@ class RaddRegistryUtilsTest {
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
         RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))));
+                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
+                new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
-        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42",
+        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42", "testUid",
                                                                                                                     request, new FileCreationResponseDto(), "42");
 
         // Assert
@@ -279,7 +212,7 @@ class RaddRegistryUtilsTest {
 
     /**
      * Method under test:
-     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, RegistryUploadRequest, FileCreationResponseDto, String)}
+     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, String, RegistryUploadRequest, FileCreationResponseDto, String)}
      */
     @Test
     void testGetPnRaddRegistryImportEntity2() throws JsonProcessingException {
@@ -300,11 +233,12 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
         RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))));
+                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
+                                                                    new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
-        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42",
+        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42", "testUid",
                                                                                                                     request, new FileCreationResponseDto(), "42");
 
         // Assert
@@ -319,7 +253,7 @@ class RaddRegistryUtilsTest {
 
     /**
      * Method under test:
-     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, RegistryUploadRequest, FileCreationResponseDto, String)}
+     * {@link RaddRegistryUtils#getPnRaddRegistryImportEntity(String, String, RegistryUploadRequest, FileCreationResponseDto, String)}
      */
     @Test
     void testGetPnRaddRegistryImportEntity3() {
@@ -339,11 +273,12 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
         RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))));
+                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
+                                                                    new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
-        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42",
+        RaddRegistryImportEntity actualPnRaddRegistryImportEntity = raddRegistryUtils.getPnRaddRegistryImportEntity("42", "testUid",
                                                                                                                     request, new FileCreationResponseDto(), "42");
 
         // Assert
@@ -386,15 +321,15 @@ class RaddRegistryUtilsTest {
     @Test
     void testGetRequestAddressFromOriginalRequest2() {
         // Arrange
-        AddressManagerRequestAddress addressManagerRequestAddress = new AddressManagerRequestAddress();
-        addressManagerRequestAddress.setAddressRow("42 Main St");
-        addressManagerRequestAddress.setCap("Cap");
-        addressManagerRequestAddress.setCity("Oxford");
-        addressManagerRequestAddress.setCountry("GB");
-        addressManagerRequestAddress.setId("42");
-        addressManagerRequestAddress.setPr("Pr");
-        when(objectMapperUtil.toObject(Mockito.any(), Mockito.<Class<AddressManagerRequestAddress>>any()))
-                .thenReturn(addressManagerRequestAddress);
+        NormalizationRequestAddress normalizationRequestAddress = new NormalizationRequestAddress();
+        normalizationRequestAddress.setAddressRow("42 Main St");
+        normalizationRequestAddress.setCap("Cap");
+        normalizationRequestAddress.setCity("Oxford");
+        normalizationRequestAddress.setCountry("GB");
+        normalizationRequestAddress.setId("42");
+        normalizationRequestAddress.setPr("Pr");
+        when(objectMapperUtil.toObject(Mockito.any(), Mockito.<Class<NormalizationRequestAddress>>any()))
+                .thenReturn(normalizationRequestAddress);
 
         RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
         raddRegistryRequestEntity.setCorrelationId("42");
@@ -413,12 +348,12 @@ class RaddRegistryUtilsTest {
         entities.add(raddRegistryRequestEntity);
 
         // Act
-        List<AddressManagerRequestAddress> actualRequestAddressFromOriginalRequest = raddRegistryUtils
+        List<NormalizationRequestAddress> actualRequestAddressFromOriginalNormalizationRequest = raddRegistryUtils
                 .getRequestAddressFromOriginalRequest(entities);
 
         // Assert
-        verify(objectMapperUtil).toObject(Mockito.any(), Mockito.<Class<AddressManagerRequestAddress>>any());
-        assertEquals(1, actualRequestAddressFromOriginalRequest.size());
+        verify(objectMapperUtil).toObject(Mockito.any(), Mockito.<Class<NormalizationRequestAddress>>any());
+        assertEquals(1, actualRequestAddressFromOriginalNormalizationRequest.size());
     }
 
     /**
@@ -428,15 +363,15 @@ class RaddRegistryUtilsTest {
     @Test
     void testGetRequestAddressFromOriginalRequest3() {
         // Arrange
-        AddressManagerRequestAddress addressManagerRequestAddress = new AddressManagerRequestAddress();
-        addressManagerRequestAddress.setAddressRow("42 Main St");
-        addressManagerRequestAddress.setCap("Cap");
-        addressManagerRequestAddress.setCity("Oxford");
-        addressManagerRequestAddress.setCountry("GB");
-        addressManagerRequestAddress.setId("42");
-        addressManagerRequestAddress.setPr("Pr");
-        when(objectMapperUtil.toObject(Mockito.any(), Mockito.<Class<AddressManagerRequestAddress>>any()))
-                .thenReturn(addressManagerRequestAddress);
+        NormalizationRequestAddress normalizationRequestAddress = new NormalizationRequestAddress();
+        normalizationRequestAddress.setAddressRow("42 Main St");
+        normalizationRequestAddress.setCap("Cap");
+        normalizationRequestAddress.setCity("Oxford");
+        normalizationRequestAddress.setCountry("GB");
+        normalizationRequestAddress.setId("42");
+        normalizationRequestAddress.setPr("Pr");
+        when(objectMapperUtil.toObject(Mockito.any(), Mockito.<Class<NormalizationRequestAddress>>any()))
+                .thenReturn(normalizationRequestAddress);
 
         RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
         raddRegistryRequestEntity.setCorrelationId("42");
@@ -469,13 +404,13 @@ class RaddRegistryUtilsTest {
         entities.add(raddRegistryRequestEntity);
 
         // Act
-        List<AddressManagerRequestAddress> actualRequestAddressFromOriginalRequest = raddRegistryUtils
+        List<NormalizationRequestAddress> actualRequestAddressFromOriginalNormalizationRequest = raddRegistryUtils
                 .getRequestAddressFromOriginalRequest(entities);
 
         // Assert
         verify(objectMapperUtil, atLeast(1)).toObject(Mockito.any(),
-                                                      Mockito.<Class<AddressManagerRequestAddress>>any());
-        assertEquals(2, actualRequestAddressFromOriginalRequest.size());
+                                                      Mockito.<Class<NormalizationRequestAddress>>any());
+        assertEquals(2, actualRequestAddressFromOriginalNormalizationRequest.size());
     }
 
     /**
@@ -485,7 +420,7 @@ class RaddRegistryUtilsTest {
     @Test
     void testGetRequestAddressFromOriginalRequest4() {
         // Arrange
-        when(objectMapperUtil.toObject(Mockito.any(), Mockito.<Class<AddressManagerRequestAddress>>any()))
+        when(objectMapperUtil.toObject(Mockito.any(), Mockito.<Class<NormalizationRequestAddress>>any()))
                 .thenThrow(new RuntimeException("foo"));
 
         RaddRegistryRequestEntity raddRegistryRequestEntity = new RaddRegistryRequestEntity();
@@ -506,195 +441,7 @@ class RaddRegistryUtilsTest {
 
         // Act and Assert
         assertThrows(RuntimeException.class, () -> raddRegistryUtils.getRequestAddressFromOriginalRequest(entities));
-        verify(objectMapperUtil).toObject(Mockito.any(), Mockito.<Class<AddressManagerRequestAddress>>any());
-    }
-
-    /**
-     * Method under test:
-     * {@link RaddRegistryUtils#getNormalizeRequestDtoFromAddressManagerRequest(AddressManagerRequest)}
-     */
-    @Test
-    void testGetNormalizeRequestDtoFromAddressManagerRequest() {
-        // Arrange
-        AddressManagerRequest request = new AddressManagerRequest();
-        request.setAddresses(new ArrayList<>());
-        request.setCorrelationId("42");
-
-        // Act
-        NormalizeItemsRequestDto actualNormalizeRequestDtoFromAddressManagerRequest = raddRegistryUtils
-                .getNormalizeRequestDtoFromAddressManagerRequest(request);
-
-        // Assert
-        assertEquals("42", actualNormalizeRequestDtoFromAddressManagerRequest.getCorrelationId());
-        assertTrue(actualNormalizeRequestDtoFromAddressManagerRequest.getRequestItems().isEmpty());
-    }
-
-    /**
-     * Method under test:
-     * {@link RaddRegistryUtils#getNormalizeRequestDtoFromAddressManagerRequest(AddressManagerRequest)}
-     */
-    @Test
-    void testGetNormalizeRequestDtoFromAddressManagerRequest2() {
-        // Arrange
-        AddressManagerRequest request = mock(AddressManagerRequest.class);
-        when(request.getCorrelationId()).thenReturn("42");
-        when(request.getAddresses()).thenReturn(new ArrayList<>());
-        doNothing().when(request).setAddresses(Mockito.any());
-        doNothing().when(request).setCorrelationId(Mockito.any());
-        request.setAddresses(new ArrayList<>());
-        request.setCorrelationId("42");
-
-        // Act
-        NormalizeItemsRequestDto actualNormalizeRequestDtoFromAddressManagerRequest = raddRegistryUtils
-                .getNormalizeRequestDtoFromAddressManagerRequest(request);
-
-        // Assert
-        verify(request).getAddresses();
-        verify(request).getCorrelationId();
-        verify(request).setAddresses(Mockito.any());
-        verify(request).setCorrelationId(Mockito.any());
-        assertEquals("42", actualNormalizeRequestDtoFromAddressManagerRequest.getCorrelationId());
-        assertTrue(actualNormalizeRequestDtoFromAddressManagerRequest.getRequestItems().isEmpty());
-    }
-
-    /**
-     * Method under test:
-     * {@link RaddRegistryUtils#getNormalizeRequestDtoFromAddressManagerRequest(AddressManagerRequest)}
-     */
-    @Test
-    void testGetNormalizeRequestDtoFromAddressManagerRequest3() {
-        // Arrange
-        AddressManagerRequestAddress addressManagerRequestAddress = new AddressManagerRequestAddress();
-        addressManagerRequestAddress.setAddressRow("42 Main St");
-        addressManagerRequestAddress.setCap("Cap");
-        addressManagerRequestAddress.setCity("Oxford");
-        addressManagerRequestAddress.setCountry("GB");
-        addressManagerRequestAddress.setId("42");
-        addressManagerRequestAddress.setPr("Pr");
-
-        ArrayList<AddressManagerRequestAddress> addressManagerRequestAddressList = new ArrayList<>();
-        addressManagerRequestAddressList.add(addressManagerRequestAddress);
-        AddressManagerRequest request = mock(AddressManagerRequest.class);
-        when(request.getCorrelationId()).thenReturn("42");
-        when(request.getAddresses()).thenReturn(addressManagerRequestAddressList);
-        doNothing().when(request).setAddresses(Mockito.any());
-        doNothing().when(request).setCorrelationId(Mockito.any());
-        request.setAddresses(new ArrayList<>());
-        request.setCorrelationId("42");
-
-        // Act
-        NormalizeItemsRequestDto actualNormalizeRequestDtoFromAddressManagerRequest = raddRegistryUtils
-                .getNormalizeRequestDtoFromAddressManagerRequest(request);
-
-        // Assert
-        verify(request).getAddresses();
-        verify(request).getCorrelationId();
-        verify(request).setAddresses(Mockito.any());
-        verify(request).setCorrelationId(Mockito.any());
-        List<NormalizeRequestDto> requestItems = actualNormalizeRequestDtoFromAddressManagerRequest.getRequestItems();
-        assertEquals(1, requestItems.size());
-        NormalizeRequestDto getResult = requestItems.get(0);
-        AnalogAddressDto address = getResult.getAddress();
-        assertEquals("42 Main St", address.getAddressRow());
-        assertEquals("42", actualNormalizeRequestDtoFromAddressManagerRequest.getCorrelationId());
-        assertEquals("42", getResult.getId());
-        assertEquals("Cap", address.getCap());
-        assertEquals("GB", address.getCountry());
-        assertEquals("Oxford", address.getCity());
-        assertEquals("Pr", address.getPr());
-    }
-
-    /**
-     * Method under test:
-     * {@link RaddRegistryUtils#getNormalizeRequestDtoFromAddressManagerRequest(AddressManagerRequest)}
-     */
-    @Test
-    void testGetNormalizeRequestDtoFromAddressManagerRequest4() {
-        // Arrange
-        AddressManagerRequestAddress addressManagerRequestAddress = new AddressManagerRequestAddress();
-        addressManagerRequestAddress.setAddressRow("42 Main St");
-        addressManagerRequestAddress.setCap("Cap");
-        addressManagerRequestAddress.setCity("Oxford");
-        addressManagerRequestAddress.setCountry("GB");
-        addressManagerRequestAddress.setId("42");
-        addressManagerRequestAddress.setPr("Pr");
-
-        AddressManagerRequestAddress addressManagerRequestAddress2 = new AddressManagerRequestAddress();
-        addressManagerRequestAddress2.setAddressRow("17 High St");
-        addressManagerRequestAddress2.setCap("it.pagopa.pn.radd.pojo.AddressManagerRequestAddress");
-        addressManagerRequestAddress2.setCity("London");
-        addressManagerRequestAddress2.setCountry("GBR");
-        addressManagerRequestAddress2.setId("Id");
-        addressManagerRequestAddress2.setPr("it.pagopa.pn.radd.pojo.AddressManagerRequestAddress");
-
-        ArrayList<AddressManagerRequestAddress> addressManagerRequestAddressList = new ArrayList<>();
-        addressManagerRequestAddressList.add(addressManagerRequestAddress2);
-        addressManagerRequestAddressList.add(addressManagerRequestAddress);
-        AddressManagerRequest request = mock(AddressManagerRequest.class);
-        when(request.getCorrelationId()).thenReturn("42");
-        when(request.getAddresses()).thenReturn(addressManagerRequestAddressList);
-        doNothing().when(request).setAddresses(Mockito.any());
-        doNothing().when(request).setCorrelationId(Mockito.any());
-        request.setAddresses(new ArrayList<>());
-        request.setCorrelationId("42");
-
-        // Act
-        NormalizeItemsRequestDto actualNormalizeRequestDtoFromAddressManagerRequest = raddRegistryUtils
-                .getNormalizeRequestDtoFromAddressManagerRequest(request);
-
-        // Assert
-        verify(request).getAddresses();
-        verify(request).getCorrelationId();
-        verify(request).setAddresses(Mockito.any());
-        verify(request).setCorrelationId(Mockito.any());
-        List<NormalizeRequestDto> requestItems = actualNormalizeRequestDtoFromAddressManagerRequest.getRequestItems();
-        assertEquals(2, requestItems.size());
-        NormalizeRequestDto getResult = requestItems.get(0);
-        AnalogAddressDto address = getResult.getAddress();
-        assertEquals("17 High St", address.getAddressRow());
-        NormalizeRequestDto getResult2 = requestItems.get(1);
-        AnalogAddressDto address2 = getResult2.getAddress();
-        assertEquals("42 Main St", address2.getAddressRow());
-        assertEquals("42", actualNormalizeRequestDtoFromAddressManagerRequest.getCorrelationId());
-        assertEquals("42", getResult2.getId());
-        assertEquals("Cap", address2.getCap());
-        assertEquals("GB", address2.getCountry());
-        assertEquals("GBR", address.getCountry());
-        assertEquals("Id", getResult.getId());
-        assertEquals("London", address.getCity());
-        assertEquals("Oxford", address2.getCity());
-        assertEquals("Pr", address2.getPr());
-        assertEquals("it.pagopa.pn.radd.pojo.AddressManagerRequestAddress", address.getCap());
-        assertEquals("it.pagopa.pn.radd.pojo.AddressManagerRequestAddress", address.getPr());
-    }
-
-    /**
-     * Method under test: {@link RaddRegistryUtils#retrieveAddressManagerApiKey()}
-     */
-    @Test
-    void testRetrieveAddressManagerApiKey() {
-        // Arrange
-        when(secretService.getSecret(Mockito.any())).thenReturn("Secret");
-
-        // Act
-        String actualRetrieveAddressManagerApiKeyResult = raddRegistryUtils.retrieveAddressManagerApiKey();
-
-        // Assert
-        verify(secretService).getSecret(Mockito.any());
-        assertEquals("Secret", actualRetrieveAddressManagerApiKeyResult);
-    }
-
-    /**
-     * Method under test: {@link RaddRegistryUtils#retrieveAddressManagerApiKey()}
-     */
-    @Test
-    void testRetrieveAddressManagerApiKey2() {
-        // Arrange
-        when(secretService.getSecret(Mockito.any())).thenThrow(new RuntimeException("foo"));
-
-        // Act and Assert
-        assertThrows(RuntimeException.class, () -> raddRegistryUtils.retrieveAddressManagerApiKey());
-        verify(secretService).getSecret(Mockito.any());
+        verify(objectMapperUtil).toObject(Mockito.any(), Mockito.<Class<NormalizationRequestAddress>>any());
     }
 
     /**
@@ -809,7 +556,7 @@ class RaddRegistryUtilsTest {
         raddRegistryEntity.setGeoLocation("Geo Location");
         NormalizedAddressEntity addressEntity = new NormalizedAddressEntity();
         addressEntity.setCountry("country");
-        addressEntity.setProvince("pr");
+        addressEntity.setPr("pr");
         addressEntity.setCity("city");
         addressEntity.setCap("cap");
         raddRegistryEntity.setNormalizedAddress(addressEntity);
@@ -846,7 +593,7 @@ class RaddRegistryUtilsTest {
         raddRegistryEntity.setGeoLocation("Geo Location");
         NormalizedAddressEntity addressEntity = new NormalizedAddressEntity();
         addressEntity.setCountry("country");
-        addressEntity.setProvince("pr");
+        addressEntity.setPr("pr");
         addressEntity.setCity("city");
         addressEntity.setCap("cap");
         raddRegistryEntity.setNormalizedAddress(addressEntity);
@@ -864,7 +611,7 @@ class RaddRegistryUtilsTest {
         raddRegistryEntity2.setGeoLocation("it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity");
         NormalizedAddressEntity addressEntity2 = new NormalizedAddressEntity();
         addressEntity.setCountry("country2");
-        addressEntity.setProvince("pr2");
+        addressEntity.setPr("pr2");
         addressEntity.setCity("city2");
         addressEntity.setCap("cap2");
         raddRegistryEntity2.setNormalizedAddress(addressEntity2);
@@ -918,7 +665,7 @@ class RaddRegistryUtilsTest {
         raddRegistryEntity.setGeoLocation("Geo Location");
         NormalizedAddressEntity addressEntity = new NormalizedAddressEntity();
         addressEntity.setCountry("country");
-        addressEntity.setProvince("pr");
+        addressEntity.setPr("pr");
         addressEntity.setCity("city");
         addressEntity.setCap("cap");
         raddRegistryEntity.setNormalizedAddress(addressEntity);
@@ -965,7 +712,8 @@ class RaddRegistryUtilsTest {
         pnRaddFsuConfig.setEvaluatedZipCodeConfigNumber(10);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
         RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))));
+                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
+                new RegistryMappingUtils(objectMapperUtil));
 
         // Act and Assert
         assertTrue(raddRegistryUtils.findActiveIntervals(new ArrayList<>()).isEmpty());
@@ -981,7 +729,8 @@ class RaddRegistryUtilsTest {
         pnRaddFsuConfig.setEvaluatedZipCodeConfigNumber(1);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
         RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))));
+                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
+                new RegistryMappingUtils(objectMapperUtil));
 
         ArrayList<TimeInterval> timeIntervals = new ArrayList<>();
         Instant start = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
@@ -1302,19 +1051,18 @@ class RaddRegistryUtilsTest {
 
     @Test
     void testMapRegistryEntityToRegistry_success() {
-        RaddRegistryEntity entity = new RaddRegistryEntity();
-        entity.setRegistryId("reg123");
-        entity.setRequestId("req123");
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setPartnerId("partner123");
+        entity.setLocationId("reg123");
         entity.setDescription("Descrizione test");
-        entity.setPhoneNumber("1234567890");
+        entity.setPhoneNumbers(List.of("1234567890"));
         entity.setOpeningTime("9-13");
         entity.setStartValidity(Instant.parse("2023-01-01T00:00:00Z"));
         entity.setEndValidity(Instant.parse("2023-12-31T23:59:59Z"));
-        entity.setExternalCode("EXT123");
-        entity.setCapacity("10");
-        entity.setCxId("CXID001");
+        entity.setExternalCodes(List.of("EXT123"));
 
-        NormalizedAddressEntity address = new NormalizedAddressEntity();
+
+        NormalizedAddressEntityV2 address = new NormalizedAddressEntityV2();
         address.setAddressRow("Via Roma 1");
         address.setCap("00100");
         address.setProvince("RM");
@@ -1322,14 +1070,31 @@ class RaddRegistryUtilsTest {
         address.setCountry("IT");
         entity.setNormalizedAddress(address);
 
-        GeoLocation geoLocation = new GeoLocation();
-        geoLocation.setLatitude("41.9028");
-        geoLocation.setLongitude("12.4964");
-        when(objectMapperUtil.toObject(anyString(), eq(GeoLocation.class))).thenReturn(geoLocation);
 
-        entity.setGeoLocation("{\"latitude\": \"41.9028\", \"longitude\": \"12.4964\"}");
+        Registry registryTest = new Registry();
+        registryTest.setRegistryId("reg123");
+        registryTest.setRequestId("req123");
+        registryTest.setDescription("Descrizione test");
+        registryTest.setPhoneNumber("1234567890");
+        registryTest.setOpeningTime("9-13");
+        registryTest.setStartValidity(Date.from(Instant.parse("2023-01-01T00:00:00Z")));
+        registryTest.setEndValidity(Date.from(Instant.parse("2023-12-31T23:59:59Z")));
+        registryTest.setExternalCode("EXT123");
 
-        ResultPaginationDto<RaddRegistryEntity, String> resultPaginationDto = new ResultPaginationDto<>();
+        Address registryAddress = new Address();
+        registryAddress.setAddressRow("Via Roma 1");
+        registryAddress.setCap("00100");
+        registryAddress.setCity("Roma");
+        registryAddress.setPr("RM");
+        registryAddress.setCountry("IT");
+
+        registryTest.setAddress(registryAddress);
+
+        when(registryMappingUtils.mappingToV1(Mockito.any())).thenReturn(registryTest);
+
+
+
+        ResultPaginationDto<RaddRegistryEntityV2, String> resultPaginationDto = new ResultPaginationDto<>();
         resultPaginationDto.setResultsPage(List.of(entity));
         List<String> nextPages = new ArrayList<>();
         nextPages.add("NEXT_PAGE");
@@ -1343,6 +1108,7 @@ class RaddRegistryUtilsTest {
         assertEquals(1, response.getRegistries().size());
 
         Registry registry = response.getRegistries().get(0);
+
         assertEquals("reg123", registry.getRegistryId());
         assertEquals("req123", registry.getRequestId());
         assertEquals("Descrizione test", registry.getDescription());
@@ -1351,11 +1117,6 @@ class RaddRegistryUtilsTest {
         assertEquals(Date.from(Instant.parse("2023-01-01T00:00:00Z")), registry.getStartValidity());
         assertEquals(Date.from(Instant.parse("2023-12-31T23:59:59Z")), registry.getEndValidity());
         assertEquals("EXT123", registry.getExternalCode());
-        assertEquals("10", registry.getCapacity());
-
-        assertNotNull(registry.getGeoLocation());
-        assertEquals("41.9028", registry.getGeoLocation().getLatitude());
-        assertEquals("12.4964", registry.getGeoLocation().getLongitude());
 
         assertNotNull(registry.getAddress());
         assertEquals("Via Roma 1", registry.getAddress().getAddressRow());

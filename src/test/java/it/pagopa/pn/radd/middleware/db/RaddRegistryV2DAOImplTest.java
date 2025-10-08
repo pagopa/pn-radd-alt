@@ -4,25 +4,25 @@ import it.pagopa.pn.radd.config.BaseTest;
 import it.pagopa.pn.radd.config.RestExceptionHandler;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.middleware.db.entities.BiasPointEntity;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
-import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntity;
+import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
-import it.pagopa.pn.radd.pojo.PnLastEvaluatedKey;
+import it.pagopa.pn.radd.pojo.ResultPaginationDto;
 import lombok.CustomLog;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.http.HttpStatus;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +37,8 @@ class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
     @SpyBean
     private RestExceptionHandler exceptionHandler;
 
+    @Mock
+    ResultPaginationDto resultPaginationDto;
     @Autowired
     private BaseDao<RaddRegistryEntityV2> baseDao;
     @Mock
@@ -59,7 +61,18 @@ class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
         entity.setWebsite("https://test.it");
         entity.setPartnerType("TYPE1");
 
-        NormalizedAddressEntity normalizedAddress = new NormalizedAddressEntity();
+        NormalizedAddressEntityV2 normalizedAddress = getNormalizedAddressEntityV2();
+
+        entity.setNormalizedAddress(normalizedAddress);
+
+        entity.setCreationTimestamp(Instant.now());
+        entity.setUpdateTimestamp(Instant.now());
+        entity.setUpdateTimestamp(Instant.now());
+        return entity;
+    }
+
+    private static @NotNull NormalizedAddressEntityV2 getNormalizedAddressEntityV2() {
+        NormalizedAddressEntityV2 normalizedAddress = new NormalizedAddressEntityV2();
         normalizedAddress.setAddressRow("123 Test St");
         normalizedAddress.setCity("Test City");
         normalizedAddress.setProvince("TP");
@@ -75,13 +88,7 @@ class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
         biasPoint.setPostalCode(BigDecimal.ONE);
         biasPoint.setCountry(BigDecimal.ONE);
         normalizedAddress.setBiasPoint(biasPoint);
-
-        entity.setNormalizedAddress(normalizedAddress);
-
-        entity.setCreationTimestamp(Instant.now());
-        entity.setUpdateTimestamp(Instant.now());
-        entity.setUpdateTimestamp(Instant.now());
-        return entity;
+        return normalizedAddress;
     }
 
     @Test
@@ -231,6 +238,181 @@ class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
         raddRegistryDAO.putItemIfAbsent(entity1).then(raddRegistryDAO.putItemIfAbsent(entity2)).block();
 
         Assertions.assertThrows(RaddGenericException.class, () -> raddRegistryDAO.scanRegistries(1, "test"));
+    }
+
+
+    @Test
+    void shouldFindByFiltersSuccessfully() {
+        // given
+        RaddRegistryEntityV2 entity = buildEntity();
+        entity.getNormalizedAddress().setCap("00100");
+        entity.getNormalizedAddress().setCity("Roma");
+        entity.getNormalizedAddress().setProvince("RM");
+        entity.setExternalCodes(List.of("EXTCODE"));
+
+        StepVerifier.create(raddRegistryDAO.putItemIfAbsent(entity))
+                    .assertNext(inserted -> assertThat(inserted).isEqualTo(entity))
+                    .verifyComplete();
+
+        // filtro per cap
+        StepVerifier.create(raddRegistryDAO.findByFilters(entity.getPartnerId(), 10, "00100", null, null, null, null))
+                    .assertNext(result -> {
+                        assertThat(result.getResultsPage()).extracting(e -> e.getNormalizedAddress().getCap()).contains("00100");
+                    })
+                    .verifyComplete();
+
+        // filtro per city
+        StepVerifier.create(raddRegistryDAO.findByFilters(entity.getPartnerId(), 10, null, "Roma", null, null, null))
+                    .assertNext(result -> {
+                        assertThat(result.getResultsPage()).extracting(e -> e.getNormalizedAddress().getCity()).contains("Roma");
+                    })
+                    .verifyComplete();
+
+        // filtro per province
+        StepVerifier.create(raddRegistryDAO.findByFilters(entity.getPartnerId(), 10, null, null, "RM", null, null))
+                    .assertNext(result -> {
+                        assertThat(result.getResultsPage()).extracting(e -> e.getNormalizedAddress().getProvince()).contains("RM");
+                    })
+                    .verifyComplete();
+
+        // filtro per externalCode
+        StepVerifier.create(raddRegistryDAO.findByFilters(entity.getPartnerId(), 10, null, null, null, "EXTCODE", null))
+                    .assertNext(result -> {
+                        assertThat(result.getResultsPage()).extracting(RaddRegistryEntityV2::getExternalCodes).anySatisfy(list -> assertThat(list).contains("EXTCODE"));
+                    })
+                    .verifyComplete();
+    }
+
+
+    @Test
+    void shouldThrowExceptionOnInvalidLastKey() {
+        RaddRegistryEntityV2 entity = buildEntity();
+        entity.getNormalizedAddress().setCap("00100");
+        Assertions.assertThrows(RaddGenericException.class, () ->
+                                        raddRegistryDAO.findByFilters(entity.getPartnerId(), 10, "00100", null, null, null, "invalid-last-key").block()
+                               );
+    }
+    @Test
+    void shouldFindEntitiesByPartnerIdAndRequestId() {
+        // given
+        String partnerId = "partner-" + UUID.randomUUID();
+        String requestId = "req-123";
+
+        RaddRegistryEntityV2 entity1 = buildEntity();
+        entity1.setPartnerId(partnerId);
+        entity1.setRequestId(requestId);
+
+        RaddRegistryEntityV2 entity2 = buildEntity();
+        entity2.setPartnerId(partnerId);
+        entity2.setRequestId(requestId);
+
+        RaddRegistryEntityV2 entity3 = buildEntity();
+        entity3.setPartnerId(partnerId);
+        entity3.setRequestId("different-req");
+
+        RaddRegistryEntityV2 entity4 = buildEntity();
+        entity4.setPartnerId(partnerId);
+        entity4.setRequestId(null);
+
+        StepVerifier.create(
+                raddRegistryDAO.putItemIfAbsent(entity1)
+                        .then(raddRegistryDAO.putItemIfAbsent(entity2))
+                        .then(raddRegistryDAO.putItemIfAbsent(entity3))
+                        .then(raddRegistryDAO.putItemIfAbsent(entity4))
+                        .then()
+        ).verifyComplete();
+
+        // when + then
+        StepVerifier.create(raddRegistryDAO.findByPartnerIdAndRequestId(partnerId, requestId).collectList())
+                .assertNext(list -> {
+                    assertThat(list).hasSize(2);
+                    assertThat(list).extracting(RaddRegistryEntityV2::getRequestId)
+                            .allMatch(rid -> rid.equals(requestId));
+                    assertThat(list).extracting(RaddRegistryEntityV2::getPartnerId)
+                            .allMatch(pid -> pid.equals(partnerId));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldFindCrudRegistriesByPartnerId() {
+        // given
+        String partnerId = "partner-" + UUID.randomUUID();
+
+        RaddRegistryEntityV2 entityWithoutRequestId = buildEntity();
+        entityWithoutRequestId.setPartnerId(partnerId);
+        entityWithoutRequestId.setRequestId(null);
+
+        RaddRegistryEntityV2 entityWithSelfPrefix = buildEntity();
+        entityWithSelfPrefix.setPartnerId(partnerId);
+        entityWithSelfPrefix.setRequestId("SELF-123");
+
+        RaddRegistryEntityV2 entityWithImportRequestId = buildEntity();
+        entityWithImportRequestId.setPartnerId(partnerId);
+        entityWithImportRequestId.setRequestId("import-req-456");
+
+        StepVerifier.create(
+                raddRegistryDAO.putItemIfAbsent(entityWithoutRequestId)
+                        .then(raddRegistryDAO.putItemIfAbsent(entityWithSelfPrefix))
+                        .then(raddRegistryDAO.putItemIfAbsent(entityWithImportRequestId))
+                        .then()
+        ).verifyComplete();
+
+        // when + then
+        StepVerifier.create(raddRegistryDAO.findCrudRegistriesByPartnerId(partnerId).collectList())
+                .assertNext(list -> {
+                    assertThat(list).hasSize(2);
+                    assertThat(list).extracting(RaddRegistryEntityV2::getPartnerId)
+                            .allMatch(pid -> pid.equals(partnerId));
+                    assertThat(list).extracting(RaddRegistryEntityV2::getRequestId)
+                            .allMatch(rid -> rid == null || rid.startsWith("SELF"));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldNotFindEntitiesWithDifferentRequestId() {
+        // given
+        String partnerId = "partner-" + UUID.randomUUID();
+        String requestId = "req-123";
+
+        RaddRegistryEntityV2 entity = buildEntity();
+        entity.setPartnerId(partnerId);
+        entity.setRequestId("different-req");
+
+        StepVerifier.create(raddRegistryDAO.putItemIfAbsent(entity))
+                .assertNext(inserted -> assertThat(inserted).isEqualTo(entity))
+                .verifyComplete();
+
+        // when + then
+        StepVerifier.create(raddRegistryDAO.findByPartnerIdAndRequestId(partnerId, requestId).collectList())
+                .assertNext(list -> assertThat(list).isEmpty())
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldNotFindCrudRegistriesWhenAllHaveImportRequestId() {
+        // given
+        String partnerId = "partner-" + UUID.randomUUID();
+
+        RaddRegistryEntityV2 entity1 = buildEntity();
+        entity1.setPartnerId(partnerId);
+        entity1.setRequestId("import-req-1");
+
+        RaddRegistryEntityV2 entity2 = buildEntity();
+        entity2.setPartnerId(partnerId);
+        entity2.setRequestId("import-req-2");
+
+        StepVerifier.create(
+                raddRegistryDAO.putItemIfAbsent(entity1)
+                        .then(raddRegistryDAO.putItemIfAbsent(entity2))
+                        .then()
+        ).verifyComplete();
+
+        // when + then
+        StepVerifier.create(raddRegistryDAO.findCrudRegistriesByPartnerId(partnerId).collectList())
+                .assertNext(list -> assertThat(list).isEmpty())
+                .verifyComplete();
     }
 
 }
