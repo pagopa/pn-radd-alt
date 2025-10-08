@@ -70,7 +70,7 @@ public class RaddRegistryRequestEntityMapper {
         return originalRequest;
     }
 
-    public RaddRegistryRequestEntity retrieveRaddRegistryRequestEntity(String cxId, String requestId, RaddRegistryOriginalRequest originalRequest) {
+    public RaddRegistryRequestEntity retrieveRaddRegistryRequestEntity(String cxId, String requestId, String uid, RaddRegistryOriginalRequest originalRequest) {
 
         String originalRequestString = objectMapperUtil.toJson(originalRequest);
 
@@ -81,6 +81,7 @@ public class RaddRegistryRequestEntityMapper {
         requestEntity.setCorrelationId(requestId);
         requestEntity.setCreatedAt(Instant.now());
         requestEntity.setUpdatedAt(Instant.now());
+        requestEntity.setUid(uid);
         requestEntity.setOriginalRequest(originalRequestString);
         requestEntity.setStatus(RegistryRequestStatus.NOT_WORKED.name());
         return requestEntity;
@@ -169,6 +170,7 @@ public class RaddRegistryRequestEntityMapper {
             requestEntity.setCreatedAt(Instant.now());
             requestEntity.setUpdatedAt(Instant.now());
             requestEntity.setOriginalRequest(originalRequestString);
+            requestEntity.setUid(importEntity.getUid());
 
             checkRequiredFieldsAndUpdateError(wrappedRaddRegistryOriginalRequest);
             if (!CollectionUtils.isNullOrEmpty(wrappedRaddRegistryOriginalRequest.getErrors())) {

@@ -140,22 +140,6 @@ Parameters:
     Type: String
     Description: 'ARN of dynamodb table containing radd coverage'
 
-  RaddInternalCapCheckerQueueName:
-    Type: String
-    Description: Name of Internal queue
-
-  RaddInternalCapCheckerQueueARN:
-    Type: String
-    Description: 'ARN for RaddInternalCapCheckerQueue'
-
-  RaddInternalCapCheckerDLQName:
-    Type: String
-    Description: Name of DLQ for RaddInternalCapChecker
-
-  RaddInternalCapCheckerDLQARN:
-    Type: String
-    Description: 'DLQ ARN for RaddInternalCapChecker'
-
   ShedLockTableName:
     Type: String
     Description: Name of DynamoDB table used for implementing distributed locks.
@@ -179,10 +163,6 @@ Parameters:
   MaxQuerySize:
     Type: Number
     Description: 'Max query size'
-
-  AddressManagerToRaddAltQueueARN:
-    Type: String
-    Description: 'AddressManager-to-f24 queue ARN'
 
   SafeStorageToRaddAltQueueARN:
     Type: String
@@ -367,18 +347,6 @@ Parameters:
     Type: String
     Description: 'Name of SafeStorage queue'
 
-  AddressManagerToRaddAltQueueName:
-    Type: String
-    Description: 'Name of AddressManager queue'
-
-  AddressManagerBaseUrl:
-    Type: String
-    Description: 'Address manager base url'
-
-  AddressManagerApiKeySecret:
-    Type: String
-    Description: 'Address manager api key secret'
-
   VerifyRaddRegistryImportLockAtMost:
     Type: String
     Description: It specifies how long the lock should be kept in case the executing node dies for Recovery batches (milliseconds)
@@ -500,37 +468,31 @@ Resources:
         ContainerEnvEntry18: !Sub 'PN_RADD_DAO_RADDREGISTRYREQUESTTABLE=${RaddRegistryRequestDynamoTableName}'
         ContainerEnvEntry19: !Sub 'PN_RADD_DAO_RADDREGISTRYIMPORTTABLE=${RaddRegistryImportDynamoTableName}'
         ContainerEnvEntry20: !Sub 'PN_RADD_DAO_RADDREGISTRYTABLE=${RaddRegistryDynamoTableName}'
-        ContainerEnvEntry21: !Sub 'PN_RADD_SQS_INTERNALCAPCHECKERQUEUENAME=${RaddInternalCapCheckerQueueName}'
+        ContainerEnvEntry21: !Sub 'PN_RADD_DAO_RADDREGISTRYTABLEV2=${RaddRegistryDynamoTableV2Name}'
         ContainerEnvEntry22: !Sub 'PN_RADD_SQS_INPUTQUEUENAME=${PnRaddAltInputQueueName}'
         ContainerEnvEntry23: !Sub 'PN_RADD_REGISTRYSAFESTORAGEDOCTYPE=${RegistrySafeStorageDocType}'
         ContainerEnvEntry24: !Sub 'PN_RADD_REGISTRYDEFAULTENDVALIDITY=${RegistryDefaultEndValidity}'
         ContainerEnvEntry25: !Sub 'PN_RADD_REGISTRYDEFAULTDELETERULE=${RegistryDefaultDeleteRule}'
         ContainerEnvEntry26: !Sub 'PN_RADD_REGISTRYIMPORTUPLOADFILETTL=${RegistryImportUploadFileTtl}'
         ContainerEnvEntry27: !Sub 'PN_RADD_SQS_SAFESTORAGEQUEUENAME=${SafeStorageToRaddAltQueueName}'
-        ContainerEnvEntry28: !Sub 'PN_RADD_SQS_ADDRESSMANAGERQUEUENAME=${AddressManagerToRaddAltQueueName}'
-        ContainerEnvEntry29: !Sub 'SPRING_CLOUD_FUNCTIONROUTER_QUEUES_LIST=${RaddInternalCapCheckerQueueName},${PnRaddAltInputQueueName},${SafeStorageToRaddAltQueueName},${AddressManagerToRaddAltQueueName}'
-        ContainerEnvEntry30: !Sub 'PN_RADD_ADDRESSMANAGERBASEURL=${AddressManagerBaseUrl}'
-        ContainerEnvEntry31: !Sub 'PN_RADD_ADDRESSMANAGERAPIKEYSECRET=${AddressManagerApiKeySecret}'
+        ContainerEnvEntry28: !Sub 'PN_RADD_MAX_PRINT_REQUESTS=${MaxPrintRequests}'
+        ContainerEnvEntry29: !Sub 'AWS_GEO_REGIONCODE=${AwsGeoRegionCode}'
+        ContainerEnvEntry30: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
+        ContainerEnvEntry31: !Sub 'SPRING_CLOUD_FUNCTIONROUTER_QUEUES_LIST=${PnRaddAltInputQueueName},${SafeStorageToRaddAltQueueName}'
         ContainerEnvEntry32: !Sub 'PN_RADD_DAO_SHEDLOCKTABLENAME=${ShedLockTableName}'
+        ContainerEnvEntry33: !Sub 'PN_RADD_MAX_PAGE_NUMBER=${PnRaddMaxPageNumber}'
         ContainerEnvEntry34: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_LOCKATMOST=${VerifyRaddRegistryImportLockAtMost}'
         ContainerEnvEntry35: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_LOCKATLEAST=${VerifyRaddRegistryImportLockAtLeast}'
         ContainerEnvEntry36: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_DELAY=${VerifyRaddRegistryImportDelay}'
         ContainerEnvEntry37: !Sub 'PN_RADD_MAXQUERYSIZE=${MaxQuerySize}'
         ContainerEnvEntry38: !Sub 'PN_RADD_REGISTRYIMPORTREPLACEDTTL=${RegistryImportReplacedTtl}'
         ContainerEnvEntry39: !Sub 'PN_RADD_SQS_SAFESTORAGEQUEUENAME=${SafeStorageToRaddAltQueueName}'
-        ContainerEnvEntry40: !Sub 'PN_RADD_SQS_ADDRESSMANAGERQUEUENAME=${AddressManagerToRaddAltQueueName}'
-        ContainerEnvEntry41: !Sub 'SPRING_CLOUD_FUNCTIONROUTER_QUEUES_LIST=${RaddInternalCapCheckerQueueName},${PnRaddAltInputQueueName},${SafeStorageToRaddAltQueueName},${AddressManagerToRaddAltQueueName}'
+        ContainerEnvEntry40: !Sub 'PN_CRON_ANALYZER=${PnCronAnalyzer}'
+        ContainerEnvEntry41: !Sub 'PN_RADD_MAX_DYNAMO_DB_QUERY_SIZE=${PnRaddMaxDynamoDBQuerySize}'
         ContainerEnvEntry42: !Sub 'PN_RADD_EVALUATED_ZIP_CODE_CONFIG_TYPE=${EvaluatedZipCodeConfigType}'
         ContainerEnvEntry43: !Sub 'PN_RADD_EVALUATED_ZIP_CODE_CONFIG_NUMBER=${EvaluatedZipCodeConfigNumber}'
         ContainerEnvEntry44: !Sub 'PN_RADD_EVENTBUS_NAME=arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-CoreEventBus'
-        ContainerEnvEntry45: !Sub 'PN_RADD_MAX_DYNAMO_DB_QUERY_SIZE=${PnRaddMaxDynamoDBQuerySize}'
-        ContainerEnvEntry46: !Sub 'PN_RADD_MAX_PAGE_NUMBER=${PnRaddMaxPageNumber}'
-        ContainerEnvEntry47: !Sub 'PN_CRON_ANALYZER=${PnCronAnalyzer}'
-        ContainerEnvEntry48: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
-        ContainerEnvEntry49: !Sub 'PN_RADD_MAX_PRINT_REQUESTS=${MaxPrintRequests}'
-        ContainerEnvEntry50: !Sub 'AWS_GEO_REGIONCODE=${AwsGeoRegionCode}'
-        ContainerEnvEntry51: !Sub 'PN_RADD_DAO_RADDREGISTRYTABLEV2=${RaddRegistryDynamoTableV2Name}'
-        ContainerEnvEntry52: !Sub 'PN_RADD_DAO_RADDCOVERAGETABLE=${RaddCoverageDynamoTableName}'
+        ContainerEnvEntry45: !Sub 'PN_RADD_DAO_RADDCOVERAGETABLE=${RaddCoverageDynamoTableName}'
         MappedPaths: '/radd-net/*,/radd-net-private/*,/radd-alt/*,/radd-bo/*'
         ECSClusterName: !Ref ECSClusterName
         Subnets: !Ref VpcEgressSubnetsIds
@@ -564,11 +526,8 @@ Resources:
               - sqs:GetQueueAttributes
               - sqs:ReceiveMessage
             Resource:
-              - !Ref RaddInternalCapCheckerDLQARN
-              - !Ref RaddInternalCapCheckerQueueARN
               - !Ref PnRaddAltInputQueueDLQARN
               - !Ref PnRaddAltInputQueueARN
-              - !Ref AddressManagerToRaddAltQueueARN
               - !Ref SafeStorageToRaddAltQueueARN
           - Effect: Allow
             Action:
@@ -744,7 +703,6 @@ Resources:
         QueueArns: !Join
           - ','
           - - !Ref PnRaddAltInputQueueName
-            - !Ref RaddInternalCapCheckerQueueName
         AlarmArns: !Join
           - ','
           - - !GetAtt RaddMicroservice.Outputs.FatalLogsMetricAlarmArn

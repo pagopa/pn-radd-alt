@@ -7,7 +7,7 @@ import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.mapper.StoreRegistryMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.AddressEntity;
-import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntity;
+import it.pagopa.pn.radd.middleware.db.entities.NormalizedAddressEntityV2;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +51,7 @@ class StoreRegistryServiceTest {
         registryEntity.setDescription("testDescription");
         registryEntity.setOpeningTime("testOpeningTime");
 
-        NormalizedAddressEntity normalizedAddressEntity = new NormalizedAddressEntity();
+        NormalizedAddressEntityV2 normalizedAddressEntity = new NormalizedAddressEntityV2();
         normalizedAddressEntity.setCountry("country");
         normalizedAddressEntity.setProvince("pr");
         normalizedAddressEntity.setCity("city");

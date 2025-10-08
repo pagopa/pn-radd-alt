@@ -4,8 +4,8 @@ import lombok.Data;
 
 import java.util.List;
 @Data
-public class AddressManagerRequest {
+public class NormalizationRequest {
 
     private String correlationId;
-    private List<AddressManagerRequestAddress> addresses;
+    private List<NormalizationRequestAddress> addresses;
 }

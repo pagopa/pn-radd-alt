@@ -34,7 +34,16 @@ public class RegistryController implements ImportApi {
      */
     @Override
     public Mono<ResponseEntity<RegistryUploadResponse>> uploadRegistryRequests(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, Mono<RegistryUploadRequest> registryUploadRequest, final ServerWebExchange exchange) {
-        return registryService.uploadRegistryRequests(xPagopaPnCxId, registryUploadRequest)
+        return handleUploadRegistryRequests(xPagopaPnCxId, uid, registryUploadRequest);
+    }
+
+    @Override
+    public Mono<ResponseEntity<RegistryUploadResponse>> uploadRegistryRequestsBo(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, Mono<RegistryUploadRequest> registryUploadRequest, ServerWebExchange exchange) {
+        return handleUploadRegistryRequests(xPagopaPnCxId, xPagopaPnUid, registryUploadRequest);
+    }
+
+    private Mono<ResponseEntity<RegistryUploadResponse>> handleUploadRegistryRequests(String xPagopaPnCxId, String uid, Mono<RegistryUploadRequest> registryUploadRequest) {
+        return registryService.uploadRegistryRequests(xPagopaPnCxId, uid, registryUploadRequest)
                 .map(registryUploadResponse -> ResponseEntity.status(HttpStatus.OK).body(registryUploadResponse));
     }
 
@@ -55,6 +64,15 @@ public class RegistryController implements ImportApi {
      */
     @Override
     public Mono<ResponseEntity<VerifyRequestResponse>> verifyRequest(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String requestId, final ServerWebExchange exchange) {
+        return handleVerifyRequest(xPagopaPnCxId, requestId);
+    }
+
+    @Override
+    public Mono<ResponseEntity<VerifyRequestResponse>> verifyRequestBo(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, String requestId, ServerWebExchange exchange) {
+        return handleVerifyRequest(xPagopaPnCxId, requestId);
+    }
+
+    private Mono<ResponseEntity<VerifyRequestResponse>> handleVerifyRequest(String xPagopaPnCxId, String requestId) {
         return registryService.verifyRegistriesImportRequest(xPagopaPnCxId, requestId)
                 .map(verifyRequestResponse -> ResponseEntity.status(HttpStatus.OK).body(verifyRequestResponse));
     }
@@ -78,6 +96,15 @@ public class RegistryController implements ImportApi {
      */
     @Override
     public Mono<ResponseEntity<RequestResponse>> retrieveRequestItems(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String requestId, Integer limit, String lastKey, final ServerWebExchange exchange) {
+        return handleRetrieveRequestItems(xPagopaPnCxId, requestId, limit, lastKey);
+    }
+
+    @Override
+    public Mono<ResponseEntity<RequestResponse>> retrieveRequestItemsBo(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, String requestId, Integer limit, String lastKey, ServerWebExchange exchange) {
+        return handleRetrieveRequestItems(xPagopaPnCxId, requestId, limit, lastKey);
+    }
+
+    private Mono<ResponseEntity<RequestResponse>> handleRetrieveRequestItems(String xPagopaPnCxId, String requestId, Integer limit, String lastKey) {
         return registryService.retrieveRequestItems(xPagopaPnCxId, requestId, limit, lastKey)
                 .map(requestResponse -> ResponseEntity.status(HttpStatus.OK).body(requestResponse));
     }
