@@ -47,6 +47,7 @@ components:
     ValidityDate:
       type: string
       format: date
+      example: "2025-10-08"
 
     CreateCoverageRequest:
       type: object

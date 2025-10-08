@@ -12,6 +12,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
 
+import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.DATE_INTERVAL_ERROR;
+
 @Slf4j
 public class DateUtils {
 
@@ -90,7 +92,7 @@ public class DateUtils {
         log.debug("Validating end date: start={} end={}", startDate, endDateStr);
         Instant end = convertDateToInstantAtStartOfDay(endDateStr);
         if (end.isBefore(startDate)) {
-            throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR,
+            throw new RaddGenericException(DATE_INTERVAL_ERROR,
                                            "La data di fine validità è precedente a quella di inizio validità (" + startDate + ")",
                                            HttpStatus.BAD_REQUEST);
         }
@@ -106,8 +108,8 @@ public class DateUtils {
         LocalDate effectiveEnd = (endRequest != null) ? endRequest : endEntity;
 
         if (!isValidInterval(effectiveStart, effectiveEnd)) {
-            String msg = "Intervallo di date non valido: start = " + effectiveStart + ", end = " + effectiveEnd + ".";
-            throw new RaddGenericException(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, msg, HttpStatus.BAD_REQUEST);
+            String msg = DATE_INTERVAL_ERROR.getMessage() + ": start = " + effectiveStart + ", end = " + effectiveEnd + ".";
+            throw new RaddGenericException(DATE_INTERVAL_ERROR, msg, HttpStatus.BAD_REQUEST);
         }
 
         log.debug("Coverage date validation successful: start={}, end={}", effectiveStart, effectiveEnd);

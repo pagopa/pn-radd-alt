@@ -28,7 +28,7 @@ public class CoverageController implements CoverageApi {
     @Override
     public Mono<ResponseEntity<Coverage>> updateCoverage(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, String cap, String locality, Mono<UpdateCoverageRequest> updateCoverageRequest, ServerWebExchange exchange) {
         return updateCoverageRequest.flatMap(request -> coverageService.updateCoverage(xPagopaPnUid, cap, locality, request))
-                                    .map(response -> ResponseEntity.status(HttpStatus.OK).build());
+                                    .map(response -> ResponseEntity.status(HttpStatus.OK).body(response));
     }
 
 }

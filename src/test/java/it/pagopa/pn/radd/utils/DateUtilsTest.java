@@ -141,7 +141,7 @@ class DateUtilsTest {
         //Update senza date nell'entità ( 1° aggiornamento con date ) e endDate < startDate
         RaddGenericException ex = assertThrows(RaddGenericException.class, () ->
                 DateUtils.validateCoverageDateInterval(null,null,LocalDate.now().plusDays(1L),LocalDate.now()));
-        assertEquals(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, ex.getExceptionType());
+        assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
 
     }
 
