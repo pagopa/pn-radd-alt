@@ -118,21 +118,21 @@ components:
           type: string
           description: Nazione
           example: 'ITALIA'
-      CheckCoverageResponse:
+    CheckCoverageResponse:
         type: object
         properties:
           hasCoverage:
             type: boolean
             description: Indica se è disponibile la copertura RADD per l'indirizzo richiesto
             example: true
-      SearchMode:
+    SearchMode:
         type: string
         enum:
           - LIGHT
           - COMPLETE
         description: Modalità con cui l’API ricerca la copertura
 
-      parameters:
+  parameters:
         cap:
           name: cap
           description: CAP della località coperta
