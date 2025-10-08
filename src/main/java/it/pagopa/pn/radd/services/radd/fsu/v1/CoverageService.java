@@ -11,9 +11,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
+
 import static it.pagopa.pn.radd.utils.CoverageUtils.buildCoverageEntity;
 import static it.pagopa.pn.radd.utils.CoverageUtils.mapFieldToUpdate;
-import static it.pagopa.pn.radd.utils.DateUtils.validateCoverageDateInterval;
+import static it.pagopa.pn.radd.utils.DateUtils.isValidInterval;
 
 @Service
 @RequiredArgsConstructor
@@ -31,13 +33,19 @@ public class CoverageService {
     }
 
     public Mono<Coverage> updateCoverage(String xPagopaPnUid, String cap, String locality, UpdateCoverageRequest request) {
-        validateCoverageDateInterval(null, null, request.getStartValidity(), request.getEndValidity());
         log.info("Start updateCoverage for cap [{}] and locality [{}]", cap, locality);
+        validateInputInterval(request.getStartValidity(), request.getEndValidity());
         return coverageDAO.find(cap, locality)
                           .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.COVERAGE_NOT_FOUND, HttpStatus.NOT_FOUND)))
                           .flatMap(coverageEntity -> coverageDAO.updateCoverageEntity(mapFieldToUpdate(xPagopaPnUid, coverageEntity, request)))
                           .map(coverageMapper::toDto)
                           .doOnError(throwable -> log.error("Error during update coverage request", throwable));
+    }
+
+    private void validateInputInterval(LocalDate startValidity, LocalDate endValidity) {
+        if (!isValidInterval(startValidity, endValidity)) {
+            throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
+        }
     }
 
 }
