@@ -99,18 +99,21 @@ public class DateUtils {
 
     public static void validateCoverageDateInterval(LocalDate startEntity, LocalDate endEntity, LocalDate startRequest, LocalDate endRequest){
 
-            log.debug("Starting of date validation:");
+        log.debug("Starting of date validation:");
 
-            LocalDate start = (startRequest != null) ? startRequest : startEntity;
-            LocalDate end = (endRequest != null) ? endRequest : endEntity;
+        LocalDate start = (startRequest != null) ? startRequest : startEntity;
+        LocalDate end = (endRequest != null) ? endRequest : endEntity;
 
-            if (start == null || end == null) {
-                log.debug("update without dates!");
-            } else if (end.equals(start) || end.isAfter(start)) {
-                log.debug("coverage date validation successful: start={} end={}", start, end);
-            } else {
-                throw new RaddGenericException(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
-            }
+        if (start == null && end == null) {
+            log.debug("update without dates!");
+        } else if (end.equals(start) || end.isAfter(start)) {
+            log.debug("coverage date validation successful: start={} end={}", start, end);
+        } else {
+            log.error("coverage date validation error: start={} end={}", start, end);
+
+            String msg = "Le date da verificare sono: start = " + start + ", end = " + end + ".";
+            throw new RaddGenericException(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, msg, HttpStatus.BAD_REQUEST);
+        }
 
     }
 
