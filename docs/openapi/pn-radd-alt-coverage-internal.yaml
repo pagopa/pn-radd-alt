@@ -78,8 +78,8 @@ paths:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
-        - $ref: '#/components/parameters/cap'
-        - $ref: '#/components/parameters/locality'
+        - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/parameters/capInPath'
+        - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/parameters/localityInPath'
       requestBody:
         content:
           application/json:
@@ -105,38 +105,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
-
-components:
-  parameters:
-    cap:
-      name: cap
-      description: CAP della località coperta
-      in: path
-      required: true
-      schema:
-        type: string
-      example: 00000
-    locality:
-      name: locality
-      description: Località coperta
-      in: path
-      required: true
-      schema:
-        type: string
-
-  responses:
-    Forbidden:
-      description: Forbidden
-    NotFound:
-      description: Not found
-    Invalid:
-      description: Bad Request
-    NotAllowed:
-      description: Method not allowed
-    InternalError:
-      description: Internal Server Error
-    Unauthorized:
-      description: Unauthorized
 
 #  securitySchemes: # ONLY EXTERNAL
 #    bearerAuth: # ONLY EXTERNAL
