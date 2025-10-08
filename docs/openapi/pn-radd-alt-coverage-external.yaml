@@ -37,9 +37,6 @@ paths:
       x-api-permissions:
         - 'radd-coverage-write'
       parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
       requestBody:
         content:
           application/json:
@@ -75,9 +72,6 @@ paths:
       x-api-permissions:
         - 'radd-coverage-write'
       parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
         - $ref: '#/components/parameters/cap'
         - $ref: '#/components/parameters/locality'
       requestBody:
@@ -138,11 +132,11 @@ components:
     Unauthorized:
       description: Unauthorized
 
-#  securitySchemes: # ONLY EXTERNAL
-#    bearerAuth: # ONLY EXTERNAL
-#      type: http          # ONLY EXTERNAL
-#      scheme: bearer      # ONLY EXTERNAL
-#      bearerFormat: JWT   # ONLY EXTERNAL
+  securitySchemes: # ONLY EXTERNAL
+    bearerAuth: # ONLY EXTERNAL
+      type: http          # ONLY EXTERNAL
+      scheme: bearer      # ONLY EXTERNAL
+      bearerFormat: JWT   # ONLY EXTERNAL
 #
-#security: # ONLY EXTERNAL
-#  - bearerAuth: [ ]     # ONLY EXTERNAL
+security: # ONLY EXTERNAL
+  - bearerAuth: [ ]     # ONLY EXTERNAL
