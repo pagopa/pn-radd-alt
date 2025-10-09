@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: rb65eTQhOCNn1dEapuS+37g1MsGSiAoEyiRmCoWvR7c=
+  version: TOSBUupoO0eLfuTC/PsBnhZCQ7k6jMWVkVDpyv2QYGY=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -961,7 +961,6 @@ paths:
       operationId: addCoverage
       x-api-permissions:
         - radd-coverage-write
-      parameters: []
       requestBody:
         content:
           application/json:
@@ -1007,6 +1006,7 @@ paths:
         connectionType: VPC_LINK
         timeoutInMillis: 29000
         type: http_proxy
+      parameters: []
     options:
       operationId: Options for /api/v1/coverages API CORS
       x-amazon-apigateway-integration:

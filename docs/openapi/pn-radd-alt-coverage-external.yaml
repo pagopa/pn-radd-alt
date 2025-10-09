@@ -36,7 +36,6 @@ paths:
       operationId: addCoverage
       x-api-permissions:
         - 'radd-coverage-write'
-      parameters:
       requestBody:
         content:
           application/json:
@@ -100,6 +99,7 @@ paths:
               schema:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
 
+components:
   securitySchemes: # ONLY EXTERNAL
     bearerAuth: # ONLY EXTERNAL
       type: http          # ONLY EXTERNAL
