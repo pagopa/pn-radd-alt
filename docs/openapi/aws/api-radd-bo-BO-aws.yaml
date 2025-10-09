@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: Io/zn8F0pljUbEKD62vsOg0rSKK14Fv45mSgdHSmVGQ=
+  version: rb65eTQhOCNn1dEapuS+37g1MsGSiAoEyiRmCoWvR7c=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -1205,7 +1205,7 @@ components:
       in: path
       required: true
       schema:
-        type: string
+        $ref: '#/components/schemas/Cap'
       example: 0
     localityInPath:
       name: locality
