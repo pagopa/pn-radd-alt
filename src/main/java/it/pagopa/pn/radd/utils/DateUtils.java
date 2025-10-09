@@ -130,7 +130,7 @@ public class DateUtils {
             return false;
         }
 
-        // Se entrambi valorizzati e uguali, non è attivo
+        // Se sono uguali, deve essere oggi per essere attivo
         if (startValidity != null && startValidity.equals(endValidity)) {
             return today.equals(startValidity);
         }
