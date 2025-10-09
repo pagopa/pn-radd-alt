@@ -140,7 +140,7 @@ components:
       in: path
       required: true
       schema:
-        type: string
+        $ref: '#/components/schemas/Cap'
       example: 00000
     localityInPath:
       name: locality

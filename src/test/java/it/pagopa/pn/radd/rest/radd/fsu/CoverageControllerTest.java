@@ -182,6 +182,30 @@ class CoverageControllerTest {
     }
 
     @Test
+    void updateCoverage_invalidCap() {
+
+        UpdateCoverageRequest request = buildValidUpdateRequest();
+
+        Coverage response = new Coverage();
+        response.setCap(CAP);
+        response.setLocality(LOCALITY);
+
+        when(coverageService.updateCoverage(U_ID, CAP, LOCALITY, request))
+                .thenReturn(Mono.just(response));
+
+        webTestClient.patch()
+                .uri(UPDATE_PATH, "invalidCap", LOCALITY)
+                .header(PN_PAGOPA_CX_TYPE, CxTypeAuthFleet.BO.getValue())
+                .header(PN_PAGOPA_UID, U_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest();
+
+    }
+
+    @Test
     void updateCoverage_NotFound() {
 
         UpdateCoverageRequest request = buildValidUpdateRequest();
