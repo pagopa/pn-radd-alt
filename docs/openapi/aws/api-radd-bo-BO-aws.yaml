@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: TOSBUupoO0eLfuTC/PsBnhZCQ7k6jMWVkVDpyv2QYGY=
+  version: KSxnyFrbtNVOMRb2NX+o14LW+zfUaRpCPR0AgWyrNTA=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -1866,6 +1866,35 @@ components:
           type: string
           description: Istante dell'ultima modifica del punto di ritiro
           format: date-time
+    CreateCoverageRequest:
+      type: object
+      required:
+        - cap
+        - locality
+      properties:
+        cap:
+          $ref: '#/components/schemas/Cap'
+        locality:
+          $ref: '#/components/schemas/Locality'
+        cadastralCode:
+          $ref: '#/components/schemas/CadastralCode'
+        province:
+          $ref: '#/components/schemas/Province'
+    UpdateCoverageRequest:
+      type: object
+      properties:
+        cadastralCode:
+          $ref: '#/components/schemas/CadastralCode'
+        province:
+          $ref: '#/components/schemas/Province'
+        startValidity:
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di inizio validità copertura
+        endValidity:
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di fine validità copertura
     Cap:
       type: string
       description: CAP della località coperta
@@ -1885,20 +1914,6 @@ components:
       description: Provincia della località coperta da RADD
       pattern: ^([a-zA-Z]{2})$
       example: RM
-    CreateCoverageRequest:
-      type: object
-      required:
-        - cap
-        - locality
-      properties:
-        cap:
-          $ref: '#/components/schemas/Cap'
-        locality:
-          $ref: '#/components/schemas/Locality'
-        cadastralCode:
-          $ref: '#/components/schemas/CadastralCode'
-        province:
-          $ref: '#/components/schemas/Province'
     ValidityDate:
       type: string
       format: date
@@ -1910,21 +1925,6 @@ components:
           $ref: '#/components/schemas/Cap'
         locality:
           $ref: '#/components/schemas/Locality'
-        cadastralCode:
-          $ref: '#/components/schemas/CadastralCode'
-        province:
-          $ref: '#/components/schemas/Province'
-        startValidity:
-          allOf:
-            - $ref: '#/components/schemas/ValidityDate'
-            - description: Data di inizio validità copertura
-        endValidity:
-          allOf:
-            - $ref: '#/components/schemas/ValidityDate'
-            - description: Data di fine validità copertura
-    UpdateCoverageRequest:
-      type: object
-      properties:
         cadastralCode:
           $ref: '#/components/schemas/CadastralCode'
         province:
