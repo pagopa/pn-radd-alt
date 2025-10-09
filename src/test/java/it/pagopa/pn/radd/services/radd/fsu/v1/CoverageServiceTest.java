@@ -3,16 +3,12 @@ package it.pagopa.pn.radd.services.radd.fsu.v1;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.Coverage;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateCoverageRequest;
 import it.pagopa.pn.radd.mapper.*;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CheckCoverageRequest;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CheckCoverageResponse;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.SearchMode;
 import it.pagopa.pn.radd.middleware.db.CoverageDAO;
 import it.pagopa.pn.radd.middleware.db.entities.CoverageEntity;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import it.pagopa.pn.radd.utils.DateUtils;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,10 +26,8 @@ import java.time.LocalDate;
 
 import static org.mockito.ArgumentMatchers.eq;
 
-import java.time.LocalDate;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)

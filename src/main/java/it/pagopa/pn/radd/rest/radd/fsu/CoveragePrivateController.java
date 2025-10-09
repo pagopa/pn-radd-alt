@@ -22,7 +22,7 @@ public class CoveragePrivateController implements CoveragePrivateApi {
 
 
     @Override
-    public Mono<ResponseEntity<CheckCoverageResponse>> checkCoverage(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, SearchMode searchMode, Mono<CheckCoverageRequest> checkCoverageRequest, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<CheckCoverageResponse>> checkCoverage(SearchMode searchMode, Mono<CheckCoverageRequest> checkCoverageRequest, ServerWebExchange exchange) {
         return checkCoverageRequest.flatMap(request -> coverageService.checkCoverage(request, searchMode))
                                    .map(checkCoverageResponse -> ResponseEntity.status(HttpStatus.OK).body(checkCoverageResponse));
         }

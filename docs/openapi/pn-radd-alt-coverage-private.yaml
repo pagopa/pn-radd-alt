@@ -36,9 +36,6 @@ paths:
       x-api-permissions:
         - 'radd-coverage-read'
       parameters:
-        - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
         - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/parameters/searchMode'
       requestBody:
         content:

@@ -31,14 +31,7 @@ public class CoveragePrivateControllerTest {
     @Autowired
     WebTestClient webTestClient;
 
-
-    public static final String PN_PAGOPA_CX_ID = "x-pagopa-pn-cx-id";
-    public static final String PN_PAGOPA_CX_TYPE = "x-pagopa-pn-cx-type";
-    public static final String PN_PAGOPA_UID = "x-pagopa-pn-uid";
-    private final String CF_ENTE = "LLLLLLNNLNNLNNNL";
     private final String SEARCH_MODE="search_mode";
-    private final String U_ID = UUID.randomUUID().toString();
-
     private final String CAP = "00000";
     private final String LOCALITY = "locality";
 
@@ -67,9 +60,6 @@ public class CoveragePrivateControllerTest {
                              .path(CREATE_PATH_PRIVATE)
                              .queryParam(SEARCH_MODE, "LIGHT")
                              .build())
-                     .header(PN_PAGOPA_UID, U_ID)
-                     .header(PN_PAGOPA_CX_ID, CF_ENTE)
-                     .header(PN_PAGOPA_CX_TYPE, "PA")
                      .bodyValue(checkCoverageRequest())
                      .exchange()
                      .expectStatus().isOk();
@@ -89,9 +79,6 @@ public class CoveragePrivateControllerTest {
                      .uri(uriBuilder -> uriBuilder
                              .path(CREATE_PATH_PRIVATE)
                              .build())
-                     .header(PN_PAGOPA_UID, U_ID)
-                     .header(PN_PAGOPA_CX_ID, CF_ENTE)
-                     .header(PN_PAGOPA_CX_TYPE, "PA")
                      .bodyValue(checkCoverageRequest())
                      .exchange()
                      .expectStatus().isBadRequest();
