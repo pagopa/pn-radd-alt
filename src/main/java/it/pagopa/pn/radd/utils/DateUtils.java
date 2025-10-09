@@ -109,7 +109,7 @@ public class DateUtils {
 
         // Se entrambi valorizzati e uguali, non è attivo
         if (startValidity != null && startValidity.equals(endValidity)) {
-            return false;
+            return today.equals(startValidity);
         }
 
         // Verifica che oggi sia >= start (se presente)

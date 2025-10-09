@@ -168,7 +168,7 @@ class DateUtilsTest {
     @Test
     void testStartEqualsEndToday() throws Exception {
         LocalDate date = LocalDate.now();
-        assertFalse(DateUtils.isValidityActive(date, date));
+        assertTrue(DateUtils.isValidityActive(date, date));
     }
 
     // entrambe valorizzate e uguali nel passato -> torno false

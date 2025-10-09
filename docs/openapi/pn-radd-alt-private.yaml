@@ -9,6 +9,8 @@ servers:
 tags:
   - name: notificationInquiry
     description: API di interrogazione delle pratiche.
+  - name: CoveragePrivate
+    description: API per la copertura RADD
 
 paths:
   /radd-net-private/api/v1/act/operations/by-id/{transactionId}:                                                                        
@@ -189,7 +191,40 @@ paths:
         405:                                                                                                                               
           $ref: '#/components/responses/NotAllowed'                                                                                        
         500:                                                                                                                               
-          $ref: '#/components/responses/InternalError'                                                                                    
+          $ref: '#/components/responses/InternalError'
+
+#COVERAGE
+  /radd-net-private/api/v1/coverages/check:
+    post:
+      tags:
+        - CoveragePrivate
+      description: >-
+        API che verifica se è disponibile la copertura RADD per un determinato indirizzo
+      operationId: checkCoverage
+      x-api-permissions:
+        - 'radd-coverage-read'
+      parameters:
+        - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/parameters/searchMode'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/CheckCoverageRequest'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/CheckCoverageResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+
 components:
   schemas:
     ResponseStatus:
@@ -388,7 +423,7 @@ components:
         to:                                                                                                                 
           type: string                                                                                                      
           format: date-time                                                                                                 
-          description: Data/ora in formato RFC3339.                                                                         
+          description: Data/ora in formato RFC3339.
 
   parameters:
     transactionId:

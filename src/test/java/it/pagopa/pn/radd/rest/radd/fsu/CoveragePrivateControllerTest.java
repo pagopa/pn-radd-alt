@@ -35,7 +35,7 @@ public class CoveragePrivateControllerTest {
     private final String CAP = "00000";
     private final String LOCALITY = "locality";
 
-    private final String CREATE_PATH_PRIVATE = "/radd-bo/api/v1/coverages/check";
+    private final String CREATE_PATH_PRIVATE = "/radd-net-private/api/v1/coverages/check";
 
 
 
