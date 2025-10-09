@@ -125,4 +125,24 @@ class DateUtilsTest {
                 DateUtils.validateDateInterval(start, end));
         assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
     }
+
+    @Test
+    void testValidateCoverageDateInterval() {
+
+        //Update senza date
+        assertDoesNotThrow(() -> DateUtils.validateCoverageDateInterval(null, null,null,null));
+
+        //Update senza date nell'entità ( 1° aggiornamento con date ) e endDate > startDate
+        assertDoesNotThrow(() -> DateUtils.validateCoverageDateInterval(null,null,LocalDate.now(),LocalDate.now().plusDays(1L)));
+
+        //Update senza date nell'entità ( 1° aggiornamento con date ) e endDate = startDate
+        assertDoesNotThrow(() -> DateUtils.validateCoverageDateInterval(null,null,LocalDate.now(),LocalDate.now()));
+
+        //Update senza date nell'entità ( 1° aggiornamento con date ) e endDate < startDate
+        RaddGenericException ex = assertThrows(RaddGenericException.class, () ->
+                DateUtils.validateCoverageDateInterval(null,null,LocalDate.now().plusDays(1L),LocalDate.now()));
+        assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
+
+    }
+
 }

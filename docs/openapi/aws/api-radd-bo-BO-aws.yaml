@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: PTaSXLleTA4kJWTH7O8SOT0/mAbGTHg2GnjMuAPteKM=
+  version: Io/zn8F0pljUbEKD62vsOg0rSKK14Fv45mSgdHSmVGQ=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -1902,6 +1902,7 @@ components:
     ValidityDate:
       type: string
       format: date
+      example: '2025-10-08'
     Coverage:
       type: object
       properties:
