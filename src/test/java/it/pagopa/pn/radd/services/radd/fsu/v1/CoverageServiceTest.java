@@ -147,7 +147,7 @@ class CoverageServiceTest {
         request.setEndValidity(LocalDate.now().minusDays(5L));
 
         RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> coverageService.updateCoverage(U_ID, CAP, LOCALITY, request));
-        Assertions.assertEquals(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, ex.getExceptionType());
+        Assertions.assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
 
     }
 

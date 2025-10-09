@@ -12,6 +12,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
 
+import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.DATE_INTERVAL_ERROR;
+
 @Slf4j
 public class DateUtils {
 
@@ -90,31 +92,34 @@ public class DateUtils {
         log.debug("Validating end date: start={} end={}", startDate, endDateStr);
         Instant end = convertDateToInstantAtStartOfDay(endDateStr);
         if (end.isBefore(startDate)) {
-            throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR,
+            throw new RaddGenericException(DATE_INTERVAL_ERROR,
                                            "La data di fine validità è precedente a quella di inizio validità (" + startDate + ")",
                                            HttpStatus.BAD_REQUEST);
         }
         return end;
     }
 
-    public static void validateCoverageDateInterval(LocalDate startEntity, LocalDate endEntity, LocalDate startRequest, LocalDate endRequest){
+    public static void validateCoverageDateInterval(LocalDate startEntity, LocalDate endEntity, LocalDate startRequest, LocalDate endRequest) {
 
-        log.debug("Starting of date validation:");
+        log.debug("Starting date validation: startEntity={}, endEntity={}, startRequest={}, endRequest={}",
+                startEntity, endEntity, startRequest, endRequest);
 
-        LocalDate start = (startRequest != null) ? startRequest : startEntity;
-        LocalDate end = (endRequest != null) ? endRequest : endEntity;
+        LocalDate effectiveStart = (startRequest != null) ? startRequest : startEntity;
+        LocalDate effectiveEnd = (endRequest != null) ? endRequest : endEntity;
 
-        if (start == null && end == null) {
-            log.debug("update without dates!");
-        } else if (end.equals(start) || end.isAfter(start)) {
-            log.debug("coverage date validation successful: start={} end={}", start, end);
-        } else {
-            log.error("coverage date validation error: start={} end={}", start, end);
-
-            String msg = "Le date da verificare sono: start = " + start + ", end = " + end + ".";
-            throw new RaddGenericException(ExceptionTypeEnum.COVERAGE_DATE_INTERVAL_ERROR, msg, HttpStatus.BAD_REQUEST);
+        if (!isValidInterval(effectiveStart, effectiveEnd)) {
+            String msg = DATE_INTERVAL_ERROR.getMessage() + ": start = " + effectiveStart + ", end = " + effectiveEnd + ".";
+            throw new RaddGenericException(DATE_INTERVAL_ERROR, msg, HttpStatus.BAD_REQUEST);
         }
 
+        log.debug("Coverage date validation successful: start={}, end={}", effectiveStart, effectiveEnd);
+    }
+
+    public static boolean isValidInterval(LocalDate startValidity, LocalDate endValidity) {
+        if (startValidity == null || endValidity == null) {
+            return true;
+        }
+        return startValidity.equals(endValidity) || startValidity.isBefore(endValidity);
     }
 
 }
