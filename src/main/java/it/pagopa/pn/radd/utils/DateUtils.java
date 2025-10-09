@@ -122,4 +122,26 @@ public class DateUtils {
         return startValidity.equals(endValidity) || startValidity.isBefore(endValidity);
     }
 
+    public static boolean isValidityActive(LocalDate startValidity, LocalDate endValidity) {
+        LocalDate today = LocalDate.now();
+
+        // Se entrambi null, non è attivo
+        if (startValidity == null && endValidity == null) {
+            return false;
+        }
+
+        // Se sono uguali, deve essere oggi per essere attivo
+        if (startValidity != null && startValidity.equals(endValidity)) {
+            return today.equals(startValidity);
+        }
+
+        // Verifica che oggi sia >= start (se presente)
+        boolean afterStart = startValidity == null || !today.isBefore(startValidity);
+
+        // Verifica che oggi sia <= end (se presente)
+        boolean beforeEnd = endValidity == null || !today.isAfter(endValidity);
+
+        return afterStart && beforeEnd;
+    }
+
 }

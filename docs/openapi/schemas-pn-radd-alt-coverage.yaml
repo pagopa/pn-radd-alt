@@ -80,6 +80,59 @@ components:
             - $ref: '#/components/schemas/ValidityDate'
             - description: Data di fine validità copertura
 
+    CheckCoverageRequest:
+      type: object
+      required:
+        - cap
+        - city
+      properties:
+        nameRow2:
+          type: string
+          description: Destinatario
+          example: 'c/o Rossi Mario'
+        addressRow:
+          type: string
+          description: Indirizzo 1
+          example: 'Via Roma 123'
+        addressRow2:
+          type: string
+          description: Indirizzo 2
+          example: 'Interno 5'
+        cap:
+          type: string
+          description: CAP della località coperta
+          pattern: '^\d{5}$'
+          example: '00000'
+        city:
+          type: string
+          description: Città 1
+          example: 'Roma'
+        city2:
+          type: string
+          description: Città 2
+          example: 'Centro Storico'
+        pr:
+          type: string
+          description: Provincia
+          example: 'RM'
+        country:
+          type: string
+          description: Nazione
+          example: 'ITALIA'
+    CheckCoverageResponse:
+        type: object
+        properties:
+          hasCoverage:
+            type: boolean
+            description: Indica se è disponibile la copertura RADD per l'indirizzo richiesto
+            example: true
+    SearchMode:
+        type: string
+        enum:
+          - LIGHT
+          - COMPLETE
+        description: Modalità con cui l’API ricerca la copertura
+
   parameters:
     capInPath:
       name: cap
@@ -87,7 +140,7 @@ components:
       in: path
       required: true
       schema:
-        type: string
+        $ref: '#/components/schemas/Cap'
       example: 00000
     localityInPath:
       name: locality
@@ -96,3 +149,10 @@ components:
       required: true
       schema:
         type: string
+    searchMode:
+      name: search_mode
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/SearchMode'
+      example: "LIGHT"

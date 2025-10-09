@@ -453,8 +453,7 @@
                                 <basePackage>${project.groupId}.radd.alt.generated.openapi.server.v1</basePackage>
                                 <modelPackage>${project.groupId}.radd.alt.generated.openapi.server.v1.dto</modelPackage>
                                 <apiPackage>${project.groupId}.radd.alt.generated.openapi.server.v1.api</apiPackage>
-                                <configPackage>${project.groupId}.radd.alt.generated.openapi.server.v1.config
-                                </configPackage>
+                                <configPackage>${project.groupId}.radd.alt.generated.openapi.server.v1.config</configPackage>
                             </configOptions>
                         </configuration>
                     </execution>
