@@ -20,13 +20,13 @@ public class CoverageController implements CoverageApi {
     private final CoverageService coverageService;
 
     @Override
-    public Mono<ResponseEntity<Coverage>> addCoverage(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, Mono<CreateCoverageRequest> createCoverageRequest, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<Coverage>> addCoverage(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnUid, Mono<CreateCoverageRequest> createCoverageRequest, ServerWebExchange exchange) {
         return createCoverageRequest.flatMap(request -> coverageService.addCoverage(xPagopaPnUid,request))
                                     .map(response -> ResponseEntity.status(HttpStatus.OK).body(response));
     }
 
     @Override
-    public Mono<ResponseEntity<Coverage>> updateCoverage(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, String cap, String locality, Mono<UpdateCoverageRequest> updateCoverageRequest, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<Coverage>> updateCoverage(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnUid, String cap, String locality, Mono<UpdateCoverageRequest> updateCoverageRequest, ServerWebExchange exchange) {
         return updateCoverageRequest.flatMap(request -> coverageService.updateCoverage(xPagopaPnUid, cap, locality, request))
                                     .map(response -> ResponseEntity.status(HttpStatus.OK).build());
     }
