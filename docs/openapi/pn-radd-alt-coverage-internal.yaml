@@ -38,7 +38,6 @@ paths:
         - 'radd-coverage-write'
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
       requestBody:
         content:
@@ -76,7 +75,6 @@ paths:
         - 'radd-coverage-write'
       parameters:
         - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
-        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
         - $ref: 'remote-refs.yaml#/components/parameters/uidAuthFleet'          # NO EXTERNAL
         - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/parameters/capInPath'
         - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/parameters/localityInPath'

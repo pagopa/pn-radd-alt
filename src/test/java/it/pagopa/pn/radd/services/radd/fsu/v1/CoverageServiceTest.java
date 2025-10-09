@@ -1,7 +1,8 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.Coverage;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateCoverageRequest;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
+import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.*;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CheckCoverageRequest;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CheckCoverageResponse;
@@ -30,6 +31,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+
 @ExtendWith(MockitoExtension.class)
 @ContextConfiguration(classes = {RegistrySelfServiceV2.class})
 @CustomLog
@@ -65,81 +67,20 @@ class CoverageServiceTest {
         req.setCadastralCode("A000");
 
         return req;
-}
 
-    @Test
-    void testCheckCoverageLightModeWithCoverage() {
-        CheckCoverageRequest request = new CheckCoverageRequest().cap("00100");
-        CoverageEntity coverage = new CoverageEntity();
-        coverage.setStartValidity(LocalDate.now().minusDays(1));
-        coverage.setEndValidity(LocalDate.now().plusDays(1));
-
-        Mockito.when(coverageDAO.findByCap(eq("00100")))
-               .thenReturn(Flux.just(coverage));
-
-        StepVerifier.create(coverageService.checkCoverage(request, SearchMode.LIGHT))
-                    .expectNextMatches(resp -> resp.getHasCoverage())
-                    .verifyComplete();
     }
 
-    @Test
-    void testCheckCoverageLightModeWithoutCoverage() {
-        CheckCoverageRequest request = new CheckCoverageRequest().cap("00100");
+    private UpdateCoverageRequest buildValidUpdateRequest() {
 
-        Mockito.when(coverageDAO.findByCap(eq("00100")))
-               .thenReturn(Flux.empty());
+        UpdateCoverageRequest req = new UpdateCoverageRequest();
 
-        StepVerifier.create(coverageService.checkCoverage(request, SearchMode.LIGHT))
-                    .expectNextMatches(resp -> !resp.getHasCoverage())
-                    .verifyComplete();
-    }
+        req.setProvince("RM");
+        req.setCadastralCode("A000");
+        req.setStartValidity(LocalDate.now());
+        req.setEndValidity(LocalDate.now().plusDays(1L));
 
-    @Test
-    void testCheckCoverageCompleteModeWithCoverage() {
-        CheckCoverageRequest request = new CheckCoverageRequest().cap("00100").city("Roma");
-        CoverageEntity coverage = new CoverageEntity();
-        coverage.setStartValidity(LocalDate.now().minusDays(1));
-        coverage.setEndValidity(LocalDate.now().plusDays(1));
+        return req;
 
-        Mockito.when(coverageDAO.find(eq("00100"), eq("Roma")))
-               .thenReturn(Mono.just(coverage));
-
-        StepVerifier.create(coverageService.checkCoverage(request, SearchMode.COMPLETE))
-                    .expectNextMatches(resp -> resp.getHasCoverage())
-                    .verifyComplete();
-    }
-    @Test
-    void testCheckCoverageCompleteModeWithoutCoverage() {
-        CheckCoverageRequest request = new CheckCoverageRequest().cap("00100").city("Roma");
-
-        Mockito.when(coverageDAO.find(eq("00100"), eq("Roma")))
-               .thenReturn(Mono.empty());
-
-        StepVerifier.create(coverageService.checkCoverage(request, SearchMode.COMPLETE))
-                    .expectNextMatches(resp -> !resp.getHasCoverage())
-                    .verifyComplete();
-    }
-    //test per isValidityActive
-
-    @Test
-    void testCoverageWithActiveDate() {
-        CheckCoverageRequest request = new CheckCoverageRequest();
-        request.setCap("00000");
-        request.setCity("Roma");
-
-        // Mock del DAO
-        CoverageEntity cov = new CoverageEntity();
-        cov.setStartValidity(LocalDate.now().minusDays(1));
-        cov.setEndValidity(LocalDate.now().plusDays(1));
-
-        Mockito.when(coverageDAO.findByCap("00000"))
-               .thenReturn(Flux.just(cov));
-
-        Mono<CheckCoverageResponse> result = coverageService.checkCoverage(request, SearchMode.LIGHT);
-
-        StepVerifier.create(result)
-                    .expectNextMatches(resp -> resp.getHasCoverage())
-                    .verifyComplete();
     }
 
     @Test
@@ -156,6 +97,138 @@ class CoverageServiceTest {
         StepVerifier.create(result)
                     .assertNext(Assertions::assertNotNull)
                     .verifyComplete();
+
+    }
+
+    @Test
+    void updateCoverage() {
+
+        UpdateCoverageRequest request = buildValidUpdateRequest();
+
+        CoverageEntity entity = new CoverageEntity();
+        entity.setCap(CAP);
+        entity.setLocality(LOCALITY);
+
+        Mockito.lenient().when(coverageDAO.findByCap(CAP)).thenReturn(Flux.empty());
+        Mockito.lenient().when(coverageDAO.find(CAP, LOCALITY)).thenReturn(Mono.just(entity));
+        when(coverageDAO.updateCoverageEntity(entity)).thenReturn(Mono.just(entity));
+
+        StepVerifier.create(coverageService.updateCoverage(U_ID, CAP, LOCALITY, request))
+                    .expectNextMatches(coverageEntity -> entity.getCadastralCode().equalsIgnoreCase(request.getCadastralCode())
+                                                         && entity.getProvince().equalsIgnoreCase(request.getProvince()))
+                    .verifyComplete();
+
+    }
+
+    @Test
+    void updateCoverage_NotFound() {
+
+        when(coverageDAO.find(CAP, LOCALITY)).thenReturn(Mono.empty());
+
+        StepVerifier.create(coverageService.updateCoverage(U_ID, CAP, LOCALITY, new UpdateCoverageRequest()))
+                    .verifyErrorMessage(ExceptionTypeEnum.COVERAGE_NOT_FOUND.getMessage());
+
+    }
+
+    @Test
+    void updateCoverage_BadRequest() {
+
+        CoverageEntity entity = new CoverageEntity();
+        entity.setCap(CAP);
+        entity.setLocality(LOCALITY);
+        entity.setCadastralCode("");
+
+        when(coverageDAO.find(CAP, LOCALITY)).thenReturn(Mono.just(entity));
+
+        StepVerifier.create(coverageService.updateCoverage(U_ID, CAP, LOCALITY, new UpdateCoverageRequest()))
+                    .verifyError();
+
+    }
+
+    @Test
+    void updateCoverage_InvalidIntervalDates() {
+
+        UpdateCoverageRequest request = buildValidUpdateRequest();
+        request.setEndValidity(LocalDate.now().minusDays(5L));
+
+        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> coverageService.updateCoverage(U_ID, CAP, LOCALITY, request));
+        Assertions.assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
+
+    }
+
+    @Test
+    void testCheckCoverageLightModeWithCoverage() {
+        CheckCoverageRequest request = new CheckCoverageRequest().cap("00100");
+        CoverageEntity coverage = new CoverageEntity();
+        coverage.setStartValidity(LocalDate.now().minusDays(1));
+        coverage.setEndValidity(LocalDate.now().plusDays(1));
+
+        Mockito.when(coverageDAO.findByCap(eq("00100")))
+                .thenReturn(Flux.just(coverage));
+
+        StepVerifier.create(coverageService.checkCoverage(request, SearchMode.LIGHT))
+                .expectNextMatches(resp -> resp.getHasCoverage())
+                .verifyComplete();
+    }
+
+    @Test
+    void testCheckCoverageLightModeWithoutCoverage() {
+        CheckCoverageRequest request = new CheckCoverageRequest().cap("00100");
+
+        Mockito.when(coverageDAO.findByCap(eq("00100")))
+                .thenReturn(Flux.empty());
+
+        StepVerifier.create(coverageService.checkCoverage(request, SearchMode.LIGHT))
+                .expectNextMatches(resp -> !resp.getHasCoverage())
+                .verifyComplete();
+    }
+
+    @Test
+    void testCheckCoverageCompleteModeWithCoverage() {
+        CheckCoverageRequest request = new CheckCoverageRequest().cap("00100").city("Roma");
+        CoverageEntity coverage = new CoverageEntity();
+        coverage.setStartValidity(LocalDate.now().minusDays(1));
+        coverage.setEndValidity(LocalDate.now().plusDays(1));
+
+        Mockito.when(coverageDAO.find(eq("00100"), eq("Roma")))
+                .thenReturn(Mono.just(coverage));
+
+        StepVerifier.create(coverageService.checkCoverage(request, SearchMode.COMPLETE))
+                .expectNextMatches(resp -> resp.getHasCoverage())
+                .verifyComplete();
+    }
+    @Test
+    void testCheckCoverageCompleteModeWithoutCoverage() {
+        CheckCoverageRequest request = new CheckCoverageRequest().cap("00100").city("Roma");
+
+        Mockito.when(coverageDAO.find(eq("00100"), eq("Roma")))
+                .thenReturn(Mono.empty());
+
+        StepVerifier.create(coverageService.checkCoverage(request, SearchMode.COMPLETE))
+                .expectNextMatches(resp -> !resp.getHasCoverage())
+                .verifyComplete();
+    }
+    //test per isValidityActive
+
+    @Test
+    void testCoverageWithActiveDate() {
+        CheckCoverageRequest request = new CheckCoverageRequest();
+        request.setCap("00000");
+        request.setCity("Roma");
+
+        // Mock del DAO
+        CoverageEntity cov = new CoverageEntity();
+        cov.setStartValidity(LocalDate.now().minusDays(1));
+        cov.setEndValidity(LocalDate.now().plusDays(1));
+
+        Mockito.when(coverageDAO.findByCap("00000"))
+                .thenReturn(Flux.just(cov));
+
+        Mono<CheckCoverageResponse> result = coverageService.checkCoverage(request, SearchMode.LIGHT);
+
+        StepVerifier.create(result)
+                .expectNextMatches(resp -> resp.getHasCoverage())
+                .verifyComplete();
     }
 
     @Test
@@ -169,13 +242,13 @@ class CoverageServiceTest {
         cov.setEndValidity(LocalDate.now().minusDays(1));
 
         Mockito.when(coverageDAO.findByCap("00000"))
-               .thenReturn(Flux.just(cov));
+                .thenReturn(Flux.just(cov));
 
         Mono<CheckCoverageResponse> result = coverageService.checkCoverage(request, SearchMode.LIGHT);
 
         StepVerifier.create(result)
-                    .expectNextMatches(resp -> !resp.getHasCoverage())
-                    .verifyComplete();
+                .expectNextMatches(resp -> !resp.getHasCoverage())
+                .verifyComplete();
     }
 
 }
