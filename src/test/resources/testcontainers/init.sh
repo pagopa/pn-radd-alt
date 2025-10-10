@@ -247,6 +247,20 @@ aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
     AttributeName=locationId,KeyType=RANGE \
     --provisioned-throughput ReadCapacityUnits=10,WriteCapacityUnits=5
 
+
+echo "### CREATE PN RADD COVERAGE TABLE ###"
+
+aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \
+    dynamodb create-table \
+    --table-name pn-RaddCoverage \
+    --attribute-definitions \
+    AttributeName=cap,AttributeType=S \
+    AttributeName=locality,AttributeType=S \
+    --key-schema \
+    AttributeName=cap,KeyType=HASH \
+    AttributeName=locality,KeyType=RANGE \
+    --provisioned-throughput ReadCapacityUnits=10,WriteCapacityUnits=5
+
 echo "### CREATE PN RADD SCHEDLOCK TABLE ###"
 
 aws --profile default --region us-east-1 --endpoint-url=http://localstack:4566 \

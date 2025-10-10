@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: oC8mVPFqTKh9bBsrSv1Cf7j46NYHxi09G+qfB/vplxo=
+  version: KSxnyFrbtNVOMRb2NX+o14LW+zfUaRpCPR0AgWyrNTA=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -951,6 +951,146 @@ paths:
         connectionType: VPC_LINK
         timeoutInMillis: 29000
         type: http_proxy
+  /api/v1/coverages:
+    post:
+      tags:
+        - Coverage
+      description: >-
+        API che consente la creazione di una nuova copertura RADD per una
+        specifica località
+      operationId: addCoverage
+      x-api-permissions:
+        - radd-coverage-write
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCoverageRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coverage'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - pn-auth-fleet_backofficeAuthorizer: []
+      x-amazon-apigateway-integration:
+        uri: >-
+          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v1/coverages
+        connectionId: ${stageVariables.NetworkLoadBalancerLink}
+        httpMethod: ANY
+        requestParameters:
+          integration.request.header.x-pagopa-pn-cx-id: context.authorizer.cx_id
+          integration.request.header.x-pagopa-pn-cx-role: context.authorizer.cx_role
+          integration.request.header.x-pagopa-pn-uid: context.authorizer.uid
+          integration.request.header.x-pagopa-pn-jti: context.authorizer.cx_jti
+          integration.request.header.x-pagopa-pn-cx-type: context.authorizer.cx_type
+          integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
+          integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
+          integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
+        passthroughBehavior: when_no_match
+        connectionType: VPC_LINK
+        timeoutInMillis: 29000
+        type: http_proxy
+      parameters: []
+    options:
+      operationId: Options for /api/v1/coverages API CORS
+      x-amazon-apigateway-integration:
+        uri: >-
+          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v1/coverages
+        connectionId: ${stageVariables.NetworkLoadBalancerLink}
+        httpMethod: ANY
+        requestParameters: {}
+        passthroughBehavior: when_no_match
+        connectionType: VPC_LINK
+        timeoutInMillis: 29000
+        type: http_proxy
+  /api/v1/coverages/{cap}/{locality}:
+    patch:
+      tags:
+        - Coverage
+      description: API che permette la modifica di una copertura esistente
+      operationId: updateCoverage
+      x-api-permissions:
+        - radd-coverage-write
+      parameters:
+        - $ref: '#/components/parameters/capInPath'
+        - $ref: '#/components/parameters/localityInPath'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCoverageRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coverage'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Not found - Copertura non trovata
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      security:
+        - pn-auth-fleet_backofficeAuthorizer: []
+      x-amazon-apigateway-integration:
+        uri: >-
+          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v1/coverages/{cap}/{locality}
+        connectionId: ${stageVariables.NetworkLoadBalancerLink}
+        httpMethod: ANY
+        requestParameters:
+          integration.request.header.x-pagopa-pn-cx-id: context.authorizer.cx_id
+          integration.request.header.x-pagopa-pn-cx-role: context.authorizer.cx_role
+          integration.request.header.x-pagopa-pn-uid: context.authorizer.uid
+          integration.request.header.x-pagopa-pn-jti: context.authorizer.cx_jti
+          integration.request.header.x-pagopa-pn-cx-type: context.authorizer.cx_type
+          integration.request.header.x-pagopa-pn-cx-groups: context.authorizer.cx_groups
+          integration.request.header.x-pagopa-pn-src-ch-details: context.authorizer.sourceChannelDetails
+          integration.request.header.x-pagopa-pn-src-ch: '''BACKOFFICE'''
+          integration.request.path.cap: method.request.path.cap
+          integration.request.path.locality: method.request.path.locality
+        passthroughBehavior: when_no_match
+        connectionType: VPC_LINK
+        timeoutInMillis: 29000
+        type: http_proxy
+    options:
+      operationId: Options for /api/v1/coverages/{cap}/{locality} API CORS
+      x-amazon-apigateway-integration:
+        uri: >-
+          http://${stageVariables.ApplicationLoadBalancerDomain}:8080/${stageVariables.ServiceApiPath}/api/v1/coverages/{cap}/{locality}
+        connectionId: ${stageVariables.NetworkLoadBalancerLink}
+        httpMethod: ANY
+        requestParameters:
+          integration.request.path.cap: method.request.path.cap
+          integration.request.path.locality: method.request.path.locality
+        passthroughBehavior: when_no_match
+        connectionType: VPC_LINK
+        timeoutInMillis: 29000
+        type: http_proxy
 components:
   parameters:
     registryId:
@@ -1056,6 +1196,21 @@ components:
       name: partnerId
       description: C.F. del partner erogatore
       in: header
+      required: true
+      schema:
+        type: string
+    capInPath:
+      name: cap
+      description: CAP della località coperta
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Cap'
+      example: 0
+    localityInPath:
+      name: locality
+      description: Località coperta
+      in: path
       required: true
       schema:
         type: string
@@ -1711,6 +1866,77 @@ components:
           type: string
           description: Istante dell'ultima modifica del punto di ritiro
           format: date-time
+    CreateCoverageRequest:
+      type: object
+      required:
+        - cap
+        - locality
+      properties:
+        cap:
+          $ref: '#/components/schemas/Cap'
+        locality:
+          $ref: '#/components/schemas/Locality'
+        cadastralCode:
+          $ref: '#/components/schemas/CadastralCode'
+        province:
+          $ref: '#/components/schemas/Province'
+    UpdateCoverageRequest:
+      type: object
+      properties:
+        cadastralCode:
+          $ref: '#/components/schemas/CadastralCode'
+        province:
+          $ref: '#/components/schemas/Province'
+        startValidity:
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di inizio validità copertura
+        endValidity:
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di fine validità copertura
+    Cap:
+      type: string
+      description: CAP della località coperta
+      pattern: ^\d{5}$
+      example: '00000'
+    Locality:
+      type: string
+      description: Località coperta da RADD
+      example: Ciampino
+    CadastralCode:
+      type: string
+      description: Codice catastale del comune associato alla località
+      pattern: ^([a-zA-Z0-9]{4})$
+      example: M272
+    Province:
+      type: string
+      description: Provincia della località coperta da RADD
+      pattern: ^([a-zA-Z]{2})$
+      example: RM
+    ValidityDate:
+      type: string
+      format: date
+      example: '2025-10-08'
+    Coverage:
+      type: object
+      properties:
+        cap:
+          $ref: '#/components/schemas/Cap'
+        locality:
+          $ref: '#/components/schemas/Locality'
+        cadastralCode:
+          $ref: '#/components/schemas/CadastralCode'
+        province:
+          $ref: '#/components/schemas/Province'
+        startValidity:
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di inizio validità copertura
+        endValidity:
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di fine validità copertura
   responses:
     Forbidden:
       description: Forbidden
@@ -1739,6 +1965,7 @@ tags:
   - name: Registry
   - name: Import
   - name: RegistryV2
+  - name: Coverage
 x-amazon-apigateway-gateway-responses:
   DEFAULT_5XX:
     responseParameters:

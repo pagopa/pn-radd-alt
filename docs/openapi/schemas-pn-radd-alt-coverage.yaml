@@ -1,0 +1,158 @@
+components:
+  schemas:
+
+    Coverage:
+      type: object
+      properties:
+        cap:
+          $ref: '#/components/schemas/Cap'
+        locality:
+          $ref: '#/components/schemas/Locality'
+        cadastralCode:
+          $ref: '#/components/schemas/CadastralCode'
+        province:
+          $ref: '#/components/schemas/Province'
+        startValidity:
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di inizio validità copertura
+        endValidity:
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di fine validità copertura
+
+    Cap:
+      type: string
+      description: CAP della località coperta
+      pattern: '^\d{5}$'
+      example: '00000'
+
+    Locality:
+      type: string
+      description: Località coperta da RADD
+      example: "Ciampino"
+
+    CadastralCode:
+      type: string
+      description: Codice catastale del comune associato alla località
+      pattern: ^([a-zA-Z0-9]{4})$
+      example: "M272"
+
+    Province:
+      type: string
+      description: Provincia della località coperta da RADD
+      pattern: ^([a-zA-Z]{2})$
+      example: "RM"
+
+    ValidityDate:
+      type: string
+      format: date
+      example: "2025-10-08"
+
+    CreateCoverageRequest:
+      type: object
+      required:
+        - cap
+        - locality
+      properties:
+        cap:
+          $ref: '#/components/schemas/Cap'
+        locality:
+          $ref: '#/components/schemas/Locality'
+        cadastralCode:
+          $ref: '#/components/schemas/CadastralCode'
+        province:
+          $ref: '#/components/schemas/Province'
+
+    UpdateCoverageRequest:
+      type: object
+      properties:
+        cadastralCode:
+          $ref: '#/components/schemas/CadastralCode'
+        province:
+          $ref: '#/components/schemas/Province'
+        startValidity:
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di inizio validità copertura
+        endValidity:
+          allOf:
+            - $ref: '#/components/schemas/ValidityDate'
+            - description: Data di fine validità copertura
+
+    CheckCoverageRequest:
+      type: object
+      required:
+        - cap
+        - city
+      properties:
+        nameRow2:
+          type: string
+          description: Destinatario
+          example: 'c/o Rossi Mario'
+        addressRow:
+          type: string
+          description: Indirizzo 1
+          example: 'Via Roma 123'
+        addressRow2:
+          type: string
+          description: Indirizzo 2
+          example: 'Interno 5'
+        cap:
+          type: string
+          description: CAP della località coperta
+          pattern: '^\d{5}$'
+          example: '00000'
+        city:
+          type: string
+          description: Città 1
+          example: 'Roma'
+        city2:
+          type: string
+          description: Città 2
+          example: 'Centro Storico'
+        pr:
+          type: string
+          description: Provincia
+          example: 'RM'
+        country:
+          type: string
+          description: Nazione
+          example: 'ITALIA'
+    CheckCoverageResponse:
+        type: object
+        properties:
+          hasCoverage:
+            type: boolean
+            description: Indica se è disponibile la copertura RADD per l'indirizzo richiesto
+            example: true
+    SearchMode:
+        type: string
+        enum:
+          - LIGHT
+          - COMPLETE
+        description: Modalità con cui l’API ricerca la copertura
+
+  parameters:
+    capInPath:
+      name: cap
+      description: CAP della località coperta
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Cap'
+      example: 00000
+    localityInPath:
+      name: locality
+      description: Località coperta
+      in: path
+      required: true
+      schema:
+        type: string
+    searchMode:
+      name: search_mode
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/SearchMode'
+      example: "LIGHT"

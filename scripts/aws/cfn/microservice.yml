@@ -124,6 +124,10 @@ Parameters:
     Type: String
     Description: 'Name of dynamodb table V2 containing radd registries'
 
+  RaddCoverageDynamoTableName:
+    Type: String
+    Description: 'Name of dynamodb table containing radd coverage'
+
   RaddRegistryDynamoTableArn:
     Type: String
     Description: 'ARN of dynamodb table containing radd registries'
@@ -131,6 +135,10 @@ Parameters:
   RaddRegistryDynamoTableV2Arn:
     Type: String
     Description: 'ARN of dynamodb table V2 containing radd registries'
+
+  RaddCoverageDynamoTableArn:
+    Type: String
+    Description: 'ARN of dynamodb table containing radd coverage'
 
   ShedLockTableName:
     Type: String
@@ -198,7 +206,6 @@ Parameters:
     AllowedValues:
       - "true"
       - "false"
-
 
   # OpenApi Bucket params
   MicroserviceBucketName:
@@ -485,6 +492,7 @@ Resources:
         ContainerEnvEntry42: !Sub 'PN_RADD_EVALUATED_ZIP_CODE_CONFIG_TYPE=${EvaluatedZipCodeConfigType}'
         ContainerEnvEntry43: !Sub 'PN_RADD_EVALUATED_ZIP_CODE_CONFIG_NUMBER=${EvaluatedZipCodeConfigNumber}'
         ContainerEnvEntry44: !Sub 'PN_RADD_EVENTBUS_NAME=arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-CoreEventBus'
+        ContainerEnvEntry45: !Sub 'PN_RADD_DAO_RADDCOVERAGETABLE=${RaddCoverageDynamoTableName}'
         MappedPaths: '/radd-net/*,/radd-net-private/*,/radd-alt/*,/radd-bo/*'
         ECSClusterName: !Ref ECSClusterName
         Subnets: !Ref VpcEgressSubnetsIds
@@ -547,6 +555,8 @@ Resources:
               - !Sub "${RaddRegistryDynamoTableArn}/*"
               - !Sub "${RaddRegistryDynamoTableV2Arn}"
               - !Sub "${RaddRegistryDynamoTableV2Arn}/*"
+              - !Sub "${RaddCoverageDynamoTableArn}"
+              - !Sub "${RaddCoverageDynamoTableArn}/*"
               - !Sub "${ShedLockTableArn}"
           - Effect: Allow
             Action:
@@ -558,7 +568,6 @@ Resources:
               - geo-places:Geocode
             Resource:
               - !Sub arn:aws:geo-places:${AwsGeoRegionCode}::provider/default
-
 
   # Expose PN-Radd-Alt microservice public API with API-GW for RADD usage
   RaddAltMicroservicePublicAPI:
@@ -690,6 +699,7 @@ Resources:
             - !Ref RaddRegistryImportDynamoTableName
             - !Ref RaddRegistryDynamoTableName
             - !Ref RaddRegistryDynamoTableV2Name
+            - !Ref RaddCoverageDynamoTableName
         QueueArns: !Join
           - ','
           - - !Ref PnRaddAltInputQueueName

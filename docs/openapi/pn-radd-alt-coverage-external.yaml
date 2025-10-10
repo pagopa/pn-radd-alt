@@ -1,0 +1,115 @@
+openapi: 3.0.1
+info:
+  termsOfService: https://notifichedigitali.pagopa.it/radd/index.html
+  title: 'Piattaforma Notifiche: API B2B per gli operatori RADD'
+  x-summary: 'Piattaforma Notifiche: API B2B per gli operatori RADD'
+  version: '1.0.0'
+  contact:
+    email: pn-supporto-radd@pagopa.it
+  license:
+    name: Licenza di PN
+    url: 'https://notifichedigitali.pagopa.it/radd/index.html'
+  description: >-
+    #Abstract
+    API per la gestione delle coperture RADD da parte degli operatori OPS.
+
+    Le API permettono di:
+    - consente la creazione di una nuova copertura RADD per una specifica località
+    - permette la modifica di una copertura esistente
+
+servers:
+  - url: https://api.radd.notifichedigitali.it
+    description: Ambiente di produzione
+  - url: https://api.radd.uat.notifichedigitali.it
+    description: Ambiente di collaudo UAT
+
+tags:
+  - name: Coverage
+
+paths:
+  /radd-bo/api/v1/coverages:
+    post:
+      tags:
+        - Coverage
+      description: >-
+        API che consente la creazione di una nuova copertura RADD per una specifica località
+      operationId: addCoverage
+      x-api-permissions:
+        - 'radd-coverage-write'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCoverageRequest'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/Coverage'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '409':
+          description: Conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+  /radd-bo/api/v1/coverages/{cap}/{locality}:
+    patch:
+      tags:
+        - Coverage
+      description: >-
+        API che permette la modifica di una copertura esistente
+      operationId: updateCoverage
+      x-api-permissions:
+        - 'radd-coverage-write'
+      parameters:
+        - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/parameters/capInPath'
+        - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/parameters/localityInPath'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCoverageRequest'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/Coverage'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '404':
+          description: Not found - Copertura non trovata
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+
+components:
+  schemas:
+    CreateCoverageRequest:
+      $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/CreateCoverageRequest'
+    UpdateCoverageRequest:
+      $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/schemas/UpdateCoverageRequest'
+  securitySchemes: # ONLY EXTERNAL
+    bearerAuth: # ONLY EXTERNAL
+      type: http          # ONLY EXTERNAL
+      scheme: bearer      # ONLY EXTERNAL
+      bearerFormat: JWT   # ONLY EXTERNAL
+#
+security: # ONLY EXTERNAL
+  - bearerAuth: [ ]     # ONLY EXTERNAL

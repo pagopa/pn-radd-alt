@@ -12,6 +12,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
 
+import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.DATE_INTERVAL_ERROR;
+
 @Slf4j
 public class DateUtils {
 
@@ -38,8 +40,6 @@ public class DateUtils {
         return Date.from(time.toInstant());
 
     }
-
-
 
     public static OffsetDateTime getOffsetDateTime(String date){
         return LocalDateTime.parse(date, DateTimeFormatter.ISO_LOCAL_DATE_TIME).atOffset(ZoneOffset.UTC);
@@ -92,11 +92,56 @@ public class DateUtils {
         log.debug("Validating end date: start={} end={}", startDate, endDateStr);
         Instant end = convertDateToInstantAtStartOfDay(endDateStr);
         if (end.isBefore(startDate)) {
-            throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR,
+            throw new RaddGenericException(DATE_INTERVAL_ERROR,
                                            "La data di fine validità è precedente a quella di inizio validità (" + startDate + ")",
                                            HttpStatus.BAD_REQUEST);
         }
         return end;
+    }
+
+    public static void validateCoverageDateInterval(LocalDate startEntity, LocalDate endEntity, LocalDate startRequest, LocalDate endRequest) {
+
+        log.debug("Starting date validation: startEntity={}, endEntity={}, startRequest={}, endRequest={}",
+                startEntity, endEntity, startRequest, endRequest);
+
+        LocalDate effectiveStart = (startRequest != null) ? startRequest : startEntity;
+        LocalDate effectiveEnd = (endRequest != null) ? endRequest : endEntity;
+
+        if (!isValidInterval(effectiveStart, effectiveEnd)) {
+            String msg = DATE_INTERVAL_ERROR.getMessage() + ": start = " + effectiveStart + ", end = " + effectiveEnd + ".";
+            throw new RaddGenericException(DATE_INTERVAL_ERROR, msg, HttpStatus.BAD_REQUEST);
+        }
+
+        log.debug("Coverage date validation successful: start={}, end={}", effectiveStart, effectiveEnd);
+    }
+
+    public static boolean isValidInterval(LocalDate startValidity, LocalDate endValidity) {
+        if (startValidity == null || endValidity == null) {
+            return true;
+        }
+        return startValidity.equals(endValidity) || startValidity.isBefore(endValidity);
+    }
+
+    public static boolean isValidityActive(LocalDate startValidity, LocalDate endValidity) {
+        LocalDate today = LocalDate.now();
+
+        // Se entrambi null, non è attivo
+        if (startValidity == null && endValidity == null) {
+            return false;
+        }
+
+        // Se sono uguali, deve essere oggi per essere attivo
+        if (startValidity != null && startValidity.equals(endValidity)) {
+            return today.equals(startValidity);
+        }
+
+        // Verifica che oggi sia >= start (se presente)
+        boolean afterStart = startValidity == null || !today.isBefore(startValidity);
+
+        // Verifica che oggi sia <= end (se presente)
+        boolean beforeEnd = endValidity == null || !today.isAfter(endValidity);
+
+        return afterStart && beforeEnd;
     }
 
 }
