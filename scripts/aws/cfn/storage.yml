@@ -170,7 +170,6 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
 
-
   RaddRegistryImportDynamoTable:
     Type: AWS::DynamoDB::Table
     UpdateReplacePolicy: Retain
@@ -214,7 +213,6 @@ Resources:
         StreamViewType: NEW_IMAGE
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
-
 
   RaddRegistryDynamoTable:
     Type: AWS::DynamoDB::Table
@@ -275,6 +273,30 @@ Resources:
             KeyType: "HASH"
           - AttributeName: "locationId"
             KeyType: "RANGE"
+      BillingMode: "PAY_PER_REQUEST"
+      KinesisStreamSpecification:
+        StreamArn: !Ref CdcKinesisSourceStreamArn
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  RaddCoverageDynamoTable:
+    Type: AWS::DynamoDB::Table
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub '${ProjectName}-RaddCoverage'
+      AttributeDefinitions:
+        - AttributeName: "cap"
+          AttributeType: "S"
+        - AttributeName: "locality"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "cap"
+          KeyType: "HASH"
+        - AttributeName: "locality"
+          KeyType: "RANGE"
       BillingMode: "PAY_PER_REQUEST"
       KinesisStreamSpecification:
         StreamArn: !Ref CdcKinesisSourceStreamArn
@@ -367,6 +389,10 @@ Outputs:
     Description: Name of dynamodb table containing radd registry
     Value: !Ref RaddRegistryDynamoTableV2
 
+  RaddCoverageDynamoTableName:
+    Description: Name of dynamodb table containing radd coverage
+    Value: !Ref RaddCoverageDynamoTable
+
   RaddRegistryDynamoTableArn:
     Description: ARN of dynamodb table containing radd registry
     Value: !Sub '${RaddRegistryDynamoTable.Arn}'
@@ -374,6 +400,10 @@ Outputs:
   RaddRegistryDynamoTableV2Arn:
     Description: ARN of dynamodb table containing radd registry
     Value: !Sub '${RaddRegistryDynamoTableV2.Arn}'
+
+  RaddCoverageDynamoTableArn:
+    Description: ARN of dynamodb table containing radd coverage
+    Value: !Sub '${RaddCoverageDynamoTable.Arn}'
 
   # Log group exports
   EcsLogGroup:

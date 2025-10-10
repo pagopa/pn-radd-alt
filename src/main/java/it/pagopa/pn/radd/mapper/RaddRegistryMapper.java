@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Component
 @CustomLog
-public class RaddRegistryMapper extends AbstractRegistryMapper {
+public class RaddRegistryMapper extends AbstractDateMapper {
 
     private final NormalizedAddressMapper normalizedAddressMapper;
     private final AddressMapper addressMapper;
