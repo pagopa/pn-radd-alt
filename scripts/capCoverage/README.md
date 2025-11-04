@@ -29,6 +29,7 @@ cp .env.example .env
 API_BASE_URL=https://your-api-server.com
 
 # Cognito
+COGNITO_USE_ID_TOKEN=true
 COGNITO_REGION=eu-central-1
 COGNITO_USER_POOL_ID=eu-central-1_XXXXXXX
 COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
