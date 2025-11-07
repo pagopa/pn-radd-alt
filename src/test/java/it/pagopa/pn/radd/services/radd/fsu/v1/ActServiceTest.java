@@ -89,7 +89,7 @@ class ActServiceTest  {
     void testWhenResponseIsFull(){
 
         when(pnDataVaultClient.getEnsureFiscalCode(any(), any())
-        ).thenReturn( Mono.just("data"));
+            ).thenReturn( Mono.just("data"));
         Mono<String> response = actService.getEnsureFiscalCode("test", Const.PF);
         assertFalse(response.toString().isEmpty());
     }
@@ -131,13 +131,14 @@ class ActServiceTest  {
     @Test
     void testWhenAddInquiryHasNoQrCode(){
         StepVerifier.create(actService.actInquiry("test","", CxTypeAuthFleet.PG,"test","test", "test", "test"))
-                .expectError(PnInvalidInputException.class).verify();
+                    .expectError(PnInvalidInputException.class).verify();
     }
 
     @Test
     void testStartTransactionReturnErrorPnInvalidInputException(){
         ActStartTransactionRequest startTransactionRequest = new ActStartTransactionRequest();
         startTransactionRequest.setQrCode("qrcode");
+        startTransactionRequest.setOperationId("id");
         startTransactionRequest.setOperationId("id");
         startTransactionRequest.setRecipientTaxId("taxId");
         startTransactionRequest.setFileKey("fileKey");
@@ -149,13 +150,14 @@ class ActServiceTest  {
         transactionData.setQrCode("qrcode");
         transactionData.setIun("iun");
         StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", startTransactionRequest) )
-                .expectError(PnInvalidInputException.class).verify();
+                    .expectError(PnInvalidInputException.class).verify();
     }
 
     @Test
     void testStartTransactionReturnErrorResponseStatusExceptionRaddUploaderWithNoFileKey(){
         ActStartTransactionRequest startTransactionRequest = new ActStartTransactionRequest();
         startTransactionRequest.setQrCode("qrcode");
+        startTransactionRequest.setOperationId("id");
         startTransactionRequest.setOperationId("id");
         startTransactionRequest.setRecipientTaxId("taxId");
         startTransactionRequest.setIun("iun");
@@ -165,15 +167,16 @@ class ActServiceTest  {
         transactionData.setQrCode("qrcode");
         transactionData.setIun("iun");
         StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", startTransactionRequest) )
-                .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
-                        "Campo fileKey obbligatorio mancante".equals(throwable.getMessage()))
-                .verify();
+                    .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
+                                                     "Campo fileKey obbligatorio mancante".equals(throwable.getMessage()))
+                    .verify();
     }
 
     @Test
     void testStartTransactionReturnErrorResponseStatusExceptionRaddUploaderWithNoVersionToken(){
         ActStartTransactionRequest startTransactionRequest = new ActStartTransactionRequest();
         startTransactionRequest.setQrCode("qrcode");
+        startTransactionRequest.setOperationId("id");
         startTransactionRequest.setOperationId("id");
         startTransactionRequest.setRecipientTaxId("taxId");
         startTransactionRequest.setIun("iun");
@@ -184,15 +187,16 @@ class ActServiceTest  {
         transactionData.setQrCode("qrcode");
         transactionData.setIun("iun");
         StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", startTransactionRequest) )
-                .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
-                        "Campo versionToken obbligatorio mancante".equals(throwable.getMessage()))
-                .verify();
+                    .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
+                                                     "Campo versionToken obbligatorio mancante".equals(throwable.getMessage()))
+                    .verify();
     }
 
     @Test
     void testStartTransactionReturnErrorResponseStatusExceptionRaddStandardWithFileKey(){
         ActStartTransactionRequest startTransactionRequest = new ActStartTransactionRequest();
         startTransactionRequest.setQrCode("qrcode");
+        startTransactionRequest.setOperationId("id");
         startTransactionRequest.setOperationId("id");
         startTransactionRequest.setRecipientTaxId("taxId");
         startTransactionRequest.setIun("iun");
@@ -202,15 +206,16 @@ class ActServiceTest  {
         transactionData.setQrCode("qrcode");
         transactionData.setIun("iun");
         StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD", startTransactionRequest) )
-                .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
-                        "Campo fileKey inaspettato".equals(throwable.getMessage()))
-                .verify();
+                    .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
+                                                     "Campo fileKey inaspettato".equals(throwable.getMessage()))
+                    .verify();
     }
 
     @Test
     void testStartTransactionReturnErrorResponseStatusExceptionRaddStandardWithVersionToken(){
         ActStartTransactionRequest startTransactionRequest = new ActStartTransactionRequest();
         startTransactionRequest.setQrCode("qrcode");
+        startTransactionRequest.setOperationId("id");
         startTransactionRequest.setOperationId("id");
         startTransactionRequest.setRecipientTaxId("taxId");
         startTransactionRequest.setIun("iun");
@@ -220,9 +225,9 @@ class ActServiceTest  {
         transactionData.setQrCode("qrcode");
         transactionData.setIun("iun");
         StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD", startTransactionRequest) )
-                .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
-                        "Campo versionToken inaspettato".equals(throwable.getMessage()))
-                .verify();
+                    .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
+                                                     "Campo versionToken inaspettato".equals(throwable.getMessage()))
+                    .verify();
     }
 
     @Test
@@ -232,7 +237,6 @@ class ActServiceTest  {
         startTransactionRequest.setFileKey("fileKey");
         startTransactionRequest.setChecksum("checksum");
         startTransactionRequest.setVersionToken("versionToken");
-        startTransactionRequest.setIun("iun");
         Mono<StartTransactionResponse> response = actService.startTransaction("test", "123", CxTypeAuthFleet.PG, "RADD_UPLOADER", startTransactionRequest);
         response.onErrorResume(PnInvalidInputException.class, exception -> {
             log.info("Exception {}", exception.getReason());
@@ -349,16 +353,16 @@ class ActServiceTest  {
 
         WebClientResponseException ex = new WebClientResponseException("Internal server Error", 500, "header", null, null, null);
         Mockito.when(pnDeliveryPushClient.notifyNotificationRaddRetrieved(any(), any()))
-                .thenReturn(Mono.error(new PnRaddException(ex)));
+               .thenReturn(Mono.error(new PnRaddException(ex)));
 
         when(raddTransactionDAOImpl.updateStatus(any(), any()))
                 .thenReturn(Mono.just(baseEntity));
 
         actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId")
-                .onErrorResume(PnRaddException.class, exception ->{
-                    assertNotNull(exception);
-                    return Mono.empty();
-                }).block();
+                  .onErrorResume(PnRaddException.class, exception ->{
+                      assertNotNull(exception);
+                      return Mono.empty();
+                  }).block();
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT completeTransaction - uid=test cxId=cxId cxType=PF operationId=operationIdTest");
         ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT completeTransaction with error Internal server Error - uid=test cxId=cxId cxType=PF operationId=operationIdTest");
     }
@@ -371,16 +375,16 @@ class ActServiceTest  {
 
         WebClientResponseException ex = new WebClientResponseException("Internal server Error", 500, "header", null, null, null);
         Mockito.when(pnDeliveryPushClient.notifyNotificationRaddRetrieved(any(), any()))
-                .thenReturn(Mono.error(new PnRaddException(ex)));
+               .thenReturn(Mono.error(new PnRaddException(ex)));
 
         when(raddTransactionDAOImpl.updateStatus(any(), any()))
                 .thenThrow(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_UPDATE_STATUS));
 
         actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId")
-                .onErrorResume(PnRaddException.class, exception ->{
-                    assertNotNull(exception);
-                    return Mono.empty();
-                }).block();
+                  .onErrorResume(PnRaddException.class, exception ->{
+                      assertNotNull(exception);
+                      return Mono.empty();
+                  }).block();
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT completeTransaction - uid=test cxId=cxId cxType=PF operationId=operationIdTest");
         ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT completeTransaction with error Internal server Error - uid=test cxId=cxId cxType=PF operationId=operationIdTest");
     }
@@ -393,7 +397,7 @@ class ActServiceTest  {
     void testCompleteWhenGetTransactionThrowExceptionThenReturnError1() {
         completeRequest.setOperationId("OperationIdTestNotExist");
         Mockito.when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any()))
-                .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)));
+               .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)));
         CompleteTransactionResponse responseError1 = actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId").block();
         assertNotNull(responseError1);
         assertNotNull(responseError1.getStatus());
@@ -408,16 +412,16 @@ class ActServiceTest  {
     @Test
     void testAbortTransactionReturnError(){
         StepVerifier.create(actService.actInquiry("test","", CxTypeAuthFleet.PG,"test","test", "test", "test"))
-                .expectError(PnInvalidInputException.class).verify();
+                    .expectError(PnInvalidInputException.class).verify();
     }
 
     @Test
     void testWhenAbortTransactionReqNull(){
         Mono<AbortTransactionResponse> abortTransactionResponse = actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",null);
         abortTransactionResponse.onErrorResume( PnInvalidInputException.class, exception ->{
-            assertEquals("Alcuni parametri come operazione id o data di operazione non sono valorizzate", exception.getMessage() );
-            return Mono.empty();}
-         ).block();
+                                                    assertEquals("Alcuni parametri come operazione id o data di operazione non sono valorizzate", exception.getMessage() );
+                                                    return Mono.empty();}
+                                              ).block();
     }
 
     @Test
@@ -436,7 +440,7 @@ class ActServiceTest  {
     @Test
     void testActInquiryWhenDataVaultCallFails() {
         when(pnDataVaultClient.getEnsureFiscalCode(any(), any())).thenReturn(Mono.error(new PnRaddException(WebClientResponseException.create(500, "Internal server Error", null, null, null, null))));
-        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "iun").block();
+        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "").block();
         assertNotNull(monoResponse);
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
@@ -496,36 +500,36 @@ class ActServiceTest  {
     @Test
     void testActInquiryWhenRequestIsEmpty() {
         actService.completeTransaction("test", new CompleteTransactionRequest(),CxTypeAuthFleet.valueOf("PF"), "cxId")
-            .onErrorResume(PnInvalidInputException.class, exception ->{
-                assertEquals("Operation id non valorizzato", exception.getMessage() );
-                return Mono.empty();}
-            ).block();
+                  .onErrorResume(PnInvalidInputException.class, exception ->{
+                                     assertEquals("Operation id non valorizzato", exception.getMessage() );
+                                     return Mono.empty();}
+                                ).block();
     }
 
 
     @Test
     void testAbortTransactionReqNull (){
         actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",null)
-                .onErrorResume(PnInvalidInputException.class, exception ->{
-                    assertNotNull(exception);
-                    return Mono.empty();
-                }).block();
+                  .onErrorResume(PnInvalidInputException.class, exception ->{
+                      assertNotNull(exception);
+                      return Mono.empty();
+                  }).block();
 
         AbortTransactionRequest request = new AbortTransactionRequest();
         request.setOperationId(null);
         actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",request)
-                .onErrorResume(PnInvalidInputException.class, exception ->{
-                    assertNotNull(exception);
-                    return Mono.empty();
-                }).block();
+                  .onErrorResume(PnInvalidInputException.class, exception ->{
+                      assertNotNull(exception);
+                      return Mono.empty();
+                  }).block();
 
         request.setOperationId("Id");
         request.setReason(null);
         actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",request)
-                .onErrorResume(PnInvalidInputException.class, exception ->{
-                    assertNotNull(exception);
-                    return Mono.empty();
-                }).block();
+                  .onErrorResume(PnInvalidInputException.class, exception ->{
+                      assertNotNull(exception);
+                      return Mono.empty();
+                  }).block();
 
 
     }
@@ -562,10 +566,10 @@ class ActServiceTest  {
         when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(entity));
         when( raddTransactionDAOImpl.updateStatus(any(), any())).thenThrow(new RaddGenericException(ExceptionTypeEnum.GENERIC_ERROR));
         actService.abortTransaction("test",CxTypeAuthFleet.valueOf("PF"),"cxId" ,request)
-                .onErrorResume(RaddGenericException.class, exception ->{
-                    assertNotNull(exception);
-                    return Mono.empty();
-                }).block();
+                  .onErrorResume(RaddGenericException.class, exception ->{
+                      assertNotNull(exception);
+                      return Mono.empty();
+                  }).block();
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT abortTransaction - uid=test cxId=cxId cxType=PF operationId=Id");
         ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT abortTransaction with error Si è verificato un errore - uid=test cxId=cxId cxType=PF operationId=Id status=TransactionResponseStatus(code=99, message=Si è verificato un errore)");
     }
