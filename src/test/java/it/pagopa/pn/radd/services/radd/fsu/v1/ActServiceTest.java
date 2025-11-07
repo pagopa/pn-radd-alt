@@ -139,7 +139,6 @@ class ActServiceTest  {
         ActStartTransactionRequest startTransactionRequest = new ActStartTransactionRequest();
         startTransactionRequest.setQrCode("qrcode");
         startTransactionRequest.setOperationId("id");
-        startTransactionRequest.setOperationId("id");
         startTransactionRequest.setRecipientTaxId("taxId");
         startTransactionRequest.setFileKey("fileKey");
         startTransactionRequest.setChecksum("checksum");
@@ -158,7 +157,6 @@ class ActServiceTest  {
         ActStartTransactionRequest startTransactionRequest = new ActStartTransactionRequest();
         startTransactionRequest.setQrCode("qrcode");
         startTransactionRequest.setOperationId("id");
-        startTransactionRequest.setOperationId("id");
         startTransactionRequest.setRecipientTaxId("taxId");
         startTransactionRequest.setIun("iun");
         startTransactionRequest.setFileKey(null);
@@ -176,7 +174,6 @@ class ActServiceTest  {
     void testStartTransactionReturnErrorResponseStatusExceptionRaddUploaderWithNoVersionToken(){
         ActStartTransactionRequest startTransactionRequest = new ActStartTransactionRequest();
         startTransactionRequest.setQrCode("qrcode");
-        startTransactionRequest.setOperationId("id");
         startTransactionRequest.setOperationId("id");
         startTransactionRequest.setRecipientTaxId("taxId");
         startTransactionRequest.setIun("iun");
@@ -197,7 +194,6 @@ class ActServiceTest  {
         ActStartTransactionRequest startTransactionRequest = new ActStartTransactionRequest();
         startTransactionRequest.setQrCode("qrcode");
         startTransactionRequest.setOperationId("id");
-        startTransactionRequest.setOperationId("id");
         startTransactionRequest.setRecipientTaxId("taxId");
         startTransactionRequest.setIun("iun");
         startTransactionRequest.setFileKey("fileKey");
@@ -215,7 +211,6 @@ class ActServiceTest  {
     void testStartTransactionReturnErrorResponseStatusExceptionRaddStandardWithVersionToken(){
         ActStartTransactionRequest startTransactionRequest = new ActStartTransactionRequest();
         startTransactionRequest.setQrCode("qrcode");
-        startTransactionRequest.setOperationId("id");
         startTransactionRequest.setOperationId("id");
         startTransactionRequest.setRecipientTaxId("taxId");
         startTransactionRequest.setIun("iun");
@@ -237,6 +232,7 @@ class ActServiceTest  {
         startTransactionRequest.setFileKey("fileKey");
         startTransactionRequest.setChecksum("checksum");
         startTransactionRequest.setVersionToken("versionToken");
+        startTransactionRequest.setIun("iun");
         Mono<StartTransactionResponse> response = actService.startTransaction("test", "123", CxTypeAuthFleet.PG, "RADD_UPLOADER", startTransactionRequest);
         response.onErrorResume(PnInvalidInputException.class, exception -> {
             log.info("Exception {}", exception.getReason());
@@ -440,7 +436,7 @@ class ActServiceTest  {
     @Test
     void testActInquiryWhenDataVaultCallFails() {
         when(pnDataVaultClient.getEnsureFiscalCode(any(), any())).thenReturn(Mono.error(new PnRaddException(WebClientResponseException.create(500, "Internal server Error", null, null, null, null))));
-        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "").block();
+        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "iun").block();
         assertNotNull(monoResponse);
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());

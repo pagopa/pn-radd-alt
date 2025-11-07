@@ -81,6 +81,7 @@ class ActServiceStartTransactionTest {
 
     private ActStartTransactionRequest createActStartTransactionRequest(){
         ActStartTransactionRequest actStartTransactionRequest = new ActStartTransactionRequest();
+        actStartTransactionRequest.setIun("Iun");
         actStartTransactionRequest.setOperationId("Id");
         actStartTransactionRequest.setQrCode("QrCode");
         actStartTransactionRequest.setChecksum("Checksum");
