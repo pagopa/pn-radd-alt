@@ -205,6 +205,7 @@ paths:
         - 'radd-coverage-read'
       parameters:
         - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/parameters/searchMode'
+        - $ref: 'schemas-pn-radd-alt-coverage.yaml#/components/parameters/coverageDate'
       requestBody:
         content:
           application/json:
