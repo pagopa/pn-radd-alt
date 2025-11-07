@@ -289,8 +289,8 @@ class ActServiceTest  {
         assertThat(response.getStatus()).isNotNull();
         assertThat(response.getStatus().getCode()).isEqualTo(StartTransactionResponseStatus.CodeEnum.NUMBER_3);
         assertThat(response.getStatus().getMessage()).isEqualTo("Limite di 1 stampa superato");
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=id cxId=cxId cxType=PF operationId=id");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Limite di 1 stampa superato - uid=id cxId=cxId cxType=PF operationId=id recipientInternalId=123 status=StartTransactionResponseStatus(code=3, message=Limite di 1 stampa superato, retryAfter=null)");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=id cxId=cxId cxType=PF operationId=id iun=iun");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Limite di 1 stampa superato - uid=id cxId=cxId cxType=PF operationId=id recipientInternalId=123 iun=iun status=StartTransactionResponseStatus(code=3, message=Limite di 1 stampa superato, retryAfter=null)");
     }
 
 
@@ -433,8 +433,8 @@ class ActServiceTest  {
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.IUN_NOT_FOUND.getMessage(), monoResponse.getStatus().getMessage());
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Iun not found with params - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I status=ActInquiryResponseStatus(code=99, message=Iun not found with params)");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Iun not found with params - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun= status=ActInquiryResponseStatus(code=99, message=Iun not found with params)");
     }
 
     @Test
@@ -445,7 +445,7 @@ class ActServiceTest  {
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.GENERIC_ERROR.getMessage(), monoResponse.getStatus().getMessage());
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
         ExpectedLoggingAssertions.assertThat(logging).hasErrorMessageMatching(".*\\[AUD_RADD_ACTINQUIRY\\] FAILURE - End ACT Inquiry with error.*");
     }
 
@@ -466,7 +466,7 @@ class ActServiceTest  {
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.NOTIFICATION_CANCELLED.getMessage(), monoResponse.getStatus().getMessage());
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
         ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Questa notifica è stata annullata dall’ente mittente - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun=iun status=ActInquiryResponseStatus(code=80, message=Questa notifica è stata annullata dall’ente mittente)");
     }
 
@@ -493,7 +493,7 @@ class ActServiceTest  {
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE.getMessage(), monoResponse.getStatus().getMessage());
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
         ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Documenti non disponibili - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun=iun status=ActInquiryResponseStatus(code=4, message=Documenti non disponibili)");
     }
 
