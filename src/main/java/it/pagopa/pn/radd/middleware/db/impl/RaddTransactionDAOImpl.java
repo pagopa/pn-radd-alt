@@ -24,6 +24,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +53,7 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
 
     @Override
     public Mono<RaddTransactionEntity> createRaddTransaction(RaddTransactionEntity entity, List<OperationsIunsEntity> iunsEntities){
+        entity.setCreationTimeStamp(Instant.now());
         return putTransactionWithConditions(entity)
                 .doOnNext(raddTransaction -> log.debug("[{} - {}] radd transaction created", raddTransaction.getOperationId(), raddTransaction.getIun()))
                 .flatMap(raddTransaction -> operationsIunsDAO.putWithBatch(iunsEntities).thenReturn(entity))
@@ -193,6 +195,7 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
     @Override
     public Mono<RaddTransactionEntity> updateStatus(RaddTransactionEntity entity, RaddTransactionStatusEnum status) {
         entity.setStatus(status.name());
+        entity.setUpdateTimeStamp(Instant.now());
         return this.updateItem(entity)
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
                 .filter(updated -> updated.getStatus().equals(entity.getStatus()))
@@ -255,6 +258,7 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
     @Override
     public Mono<RaddTransactionEntity> updateZipAttachments(RaddTransactionEntity entity, Map<String, String> zipAttachments) {
         entity.setZipAttachments(zipAttachments);
+        entity.setUpdateTimeStamp(Instant.now());
         return this.updateItem(entity)
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
                 .filter(updated -> updated.getZipAttachments().equals(entity.getZipAttachments()))
