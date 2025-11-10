@@ -13,6 +13,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.StartTransactionRes
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.StartTransactionResponseStatus;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
+import it.pagopa.pn.radd.exception.PnInvalidInputException;
 import it.pagopa.pn.radd.exception.PnRaddException;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.TransactionDataMapper;
@@ -289,6 +290,16 @@ class ActServiceStartTransactionTest {
         assertEquals(ExceptionTypeEnum.TRANSACTION_ALREADY_EXIST.getMessage(), startTransactionResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG operationId=Id iun=null");
         ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Transazione già esistente o con stato completed o aborted - uid=test cxId=cxId cxType=PG operationId=Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=null status=StartTransactionResponseStatus(code=5, message=Transazione già esistente o con stato completed o aborted, retryAfter=null)");
+    }
+
+    @Test
+    void testWithIunInRequest(){
+        ActStartTransactionRequest request = createActStartTransactionRequest();
+        request.setIun("FakeIun");
+
+        StepVerifier.create(actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", request))
+                    .expectError(PnInvalidInputException.class).verify();
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG operationId=Id iun=FakeIun");
     }
 
 }
