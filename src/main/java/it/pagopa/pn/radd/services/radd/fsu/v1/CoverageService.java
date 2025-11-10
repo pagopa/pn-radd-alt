@@ -13,11 +13,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
-import it.pagopa.pn.radd.utils.DateUtils;
-
 import static it.pagopa.pn.radd.utils.CoverageUtils.buildCoverageEntity;
 import static it.pagopa.pn.radd.utils.CoverageUtils.mapFieldToUpdate;
+import static it.pagopa.pn.radd.utils.DateUtils.isDateInRange;
 import static it.pagopa.pn.radd.utils.DateUtils.isValidInterval;
 
 @Service
@@ -51,28 +49,30 @@ public class CoverageService {
         }
     }
 
-    public Mono<CheckCoverageResponse> checkCoverage(CheckCoverageRequest request, SearchMode searchMode) {
-        log.info("Checking coverage for cap: {} and locality: {} with search mode: {}",
-                request.getCap(), request.getCity(), searchMode);
+    public Mono<CheckCoverageResponse> checkCoverage(CheckCoverageRequest request, SearchMode searchMode, LocalDate searchDate) {
+        LocalDate referenceDate = (searchDate != null) ? searchDate : LocalDate.now();
+
+        log.info("Checking coverage for cap: {} and locality: {} with search mode: {} and referenceDate: {}",
+                request.getCap(), request.getCity(), searchMode, referenceDate);
 
         return switch (searchMode) {
-            case LIGHT -> handleLightSearch(request);
-            case COMPLETE -> handleCompleteSearch(request);
+            case LIGHT -> handleLightSearch(request, referenceDate);
+            case COMPLETE -> handleCompleteSearch(request, referenceDate);
         };
     }
 
-    private Mono<CheckCoverageResponse> handleLightSearch(CheckCoverageRequest request) {
+    private Mono<CheckCoverageResponse> handleLightSearch(CheckCoverageRequest request, LocalDate referenceDate) {
         return coverageDAO.findByCap(request.getCap())
-                .filter(cov -> DateUtils.isValidityActive(cov.getStartValidity(), cov.getEndValidity()))
+                .filter(cov -> isDateInRange(cov.getStartValidity(), cov.getEndValidity(), referenceDate))
                 .collectList()
                 .map(coverages -> new CheckCoverageResponse().hasCoverage(!coverages.isEmpty()))
                 .defaultIfEmpty(new CheckCoverageResponse().hasCoverage(false));
     }
 
-    private Mono<CheckCoverageResponse> handleCompleteSearch(CheckCoverageRequest request) {
+    private Mono<CheckCoverageResponse> handleCompleteSearch(CheckCoverageRequest request, LocalDate referenceDate) {
         return coverageDAO.find(request.getCap(), request.getCity())
                 .map(cov -> new CheckCoverageResponse()
-                        .hasCoverage(DateUtils.isValidityActive(cov.getStartValidity(), cov.getEndValidity())))
+                        .hasCoverage(isDateInRange(cov.getStartValidity(), cov.getEndValidity(), referenceDate)))
                 .defaultIfEmpty(new CheckCoverageResponse().hasCoverage(false));
     }
 

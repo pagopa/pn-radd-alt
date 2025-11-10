@@ -46,7 +46,6 @@ public class DateUtils {
     }
 
     public static OffsetDateTime getOffsetDateTimeFromDate(Date date) {
-        //return OffsetDateTime.ofInstant(date.toInstant(), italianZoneId);
         return OffsetDateTime.ofInstant(date.toInstant(), ZoneOffset.UTC);
     }
 
@@ -122,26 +121,37 @@ public class DateUtils {
         return startValidity.equals(endValidity) || startValidity.isBefore(endValidity);
     }
 
-    public static boolean isValidityActive(LocalDate startValidity, LocalDate endValidity) {
-        LocalDate today = LocalDate.now();
-
-        // Se entrambi null, non è attivo
-        if (startValidity == null && endValidity == null) {
+    /**
+     * Verifica se una data di riferimento è inclusa in un intervallo di date.
+     * <p>
+     * Se né startDate né endDate sono valorizzati, l'intervallo non è definito
+     * e la data di riferimento non è considerata in range (ritorna false).
+     *
+     * @param startDate Data di inizio dell'intervallo (può essere null, indica nessun limite inferiore)
+     * @param endDate Data di fine dell'intervallo (può essere null, indica nessun limite superiore)
+     * @param referenceDate Data da verificare se inclusa nell'intervallo (non può essere null)
+     * @return true se la data di riferimento è inclusa nell'intervallo, false altrimenti.
+     *         Ritorna false se entrambe startDate ed endDate sono null (intervallo non definito).
+     */
+    public static boolean isDateInRange(LocalDate startDate, LocalDate endDate, @NotNull LocalDate referenceDate) {
+        // Se entrambe le date dell'intervallo sono null, l'intervallo non è definito
+        // e la data di riferimento non è considerata in range
+        if (startDate == null && endDate == null) {
             return false;
         }
 
-        // Se sono uguali, deve essere oggi per essere attivo
-        if (startValidity != null && startValidity.equals(endValidity)) {
-            return today.equals(startValidity);
+        // Se le date di inizio e fine sono uguali, verifica l'uguaglianza esatta
+        if (startDate != null && startDate.equals(endDate)) {
+            return referenceDate.equals(startDate);
         }
 
-        // Verifica che oggi sia >= start (se presente)
-        boolean afterStart = startValidity == null || !today.isBefore(startValidity);
+        // Verifica che la data di riferimento sia >= startDate (se presente)
+        boolean afterOrEqualStart = startDate == null || !referenceDate.isBefore(startDate);
 
-        // Verifica che oggi sia <= end (se presente)
-        boolean beforeEnd = endValidity == null || !today.isAfter(endValidity);
+        // Verifica che la data di riferimento sia <= endDate (se presente)
+        boolean beforeOrEqualEnd = endDate == null || !referenceDate.isAfter(endDate);
 
-        return afterStart && beforeEnd;
+        return afterOrEqualStart && beforeOrEqualEnd;
     }
 
 }
