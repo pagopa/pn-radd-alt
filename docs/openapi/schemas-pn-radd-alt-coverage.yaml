@@ -156,3 +156,12 @@ components:
       schema:
         $ref: '#/components/schemas/SearchMode'
       example: "LIGHT"
+    searchDate:
+      name: search_date
+      description: Data per la quale verificare la copertura
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date
+      example: "2025-10-08"
