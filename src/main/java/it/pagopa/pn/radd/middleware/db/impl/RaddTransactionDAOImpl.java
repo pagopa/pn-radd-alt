@@ -53,7 +53,7 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
 
     @Override
     public Mono<RaddTransactionEntity> createRaddTransaction(RaddTransactionEntity entity, List<OperationsIunsEntity> iunsEntities){
-        entity.setCreationTimeStamp(Instant.now());
+        entity.setCreationTimestamp(Instant.now());
         return putTransactionWithConditions(entity)
                 .doOnNext(raddTransaction -> log.debug("[{} - {}] radd transaction created", raddTransaction.getOperationId(), raddTransaction.getIun()))
                 .flatMap(raddTransaction -> operationsIunsDAO.putWithBatch(iunsEntities).thenReturn(entity))
@@ -195,7 +195,7 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
     @Override
     public Mono<RaddTransactionEntity> updateStatus(RaddTransactionEntity entity, RaddTransactionStatusEnum status) {
         entity.setStatus(status.name());
-        entity.setUpdateTimeStamp(Instant.now());
+        entity.setUpdateTimestamp(Instant.now());
         return this.updateItem(entity)
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
                 .filter(updated -> updated.getStatus().equals(entity.getStatus()))
@@ -258,7 +258,7 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
     @Override
     public Mono<RaddTransactionEntity> updateZipAttachments(RaddTransactionEntity entity, Map<String, String> zipAttachments) {
         entity.setZipAttachments(zipAttachments);
-        entity.setUpdateTimeStamp(Instant.now());
+        entity.setUpdateTimestamp(Instant.now());
         return this.updateItem(entity)
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
                 .filter(updated -> updated.getZipAttachments().equals(entity.getZipAttachments()))

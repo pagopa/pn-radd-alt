@@ -89,9 +89,9 @@ public class RaddTransactionEntity {
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_ZIP_ATTACHMENTS)}))
     private Map<String, String> zipAttachments;
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_CREATION_TIME_STAMP)}))
-    private Instant creationTimeStamp;
+    private Instant creationTimestamp;
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_UPDATE_TIME_STAMP)}))
-    private Instant updateTimeStamp;
+    private Instant updateTimestamp;
 
     public RaddTransactionEntity(String cxType, String cxId, String operationId) {
         this.setTransactionId(cxType, cxId, operationId);
