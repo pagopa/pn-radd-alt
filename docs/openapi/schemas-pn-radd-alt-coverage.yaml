@@ -121,6 +121,8 @@ components:
           example: 'ITALIA'
     CheckCoverageResponse:
         type: object
+        required:
+          - hasCoverage
         properties:
           hasCoverage:
             type: boolean
