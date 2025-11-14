@@ -141,4 +141,18 @@ class PnSafeStorageClientTest extends BaseTest.WithMockServer {
             return Mono.empty();
         }).block();
     }
+
+    @Test
+    void testUpdateFileMetadataCode400() {
+        String fileKey = "8F7C";
+
+        Mono<OperationResultCodeResponseDto> monoResponse =
+                pnSafeStorageClient.updateFileMetadata(fileKey);
+
+        monoResponse.onErrorResume(PnSafeStorageException.class, exception -> {
+            assertEquals(400, exception.getWebClientEx().getStatusCode().value());
+            return Mono.empty();
+        }).block();
+    }
+
 }
