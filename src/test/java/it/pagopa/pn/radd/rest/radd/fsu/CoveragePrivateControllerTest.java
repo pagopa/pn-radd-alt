@@ -17,12 +17,13 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
-import java.util.UUID;
+import java.time.LocalDate;
 
 @ContextConfiguration(classes = {CoveragePrivateController.class, RestExceptionHandler.class})
 @ExtendWith(SpringExtension.class)
 @WebFluxTest(controllers = {CoveragePrivateController.class})
-public class CoveragePrivateControllerTest {
+class CoveragePrivateControllerTest {
+
 
 
     @MockBean
@@ -31,11 +32,12 @@ public class CoveragePrivateControllerTest {
     @Autowired
     WebTestClient webTestClient;
 
-    private final String SEARCH_MODE="search_mode";
-    private final String CAP = "00000";
-    private final String LOCALITY = "locality";
+    private static final String SEARCH_MODE="search_mode";
+    private static final String SEARCH_DATE = "search_date";
+    private static final String CAP = "00000";
+    private static final String LOCALITY = "locality";
 
-    private final String CREATE_PATH_PRIVATE = "/radd-net-private/api/v1/coverages/check";
+    private static final String CREATE_PATH_PRIVATE = "/radd-net-private/api/v1/coverages/check";
 
 
 
@@ -52,7 +54,7 @@ public class CoveragePrivateControllerTest {
         CheckCoverageResponse  response= new CheckCoverageResponse();
         response.setHasCoverage(true);
 
-        Mockito.when(coverageService.checkCoverage(checkCoverageRequest(), SearchMode.LIGHT))
+        Mockito.when(coverageService.checkCoverage(checkCoverageRequest(), SearchMode.LIGHT, null))
                .thenReturn(Mono.just(response));
 
         webTestClient.post()
@@ -72,7 +74,7 @@ public class CoveragePrivateControllerTest {
         CheckCoverageResponse  response= new CheckCoverageResponse();
         response.setHasCoverage(true);
 
-        Mockito.when(coverageService.checkCoverage( checkCoverageRequest(), null))
+        Mockito.when(coverageService.checkCoverage( checkCoverageRequest(), null, null))
                .thenReturn(Mono.just(response));
 
         webTestClient.post()
@@ -84,7 +86,39 @@ public class CoveragePrivateControllerTest {
                      .expectStatus().isBadRequest();
     }
 
+    @Test
+    void checkCoverageTest_withSearchDate_success() {
 
+        CheckCoverageResponse response = new CheckCoverageResponse();
+        response.setHasCoverage(true);
 
+        LocalDate searchDate = LocalDate.of(2025, 6, 15);
+
+        Mockito.when(coverageService.checkCoverage(checkCoverageRequest(), SearchMode.LIGHT, searchDate))
+               .thenReturn(Mono.just(response));
+
+        webTestClient.post()
+                     .uri(uriBuilder -> uriBuilder
+                             .path(CREATE_PATH_PRIVATE)
+                             .queryParam(SEARCH_MODE, "LIGHT")
+                             .queryParam(SEARCH_DATE, "2025-06-15")
+                             .build())
+                     .bodyValue(checkCoverageRequest())
+                     .exchange()
+                     .expectStatus().isOk();
+    }
+
+    @Test
+    void checkCoverageTest_malformedSearchDate_badRequest() {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path(CREATE_PATH_PRIVATE)
+                        .queryParam(SEARCH_MODE, "LIGHT")
+                        .queryParam(SEARCH_DATE, "malformed-date")
+                        .build())
+                .bodyValue(checkCoverageRequest())
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
 
 }
