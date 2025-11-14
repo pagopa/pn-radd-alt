@@ -1,0 +1,22 @@
+{
+  "name": "coverage-validity-patch",
+  "version": "1.0.0",
+  "description": "Script per aggiornare le date di validità delle coperture RADD via PATCH usando autenticazione Cognito",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "sample": "node index.js data/sample.csv --dry-run",
+    "run": "node index.js data/sample.csv"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^16.3.1",
+    "@aws-sdk/client-cognito-identity-provider": "^3.645.0",
+    "yargs": "^17.7.2"
+  },
+  "author": "Alessandro Masci",
+  "license": "ISC"
+}
+
