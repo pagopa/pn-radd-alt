@@ -92,7 +92,13 @@ public class PnSafeStorageClient extends BaseClient {
         return fileMetadataUpdateApi.updateFileMetadata(fileKey, this.pnRaddFsuConfig.getSafeStorageCxId(), request)
                 .retryWhen(
                         Retry.backoff(2, Duration.ofMillis(500))
-                                .filter(throwable -> throwable instanceof TimeoutException || throwable instanceof ConnectException)
+                                .filter(throwable ->
+                                                throwable instanceof TimeoutException ||
+                                                throwable instanceof ConnectException ||
+                                                (throwable instanceof WebClientResponseException ex &&
+                                                 ex.getStatusCode() == HttpStatus.BAD_REQUEST)
+                                )
+                                .onRetryExhaustedThrow((retryBackoffSpec, signal) ->  signal.failure())
                 ).map(item -> {
                     log.trace("UPDATE FILE METADATA TOCK {}", new Date().getTime());
                     return item;

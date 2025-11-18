@@ -122,5 +122,25 @@
       },
       "body": "{\"resultDescription\":\"Il file non è stato trovato.\"}"
     }
+  },
+  {
+    "httpRequest": {
+      "path": "/safe-storage/v1/files/8F7C",
+      "method": "POST",
+      "body": {
+        "type": "JSON",
+        "json": { "status": "ATTACHED" }
+      }
+    },
+    "httpResponse": {
+      "statusCode": 400,
+      "headers": {
+        "content-type": ["application/json"]
+      },
+      "body": "{\"resultDescription\":\"Status change from booked to attached is not valid for client pn-radd-alt within the process with id SS\"}"
+    },
+    "times": {
+      "unlimited": true
+    }
   }
 ]
