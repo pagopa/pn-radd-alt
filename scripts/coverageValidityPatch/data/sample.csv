@@ -1,0 +1,5 @@
+cap,locality,startValidity,endValidity,province,cadastralCode
+00100,Roma,2025-01-01,2025-12-31,RM,H501
+20100,Milano,2025-02-01,2025-11-30,MI,F205
+09100,Cagliari,,2025-10-15,CA,B354
+
