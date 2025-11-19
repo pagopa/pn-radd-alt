@@ -7,6 +7,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 import static it.pagopa.pn.radd.utils.Utils.transactionIdBuilder;
 
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -48,6 +49,10 @@ public class RaddTransactionEntity {
     private static final int CX_TYPE_INDEX = 0;
     private static final int CX_ID_INDEX = 1;
 
+    private static final String COL_CREATION_TIME_STAMP = "creationTimestamp";
+    private static final String COL_UPDATE_TIME_STAMP = "updateTimestamp";
+
+
 
     @Getter(onMethod = @__({@DynamoDbPartitionKey, @DynamoDbAttribute(COL_TRANSACTION_ID)}))
     private String transactionId;
@@ -83,6 +88,10 @@ public class RaddTransactionEntity {
     private String errorReason;
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_ZIP_ATTACHMENTS)}))
     private Map<String, String> zipAttachments;
+    @Getter(onMethod = @__({@DynamoDbAttribute(COL_CREATION_TIME_STAMP)}))
+    private Instant creationTimestamp;
+    @Getter(onMethod = @__({@DynamoDbAttribute(COL_UPDATE_TIME_STAMP)}))
+    private Instant updateTimestamp;
 
     public RaddTransactionEntity(String cxType, String cxId, String operationId) {
         this.setTransactionId(cxType, cxId, operationId);
