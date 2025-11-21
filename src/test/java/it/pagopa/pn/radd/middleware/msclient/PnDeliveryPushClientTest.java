@@ -24,7 +24,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
     @Test
     void testGetNotificationLegalFacts() {
         String recipientInternalId = "854Bgs31a", iun = "LJLH-GNTJ-DVXR-202209-J-1";
-        Flux<LegalFactListElementV20Dto> fluxResponse = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun);
+        Flux<LegalFactListElementV28Dto> fluxResponse = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun);
         fluxResponse.collectList().map(response -> {
             assertNotEquals(0, response.size());
             response.forEach(element -> {
@@ -39,7 +39,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
     @Test
     void testGetNotificationLegalFactsWithDuplicates() {
         String recipientInternalId = "521Tvr56b", iun = "MDCA-BRSZ-UVTR-202412-G-2";
-        Flux<LegalFactListElementV20Dto> fluxResponse = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun);
+        Flux<LegalFactListElementV28Dto> fluxResponse = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun);
         fluxResponse.collectList().map(response -> {
             // The http mock for this scenario returns 2 elements, but they are duplicates so the method should return only one
             assertEquals(1, response.size());
@@ -55,7 +55,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
     @Test
     void testGetNotificationLegalFactsCode400() {
         String recipientInternalId = "", iun = "LJLH-GNTJ-DVXR-202209-J-1";
-        Flux<LegalFactListElementV20Dto> response = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun);
+        Flux<LegalFactListElementV28Dto> response = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun);
         response.onErrorResume(exception -> {
             if (exception instanceof PnRaddException){
                 assertEquals(400, ((PnRaddException) exception).getWebClientEx().getStatusCode().value());
