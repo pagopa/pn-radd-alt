@@ -91,8 +91,10 @@ class CoverageValidityPatchProcessor {
     const locality = row.locality || row.LOCALITY || row.comune || row.COMUNE;
     const startValidity = row.startValidity || row.start_validity || row.start || row.STARTVALIDITY;
     const endValidity = row.endValidity || row.end_validity || row.end || row.ENDVALIDITY;
-    const provinceRaw = row.province || row.Provincia || row.PROVINCE || row.pr || row.PR;
-    const cadastralRaw = row.cadastralCode || row['Cod catastale'] || row.codCatastale || row.CODCATASTALE;
+
+    // Estendo le varianti per provincia e codice catastale
+    const provinceRaw = row.province || row.Provincia || row.PROVINCE || row.PROV || row.pr || row.PR;
+    const cadastralRaw = row.cadastralCode || row['Cod catastale'] || row['COD CATASTALE'] || row.codCatastale || row.CODCATASTALE;
 
     if (!cap || !/^\d{5}$/.test(cap)) throw new Error(`CAP mancante o non valido: '${cap}'`);
     if (!locality) throw new Error('Locality mancante');
