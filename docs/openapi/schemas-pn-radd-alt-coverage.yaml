@@ -90,35 +90,51 @@ components:
           type: string
           description: Destinatario
           example: 'c/o Rossi Mario'
+          x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+          format: password # NO EXTERNAL
         addressRow:
           type: string
           description: Indirizzo 1
           example: 'Via Roma 123'
+          x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+          format: password # NO EXTERNAL
         addressRow2:
           type: string
           description: Indirizzo 2
           example: 'Interno 5'
+          x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+          format: password # NO EXTERNAL
         cap:
           type: string
           description: CAP della località coperta
           pattern: '^\d{5}$'
           example: '00000'
+          x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+          format: password # NO EXTERNAL
         city:
           type: string
           description: Città 1
           example: 'Roma'
+          x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+          format: password # NO EXTERNAL
         city2:
           type: string
           description: Città 2
           example: 'Centro Storico'
+          x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+          format: password # NO EXTERNAL
         pr:
           type: string
           description: Provincia
           example: 'RM'
+          x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+          format: password # NO EXTERNAL
         country:
           type: string
           description: Nazione
           example: 'ITALIA'
+          x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+          format: password # NO EXTERNAL
     CheckCoverageResponse:
         type: object
         required:
