@@ -12,11 +12,28 @@ class CoverageValidityPatchProcessor {
     this.dryRun = !!options.dryRun;
     this.useIdToken = !!options.useIdToken;
 
+    // Supporto token statico alternativo
+    this.staticApiToken = process.env.API_TOKEN || null;
+    this.requiredEnv = ['COGNITO_REGION', 'COGNITO_CLIENT_ID', 'COGNITO_USERNAME', 'COGNITO_PASSWORD'];
+
     this.cognitoClient = new CognitoIdentityProviderClient({ region: process.env.COGNITO_REGION });
     this.cognitoToken = null;
     this.cognitoTokenExpiry = 0;
     this._tokenPromise = null;
     this._tokenMarginSeconds = parseInt(process.env.COGNITO_TOKEN_MARGIN || '30', 10);
+
+    this.validateEnvironment();
+  }
+
+  validateEnvironment() {
+    if (this.staticApiToken) {
+      console.log('ℹ️ Uso API_TOKEN (JWT statico), salto autenticazione Cognito.');
+      return;
+    }
+    const missing = this.requiredEnv.filter(k => !process.env[k] || process.env[k].trim() === '');
+    if (missing.length) {
+      throw new Error(`Variabili Cognito mancanti: ${missing.join(', ')}. Esempio .env:\nCOGNITO_REGION=eu-central-1\nCOGNITO_CLIENT_ID=xxxxxxxx\nCOGNITO_USERNAME=utente@example.com\nCOGNITO_PASSWORD=Password123!`);
+    }
   }
 
   decodeJwt(token) {
@@ -27,6 +44,9 @@ class CoverageValidityPatchProcessor {
   }
 
   async getAuthToken() {
+    if (this.staticApiToken) {
+      return this.staticApiToken;
+    }
     const now = Math.floor(Date.now() / 1000);
     if (this.cognitoToken && now < (this.cognitoTokenExpiry - this._tokenMarginSeconds)) {
       return this.cognitoToken;
@@ -34,9 +54,11 @@ class CoverageValidityPatchProcessor {
     if (this._tokenPromise) return this._tokenPromise;
 
     this._tokenPromise = (async () => {
+      const clientId = process.env.COGNITO_CLIENT_ID;
+      if (!clientId) throw new Error('COGNITO_CLIENT_ID mancante: definisci la variabile o usa API_TOKEN');
       const params = {
         AuthFlow: 'USER_PASSWORD_AUTH',
-        ClientId: process.env.COGNITO_CLIENT_ID,
+        ClientId: clientId,
         AuthParameters: {
           USERNAME: process.env.COGNITO_USERNAME,
           PASSWORD: process.env.COGNITO_PASSWORD
@@ -57,7 +79,6 @@ class CoverageValidityPatchProcessor {
 
   validateDate(value, fieldName) {
     if (!value) return null; // opzionale
-    // formato ISO date (YYYY-MM-DD) richiesto da format: date
     const regex = /^\d{4}-\d{2}-\d{2}$/;
     if (!regex.test(value)) throw new Error(`Data '${value}' non valida per ${fieldName}. Atteso YYYY-MM-DD`);
     const d = new Date(value + 'T00:00:00Z');
@@ -97,7 +118,6 @@ class CoverageValidityPatchProcessor {
   encodePathParam(value) {
     if (value == null) return '';
     const trimmed = value.toString().trim();
-    // Normalizza caratteri Unicode (accenti) in NFC per coerenza
     const normalized = trimmed.normalize('NFC');
     return encodeURIComponent(normalized);
   }
@@ -112,7 +132,7 @@ class CoverageValidityPatchProcessor {
       const encodedLocality = this.encodePathParam(record.locality);
       const pathShown = encodedLocality !== record.locality ? `${record.cap}/${encodedLocality} (raw: ${record.locality})` : `${record.cap}/${encodedLocality}`;
       console.log(`📝 [dry-run] PATCH /coverages/${pathShown} body:`, bodyPreview);
-      this.successCount++; // considerata ok
+      this.successCount++;
       return;
     }
     try {
@@ -166,11 +186,11 @@ class CoverageValidityPatchProcessor {
         .on('end', async () => {
           console.log(`📊 Record validi da processare: ${records.length}`);
           await this.processBatches(records, batchSize, delayMs);
-          console.log(`\n📈 Completato: ✅ ${this.successCount} ❌ ${this.errorCount} 📊 ${this.successCount + this.errorCount}`);
+          console.log(`\n📈 Completato: ✅ ${this.successCount} ❌ ${this.errorCount} 📦 ${this.successCount + this.errorCount}`);
           resolve({ success: this.successCount, errors: this.errorCount, total: this.successCount + this.errorCount });
         })
         .on('error', (err) => {
-          console.error('Errore lettura CSV:', err);
+          console.error('❌ Errore lettura CSV:', err);
           reject(err);
         });
     });

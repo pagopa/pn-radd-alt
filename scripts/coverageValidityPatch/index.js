@@ -1,18 +1,37 @@
 #!/usr/bin/env node
 const path = require('path');
 const fs = require('fs');
+
+// Pre-scan argomenti per trovare --env-file
+let rawArgs = process.argv.slice(2);
+let envIdx = rawArgs.indexOf('--env-file');
+let customEnvPath = null;
+if (envIdx !== -1 && rawArgs[envIdx + 1]) {
+  customEnvPath = path.resolve(process.cwd(), rawArgs[envIdx + 1]);
+}
+const defaultEnvPath = path.resolve(__dirname, '.env');
+const envPathToLoad = customEnvPath || defaultEnvPath;
+
+try {
+  const dotenv = require('dotenv');
+  const result = dotenv.config({ path: envPathToLoad });
+  if (result.error) {
+    console.warn(`⚠️ .env non caricato da '${envPathToLoad}' (${result.error.message}). Userò variabili shell.`);
+  } else {
+    console.log(`🔧 Variabili ambiente caricate da '${envPathToLoad}'.`);
+  }
+} catch (e) {
+  console.warn(`⚠️ Impossibile caricare .env: ${e.message}`);
+}
+
 const Processor = require('./src/patch-processor');
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
-require('dotenv').config();
 
 const argv = yargs(hideBin(process.argv))
   .usage('Usage: $0 <file.csv> [options]')
   .command('$0 <file>', 'Aggiorna le date di validità delle coperture', (y) => {
-    y.positional('file', {
-      describe: 'Percorso file CSV',
-      type: 'string'
-    });
+    y.positional('file', { describe: 'Percorso file CSV', type: 'string' });
   })
   .option('api-url', {
     alias: 'u',
@@ -42,6 +61,11 @@ const argv = yargs(hideBin(process.argv))
     type: 'boolean',
     default: (process.env.COGNITO_USE_ID_TOKEN || 'false').toLowerCase() === 'true'
   })
+  .option('env-file', {
+    describe: 'Percorso file .env da caricare',
+    type: 'string',
+    default: envPathToLoad
+  })
   .help()
   .alias('h', 'help')
   .argv;
@@ -49,18 +73,17 @@ const argv = yargs(hideBin(process.argv))
 async function main() {
   const csvFilePath = argv.file;
   if (!fs.existsSync(csvFilePath)) {
-    console.error('File CSV non trovato:', csvFilePath);
+    console.error('❌ File CSV non trovato:', csvFilePath);
     process.exit(1);
   }
   const processor = new Processor(argv.apiUrl, { useIdToken: argv.useIdToken, dryRun: argv.dryRun });
   try {
     const stats = await processor.processCsvFile(csvFilePath, argv.batchSize, argv.delay);
-    console.log('\nRisultato finale:', stats);
+    console.log('\n✅ Risultato finale:', stats);
   } catch (e) {
-    console.error('Errore esecuzione:', e.message);
+    console.error('💥 Errore esecuzione:', e.message);
     process.exit(1);
   }
 }
 
 main();
-

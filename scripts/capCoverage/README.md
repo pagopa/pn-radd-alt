@@ -4,175 +4,124 @@ Un progetto Node.js che legge dati da file CSV e genera chiamate POST all'API `/
 
 ## 📋 Caratteristiche
 
-- **Lettura CSV**: Supporta file CSV con colonne COMUNE, Provincia, CAP, Cod catastale
+- **Lettura CSV**: Supporta due formati di file:
+  1. Storico: `COMUNE,Provincia,CAP,Cod catastale`
+  2. Nuovo (abilitazioni): `CAP,LOCALITY,STARTVALIDITY,PUNTIPRESENTI` (province e codice catastale assenti / opzionali)
 - **Mapping automatico**: Converte i dati CSV nel formato JSON richiesto dall'API
 - **Gestione batch**: Processa i record in lotti per evitare di sovraccaricare l'API
-- **Error handling**: Gestione robusta degli errori con retry logic
-- **Logging dettagliato**: Output colorato con statistiche di elaborazione
-- **Configurabile**: Parametri personalizzabili via linea di comando o file .env
+- **Autenticazione Cognito**: Ottiene e riusa il token fino a prossimità scadenza
+- **Logging dettagliato**: Output con statistiche di elaborazione
+- **Configurabile**: Parametri via CLI o file `.env`
 
 ## 🚀 Installazione
 
 ```bash
-# Clona il progetto
-git clone <repository-url>
-cd cd scripts/capCoverage
+# Clona il progetto (esempio)
+# git clone <repository-url>
+cd scripts/capCoverage
 
-# Installa le dipendenze
 npm install
-
-# (Opzionale) Copia e configura il file environment
-cp .env.example .env
 ```
-### Esempio .env
+
+### Esempio `.env`
 ```env
 API_BASE_URL=https://your-api-server.com
 
 # Cognito
 COGNITO_USE_ID_TOKEN=true
 COGNITO_REGION=eu-central-1
-COGNITO_USER_POOL_ID=eu-central-1_XXXXXXX
 COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
 COGNITO_USERNAME=your.username@example.com
 COGNITO_PASSWORD=YourSecurePassword123!
+# Margine secondi prima della scadenza per refresh
+COGNITO_TOKEN_MARGIN=30
 ```
 
-## 📖 Utilizzo
+## 📄 Utilizzo
 
-### Utilizzo base
 ```bash
-node index.js data/sample.csv
+# Formato storico
+node index.js data/sample.csv --api-url https://your-api-server.com
+
+# Formato nuovo (abilitazioni CAP)
+node index.js "data/Copertura RADD Abilitazione CAP-Località.csv" --api-url https://your-api-server.com --batch-size 3 --delay 500
 ```
 
-### Utilizzo avanzato con opzioni
-```bash
-node index.js data/comuni.csv \
-  --api-url https://your-api-server.com \
-  --batch-size 3 \
-  --delay 2000
-```
-
-### Script npm
-```bash
-# Esegue con il file di esempio
-npm run sample
-
-# Esegue lo script principale
-npm start data/your-file.csv
-```
-
-## ⚙️ Opzioni
-
+## ⚙️ Opzioni CLI
 | Opzione | Descrizione | Default |
 |---------|-------------|---------|
 | `--api-url` | URL base dell'API | `https://api.example.com` |
-| `--batch-size` | Numero di richieste concurrent | `5` |
-| `--delay` | Ritardo tra i batch (ms) | `1000` |
-| `--help` | Mostra il messaggio di aiuto | - |
+| `--batch-size` | Richieste concorrenti per batch | `5` |
+| `--delay` | Ritardo ms tra i batch | `1000` |
+| `--help` | Mostra help | - |
 
-## 📁 Struttura del progetto
+## 🧱 Formati CSV supportati
 
-```
-├── index.js                 # Script principale
-├── src/
-│   └── csv-processor.js     # Classe per elaborazione CSV e API
-├── data/
-│   └── sample.csv          # File CSV di esempio
-├── .vscode/
-│   └── tasks.json          # Task VS Code
-├── package.json            # Configurazione npm
-└── README.md              # Documentazione
-```
-
-## 📊 Formato CSV richiesto
-
-Il file CSV deve contenere le seguenti colonne:
-
+### Formato storico
 ```csv
 COMUNE,Provincia,CAP,Cod catastale
 Milano,MI,20100,F205
 Roma,RM,00100,H501
-Torino,TO,10100,L219
 ```
 
-## 🔄 Mapping dei dati
+### Formato nuovo abilitazioni
+```csv
+CAP,LOCALITY,STARTVALIDITY,PUNTIPRESENTI
+00012,GUIDONIA MONTECELIO,2025-11-25,COPERTO
+00015,MONTEROTONDO,2025-11-25,COPERTO
+```
 
-I dati CSV vengono mappati nel seguente formato JSON per l'API:
+Note:
+- `STARTVALIDITY` viene solo loggato (campo `_startValidityCsv`) e non inviato nel body POST perché lo schema di creazione non prevede start/end validity.
+- `PUNTIPRESENTI` è ignorato.
+- Province e codice catastale sono opzionali: se assenti non vengono inviati.
 
+## 🔀 Mapping dei dati
+
+Il payload inviato al POST deriva dai campi trovati:
 ```json
 {
-  "cap": "20100",
-  "locality": "Milano", 
-  "cadastralCode": "F205",
-  "province": "MI"
+  "cap": "00012",
+  "locality": "GUIDONIA MONTECELIO",
+  "cadastralCode": "F205", // opzionale se presente
+  "province": "RM"          // opzionale se presente
 }
 ```
 
-## 🌐 Configurazione API
+## 🔐 Autenticazione Cognito
+- USER_PASSWORD_AUTH con le variabili fornite.
+- Il token (Access o Id in base a `COGNITO_USE_ID_TOKEN`) viene riutilizzato finché non è in prossimità della scadenza (`COGNITO_TOKEN_MARGIN`).
+- Header: `Authorization: Bearer <token>`.
+- Se ti serve il claim custom `custom:backoffice_tags` usa l'ID token (`COGNITO_USE_ID_TOKEN=true`).
 
-### Endpoint
-- **URL**: `/radd-bo/api/v1/coverages`
-- **Metodo**: POST
-- **Content-Type**: application/json
-
-### Autenticazione Cognito
-Il processor ottiene un AccessToken tramite USER_PASSWORD_AUTH con le variabili ambiente fornite. Il token:
-- Viene decodificato per leggere il campo exp
-- È riutilizzato fino a 30 secondi prima della scadenza
-- Inserito nell'header: Authorization: Bearer <AccessToken>
-
-Se l'API richiede solo un token statico puoi ancora usare:
-```env
-API_TOKEN=your-jwt-token-here
-```
+## 🗓️ Validità
+Per gestire start/end validity utilizza invece lo script di patch (`scripts/coverageValidityPatch/`), che invia questi campi via PATCH.
 
 ## 📈 Output di esempio
-
 ```
-🚀 Starting CSV processing...
-   📁 File: data/sample.csv
-   🌐 API URL: https://api.example.com
-   📦 Batch size: 5
-   ⏱️  Delay: 1000ms
-
-📖 Reading CSV file: data/sample.csv
-📊 Found 5 valid records to process
-🔄 Processing batch 1/1 (5 records)
-✅ Successfully created coverage for Milano (20100)
-✅ Successfully created coverage for Roma (00100)
-❌ Failed to create coverage for Torino (10100): Network error
-✅ Successfully created coverage for Napoli (80100)
-✅ Successfully created coverage for Palermo (90100)
-
-📈 Processing complete:
-   ✅ Successful: 4
-   ❌ Failed: 1
-   📊 Total: 5
-
-🎉 Processing completed successfully!
+📖 Lettura CSV: data/Copertura RADD Abilitazione CAP-Località.csv
+📊 Record validi da processare: 120
+🔄 Batch 1/60 (2 record)
+🗓️ CSV contiene startValidity='2025-11-25' (ignorato nel POST, disponibile solo in PATCH).
+✅ Creato coverage GUIDONIA MONTECELIO (00012)
+...
 ```
 
-## 🛠️ Sviluppo
+## 🛠 Dipendenze principali
+- `csv-parser`
+- `axios`
+- `dotenv`
+- `@aws-sdk/client-cognito-identity-provider`
 
-### Requisiti
-- Node.js >= 14.0.0
-- npm >= 6.0.0
+## 🧪 Troubleshooting
+| Problema | Possibile causa | Soluzione |
+|----------|-----------------|-----------|
+| `Value null at 'clientId'` | Mancano variabili Cognito | Verifica `COGNITO_CLIENT_ID`, utente e password nel `.env` |
+| Claim custom mancante | Usando Access Token | Imposta `COGNITO_USE_ID_TOKEN=true` |
+| Nessun record elaborato | Intestazioni non riconosciute | Verifica nomi colonne (vedi formati) |
 
-### Dipendenze
-- `csv-parser`: Parsing file CSV
-- `axios`: Client HTTP per chiamate API
-- `dotenv`: Gestione variabili d'ambiente
-- @aws-sdk/client-cognito-identity-provider
+## ✅ Requisiti minimi
+- Node.js >= 16
 
-### Task VS Code
-Il progetto include task VS Code preconfigurati:
-- **Run CSV Processor**: Esegue lo script con il file di esempio
-
-## 🚨 Gestione errori
-
-Il script gestisce diversi tipi di errori:
-
-- **File non trovato**: Verifica l'esistenza del file CSV
-- **Dati mancanti**: Skips records con campi obbligatori vuoti  
-- **Errori di rete**: Retry automatico e logging dettagliato
-- **Timeout API**: Timeout configurabile (10 secondi default)
+## 📜 Licenza
+Uso interno. Adatta secondo necessità.

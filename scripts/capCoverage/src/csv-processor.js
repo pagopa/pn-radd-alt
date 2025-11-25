@@ -9,6 +9,10 @@ class CSVCoverageProcessor {
         this.apiBaseUrl = apiBaseUrl;
         this.successCount = 0;
         this.errorCount = 0;
+        // Fallback token statico opzionale
+        this.staticApiToken = process.env.API_TOKEN || null;
+        // Variabili richieste per Cognito se non si usa API_TOKEN
+        this.requiredCognitoEnv = ['COGNITO_REGION', 'COGNITO_CLIENT_ID', 'COGNITO_USERNAME', 'COGNITO_PASSWORD'];
 
         this.cognitoClient = new CognitoIdentityProviderClient({
             region: process.env.COGNITO_REGION
@@ -17,6 +21,20 @@ class CSVCoverageProcessor {
         this.cognitoTokenExpiry = 0; // epoch seconds
         this._tokenPromise = null; // lock per richieste concorrenti
         this._tokenMarginSeconds = parseInt(process.env.COGNITO_TOKEN_MARGIN || '30', 10); // margine prima della scadenza
+
+        // Validazione iniziale (non blocca se presente API_TOKEN)
+        this.validateEnvironment();
+    }
+
+    validateEnvironment() {
+        if (this.staticApiToken) {
+            console.log('ℹ️ Uso token statico da variabile API_TOKEN (Cognito non richiesto).');
+            return;
+        }
+        const missing = this.requiredCognitoEnv.filter(k => !process.env[k] || process.env[k].trim() === '');
+        if (missing.length) {
+            throw new Error(`Variabili ambiente Cognito mancanti: ${missing.join(', ')}. Configura .env oppure esportale prima di eseguire. Esempio:\nCOGNITO_REGION=eu-central-1\nCOGNITO_CLIENT_ID=xxxxxxxx\nCOGNITO_USERNAME=utente@example.com\nCOGNITO_PASSWORD=Password123!`);
+        }
     }
 
     decodeJwt(token) {
@@ -31,6 +49,10 @@ class CSVCoverageProcessor {
     }
 
     async getAuthToken() {
+        // Se presente token statico salta Cognito
+        if (this.staticApiToken) {
+            return this.staticApiToken;
+        }
         const now = Math.floor(Date.now() / 1000);
         if (this.cognitoToken && now < (this.cognitoTokenExpiry - this._tokenMarginSeconds)) {
             return this.cognitoToken; // già valido
@@ -47,6 +69,9 @@ class CSVCoverageProcessor {
                     PASSWORD: process.env.COGNITO_PASSWORD
                 }
             };
+            if (!params.ClientId) {
+                throw new Error('COGNITO_CLIENT_ID mancante: definisci la variabile ambiente o usa API_TOKEN.');
+            }
             const command = new InitiateAuthCommand(params);
             const resp = await this.cognitoClient.send(command);
             const useIdToken = (process.env.COGNITO_USE_ID_TOKEN || 'false').toLowerCase() === 'true';
@@ -62,21 +87,15 @@ class CSVCoverageProcessor {
             this.cognitoTokenExpiry = payload.exp;
             console.log(`🔐 Token Cognito (${useIdToken ? 'ID' : 'Access'}) ottenuto. Scade tra ${(this.cognitoTokenExpiry - now)}s.`);
 
-            // Debug custom attribute se presente solo nell'ID token
             const customAttrName = 'custom:backoffice_tags';
             if (useIdToken) {
                 if (payload[customAttrName]) {
-                    console.log(`🧩 Claim '${customAttrName}' presente:`, payload[customAttrName]);
+                    console.log(`🧪 Claim '${customAttrName}' presente:`, payload[customAttrName]);
                 } else {
-                    console.warn(`⚠️ Claim '${customAttrName}' non presente nell'ID token. Verifica che l'app client abbia l'attributo in lettura e che l'utente lo abbia valorizzato.`);
+                    console.warn(`⚠️ Claim '${customAttrName}' non presente nell'ID token.`);
                 }
             } else {
-                // Access token tipicamente NON contiene attributi custom
-                if (payload[customAttrName]) {
-                    console.log(`🧩 (Raro) Claim '${customAttrName}' presente nell'access token:`, payload[customAttrName]);
-                } else {
-                    console.log(`ℹ️ Usando access token: gli attributi custom come '${customAttrName}' non sono inclusi. Imposta COGNITO_USE_ID_TOKEN=true se l'authorizer richiede quel claim.`);
-                }
+                console.log(`ℹ️ Usando access token: gli attributi custom come '${customAttrName}' non sono inclusi.`);
             }
 
             return selectedToken;
@@ -90,40 +109,57 @@ class CSVCoverageProcessor {
     }
 
     /**
-     * Map CSV row to API payload format
-     * @param {Object} row - CSV row with COMUNE, Provincia, CAP, Cod catastale
-     * @returns {Object} API payload
+     * Normalizza i campi supportando entrambe le varianti di CSV:
+     * Variante "storica": COMUNE, Provincia, CAP, Cod catastale
+     * Variante "nuova": CAP, LOCALITY, STARTVALIDITY, PUNTIPRESENTI
+     * Province e cadastralCode diventano opzionali.
      */
     mapRowToApiPayload(row) {
+        // Possibili alias
+        const cap = row.CAP || row.cap;
+        const locality = row.LOCALITY || row.COMUNE || row.locality || row.comune;
+        const cadastralCode = row['Cod catastale'] || row.CODCATASTALE || row.cadastralCode;
+        const province = row.Provincia || row.PROVINCE || row.province;
+        const startValidity = row.STARTVALIDITY || row.startValidity || row.start_validity; // non usato nel body POST
+
         return {
-            cap: row.CAP,
-            locality: row.COMUNE,
-            cadastralCode: row['Cod catastale'],
-            province: row.Provincia
+            cap,
+            locality,
+            // Questi campi sono opzionali secondo CreateCoverageRequest
+            ...(cadastralCode ? { cadastralCode } : {}),
+            ...(province ? { province } : {}),
+            // Campo aggiuntivo presente nel CSV nuovo: log informativo (non inviato)
+            _startValidityCsv: startValidity || undefined
         };
     }
 
-    /**
-     * Make POST request to coverage API
-     * @param {Object} payload - API payload
-     */
     async createCoverage(payload) {
         try {
             const token = await this.getAuthToken();
-            // Rimuovo log completo del token (sensibile); opzionale debug lunghezza
+            // Rimuovo log completo del token (sensibile)
             console.log(`🔑 Usando token Cognito (len=${token.length}) per ${payload.locality}/${payload.cap}`);
-            const response = await axios.post(`${this.apiBaseUrl}/radd-bo/api/v1/coverages`, payload, {
+            // Body conforme allo schema CreateCoverageRequest
+            const body = {
+                cap: payload.cap,
+                locality: payload.locality,
+                ...(payload.cadastralCode ? { cadastralCode: payload.cadastralCode } : {}),
+                ...(payload.province ? { province: payload.province } : {})
+            };
+            if (payload._startValidityCsv) {
+                console.log(`🗓️ CSV contiene startValidity='${payload._startValidityCsv}' (ignorato nel POST, disponibile solo in PATCH).`);
+            }
+            const response = await axios.post(`${this.apiBaseUrl}/radd-bo/api/v1/coverages`, body, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
                 timeout: 10000
             });
-            console.log(`✅ Successfully created coverage for ${payload.locality} (${payload.cap})`);
+            console.log(`✅ Creato coverage ${payload.locality} (${payload.cap})`);
             this.successCount++;
             return response.data;
         } catch (error) {
-            console.error(`❌ Failed to create coverage for ${payload.locality} (${payload.cap}):`, error.response?.data || error.message);
+            console.error(`❌ Errore creazione coverage ${payload.locality} (${payload.cap}):`, error.response?.data || error.message);
             this.errorCount++;
             throw error;
         }
@@ -140,27 +176,36 @@ class CSVCoverageProcessor {
             const results = [];
             const errors = [];
 
-            console.log(`📖 Reading CSV file: ${csvFilePath}`);
+            console.log(`📖 Lettura CSV: ${csvFilePath}`);
 
             fs.createReadStream(csvFilePath)
                 .pipe(csv())
                 .on('data', (row) => {
-                    // Validate required fields
-                    if (!row.CAP || !row.COMUNE || !row['Cod catastale'] || !row.Provincia) {
-                        console.warn(`⚠️  Skipping invalid row:`, row);
+                    // Validazione minima: servono cap & locality
+                    const cap = row.CAP || row.cap;
+                    const locality = row.LOCALITY || row.COMUNE || row.locality || row.comune;
+                    if (!cap || !/^\d{5}$/.test(cap)) {
+                        console.warn(`⚠️  Riga ignorata: CAP mancante/non valido`, row);
                         return;
                     }
-
-                    const payload = this.mapRowToApiPayload(row);
-                    results.push(payload);
+                    if (!locality) {
+                        console.warn(`⚠️  Riga ignorata: LOCALITY/COMUNE mancante`, row);
+                        return;
+                    }
+                    try {
+                        const payload = this.mapRowToApiPayload(row);
+                        results.push(payload);
+                    } catch (e) {
+                        console.warn(`⚠️  Mappatura fallita: ${e.message}`, row);
+                    }
                 })
                 .on('end', async () => {
-                    console.log(`📊 Found ${results.length} valid records to process`);
+                    console.log(`📊 Record validi da processare: ${results.length}`);
                     await this.processBatches(results, batchSize, delayMs);
-                    console.log(`\n📈 Processing complete:`);
+                    console.log(`\n📈 Completato:`);
                     console.log(`   ✅ Successful: ${this.successCount}`);
                     console.log(`   ❌ Failed: ${this.errorCount}`);
-                    console.log(`   📊 Total: ${this.successCount + this.errorCount}`);
+                    console.log(`   📦 Total: ${this.successCount + this.errorCount}`);
                     resolve({
                         success: this.successCount,
                         errors: this.errorCount,
@@ -168,7 +213,7 @@ class CSVCoverageProcessor {
                     });
                 })
                 .on('error', (error) => {
-                    console.error('❌ Error reading CSV file:', error);
+                    console.error('❌ Errore lettura CSV:', error);
                     reject(error);
                 });
         });
@@ -183,7 +228,7 @@ class CSVCoverageProcessor {
     async processBatches(records, batchSize, delayMs) {
         for (let i = 0; i < records.length; i += batchSize) {
             const batch = records.slice(i, i + batchSize);
-            console.log(`🔄 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(records.length/batchSize)} (${batch.length} records)`);
+            console.log(`🔄 Batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(records.length/batchSize)} (${batch.length} record)`);
             const promises = batch.map(payload =>
                 this.createCoverage(payload).catch(error => {
                     return { error: error.message, payload }; // non interrompe batch
@@ -191,7 +236,7 @@ class CSVCoverageProcessor {
             );
             await Promise.all(promises);
             if (i + batchSize < records.length) {
-                console.log(`⏳ Waiting ${delayMs}ms before next batch...`);
+                console.log(`⏳ Attesa ${delayMs}ms prima del prossimo batch...`);
                 await new Promise(resolve => setTimeout(resolve, delayMs));
             }
         }
