@@ -110,7 +110,7 @@ Resources:
               description:struct<S:string,NULL:boolean>,
               email:struct<S:string,NULL:boolean>,
               endValidity:struct<S:string,NULL:boolean>,
-              externalCodes:struct<L:array<struct<S:string>>,NULL:boolean>,
+              externalCodes:struct<L:array<S:string>,NULL:boolean>,
               modifiedAddress:struct<BOOL:boolean,NULL:boolean>,
               normalizedAddress:struct<M:struct<
                 addressRow:struct<S:string,NULL:boolean>,
@@ -131,7 +131,7 @@ Resources:
               >>,
               openingTime:struct<S:string,NULL:boolean>,
               partnerType:struct<S:string>,
-              phoneNumbers:struct<L:array<struct<S:string>>,NULL:boolean>,
+              phoneNumbers:struct<L:array<S:string>,NULL:boolean>,
               startValidity:struct<S:string,NULL:boolean>,
               uid:struct<S:string>,
               updateTimestamp:struct<S:string>,
