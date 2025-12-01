@@ -137,7 +137,7 @@ class CSVCoverageProcessor {
         try {
             const token = await this.getAuthToken();
             // Rimuovo log completo del token (sensibile)
-            console.log(`🔑 Usando token Cognito (len=${token.length}) per ${payload.locality}/${payload.cap}`);
+            console.log(`🔑 Richiesta autenticata per ${payload.locality}/${payload.cap}`);
             // Body conforme allo schema CreateCoverageRequest
             const body = {
                 cap: payload.cap,
