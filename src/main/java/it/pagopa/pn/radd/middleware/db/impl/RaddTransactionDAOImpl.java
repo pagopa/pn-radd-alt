@@ -52,13 +52,11 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
     }
 
     @Override
-    public Mono<RaddTransactionEntity> createRaddTransaction(RaddTransactionEntity entity, List<OperationsIunsEntity> iunsEntities) {
-        return Mono.fromSupplier(() -> {
-                    entity.setCreationTimestamp(Instant.now());
-                    return entity;
-                }).flatMap(this::putTransactionWithConditions)
+    public Mono<RaddTransactionEntity> createRaddTransaction(RaddTransactionEntity entity, List<OperationsIunsEntity> iunsEntities){
+        entity.setCreationTimestamp(Instant.now());
+        return putTransactionWithConditions(entity)
                 .doOnNext(raddTransaction -> log.debug("[{} - {}] radd transaction created", raddTransaction.getOperationId(), raddTransaction.getIun()))
-                .flatMap(raddTransaction -> operationsIunsDAO.putWithBatch(iunsEntities).thenReturn(raddTransaction))
+                .flatMap(raddTransaction -> operationsIunsDAO.putWithBatch(iunsEntities).thenReturn(entity))
                 .flatMap(raddTransaction -> updateStatus(raddTransaction, RaddTransactionStatusEnum.STARTED));
     }
 
