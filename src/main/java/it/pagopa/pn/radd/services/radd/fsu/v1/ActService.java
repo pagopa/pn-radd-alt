@@ -390,7 +390,8 @@ public class ActService extends BaseService {
                 .filter(legalFactInfo -> CONTENT_TYPE_ZIP.equals(legalFactInfo.getContentType()))
                 .collect(Collectors.toMap(LegalFactInfo::getKey, LegalFactInfo::getUrl));
         transaction.setZipAttachments(zipAttachments);
-        return raddTransactionDAO.updateZipAttachments(transactionDataMapper.toEntity(transaction.getUid(), transaction), zipAttachments)
+        return raddTransactionDAO.getTransaction(transaction.getTransactionId(), OperationTypeEnum.ACT)
+                .flatMap(entity -> raddTransactionDAO.updateZipAttachments(entity, zipAttachments))
                 .thenReturn(legalFactInfoList);
     }
 
