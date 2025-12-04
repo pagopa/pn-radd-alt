@@ -129,7 +129,7 @@ class ActServiceStartTransactionTest {
         SentNotificationV25Dto sentNotificationDto = new SentNotificationV25Dto ();
         sentNotificationDto.setRecipients(List.of(notificationRecipientDto));
         sentNotificationDto.setDocuments(List.of(notificationDocumentDto));
-
+        sentNotificationDto.setSenderPaId("senderPaId");
         sentNotificationDto.setDocumentsAvailable(true);
         return sentNotificationDto;
     }

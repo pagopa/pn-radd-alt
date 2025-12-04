@@ -36,6 +36,7 @@ import reactor.core.publisher.ParallelFlux;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -163,13 +164,21 @@ public class ActService extends BaseService {
                         .map(s -> setIun(transactionData, s)))
                 .flatMap(transactionData -> hasNotificationsCancelled(transactionData.getIun())
                         .thenReturn(transactionData))
-                .flatMap(transactionData -> this.createRaddTransaction(uid, transactionData))
-                .doOnNext(transactionData ->
-                        pnRaddAltAuditLog.getContext().addTransactionId(transactionData.getTransactionId())
-                                .addIun(transactionData.getIun())
+                .zipWhen(transactionData -> hasDocumentsAvailable(transactionData.getIun()))
+                .map(tuple -> {
+                    TransactionData transactionData = tuple.getT1();
+                    SentNotificationV25Dto notification = tuple.getT2();
+                    transactionData.setSenderPaIds(Collections.singleton(notification.getSenderPaId()));
+                    return tuple;
+                })
+                .flatMap(tuple -> this.createRaddTransaction(uid, tuple.getT1())
+                        .map(createdTransactionData -> Tuples.of(createdTransactionData, tuple.getT2())))
+                .doOnNext(tuple ->
+                        pnRaddAltAuditLog.getContext().addTransactionId(tuple.getT1().getTransactionId())
+                                .addIun(tuple.getT1().getIun())
                 )
-                .flatMap(this::verifyCheckSum)
-                .zipWhen(transaction -> hasDocumentsAvailable(transaction.getIun()))
+                .flatMap(tuple -> verifyCheckSum(tuple.getT1())
+                        .map(verifiedTransactionData -> Tuples.of(verifiedTransactionData, tuple.getT2())))
                 .zipWhen(transactionAndSentNotification -> retrieveDocumentsAndAttachments(request, transactionAndSentNotification),
                         (tupla, response) -> Tuples.of(tupla.getT1(), response))
                 .zipWhen(transactionAndResponse -> this.updateFileMetadata(transactionAndResponse.getT1()), (in, out) -> in.getT2())
