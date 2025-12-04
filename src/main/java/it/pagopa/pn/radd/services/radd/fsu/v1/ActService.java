@@ -165,12 +165,7 @@ public class ActService extends BaseService {
                 .flatMap(transactionData -> hasNotificationsCancelled(transactionData.getIun())
                         .thenReturn(transactionData))
                 .zipWhen(transactionData -> hasDocumentsAvailable(transactionData.getIun()))
-                .map(tuple -> {
-                    TransactionData transactionData = tuple.getT1();
-                    SentNotificationV25Dto notification = tuple.getT2();
-                    transactionData.setSenderPaIds(Collections.singleton(notification.getSenderPaId()));
-                    return tuple;
-                })
+                .doOnNext(this::enrichTransactionDataWithSenderPaId)
                 .flatMap(tuple -> this.createRaddTransaction(uid, tuple.getT1())
                         .map(createdTransactionData -> Tuples.of(createdTransactionData, tuple.getT2())))
                 .doOnNext(tuple ->
@@ -212,6 +207,11 @@ public class ActService extends BaseService {
                         }));
     }
 
+    private void enrichTransactionDataWithSenderPaId(Tuple2<TransactionData, SentNotificationV25Dto> tuple) {
+        TransactionData transactionData = tuple.getT1();
+        SentNotificationV25Dto notification = tuple.getT2();
+        transactionData.setSenderPaIds(Collections.singleton(notification.getSenderPaId()));
+    }
 
 
     @NotNull
