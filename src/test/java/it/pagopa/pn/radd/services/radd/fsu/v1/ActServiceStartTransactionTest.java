@@ -276,6 +276,7 @@ class ActServiceStartTransactionTest {
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF)).thenReturn(Mono.just("delegateTaxIdResult"));
         Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any()))
                .thenReturn(Mono.just(responseCheckAarDtoDto));
+        Mockito.when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(createSentNotificationDto()));
         Mockito.when(raddTransactionDAOImpl.createRaddTransaction(any(), any())).thenThrow(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_ALREADY_EXIST));
         Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(),any())).thenReturn(Mono.just(0));
 
