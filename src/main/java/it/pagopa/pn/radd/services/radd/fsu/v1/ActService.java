@@ -210,7 +210,10 @@ public class ActService extends BaseService {
     private void enrichTransactionDataWithSenderPaId(Tuple2<TransactionData, SentNotificationV25Dto> tuple) {
         TransactionData transactionData = tuple.getT1();
         SentNotificationV25Dto notification = tuple.getT2();
-        transactionData.setSenderPaIds(Collections.singleton(notification.getSenderPaId()));
+        String senderPaId = notification.getSenderPaId();
+        if (senderPaId != null)
+            transactionData.setSenderPaIds(Collections.singleton(senderPaId));
+        else log.warn("SenderPaId is null for notification with IUN {}", transactionData.getIun());
     }
 
 
