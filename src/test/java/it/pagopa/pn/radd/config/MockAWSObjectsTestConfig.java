@@ -1,21 +1,21 @@
 package it.pagopa.pn.radd.config;
 
-import com.amazonaws.services.sqs.AmazonSQSAsync;
-import io.awspring.cloud.autoconfigure.messaging.SqsAutoConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import it.pagopa.pn.radd.middleware.queue.producer.CorrelationIdEventsProducer;
 import it.pagopa.pn.radd.middleware.queue.producer.RegistryImportProgressProducer;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
-@EnableAutoConfiguration(exclude = {SqsAutoConfiguration.class})
+import org.springframework.boot.test.context.TestConfiguration;
+
+@TestConfiguration
 public class MockAWSObjectsTestConfig {
 
-    @MockBean
+    @MockitoBean
     private RegistryImportProgressProducer registryImportProgressProducer;
 
-    @MockBean
+    @MockitoBean
     private CorrelationIdEventsProducer correlationIdEventsProducer;
 
-    @MockBean
-    private AmazonSQSAsync amazonSQS;
+    @MockitoBean
+    private SqsAsyncClient amazonSQS;
 }

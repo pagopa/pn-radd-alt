@@ -4,7 +4,7 @@ import it.pagopa.pn.api.dto.events.GenericEvent;
 import it.pagopa.pn.api.dto.events.StandardEventHeader;
 import lombok.*;
 
-import javax.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotEmpty;
 
 @Getter
 @Builder

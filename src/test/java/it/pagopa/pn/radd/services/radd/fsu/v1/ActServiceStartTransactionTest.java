@@ -185,7 +185,7 @@ class ActServiceStartTransactionTest {
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_0, startTransactionResponse.getStatus().getCode());
         assertEquals(Const.OK, startTransactionResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG operationId=Id iun=null");
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] SUCCESS - End ACT starTransaction - uid=test cxId=cxId cxType=PG operationId=Id transactionId=PG#cxId#Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=testIun downloadedFilekeys=[ coverFileUrl, UrlDocument, UrlLegalFact ] status=StartTransactionResponseStatus(code=0, message=OK, retryAfter=null)");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] SUCCESS - End ACT starTransaction - uid=test cxId=cxId cxType=PG operationId=Id "+"transactionId=PG#cxId#Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=testIun " +"downloadedFilekeys=[ coverFileUrl, UrlDocument, UrlLegalFact ] status=class StartTransactionResponseStatus {\n"+"    code: 0\n"+"    message: OK\n"+"    retryAfter: null\n" +"}");
     }
 
     @Test
@@ -226,7 +226,7 @@ class ActServiceStartTransactionTest {
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_2, startTransactionResponse.getStatus().getCode());
         assertEquals(new BigDecimal(20), startTransactionResponse.getStatus().getRetryAfter());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG operationId=Id iun=null");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Documento non disponibile per il download - uid=test cxId=cxId cxType=PG operationId=Id transactionId=PG#cxId#Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=testIun status=StartTransactionResponseStatus(code=2, message=Documento non disponibile per il download, retryAfter=20)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Documento non disponibile per il download - uid=test cxId=cxId cxType=PG operationId=Id "+"transactionId=PG#cxId#Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=testIun status=class StartTransactionResponseStatus {\n" +"    code: 2\n"+"    message: Documento non disponibile per il download\n"+"    retryAfter: 20\n"+"}");
     }
 
     @Test
@@ -245,7 +245,7 @@ class ActServiceStartTransactionTest {
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_99, startTransactionResponse.getStatus().getCode());
         assertEquals(ExceptionTypeEnum.IUN_NOT_FOUND.getMessage(), startTransactionResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG operationId=Id iun=null");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Iun not found with params - uid=test cxId=cxId cxType=PG operationId=Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=null status=StartTransactionResponseStatus(code=99, message=Iun not found with params, retryAfter=null)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Iun not found with params - uid=test cxId=cxId cxType=PG operationId=Id "+"recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=null status=class StartTransactionResponseStatus {\n"+"    code: 99\n"+"    message: Iun not found with params\n"+"    retryAfter: null\n"+"}");
     }
 
     @Test
@@ -290,7 +290,7 @@ class ActServiceStartTransactionTest {
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_5, startTransactionResponse.getStatus().getCode());
         assertEquals(ExceptionTypeEnum.TRANSACTION_ALREADY_EXIST.getMessage(), startTransactionResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG operationId=Id iun=null");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Transazione già esistente o con stato completed o aborted - uid=test cxId=cxId cxType=PG operationId=Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=null status=StartTransactionResponseStatus(code=5, message=Transazione già esistente o con stato completed o aborted, retryAfter=null)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Transazione già esistente o con stato completed o aborted - uid=test cxId=cxId cxType=PG operationId=Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=null status=class StartTransactionResponseStatus {\n" + "    code: 5\n" + "    message: Transazione già esistente o con stato completed o aborted\n"+"    retryAfter: null\n" +"}");
     }
 
     @Test

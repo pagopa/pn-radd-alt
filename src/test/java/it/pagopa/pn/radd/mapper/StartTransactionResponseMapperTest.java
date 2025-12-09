@@ -1,10 +1,5 @@
 package it.pagopa.pn.radd.mapper;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.DownloadUrl;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.StartTransactionResponse;
@@ -20,6 +15,8 @@ import java.util.List;
 
 
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class StartTransactionResponseMapperTest {
 

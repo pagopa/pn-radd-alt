@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.function.context.test.FunctionalSpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.CollectionUtils;
@@ -23,8 +24,8 @@ import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -32,7 +33,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-
 
 @Slf4j
 @RestControllerAdvice(annotations = RestController.class)
@@ -126,7 +126,10 @@ public class RestExceptionHandler {
     public Mono<ResponseEntity<Problem>> serverWebInputException(ServerWebInputException ex) {
         log.error(ex.getMessage());
         Problem problem = new Problem();
-        problem.setType(ex.getStatus().getReasonPhrase());
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+        if (status != null) {
+            problem.setType(status.getReasonPhrase());
+        }
         problem.setStatus(BAD_REQUEST.value());
         problem.setTitle(ex.getReason());
         problem.setDetail(ex.getMostSpecificCause().getMessage());

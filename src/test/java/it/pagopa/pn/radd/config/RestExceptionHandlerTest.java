@@ -20,8 +20,8 @@ import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -219,7 +219,7 @@ class RestExceptionHandlerTests {
     void serverWebInputException() {
         ServerWebInputException exception = mock(ServerWebInputException.class);
 
-        when(exception.getStatus()).thenReturn(HttpStatus.BAD_REQUEST);
+        when(exception.getStatusCode()).thenReturn(HttpStatus.BAD_REQUEST);
         when(exception.getMessage()).thenReturn("Validation failed");
         when(exception.getMostSpecificCause()).thenReturn(exception);
 
