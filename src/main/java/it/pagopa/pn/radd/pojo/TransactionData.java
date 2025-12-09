@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -32,6 +33,7 @@ public class TransactionData {
     private List<String> iuns = new ArrayList<>();
     private List<String> urls = new ArrayList<>();
     private Map<String, String> zipAttachments;
+    private Set<String> senderPaIds;
 
 
 }
