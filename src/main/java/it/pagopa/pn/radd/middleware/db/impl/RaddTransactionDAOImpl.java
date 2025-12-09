@@ -274,9 +274,15 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
         );
         return this.updateItemWithExpression(
                 key,
-                "ADD #setAttr :valuesToAdd",
-                Map.of("#setAttr", RaddTransactionEntity.COL_SENDER_PA_IDS),
-                Map.of(":valuesToAdd", AttributeValue.builder().ss(senderPaIdToAdd).build())
+                "ADD #setAttr :valuesToAdd SET #updateTs = :currentTs",
+                Map.of(
+                        "#setAttr", RaddTransactionEntity.COL_SENDER_PA_IDS,
+                        "#updateTs", RaddTransactionEntity.COL_UPDATE_TIME_STAMP
+                ),
+                Map.of(
+                        ":valuesToAdd", AttributeValue.builder().ss(senderPaIdToAdd).build(),
+                        ":currentTs", AttributeValue.builder().s(Instant.now().toString()).build()
+                )
         );
     }
 

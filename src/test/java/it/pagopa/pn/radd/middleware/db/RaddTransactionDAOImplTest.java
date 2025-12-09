@@ -231,6 +231,7 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
 
         assertNotNull(retrievedEntity);
         assertNotNull(retrievedEntity.getSenderPaIds());
+        assertNotNull(retrievedEntity.getUpdateTimestamp());
         assertTrue(retrievedEntity.getSenderPaIds().contains(senderPaIdToAdd));
         assertEquals(1, retrievedEntity.getSenderPaIds().size());
     }
@@ -266,6 +267,7 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
 
         assertNotNull(retrievedEntity);
         assertNotNull(retrievedEntity.getSenderPaIds());
+        assertNotNull(retrievedEntity.getUpdateTimestamp());
         assertTrue(retrievedEntity.getSenderPaIds().contains(senderPaIdToAdd));
         assertEquals(1, retrievedEntity.getSenderPaIds().size());
     }
@@ -301,6 +303,7 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
 
         assertNotNull(retrievedEntity);
         assertNotNull(retrievedEntity.getSenderPaIds());
+        assertNotNull(retrievedEntity.getUpdateTimestamp());
         assertEquals(3, retrievedEntity.getSenderPaIds().size());
         assertTrue(retrievedEntity.getSenderPaIds().contains(senderPaId1));
         assertTrue(retrievedEntity.getSenderPaIds().contains(senderPaId2));
@@ -352,6 +355,7 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
 
         assertNotNull(afterSecondAdd);
         assertNotNull(afterSecondAdd.getSenderPaIds());
+        assertNotNull(afterSecondAdd.getUpdateTimestamp());
         assertEquals(1, afterSecondAdd.getSenderPaIds().size());
         assertTrue(afterSecondAdd.getSenderPaIds().contains(duplicateSenderPaId));
     }

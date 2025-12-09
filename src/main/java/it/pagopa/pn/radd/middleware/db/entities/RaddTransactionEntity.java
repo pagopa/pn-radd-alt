@@ -51,8 +51,8 @@ public class RaddTransactionEntity {
     private static final int CX_TYPE_INDEX = 0;
     private static final int CX_ID_INDEX = 1;
 
-    private static final String COL_CREATION_TIME_STAMP = "creationTimestamp";
-    private static final String COL_UPDATE_TIME_STAMP = "updateTimestamp";
+    public static final String COL_CREATION_TIME_STAMP = "creationTimestamp";
+    public static final String COL_UPDATE_TIME_STAMP = "updateTimestamp";
 
 
 
