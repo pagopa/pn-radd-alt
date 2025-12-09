@@ -9,10 +9,8 @@ import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import reactor.core.publisher.Flux;
@@ -20,19 +18,14 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
-import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
-import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.DATE_VALIDATION_ERROR;
 import static org.junit.jupiter.api.Assertions.*;
-
-// TODO: Test disabilitati da riparare in fase di aggiornamento rispettiva API
 
 @Slf4j
 class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
@@ -206,4 +199,161 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
             return Mono.empty();
         });
     }
+
+    @Test
+    void testAddSenderPaIdSuccessfully() {
+        // Arrange: Create and save a transaction entity
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setTransactionId("PG#testCxId#addSenderPaIdOp1");
+        entity.setOperationType(OperationTypeEnum.AOR.name());
+        entity.setOperationId("addSenderPaIdOp1");
+        entity.setRecipientId("TESTFC12D34E567F");
+        entity.setUid("test-uid-1");
+        entity.setStatus(Const.STARTED);
+
+        // Create the entity first
+        RaddTransactionEntity createdEntity = raddTransactionDAO.createRaddTransaction(entity, new ArrayList<>()).block();
+        assertNotNull(createdEntity);
+
+        // Act: Add a senderPaId to the entity
+        String senderPaIdToAdd = "PA-001";
+        Mono<Void> addResult = raddTransactionDAO.addSenderPaId(createdEntity.getTransactionId(), createdEntity.getOperationType(), senderPaIdToAdd);
+
+        // Assert: Verify the operation completes successfully
+        StepVerifier.create(addResult)
+                .verifyComplete();
+
+        // Verify the entity was updated by retrieving it
+        RaddTransactionEntity retrievedEntity = raddTransactionDAO.getTransaction(
+                createdEntity.getTransactionId(),
+                OperationTypeEnum.valueOf(createdEntity.getOperationType())
+        ).block();
+
+        assertNotNull(retrievedEntity);
+        assertNotNull(retrievedEntity.getSenderPaIds());
+        assertTrue(retrievedEntity.getSenderPaIds().contains(senderPaIdToAdd));
+        assertEquals(1, retrievedEntity.getSenderPaIds().size());
+    }
+
+    @Test
+    void testAddSenderPaIdToEmptySet() {
+        // Arrange: Create entity without any senderPaIds
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setTransactionId("PG#testCxId#addSenderPaIdOp2");
+        entity.setOperationType(OperationTypeEnum.AOR.name());
+        entity.setOperationId("addSenderPaIdOp2");
+        entity.setRecipientId("TESTFC12D34E567F");
+        entity.setUid("test-uid-2");
+        entity.setStatus(Const.STARTED);
+        entity.setSenderPaIds(null); // Explicitly set to null
+
+        RaddTransactionEntity createdEntity = raddTransactionDAO.createRaddTransaction(entity, new ArrayList<>()).block();
+        assertNotNull(createdEntity);
+
+        // Act: Add first senderPaId to an empty/null set
+        String senderPaIdToAdd = "PA-FIRST";
+        Mono<Void> addResult = raddTransactionDAO.addSenderPaId(createdEntity.getTransactionId(), createdEntity.getOperationType(), senderPaIdToAdd);
+
+        // Assert: Verify successful completion
+        StepVerifier.create(addResult)
+                .verifyComplete();
+
+        // Verify the set was created and contains the value
+        RaddTransactionEntity retrievedEntity = raddTransactionDAO.getTransaction(
+                createdEntity.getTransactionId(),
+                OperationTypeEnum.valueOf(createdEntity.getOperationType())
+        ).block();
+
+        assertNotNull(retrievedEntity);
+        assertNotNull(retrievedEntity.getSenderPaIds());
+        assertTrue(retrievedEntity.getSenderPaIds().contains(senderPaIdToAdd));
+        assertEquals(1, retrievedEntity.getSenderPaIds().size());
+    }
+
+    @Test
+    void testAddMultipleSenderPaIdsSequentially() {
+        // Arrange: Create base entity
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setTransactionId("PG#testCxId#addSenderPaIdOp3");
+        entity.setOperationType(OperationTypeEnum.AOR.name());
+        entity.setOperationId("addSenderPaIdOp3");
+        entity.setRecipientId("TESTFC12D34E567F");
+        entity.setUid("test-uid-3");
+        entity.setStatus(Const.STARTED);
+
+        RaddTransactionEntity createdEntity = raddTransactionDAO.createRaddTransaction(entity, new ArrayList<>()).block();
+        assertNotNull(createdEntity);
+
+        // Act: Add multiple senderPaIds sequentially
+        String senderPaId1 = "PA-MULTI-001";
+        String senderPaId2 = "PA-MULTI-002";
+        String senderPaId3 = "PA-MULTI-003";
+
+        raddTransactionDAO.addSenderPaId(createdEntity.getTransactionId(), createdEntity.getOperationType(), senderPaId1).block();
+        raddTransactionDAO.addSenderPaId(createdEntity.getTransactionId(), createdEntity.getOperationType(), senderPaId2).block();
+        raddTransactionDAO.addSenderPaId(createdEntity.getTransactionId(), createdEntity.getOperationType(), senderPaId3).block();
+
+        // Assert: Verify all three were added
+        RaddTransactionEntity retrievedEntity = raddTransactionDAO.getTransaction(
+                createdEntity.getTransactionId(),
+                OperationTypeEnum.valueOf(createdEntity.getOperationType())
+        ).block();
+
+        assertNotNull(retrievedEntity);
+        assertNotNull(retrievedEntity.getSenderPaIds());
+        assertEquals(3, retrievedEntity.getSenderPaIds().size());
+        assertTrue(retrievedEntity.getSenderPaIds().contains(senderPaId1));
+        assertTrue(retrievedEntity.getSenderPaIds().contains(senderPaId2));
+        assertTrue(retrievedEntity.getSenderPaIds().contains(senderPaId3));
+    }
+
+    @Test
+    void testAddDuplicateSenderPaId() {
+        // Arrange: Create entity and add initial senderPaId
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setTransactionId("PG#testCxId#addSenderPaIdOp4");
+        entity.setOperationType(OperationTypeEnum.AOR.name());
+        entity.setOperationId("addSenderPaIdOp4");
+        entity.setRecipientId("TESTFC12D34E567F");
+        entity.setUid("test-uid-4");
+        entity.setStatus(Const.STARTED);
+
+        RaddTransactionEntity createdEntity = raddTransactionDAO.createRaddTransaction(entity, new ArrayList<>()).block();
+        assertNotNull(createdEntity);
+
+        String duplicateSenderPaId = "PA-DUPLICATE";
+
+        // Add the senderPaId first time
+        raddTransactionDAO.addSenderPaId(createdEntity.getTransactionId(), createdEntity.getOperationType(), duplicateSenderPaId).block();
+
+        // Verify it was added
+        RaddTransactionEntity afterFirstAdd = raddTransactionDAO.getTransaction(
+                createdEntity.getTransactionId(),
+                OperationTypeEnum.valueOf(createdEntity.getOperationType())
+        ).block();
+
+        assertNotNull(afterFirstAdd);
+        assertNotNull(afterFirstAdd.getSenderPaIds());
+        assertEquals(1, afterFirstAdd.getSenderPaIds().size());
+        assertTrue(afterFirstAdd.getSenderPaIds().contains(duplicateSenderPaId));
+
+        // Act: Add the same senderPaId again (duplicate)
+        Mono<Void> addDuplicateResult = raddTransactionDAO.addSenderPaId(createdEntity.getTransactionId(), createdEntity.getOperationType(), duplicateSenderPaId);
+
+        // Assert: Verify operation completes successfully
+        StepVerifier.create(addDuplicateResult)
+                .verifyComplete();
+
+        // Verify the set still contains only one instance (sets don't allow duplicates)
+        RaddTransactionEntity afterSecondAdd = raddTransactionDAO.getTransaction(
+                createdEntity.getTransactionId(),
+                OperationTypeEnum.valueOf(createdEntity.getOperationType())
+        ).block();
+
+        assertNotNull(afterSecondAdd);
+        assertNotNull(afterSecondAdd.getSenderPaIds());
+        assertEquals(1, afterSecondAdd.getSenderPaIds().size());
+        assertTrue(afterSecondAdd.getSenderPaIds().contains(duplicateSenderPaId));
+    }
+
 }

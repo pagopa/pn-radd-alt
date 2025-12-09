@@ -32,6 +32,8 @@ import java.util.Map;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.DATE_VALIDATION_ERROR;
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.OPERATION_TYPE_UNKNOWN;
+import static it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity.COL_OPERATION_TYPE;
+import static it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity.COL_TRANSACTION_ID;
 import static it.pagopa.pn.radd.utils.Utils.transactionIdBuilder;
 
 @Repository
@@ -263,6 +265,19 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
                 .filter(updated -> updated.getZipAttachments().equals(entity.getZipAttachments()))
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_UPDATE_STATUS)));
+    }
+
+    public Mono<Void> addSenderPaId(String transactionId, String operationType, String senderPaIdToAdd) {
+        Map<String, AttributeValue> key = Map.of(
+                COL_TRANSACTION_ID, AttributeValue.builder().s(transactionId).build(),
+                COL_OPERATION_TYPE, AttributeValue.builder().s(operationType).build()
+        );
+        return this.updateItemWithExpression(
+                key,
+                "ADD #setAttr :valuesToAdd",
+                Map.of("#setAttr", RaddTransactionEntity.COL_SENDER_PA_IDS),
+                Map.of(":valuesToAdd", AttributeValue.builder().ss(senderPaIdToAdd).build())
+        );
     }
 
 }

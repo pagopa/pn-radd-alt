@@ -41,6 +41,7 @@ public class RaddTransactionEntity {
     public static final String COL_OPERATION_END_DATE = "operationEndDate";
     public static final String COL_VERSION_TOKEN = "versionToken";
     public static final String COL_ERROR_REASON = "errorReason";
+    public static final String COL_SENDER_PA_IDS = "senderPaIds";
     private static final String COL_ZIP_ATTACHMENTS = "zipAttachments";
 
     public static final String IUN_SECONDARY_INDEX = "iun-transaction-index";
@@ -52,7 +53,6 @@ public class RaddTransactionEntity {
 
     private static final String COL_CREATION_TIME_STAMP = "creationTimestamp";
     private static final String COL_UPDATE_TIME_STAMP = "updateTimestamp";
-    private static final String COL_SENDER_PA_IDS = "senderPaIds";
 
 
 

@@ -87,11 +87,13 @@ class DocumentOperationsServiceTest {
         notificationRecipientV21Dto.setInternalId("123");
         notificationRecipientV21Dto.setDenomination("denomination");
         sentNotificationV21Dto.setRecipients(List.of(notificationRecipientV21Dto));
+        sentNotificationV21Dto.setSenderPaId("senderPaId");
 
         byte[] response = new byte[0];
         byte[] responseHex = HexFormat.of().parseHex(Hex.encodeHexString(response));
 
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV21Dto));
         when(pdfGenerator.generateCoverFile(any())).thenReturn(response);
 
@@ -147,6 +149,7 @@ class DocumentOperationsServiceTest {
         byte[] responseHex = HexFormat.of().parseHex(Hex.encodeHexString(response));
 
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV21Dto));
         when(pdfGenerator.generateCoverFile(any())).thenReturn(response);
         when(operationsIunsDAO.getAllIunsFromTransactionId(any())).thenReturn(Flux.just(operationsIunsEntity));
@@ -175,6 +178,7 @@ class DocumentOperationsServiceTest {
         operationsIunsEntity.setTransactionId("123");
 
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV21Dto));
         when(operationsIunsDAO.getAllIunsFromTransactionId(any())).thenReturn(Flux.just(operationsIunsEntity));
 

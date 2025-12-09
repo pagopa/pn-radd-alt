@@ -88,6 +88,11 @@ public class DocumentOperationsService {
     @NotNull
     private Mono<byte[]> createCoverFile(RaddTransactionEntity raddTansactionEntity, String iun) {
         return pnDeliveryClient.getNotifications(iun)
+                .flatMap(sentNotificationV25Dto -> {
+                    String senderPaId = sentNotificationV25Dto.getSenderPaId();
+                    return raddTransactionDAO.addSenderPaId(raddTansactionEntity.getOperationId(), raddTansactionEntity.getOperationType(), senderPaId)
+                            .thenReturn(sentNotificationV25Dto);
+                })
                 .map(sentNotificationV25Dto -> checkRecipientIdAndCreatePdf(sentNotificationV25Dto, raddTansactionEntity.getRecipientId()));
     }
 
