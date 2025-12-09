@@ -14,6 +14,7 @@ import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.DateUtils;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -23,6 +24,7 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
 import java.time.Instant;
 import java.util.Date;
@@ -272,18 +274,25 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
                 COL_TRANSACTION_ID, AttributeValue.builder().s(transactionId).build(),
                 COL_OPERATION_TYPE, AttributeValue.builder().s(operationType).build()
         );
+
+        Map<String, String> expressionAttributes = Map.of(
+                "#setAttr", RaddTransactionEntity.COL_SENDER_PA_IDS,
+                "#updateTs", RaddTransactionEntity.COL_UPDATE_TIME_STAMP
+        );
+
+        Map<String, AttributeValue> expressionValues = Map.of(
+                ":valuesToAdd", AttributeValue.builder().ss(senderPaIdToAdd).build(),
+                ":currentTs", AttributeValue.builder().s(Instant.now().toString()).build()
+        );
+
         return this.updateItemWithExpression(
                 key,
                 "ADD #setAttr :valuesToAdd SET #updateTs = :currentTs",
-                Map.of(
-                        "#setAttr", RaddTransactionEntity.COL_SENDER_PA_IDS,
-                        "#updateTs", RaddTransactionEntity.COL_UPDATE_TIME_STAMP
-                ),
-                Map.of(
-                        ":valuesToAdd", AttributeValue.builder().ss(senderPaIdToAdd).build(),
-                        ":currentTs", AttributeValue.builder().s(Instant.now().toString()).build()
-                )
-        );
+                "attribute_exists(" + COL_TRANSACTION_ID + ") AND attribute_exists(" + COL_OPERATION_TYPE + ")",
+                expressionAttributes,
+                expressionValues
+        )
+        .onErrorMap(ConditionalCheckFailedException.class, ex -> new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST));
     }
 
 }

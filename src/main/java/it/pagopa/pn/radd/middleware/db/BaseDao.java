@@ -57,6 +57,7 @@ public abstract class BaseDao<T> {
 
     protected Mono<Void> updateItemWithExpression(Map<String, AttributeValue> key,
                                                   String updateExpression,
+                                                  String conditionExpression,
                                                   Map<String, String> expressionAttributeNames,
                                                   Map<String, AttributeValue> expressionAttributeValues) {
         UpdateItemRequest.Builder updateRequest = UpdateItemRequest.builder()
@@ -68,6 +69,9 @@ public abstract class BaseDao<T> {
 
         if (!StringUtils.isBlank(updateExpression))
             updateRequest.updateExpression(updateExpression);
+
+        if (!StringUtils.isBlank(conditionExpression))
+            updateRequest.conditionExpression(conditionExpression);
 
         return Mono.fromFuture(dynamoDbAsyncClient.updateItem(updateRequest.build()))
                 .then();

@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.util.*;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.DATE_VALIDATION_ERROR;
+import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.TRANSACTION_NOT_EXIST;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
@@ -234,6 +235,32 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
         assertNotNull(retrievedEntity.getUpdateTimestamp());
         assertTrue(retrievedEntity.getSenderPaIds().contains(senderPaIdToAdd));
         assertEquals(1, retrievedEntity.getSenderPaIds().size());
+    }
+
+    @Test
+    void testAddSenderPaId_NonExistingTransaction() {
+        // Arrange: Create and save a transaction entity
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setTransactionId("PG#testCxId#addSenderPaIdOp1");
+        entity.setOperationType(OperationTypeEnum.AOR.name());
+        entity.setOperationId("addSenderPaIdOp1");
+        entity.setRecipientId("TESTFC12D34E567F");
+        entity.setUid("test-uid-1");
+        entity.setStatus(Const.STARTED);
+
+        // Create the entity first
+        RaddTransactionEntity createdEntity = raddTransactionDAO.createRaddTransaction(entity, new ArrayList<>()).block();
+        assertNotNull(createdEntity);
+
+        // Act: Add a senderPaId to the entity
+        String senderPaIdToAdd = "PA-001";
+        Mono<Void> addResult = raddTransactionDAO.addSenderPaId("non-existing", createdEntity.getOperationType(), senderPaIdToAdd);
+
+        // Assert: Verify the operation throws an error for non-existing transaction
+        StepVerifier.create(addResult)
+                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException e &&
+                        e.getExceptionType().equals(TRANSACTION_NOT_EXIST))
+                .verify();
     }
 
     @Test

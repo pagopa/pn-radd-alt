@@ -90,7 +90,7 @@ public class DocumentOperationsService {
         return pnDeliveryClient.getNotifications(iun)
                 .flatMap(sentNotificationV25Dto -> {
                     String senderPaId = sentNotificationV25Dto.getSenderPaId();
-                    return raddTransactionDAO.addSenderPaId(raddTansactionEntity.getOperationId(), raddTansactionEntity.getOperationType(), senderPaId)
+                    return raddTransactionDAO.addSenderPaId(raddTansactionEntity.getTransactionId(), raddTansactionEntity.getOperationType(), senderPaId)
                             .thenReturn(sentNotificationV25Dto);
                 })
                 .map(sentNotificationV25Dto -> checkRecipientIdAndCreatePdf(sentNotificationV25Dto, raddTansactionEntity.getRecipientId()));
