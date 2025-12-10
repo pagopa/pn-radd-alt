@@ -1,65 +1,33 @@
-<html>
+<!DOCTYPE html>
+
+<html lang="it">
   <head>
     <meta name="author" content="SEND - Servizio Notifiche Digitali" />
-    <style type="text/css" media="all">
-      @font-face {
-        font-family: "Titillium";
-        src: url(fonts/Titillium_Web/TitilliumWeb-SemiBold.ttf);
-        font-weight: normal;
-        font-style: normal;
-      }
-
-      @page {
-        size: A4;
-        margin: 36mm 10mm 32mm 10mm;
-
-        @top-left {
-          content: element(header);
-          vertical-align: top;
-        }
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-size: 16px;
-        font-family: "Titillium", sans-serif;
-        font-weight: 400;
-      }
-
-      p {
-        line-height: 1.5em;
-      }
-
-      #header {
-        position: running(header);
-        font-size: 14px;
-      }
-
-      #header img {
-        margin-top: 15mm;
-        width: 150px;
-        margin-left: 26mm;
-      }
-
-      .paragraph {
-        margin-top: 105mm;
-        margin-left: 53mm;
-      }
-    </style>
+    <link rel="stylesheet" href="./styles/cover-file.css" />
   </head>
   <body>
-    <div id="header">
+    <div class="header">
       <img src="images/send-logo.png" alt="Logo di SEND" />
     </div>
 
-    <p class="paragraph">
+    <p class="recipient">
       Questo documento &egrave; destinato a:<br />
-      ${denomination}
+      <strong>${denomination}</strong>
     </p>
+
+    <p class="cost-section">
+      <strong
+        >Il servizio di stampa e ritiro di questo documento costa 1,40 €</strong
+      >
+      (pi&ugrave; IVA se prevista). Eventuali spese per servizi aggiuntivi resi
+      dall&apos;esercente non sono inclusi nel servizio di stampa e ritiro.
+    </p>
+
+    <p class="disclaimer">
+      Se hai dubbi sul contenuto degli atti o sull&apos;eventuale pagamento
+      previsto, puoi rivolgerti all&apos;ente mittente.
+    </p>
+
+    <p class="signature">Grazie da SEND</p>
   </body>
 </html>

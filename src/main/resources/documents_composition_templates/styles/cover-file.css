@@ -1,0 +1,48 @@
+@font-face {
+  font-family: "Titillium Web";
+  src: url(../fonts/Titillium_Web/TitilliumWeb-Regular.ttf) format("truetype");
+  font-style: normal;
+}
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-size: 16px;
+  font-family: "Titillium Web";
+  font-weight: 400;
+  line-height: 21px;
+  padding: 63.5mm 52.9mm 0 52.9mm;
+}
+
+strong {
+  font-weight: 700;
+}
+
+.header {
+  margin-bottom: 10.5mm;
+}
+
+.header img {
+  width: 24.7mm;
+}
+
+.recipient {
+  margin-bottom: 5.3mm;
+}
+
+.cost-section {
+  margin-bottom: 10.5mm;
+}
+
+.disclaimer {
+  margin-bottom: 5.3mm;
+}
