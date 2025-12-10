@@ -9,7 +9,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import reactor.core.publisher.Mono;
+import java.util.Map;
+
 
 import static org.mockito.Mockito.*;
 
@@ -37,9 +40,11 @@ class RaddAltInputEventHandlerTest {
         PnRaddAltNormalizeRequestEvent.Payload event = mock(PnRaddAltNormalizeRequestEvent.Payload.class);
         when(event.getCorrelationId()).thenReturn("correlationId");
         when(messageNormalizeRequest.getPayload()).thenReturn(event);
+        when(messageNormalizeRequest.getHeaders()).thenReturn(new MessageHeaders(Map.of()));
+
         when(registryService.handleNormalizeRequestEvent(event)).thenReturn(Mono.empty());
 
-        raddAltInputEventHandler.pnRaddAltInputNormalizeRequestConsumer().accept(messageNormalizeRequest);
+        raddAltInputEventHandler.pnRaddAltInputNormalizeRequestConsumer(messageNormalizeRequest);
 
         verify(registryService, times(1)).handleNormalizeRequestEvent(event);
     }
@@ -50,10 +55,11 @@ class RaddAltInputEventHandlerTest {
         when(event.getCxId()).thenReturn("cxId");
         when(event.getRequestId()).thenReturn("requestId");
         when(messageImportCompleted.getPayload()).thenReturn(event);
+        when(messageImportCompleted.getHeaders()).thenReturn(new MessageHeaders(Map.of()));
 
         when(registryService.handleImportCompletedRequest(event)).thenReturn(Mono.empty());
 
-        raddAltInputEventHandler.pnRaddAltImportCompletedRequestConsumer().accept(messageImportCompleted);
+        raddAltInputEventHandler.pnRaddAltImportCompletedRequestConsumer(messageImportCompleted);
 
         verify(registryService, times(1)).handleImportCompletedRequest(event);
     }

@@ -12,7 +12,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import reactor.core.publisher.Mono;
+import java.util.Map;
 
 import static org.mockito.Mockito.*;
 
@@ -41,9 +43,11 @@ class SafeStorageEventHandlerTest {
         event.setDocumentType("DOC_TYPE");
         when(pnRaddFsuConfig.getRegistrySafeStorageDocType()).thenReturn("DOC_TYPE");
         when(message.getPayload()).thenReturn(event);
+        when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of()));
+
         when(safeStorageEventService.handleSafeStorageResponse(event)).thenReturn(Mono.empty());
 
-        safeStorageEventHandler.pnSafeStorageEventInboundConsumer().accept(message);
+        safeStorageEventHandler.pnSafeStorageEventInboundConsumer(message);
 
         verify(safeStorageEventService, times(1)).handleSafeStorageResponse(event);
     }
@@ -54,9 +58,11 @@ class SafeStorageEventHandlerTest {
         event.setDocumentType("DOC_TYPE2");
         when(pnRaddFsuConfig.getRegistrySafeStorageDocType()).thenReturn("DOC_TYPE");
         when(message.getPayload()).thenReturn(event);
+        when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of()));
+
         when(safeStorageEventService.handleSafeStorageResponse(event)).thenReturn(Mono.empty());
 
-        safeStorageEventHandler.pnSafeStorageEventInboundConsumer().accept(message);
+        safeStorageEventHandler.pnSafeStorageEventInboundConsumer(message);
 
         verify(safeStorageEventService, times(0)).handleSafeStorageResponse(event);
     }
@@ -68,7 +74,10 @@ class SafeStorageEventHandlerTest {
         event.setDocumentType("DOC_TYPE");
         when(pnRaddFsuConfig.getRegistrySafeStorageDocType()).thenReturn("DOC_TYPE");
         when(message.getPayload()).thenReturn(event);
+        when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of()));
+
+
         when(safeStorageEventService.handleSafeStorageResponse(event)).thenReturn(Mono.error(mock(RaddGenericException.class)));
-        Assertions.assertThrows(RaddGenericException.class, () -> safeStorageEventHandler.pnSafeStorageEventInboundConsumer().accept(message));
+        Assertions.assertThrows(RaddGenericException.class, () -> safeStorageEventHandler.pnSafeStorageEventInboundConsumer(message));
     }
 }

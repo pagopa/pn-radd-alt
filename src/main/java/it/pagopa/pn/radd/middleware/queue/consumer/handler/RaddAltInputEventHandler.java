@@ -1,22 +1,23 @@
 package it.pagopa.pn.radd.middleware.queue.consumer.handler;
 
+import io.awspring.cloud.sqs.annotation.SqsListener;
+import io.awspring.cloud.sqs.annotation.SqsListenerAcknowledgementMode;
 import it.pagopa.pn.commons.utils.MDCUtils;
+import it.pagopa.pn.radd.middleware.queue.consumer.AbstractConsumerMessage;
 import it.pagopa.pn.radd.middleware.queue.consumer.HandleEventUtils;
 import it.pagopa.pn.radd.middleware.queue.event.PnRaddAltNormalizeRequestEvent;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistryService;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 import org.springframework.messaging.Message;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
 
-import java.util.function.Consumer;
-@Configuration
+@Component
 @CustomLog
 @RequiredArgsConstructor
-public class RaddAltInputEventHandler {
+public class RaddAltInputEventHandler extends AbstractConsumerMessage {
 
     private final RegistryService registryService;
 
@@ -24,9 +25,9 @@ public class RaddAltInputEventHandler {
 
     private static final String IMPORT_COMPLETED_REQUEST = "pnRaddAltImportCompletedRequestConsumer";
 
-    @Bean
-    public Consumer<Message<PnRaddAltNormalizeRequestEvent.Payload>> pnRaddAltInputNormalizeRequestConsumer() {
-        return message -> {
+    @SqsListener(value = "${pn.radd.sqs.inputQueueName}", acknowledgementMode = SqsListenerAcknowledgementMode.ALWAYS)
+    public void  pnRaddAltInputNormalizeRequestConsumer(Message<PnRaddAltNormalizeRequestEvent.Payload> message) {
+            initTraceId(message.getHeaders());
             log.logStartingProcess(HANDLER_NORMALIZE_REQUEST);
             log.debug(HANDLER_NORMALIZE_REQUEST + "- message: {}", message);
             MDC.put(MDCUtils.MDC_PN_CTX_REQUEST_ID, message.getPayload().getCorrelationId());
@@ -39,11 +40,11 @@ public class RaddAltInputEventHandler {
 
             MDCUtils.addMDCToContextAndExecute(monoResult).block();
         };
-    }
 
-    @Bean
-    public Consumer<Message<ImportCompletedRequestEvent.Payload>> pnRaddAltImportCompletedRequestConsumer() {
-        return message -> {
+
+    @SqsListener(value = "${pn.radd.sqs.inputQueueName}", acknowledgementMode = SqsListenerAcknowledgementMode.ALWAYS)
+    public void pnRaddAltImportCompletedRequestConsumer(Message<ImportCompletedRequestEvent.Payload> message) {
+            initTraceId(message.getHeaders());
             log.logStartingProcess(IMPORT_COMPLETED_REQUEST);
             log.debug(IMPORT_COMPLETED_REQUEST + "- message: {}", message);
             MDC.put(MDCUtils.MDC_CX_ID_KEY, message.getPayload().getCxId());
@@ -59,4 +60,4 @@ public class RaddAltInputEventHandler {
         };
     }
 
-}
+

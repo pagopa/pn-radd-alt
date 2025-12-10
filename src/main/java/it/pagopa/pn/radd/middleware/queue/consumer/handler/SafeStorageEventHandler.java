@@ -4,20 +4,20 @@ import it.pagopa.pn.commons.log.PnLogger;
 import it.pagopa.pn.commons.utils.MDCUtils;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileDownloadResponseDto;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
+import it.pagopa.pn.radd.middleware.queue.consumer.AbstractConsumerMessage;
 import it.pagopa.pn.radd.middleware.queue.consumer.HandleEventUtils;
 import it.pagopa.pn.radd.services.radd.fsu.v1.SafeStorageEventService;
 import lombok.CustomLog;
 import org.slf4j.MDC;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import reactor.core.publisher.Mono;
+import io.awspring.cloud.sqs.annotation.SqsListener;
+import io.awspring.cloud.sqs.annotation.SqsListenerAcknowledgementMode;
+import org.springframework.stereotype.Component;
 
-import java.util.function.Consumer;
-
-@Configuration
+@Component
 @CustomLog
-public class SafeStorageEventHandler {
+public class SafeStorageEventHandler extends AbstractConsumerMessage {
 
     private final PnRaddFsuConfig pnRaddFsuConfig;
 
@@ -31,9 +31,9 @@ public class SafeStorageEventHandler {
         this.safeStorageEventService = safeStorageEventService;
     }
 
-    @Bean
-    public Consumer<Message<FileDownloadResponseDto>> pnSafeStorageEventInboundConsumer() {
-        return message -> {
+    @SqsListener(value = "${pn.radd.sqs.safeStorageQueueName}", acknowledgementMode = SqsListenerAcknowledgementMode.ALWAYS)
+    public void pnSafeStorageEventInboundConsumer(Message<FileDownloadResponseDto> message) {
+            initTraceId(message.getHeaders());
             log.debug("Handle message from {} with content {}", PnLogger.EXTERNAL_SERVICES.PN_SAFE_STORAGE, message);
             FileDownloadResponseDto response = message.getPayload();
             MDC.put(MDCUtils.MDC_PN_CTX_SAFESTORAGE_FILEKEY, response.getKey());
@@ -54,4 +54,4 @@ public class SafeStorageEventHandler {
             }
         };
     }
-}
+
