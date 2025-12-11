@@ -38,7 +38,7 @@ public class PnDeliveryPushClient extends BaseClient {
     private final PnRaddFsuConfig pnRaddFsuConfig;
 
 
-    public Flux<LegalFactListElementV20Dto> getNotificationLegalFacts(String recipientInternalId, String iun) {
+    public Flux<LegalFactListElementV28Dto> getNotificationLegalFacts(String recipientInternalId, String iun) {
         CxTypeAuthFleetDto cxType = null;
         return this.legalFactsApi.getNotificationLegalFactsPrivate( recipientInternalId, iun, null, cxType, null)
                 .retryWhen(
