@@ -1,8 +1,7 @@
-package it.pagopa.pn.radd.middleware.queue.consumer;
+package it.pagopa.pn.radd.middleware.queue.consumer.handler;
 
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.RaddGenericException;
-import it.pagopa.pn.radd.middleware.queue.consumer.handler.SafeStorageEventHandler;
 import it.pagopa.pn.radd.services.radd.fsu.v1.SafeStorageEventService;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileDownloadResponseDto;
 import org.junit.jupiter.api.Assertions;
