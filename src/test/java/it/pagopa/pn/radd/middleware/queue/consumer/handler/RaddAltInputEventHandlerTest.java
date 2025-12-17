@@ -84,7 +84,7 @@ class RaddAltInputEventHandlerTest {
         String jsonPayload = objectMapper.writeValueAsString(payload);
         Message<String> message = mock(Message.class);
         when(message.getPayload()).thenReturn(jsonPayload);
-        when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of("eventType", "pnRaddAltInputNormalizeRequestConsumer")));
+        when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of("eventType", "RADD_NORMALIZE_REQUEST")));
 
         when(registryService.handleNormalizeRequestEvent(any(PnRaddAltNormalizeRequestEvent.Payload.class)))
                 .thenReturn(Mono.empty());
@@ -104,7 +104,7 @@ class RaddAltInputEventHandlerTest {
         String jsonPayload = objectMapper.writeValueAsString(payload);
         Message<String> message = mock(Message.class);
         when(message.getPayload()).thenReturn(jsonPayload);
-        when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of("eventType", "pnRaddAltImportCompletedRequestConsumer")));
+        when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of("eventType", "IMPORT_COMPLETED")));
 
         when(registryService.handleImportCompletedRequest(any(ImportCompletedRequestEvent.Payload.class)))
                 .thenReturn(Mono.empty());

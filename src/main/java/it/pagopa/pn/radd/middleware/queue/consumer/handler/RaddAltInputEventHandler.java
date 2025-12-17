@@ -17,6 +17,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.messaging.Message;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
 
+import static it.pagopa.pn.radd.utils.Const.IMPORT_COMPLETED;
+import static it.pagopa.pn.radd.utils.Const.RADD_NORMALIZE_REQUEST;
+
 @Component
 @CustomLog
 @RequiredArgsConstructor
@@ -45,12 +48,12 @@ public class RaddAltInputEventHandler extends AbstractConsumerMessage {
         }
 
         switch (eventType) {
-            case HANDLER_NORMALIZE_REQUEST -> {
+            case RADD_NORMALIZE_REQUEST -> {
                 log.debug(HANDLER_NORMALIZE_REQUEST + "- message: {}", message);
                 PnRaddAltNormalizeRequestEvent.Payload payload = objectMapper.readValue(message.getPayload(), PnRaddAltNormalizeRequestEvent.Payload.class);
                 pnRaddAltInputNormalizeRequestConsumer(payload, headers);
             }
-            case IMPORT_COMPLETED_REQUEST -> {
+            case IMPORT_COMPLETED -> {
                 log.debug(IMPORT_COMPLETED_REQUEST + "- message: {}", message);
                 ImportCompletedRequestEvent.Payload payload = objectMapper.readValue(message.getPayload(), ImportCompletedRequestEvent.Payload.class);
                 pnRaddAltImportCompletedRequestConsumer(payload, headers);
