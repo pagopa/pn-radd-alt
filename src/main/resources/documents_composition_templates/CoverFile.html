@@ -1,107 +1,32 @@
-<html>
-<head>
-  <meta name="author" content="SEND - Servizio Notifiche Digitali" />
-  <style type="text/css" media="all">
-      @font-face {
-        font-family: 'Titillium';
-        src: url(fonts/Titillium_Web/TitilliumWeb-SemiBold.ttf);
-        font-weight: normal;
-        font-style: normal;
-      }
+<!DOCTYPE html>
 
-      @page {
-        size: A4;
-         margin: 36mm 10mm 32mm 10mm;
-
-        @top-left {
-          content: element(header);
-          vertical-align: top;
-        }
-
-        @bottom-center {
-          content: element(footer);
-        }
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-size: 16px;
-        font-family: "Titillium", sans-serif;
-        font-weight: 400;
-      }
-
-      p {
-        margin: 0;
-        padding: 0;
-        line-height: 1.5em;
-      }
-
-      #header {
-        position: running(header);
-        font-size: 14px
-      }
-
-      #header img {
-        margin-top: 15mm;
-        width: 150px;
-        margin-left: 26mm;
-      }
-
-      .row {
-        width: 100%;
-      }
-      .row::after {
-        content: "";
-        display: block;
-        clear: both;
-      }
-
-      .left-col {
-        float: left;
-      }
-
-      .col-1-10 { width: 10%; }
-      .col-2-10 { width: 20%; }
-      .col-3-10 { width: 30%; }
-      .col-4-10 { width: 40%; }
-      .col-5-10 { width: 50%; }
-      .col-6-10 { width: 60%; }
-      .col-7-10 { width: 70%; }
-      .col-8-10 { width: 80%; }
-      .col-9-10 { width: 90%; }
-
-      #subject {
-        font-size: 20px;
-        margin-bottom: 7mm;
-      }
-
-      .paragraph {
-        margin-top: 105mm;
-        margin-left: 53mm;
-      }
-
-    </style>
-</head>
-<body>
-<div class="container">
-  <div class="container">
-    <div id="header" class="row">
-      <div class="left-col">
-        <img src="images/send-logo.png" alt="Logo di SEND"/>
-      </div>
+<html lang="it">
+  <head>
+    <meta name="author" content="SEND - Servizio Notifiche Digitali" />
+    <link rel="stylesheet" href="./styles/cover-file.css" />
+  </head>
+  <body>
+    <div class="header">
+      <img src="images/send-logo.png" alt="Logo di SEND" />
     </div>
-    
 
-
-    <p class="paragraph">
-      ${denomination}
+    <p class="recipient">
+      Questo documento &egrave; destinato a:<br />
+      <strong>${denomination}</strong>
     </p>
-  </div>
-</body>
-</html>
 
+    <p class="cost-section">
+      Il servizio di stampa e ritiro di questo documento costa
+      <strong>1,40 €</strong>
+      (pi&ugrave; IVA se prevista). Eventuali spese per servizi aggiuntivi resi
+      dall&apos;esercente non sono incluse nel servizio di stampa e ritiro.
+    </p>
+
+    <p class="disclaimer">
+      Se hai dubbi sul contenuto degli atti o sull&apos;eventuale pagamento
+      previsto, puoi rivolgerti all&apos;ente mittente.
+    </p>
+
+    <p class="signature">Grazie da SEND</p>
+  </body>
+</html>
