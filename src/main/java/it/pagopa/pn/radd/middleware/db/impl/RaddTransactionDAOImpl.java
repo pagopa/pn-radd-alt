@@ -269,6 +269,7 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_UPDATE_STATUS)));
     }
 
+    @Override
     public Mono<Void> addSenderPaId(String transactionId, String operationType, String senderPaIdToAdd) {
         Map<String, AttributeValue> key = Map.of(
                 COL_TRANSACTION_ID, AttributeValue.builder().s(transactionId).build(),
