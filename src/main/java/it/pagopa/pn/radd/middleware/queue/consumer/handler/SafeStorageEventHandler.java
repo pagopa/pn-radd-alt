@@ -52,6 +52,7 @@ public class SafeStorageEventHandler extends AbstractConsumerMessage {
             } else {
                 log.debug("Safe storage event received is not handled - documentType={}", response.getDocumentType());
             }
-        };
     }
+
+}
 

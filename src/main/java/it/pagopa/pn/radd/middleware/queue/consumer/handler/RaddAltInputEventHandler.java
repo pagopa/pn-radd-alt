@@ -1,13 +1,13 @@
 package it.pagopa.pn.radd.middleware.queue.consumer.handler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import io.awspring.cloud.sqs.annotation.SqsListenerAcknowledgementMode;
 import it.pagopa.pn.commons.utils.MDCUtils;
 import it.pagopa.pn.radd.middleware.queue.consumer.AbstractConsumerMessage;
 import it.pagopa.pn.radd.middleware.queue.consumer.HandleEventUtils;
 import it.pagopa.pn.radd.middleware.queue.event.PnRaddAltNormalizeRequestEvent;
+import it.pagopa.pn.radd.services.radd.fsu.v1.JsonService;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistryService;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import static it.pagopa.pn.radd.utils.Const.RADD_NORMALIZE_REQUEST;
 public class RaddAltInputEventHandler extends AbstractConsumerMessage {
 
     private final RegistryService registryService;
-    private final ObjectMapper objectMapper;
+    private final JsonService jsonService;
 
 
     private static final String HANDLER_NORMALIZE_REQUEST = "pnRaddAltInputNormalizeRequestConsumer";
@@ -41,7 +41,7 @@ public class RaddAltInputEventHandler extends AbstractConsumerMessage {
         String eventType = message.getHeaders().get("eventType", String.class);
         MessageHeaders headers = message.getHeaders();
 
-        if(eventType==null){
+        if (eventType == null) {
             log.warn("EventType mancante nel messaggio");
             HandleEventUtils.handleException(message.getHeaders(), new IllegalArgumentException("Missing eventType"));
             return;
@@ -50,12 +50,12 @@ public class RaddAltInputEventHandler extends AbstractConsumerMessage {
         switch (eventType) {
             case RADD_NORMALIZE_REQUEST -> {
                 log.debug(HANDLER_NORMALIZE_REQUEST + "- message: {}", message);
-                PnRaddAltNormalizeRequestEvent.Payload payload = objectMapper.readValue(message.getPayload(), PnRaddAltNormalizeRequestEvent.Payload.class);
+                PnRaddAltNormalizeRequestEvent.Payload payload = jsonService.parse(message.getPayload(), PnRaddAltNormalizeRequestEvent.Payload.class);
                 pnRaddAltInputNormalizeRequestConsumer(payload, headers);
             }
             case IMPORT_COMPLETED -> {
                 log.debug(IMPORT_COMPLETED_REQUEST + "- message: {}", message);
-                ImportCompletedRequestEvent.Payload payload = objectMapper.readValue(message.getPayload(), ImportCompletedRequestEvent.Payload.class);
+                ImportCompletedRequestEvent.Payload payload = jsonService.parse(message.getPayload(), ImportCompletedRequestEvent.Payload.class);
                 pnRaddAltImportCompletedRequestConsumer(payload, headers);
             }
             default -> {
@@ -77,7 +77,7 @@ public class RaddAltInputEventHandler extends AbstractConsumerMessage {
                     });
 
             MDCUtils.addMDCToContextAndExecute(monoResult).block();
-        };
+        }
 
 
     protected void pnRaddAltImportCompletedRequestConsumer( ImportCompletedRequestEvent.Payload payload, MessageHeaders headers) {
@@ -92,7 +92,7 @@ public class RaddAltInputEventHandler extends AbstractConsumerMessage {
                     });
 
             MDCUtils.addMDCToContextAndExecute(monoResult).block();
-        };
+        }
     }
 
 

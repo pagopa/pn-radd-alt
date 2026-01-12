@@ -3,6 +3,7 @@ package it.pagopa.pn.radd.middleware.queue.consumer.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.pagopa.pn.radd.middleware.queue.event.PnRaddAltNormalizeRequestEvent;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
+import it.pagopa.pn.radd.services.radd.fsu.v1.JsonService;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,13 +37,15 @@ class RaddAltInputEventHandlerTest {
     private RaddAltInputEventHandler raddAltInputEventHandler;
 
     private ObjectMapper objectMapper;
+    private JsonService jsonService;
 
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         objectMapper = new ObjectMapper();
-        raddAltInputEventHandler = new RaddAltInputEventHandler(registryService, objectMapper);
+        jsonService = new JsonService(objectMapper);
+        raddAltInputEventHandler = new RaddAltInputEventHandler(registryService, jsonService);
     }
 
     @Test
