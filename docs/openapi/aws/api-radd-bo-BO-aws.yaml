@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: KSxnyFrbtNVOMRb2NX+o14LW+zfUaRpCPR0AgWyrNTA=
+  version: i/1gzAc9NVd1se8GLKCv2V1WQf4EXiW0Dys/354Uaxg=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -1703,6 +1703,8 @@ components:
           description: Indirizzo email del punto di ritiro
           pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
           example: mail@esempio.it
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
     GetRegistryResponseV2:
       type: object
       properties:
@@ -1866,6 +1868,27 @@ components:
           type: string
           description: Istante dell'ultima modifica del punto di ritiro
           format: date-time
+    Coordinates:
+      type: object
+      required:
+        - latitude
+        - longitude
+      description: Coordinate geografiche manuali (sovrascrivono geocoding automatico)
+      properties:
+        latitude:
+          type: number
+          format: double
+          description: Latitudine della posizione geografica.
+          example: 41.9028
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          description: Longitudine della posizione geografica.
+          example: 12.4964
+          minimum: -180
+          maximum: 180
     CreateCoverageRequest:
       type: object
       required:
