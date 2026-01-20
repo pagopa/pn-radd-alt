@@ -47,6 +47,28 @@ components:
           description: Longitudine della posizione geografica dello sportello.
           example: "12.4964"
 
+    Coordinates:
+      type: object
+      required:
+        - latitude
+        - longitude
+      description: Coordinate geografiche manuali (sovrascrivono geocoding automatico)
+      properties:
+        latitude:
+          type: number
+          format: double
+          description: Latitudine della posizione geografica.
+          example: 41.9028
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          description: Longitudine della posizione geografica.
+          example: 12.4964
+          minimum: -180
+          maximum: 180
+
     NormalizedAddress:
       allOf:
         - $ref: "#/components/schemas/AddressV2"
