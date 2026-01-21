@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: NsJiAOTm/SiWFTze7qXjPxC6B9xrz6ASivV+O7CiaVY=
+  version: YtmEISSRmpbfdYH8lbHI5XI4Li7NY5AgVBEufRstRFQ=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -896,7 +896,7 @@ paths:
         dato non modificabile.  Per assicurare l'integrità della sede, il valore
         fornito nella richiesta deve corrispondere esattamente a quello già
         presente a sistema;  in caso di discrepanza, l'operazione non verrà
-        autorizzata e verrà restituito un errore di conflitto.
+        autorizzata e verrà restituito un errore.
       operationId: selectiveUpdateRegistry
       x-api-permissions:
         - radd-registry-write
@@ -942,12 +942,6 @@ paths:
                 $ref: '#/components/schemas/Problem'
         '405':
           description: Not Allowed
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
-        '409':
-          description: Conflitto - indirizzo non corrispondente
           content:
             application/problem+json:
               schema:

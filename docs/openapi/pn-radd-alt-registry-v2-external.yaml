@@ -223,7 +223,7 @@ paths:
     
         È importante notare che l'indirizzo del punto di ritiro è considerato un dato non modificabile. 
         Per assicurare l'integrità della sede, il valore fornito nella richiesta deve corrispondere esattamente a quello già presente a sistema; 
-        in caso di discrepanza, l'operazione non verrà autorizzata e verrà restituito un errore di conflitto.
+        in caso di discrepanza, l'operazione non verrà autorizzata e verrà restituito un errore.
       operationId: selectiveUpdateRegistry
       x-api-permissions:
         - 'radd-registry-write'
@@ -251,12 +251,6 @@ paths:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
         '404':
           description: Punto di ritiro non trovato
-          content:
-            application/problem+json:
-              schema:
-                $ref: 'remote-refs.yaml#/components/schemas/Problem'
-        '409':
-          description: Conflitto - indirizzo non corrispondente
           content:
             application/problem+json:
               schema:
