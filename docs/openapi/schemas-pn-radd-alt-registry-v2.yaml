@@ -153,7 +153,10 @@ components:
           type: string
           description: Link al sito del punto di ritiro
         partnerType:
-          $ref: '#/components/schemas/PartnerType'
+          type: string
+          description: Tipologia del punto di ritiro
+          pattern: "CAF"
+          default: "CAF"
         creationTimestamp:
           type: string
           description: Istante di creazione del punto di ritiro
@@ -170,9 +173,3 @@ components:
         se non inviata viene considerata la data corrente.
       pattern: '^\d{4}-\d{2}-\d{2}$'
       example: '2024-03-21'
-
-    PartnerType:
-      type: string
-      description: Tipologia del punto di ritiro
-      pattern: "CAF"
-      default: "CAF"

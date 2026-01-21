@@ -395,7 +395,10 @@ components:
           description: Link al sito del punto di ritiro
           pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
         partnerType:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/PartnerType'
+          type: string
+          description: Tipologia del punto di ritiro
+          pattern: "CAF"
+          default: "CAF"
 
     UpdateRegistryRequestV2:
       type: object
@@ -455,8 +458,6 @@ components:
           $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AddressV2'
         startValidity:
           $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/StartValidity'
-        partnerType:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/PartnerType'
 
     GetRegistryResponseV2:
       type: object
