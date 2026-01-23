@@ -15,6 +15,7 @@ import it.pagopa.pn.radd.config.CachedSecretsManagerConsumer;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.mapper.AddressMapper;
 import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.pojo.*;
@@ -62,6 +63,9 @@ class RaddRegistryUtilsTest {
 
     @Mock
     private RegistryMappingUtils registryMappingUtils;
+
+    @Mock
+    private AddressMapper addressMapper;
 
     /**
      * Method under test:
@@ -193,9 +197,9 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
-                new RegistryMappingUtils(objectMapperUtil));
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig,
+                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
+                                                                    new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
@@ -233,7 +237,7 @@ class RaddRegistryUtilsTest {
 
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig,
                                                                     new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
                                                                     new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
@@ -273,7 +277,7 @@ class RaddRegistryUtilsTest {
 
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig,
                                                                     new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
                                                                     new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
@@ -712,7 +716,7 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setEvaluatedZipCodeConfigNumber(10);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig,
                 new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
                 new RegistryMappingUtils(objectMapperUtil));
 
@@ -729,7 +733,7 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setEvaluatedZipCodeConfigNumber(1);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig,
                 new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
                 new RegistryMappingUtils(objectMapperUtil));
 
