@@ -241,6 +241,17 @@ public class RaddRegistryUtils {
         return registryEntity;
     }
 
+    public static void validateAddressMatch(AddressEntity existingAddress, AddressV2 requestAddress)
+    {
+        if (!StringUtils.equals(existingAddress.getAddressRow(), requestAddress.getAddressRow()) ||
+                !StringUtils.equals(existingAddress.getCap(), requestAddress.getCap()) ||
+                !StringUtils.equals(existingAddress.getCity(), requestAddress.getCity()) ||
+                !StringUtils.equals(existingAddress.getProvince(), requestAddress.getProvince()) ||
+                !StringUtils.equals(existingAddress.getCountry(), requestAddress.getCountry())) {
+            throw new RaddGenericException(ExceptionTypeEnum.ADDRESS_MISMATCH, HttpStatus.BAD_REQUEST);
+        }
+    }
+
     public RaddRegistryImportEntity getPnRaddRegistryImportEntity(String xPagopaPnCxId, String uid, RegistryUploadRequest request, FileCreationResponseDto fileCreationResponseDto, String requestId) {
         RaddRegistryImportEntity pnRaddRegistryImportEntity = new RaddRegistryImportEntity();
         pnRaddRegistryImportEntity.setRequestId(requestId);

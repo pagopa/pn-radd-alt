@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -1361,4 +1362,55 @@ class RaddRegistryUtilsTest {
                              RaddRegistryUtils.mapFieldToUpdate(entity, request, "uid")
                     );
     }
+
+    @Test
+    void validateAddressMatch_Success() {
+        String addressRow = "Via Roma 1";
+        String cap = "00100";
+        String city = "Roma";
+        String province = "RM";
+        String country = "IT";
+
+        AddressEntity existing = buildAddressEntity(addressRow, cap, city, province, country);
+        AddressV2 request = buildAddressV2(addressRow, cap, city, province, country);
+
+        assertDoesNotThrow(() -> validateAddressMatch(existing, request));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "Via A, 001, Roma, RM, IT, Via B, 001, Roma, RM, IT", // Via diversa
+            "Via A, 001, Roma, RM, IT, Via A, 999, Roma, RM, IT", // CAP diverso
+            "Via A, 001, Roma, RM, IT, Via A, 001, Milano, RM, IT", // Città diversa
+            "Via A, 001, Roma, RM, IT, Via A, 001, Roma, MI, IT", // Provincia diversa
+            "Via A, 001, Roma, RM, IT, Via A, 001, Roma, RM, FR"  // Paese diverso
+    })
+    void validateAddressMatch_MultipleFailures(String a1, String c1, String ci1, String p1, String co1,
+                                               String a2, String c2, String ci2, String p2, String co2) {
+        AddressEntity existing = buildAddressEntity(a1, c1, ci1, p1, co1);
+        AddressV2 request = buildAddressV2(a2, c2, ci2, p2, co2);
+
+        RaddGenericException ex = assertThrows(RaddGenericException.class, () -> validateAddressMatch(existing, request));
+        assertEquals(ExceptionTypeEnum.ADDRESS_MISMATCH, ex.getExceptionType());
+    }
+
+    private AddressEntity buildAddressEntity(String addressRow, String cap, String city, String province, String country) {
+        AddressEntity address = new AddressEntity();
+        address.setAddressRow(addressRow);
+        address.setCap(cap);
+        address.setCity(city);
+        address.setProvince(province);
+        address.setCountry(country);
+        return address;
+    }
+
+    private AddressV2 buildAddressV2(String addressRow, String cap, String city, String province, String country) {
+        return new AddressV2()
+                .addressRow(addressRow)
+                .cap(cap)
+                .city(city)
+                .province(province)
+                .country(country);
+    }
+
 }
