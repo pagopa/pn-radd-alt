@@ -8,8 +8,9 @@ const RegistryService = require('./services/registryService');
 
 (async () => {
   const allowedEnvs = ['dev', 'test', 'uat', 'hotfix', 'prod'];
-  const [,, env, username, password, clientId, csvFilePath] = process.argv;
-
+  const [,, env, username, password, clientId, ...csvPathParts] = process.argv;
+  // accetto gli spazi nel nome del file
+  const csvFilePath = csvPathParts.join(' ');
   if (!env || !username || !password || !clientId || !csvFilePath) {
     console.error('Uso: node index.js <env> <username> <password> <clientId> <csvFilePath>');
     process.exit(1);
@@ -22,8 +23,13 @@ const RegistryService = require('./services/registryService');
 
   const apiBaseUrl = env === 'prod' ? 'https://api.radd.notifichedigitali.it' : `https://api.radd.${env}.notifichedigitali.it`;
   const registryService = new RegistryService(apiBaseUrl);
+  const partnerId = path.basename(csvFilePath).replace('.csv', '').split("-")[0];
 
-  const partnerId = path.basename(csvFilePath).replace('.csv', '');
+  if (partnerId.length !== 11){
+    console.error('formato nome file errato. Esempio: <cf>-<des>.csv.');
+    process.exit(1);
+  }
+
   const authenticator = new Authenticator(username, password, clientId);
   const jwt = await authenticator.generateJwtToken();
   const headers = { ...HEADERS, Authorization: `Bearer ${jwt}` };
