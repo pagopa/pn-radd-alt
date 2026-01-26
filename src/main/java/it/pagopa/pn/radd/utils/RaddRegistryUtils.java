@@ -9,10 +9,12 @@ import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.Fil
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.AddressV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.CreateRegistryRequestV2;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.SelectiveUpdateRegistryRequestV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.UpdateRegistryRequestV2;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.mapper.AddressMapper;
 import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.pojo.*;
@@ -48,6 +50,7 @@ import static it.pagopa.pn.radd.utils.DateUtils.*;
 @CustomLog
 public class RaddRegistryUtils {
 
+    private final AddressMapper addressMapper;
     private final ObjectMapperUtil objectMapperUtil;
     private final PnRaddFsuConfig pnRaddFsuConfig;
     private final SecretService secretService;
@@ -63,7 +66,6 @@ public class RaddRegistryUtils {
         ));
         return pageLastEvaluatedKey;
     };
-
 
     public Mono<RaddRegistryEntity> mergeNewRegistryEntity(RaddRegistryEntity preExistingRegistryEntity, RaddRegistryRequestEntity newRegistryRequestEntity) {
         return Mono.fromCallable(() -> {
@@ -237,6 +239,26 @@ public class RaddRegistryUtils {
         }
         registryEntity.setUpdateTimestamp(Instant.now());
         registryEntity.setUid(uid);
+
+        return registryEntity;
+    }
+
+    public RaddRegistryEntityV2 mapFieldToSelectiveUpdate(RaddRegistryEntityV2 registryEntity, SelectiveUpdateRegistryRequestV2 request, String uid) {
+        registryEntity.setUpdateTimestamp(Instant.now());
+        registryEntity.setUid(uid);
+
+        registryEntity.setStartValidity(request.getStartValidity() != null ? convertDateToInstantAtStartOfDay(request.getStartValidity()) : null);
+        registryEntity.setEndValidity(request.getEndValidity() != null ? convertDateToInstantAtStartOfDay(request.getEndValidity()) : null);
+
+        registryEntity.setAddress(addressMapper.toEntity(request.getAddress()));
+
+        registryEntity.setExternalCodes(request.getExternalCodes());
+        registryEntity.setDescription(request.getDescription());
+        registryEntity.setOpeningTime(request.getOpeningTime());
+        registryEntity.setPhoneNumbers(request.getPhoneNumbers());
+        registryEntity.setAppointmentRequired(request.getAppointmentRequired());
+        registryEntity.setWebsite(request.getWebsite());
+        registryEntity.setEmail(request.getEmail());
 
         return registryEntity;
     }
