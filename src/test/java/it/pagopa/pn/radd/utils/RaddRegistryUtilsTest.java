@@ -8,6 +8,7 @@ import it.pagopa.pn.api.dto.events.PnEvaluatedZipCodeEvent;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileCreationRequestDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileCreationResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.SelectiveUpdateRegistryRequestV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.UpdateRegistryRequestV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.CreateRegistryRequestV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.AddressV2;
@@ -1327,6 +1328,38 @@ class RaddRegistryUtilsTest {
         assertEquals("https://newsite.it", updated.getWebsite());
         assertEquals(true, updated.getAppointmentRequired());
         assertEquals(Instant.parse("2025-01-01T00:00:00Z"), updated.getEndValidity());
+        assertEquals(uid, updated.getUid());
+        assertNotNull(updated.getUpdateTimestamp());
+    }
+
+
+    @Test
+    void testUpdateSelectiveFields() {
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+
+        SelectiveUpdateRegistryRequestV2 request = new SelectiveUpdateRegistryRequestV2();
+        request.setStartValidity(null);
+        request.setEndValidity("2025-01-27");
+        request.setExternalCodes(List.of("EX123"));
+        request.setDescription("New description");
+        request.setOpeningTime("08:00-12:00");
+        request.setPhoneNumbers(List.of("123456789"));
+        request.setAppointmentRequired(true);
+        request.setEmail("test@example.com");
+        request.setWebsite("https://newsite.it");
+
+        String uid = "updated-by-user";
+
+        RaddRegistryEntityV2 updated = raddRegistryUtils.mapFieldToSelectiveUpdate(entity, request, uid);
+
+        assertEquals("New description", updated.getDescription());
+        assertEquals("test@example.com", updated.getEmail());
+        assertEquals("08:00-12:00", updated.getOpeningTime());
+        assertEquals(List.of("EX123"), updated.getExternalCodes());
+        assertEquals(List.of("123456789"), updated.getPhoneNumbers());
+        assertEquals("https://newsite.it", updated.getWebsite());
+        assertEquals(true, updated.getAppointmentRequired());
+        assertEquals(Instant.parse("2025-01-27T00:00:00Z"), updated.getEndValidity());
         assertEquals(uid, updated.getUid());
         assertNotNull(updated.getUpdateTimestamp());
     }

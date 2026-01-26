@@ -249,6 +249,7 @@ public class RaddRegistryUtils {
 
         registryEntity.setStartValidity(request.getStartValidity() != null ? convertDateToInstantAtStartOfDay(request.getStartValidity()) : null);
         registryEntity.setEndValidity(request.getEndValidity() != null ? convertDateToInstantAtStartOfDay(request.getEndValidity()) : null);
+
         registryEntity.setAddress(addressMapper.toEntity(request.getAddress()));
 
         registryEntity.setExternalCodes(request.getExternalCodes());
