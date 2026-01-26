@@ -11,6 +11,7 @@ import it.pagopa.pn.radd.mapper.NormalizedAddressMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryPageMapper;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
+import it.pagopa.pn.radd.middleware.db.entities.AddressEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.pojo.RaddRegistryPage;
 import lombok.CustomLog;
@@ -252,6 +253,86 @@ class RegistrySelfServiceV2Test {
 
         StepVerifier.create(registrySelfServiceV2.updateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, new UpdateRegistryRequestV2()))
                     .verifyErrorMessage(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND.getMessage());
+    }
+
+    private SelectiveUpdateRegistryRequestV2 selectiveUpdateRegistryRequestV2() {
+        SelectiveUpdateRegistryRequestV2 request = new SelectiveUpdateRegistryRequestV2();
+
+        Instant now = Instant.now();
+        formatter.format(now);
+        request.setStartValidity(formatter.format(now));
+        request.setEndValidity(formatter.format(now.plus(1, ChronoUnit.DAYS)));
+        request.setDescription("description");
+        request.setPhoneNumbers(List.of("+390123456789"));
+        request.setExternalCodes(List.of("EXT0"));
+        request.setEmail("mail@esempio.it");
+        request.setOpeningTime(OPENING_TIME_OK);
+        request.setAppointmentRequired(true);
+        request.setWebsite("https://test.it");
+        request.setAddress(new AddressV2());
+        return request;
+    }
+
+    @Test
+    void selectiveUpdateRegistry() {
+        SelectiveUpdateRegistryRequestV2 request = selectiveUpdateRegistryRequestV2();
+
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setPartnerId(PARTNER_ID);
+        entity.setLocationId(LOCATION_ID);
+        entity.setAddress(new AddressEntity());
+
+        Mockito.lenient().when(raddRegistryDAO.findByPartnerId(PARTNER_ID)).thenReturn(Flux.empty());
+        when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.just(entity));
+        when(raddRegistryDAO.updateRegistryEntity(entity)).thenReturn(Mono.just(entity));
+
+        StepVerifier.create(registrySelfServiceV2.selectiveUpdateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
+                .expectNextMatches(raddRegistryEntity -> entity.getDescription().equalsIgnoreCase(request.getDescription())
+                        && entity.getEmail().equalsIgnoreCase(request.getEmail()))
+                .verifyComplete();
+    }
+
+    @Test
+    void selectiveUpdateRegistry_NotFound() {
+        when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.empty());
+
+        StepVerifier.create(registrySelfServiceV2.selectiveUpdateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, new SelectiveUpdateRegistryRequestV2()))
+                .verifyErrorMessage(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    void selectiveUpdateRegistry_InvalidIntervalDates() {
+        SelectiveUpdateRegistryRequestV2 request = selectiveUpdateRegistryRequestV2();
+        request.setEndValidity(formatter.format(convertDateToInstantAtStartOfDay(request.getStartValidity()).minus(1, ChronoUnit.DAYS)));
+
+        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfServiceV2.selectiveUpdateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request));
+        assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
+    }
+
+    @Test
+    void selectiveUpdateRegistry_AddressMismatch() {
+        SelectiveUpdateRegistryRequestV2 request = selectiveUpdateRegistryRequestV2();
+        request.getAddress().setAddressRow("Different Address");
+        request.getAddress().setCap("Different Cap");
+        request.getAddress().setCity("Different City");
+        request.getAddress().setProvince("Different Province");
+        request.getAddress().setCountry("Different Country");
+
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setPartnerId(PARTNER_ID);
+        entity.setLocationId(LOCATION_ID);
+        AddressEntity addressEntity = new AddressEntity();
+        addressEntity.setAddressRow("addressRow");
+        addressEntity.setProvince("pr");
+        addressEntity.setCity("city");
+        addressEntity.setCap("cap");
+        addressEntity.setCountry("country");
+        entity.setAddress(addressEntity);
+
+        when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.just(entity));
+
+        StepVerifier.create(registrySelfServiceV2.selectiveUpdateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
+                .verifyErrorMessage(ExceptionTypeEnum.ADDRESS_MISMATCH.getMessage());
     }
 
 /**

@@ -20,8 +20,7 @@ import reactor.core.publisher.Mono;
 
 import static it.pagopa.pn.radd.utils.DateUtils.validateDateInterval;
 import static it.pagopa.pn.radd.utils.OpeningHoursParser.validateOpenHours;
-import static it.pagopa.pn.radd.utils.RaddRegistryUtils.buildRaddRegistryEntity;
-import static it.pagopa.pn.radd.utils.RaddRegistryUtils.mapFieldToUpdate;
+import static it.pagopa.pn.radd.utils.RaddRegistryUtils.*;
 import static it.pagopa.pn.radd.utils.UrlSanitizer.sanitizeUrl;
 
 @Service
@@ -79,28 +78,26 @@ public class RegistrySelfServiceV2 {
         }
     }
 
-    /**
-     * Controlla se i codici esterni forniti sono già associati a un'altra sede dello stesso partner.
-
-    private Mono<Void> validateExternalCodes(String partnerId, String locationId, List<String> externalCodes) {
-        if (externalCodes == null || externalCodes.isEmpty()) {
-            return Mono.empty();
-        }
-
-        return raddRegistryDAO.findByPartnerId(partnerId)
-                .filter(entity -> !entity.getLocationId().equals(locationId))
-                .flatMap(entity ->
-                        Flux.fromIterable(entity.getExternalCodes())
-                                .filter(externalCodes::contains)
-                                .map(externalCode -> Tuples.of(externalCode, entity.getLocationId()))
-                )
-                .next() // Prende il primo codice esterno duplicato trovato, se esiste
-                .flatMap(dupInfo -> Mono.error(new RaddGenericException(ExceptionTypeEnum.DUPLICATE_EXT_CODE,
-                        String.format("L'externalCode '%s' è già associato alla sede con locationId '%s'", dupInfo.getT1(), dupInfo.getT2()),
-                        HttpStatus.CONFLICT)))
-                .then();
+    public Mono<RegistryV2> selectiveUpdateRegistry(String partnerId, String locationId, String uid, SelectiveUpdateRegistryRequestV2 request) {
+        log.info("Start selectiveUpdateRegistry for partnerId [{}] and locationId [{}]", partnerId, locationId);
+        checkSelectiveUpdateRegistryRequest(request);
+        return raddRegistryDAO.find(partnerId, locationId)
+                .doOnNext(registryEntity -> validateAddressMatch(registryEntity.getAddress(), request.getAddress()))
+                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
+                .flatMap(registryEntity -> raddRegistryDAO.updateRegistryEntity(mapFieldToSelectiveUpdate(registryEntity, request, uid)))
+                .map(raddRegistryMapper::toDto)
+                .doOnError(throwable -> log.error("Error during selective update registry request for partnerId: [{}] and locationId: [{}]", partnerId, locationId, throwable));
     }
-     */
+
+    private void checkSelectiveUpdateRegistryRequest(SelectiveUpdateRegistryRequestV2 request) {
+        validateDateInterval(request.getStartValidity(), request.getEndValidity());
+        if (request.getOpeningTime() != null) {
+            validateOpenHours(request.getOpeningTime());
+        }
+        if (request.getWebsite() != null) {
+            request.setWebsite(sanitizeUrl(request.getWebsite()));
+        }
+    }
 
     public Mono<RaddRegistryEntityV2> deleteRegistry(String partnerId, String locationId) {
         return raddRegistryDAO.delete(partnerId, locationId)

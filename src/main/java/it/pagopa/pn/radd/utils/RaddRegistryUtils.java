@@ -144,6 +144,16 @@ public class RaddRegistryUtils {
         return raddRegistryEntityV2;
     }
 
+    public static AddressEntity buildAddressEntity(AddressV2 inputAddress) {
+        AddressEntity address = new AddressEntity();
+        address.setAddressRow(inputAddress.getAddressRow());
+        address.setCity(inputAddress.getCity());
+        address.setCap(inputAddress.getCap());
+        address.setProvince(inputAddress.getProvince());
+        address.setCountry(inputAddress.getCountry());
+        return address;
+    }
+
     public static NormalizedAddressEntityV2 buildNormalizedAddressEntity(AwsGeoService.CoordinatesResult coordinatesResult) {
         NormalizedAddressEntityV2 normalizedAddress = new NormalizedAddressEntityV2();
         normalizedAddress.setAddressRow(coordinatesResult.getAwsAddressRow());
@@ -243,14 +253,14 @@ public class RaddRegistryUtils {
         return registryEntity;
     }
 
-    public RaddRegistryEntityV2 mapFieldToSelectiveUpdate(RaddRegistryEntityV2 registryEntity, SelectiveUpdateRegistryRequestV2 request, String uid) {
+    public static RaddRegistryEntityV2 mapFieldToSelectiveUpdate(RaddRegistryEntityV2 registryEntity, SelectiveUpdateRegistryRequestV2 request, String uid) {
         registryEntity.setUpdateTimestamp(Instant.now());
         registryEntity.setUid(uid);
 
         registryEntity.setStartValidity(request.getStartValidity() != null ? convertDateToInstantAtStartOfDay(request.getStartValidity()) : null);
         registryEntity.setEndValidity(request.getEndValidity() != null ? convertDateToInstantAtStartOfDay(request.getEndValidity()) : null);
 
-        registryEntity.setAddress(addressMapper.toEntity(request.getAddress()));
+        registryEntity.setAddress(buildAddressEntity(request.getAddress()));
 
         registryEntity.setExternalCodes(request.getExternalCodes());
         registryEntity.setDescription(request.getDescription());
