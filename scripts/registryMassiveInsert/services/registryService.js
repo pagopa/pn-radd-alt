@@ -67,7 +67,8 @@ class RegistryService {
       const registry = convertToRegistryRequest(csvRegistry, partnerId);
       const res = await axios.post(`${this.apiBaseUrl}/radd-bo/api/v2/registry`, registry, { headers: finalHeaders });
       console.log(`➕ Aggiunta sede ${res.data.locationId}`);
-      return { ...csvRegistry, status: 'OK', result: JSON.stringify(res.data) };
+      const locationId = res.data.locationId;
+      return { ...csvRegistry, locationId: locationId, status: 'OK', result: JSON.stringify(res.data) };
     } catch (err) {
       const reason = this.#getErrorMessage(err);
       console.error(`⚠️ Inserimento KO: ${reason}`);
