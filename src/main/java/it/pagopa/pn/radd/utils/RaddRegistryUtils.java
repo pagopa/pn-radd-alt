@@ -152,6 +152,7 @@ public class RaddRegistryUtils {
         normalizedAddress.setLongitude(coordinatesResult.getAwsLongitude());
         normalizedAddress.setLatitude(coordinatesResult.getAwsLatitude());
         normalizedAddress.setBiasPoint(buildBiasPointEntity(coordinatesResult.getAwsMatchScore()));
+        normalizedAddress.setManualCoordinates(false);
         return normalizedAddress;
     }
 
@@ -235,6 +236,21 @@ public class RaddRegistryUtils {
         if (request.getEndValidity() != null) {
             registryEntity.setEndValidity(validateEndDate(registryEntity.getStartValidity(), request.getEndValidity()));
         }
+
+        // Handle manual coordinates update
+        if (request.getCoordinates() != null) {
+            NormalizedAddressEntityV2 normalizedAddress = registryEntity.getNormalizedAddress();
+
+            // Update coordinates with manual values
+            normalizedAddress.setLatitude(String.valueOf(request.getCoordinates().getLatitude()));
+            normalizedAddress.setLongitude(String.valueOf(request.getCoordinates().getLongitude()));
+            normalizedAddress.setManualCoordinates(true);
+
+            log.info("Manual coordinates provided for partnerId: {} and locationId: {} - latitude: {}, longitude: {}",
+                    registryEntity.getPartnerId(), registryEntity.getLocationId(),
+                    request.getCoordinates().getLatitude(), request.getCoordinates().getLongitude());
+        }
+
         registryEntity.setUpdateTimestamp(Instant.now());
         registryEntity.setUid(uid);
 
