@@ -14,6 +14,7 @@ import it.pagopa.pn.radd.middleware.db.RaddRegistryV2DAO;
 import it.pagopa.pn.radd.middleware.db.entities.AddressEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.pojo.RaddRegistryPage;
+import it.pagopa.pn.radd.services.radd.fsu.v1.validation.RegistryValidatorDispatcher;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static it.pagopa.pn.radd.utils.DateUtils.convertDateToInstantAtStartOfDay;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -74,7 +74,8 @@ class RegistrySelfServiceV2Test {
                 raddRegistryDAO,
                 awsGeoService,
                 raddRegistryMapper,
-                new RaddRegistryPageMapper(raddRegistryMapper)
+                new RaddRegistryPageMapper(raddRegistryMapper),
+                new RegistryValidatorDispatcher()
         );
     }
 
@@ -149,8 +150,7 @@ class RegistrySelfServiceV2Test {
 
         Mockito.lenient().when(raddRegistryDAO.findByPartnerId(PARTNER_ID)).thenReturn(Flux.empty());
         when(raddRegistryDAO.putItemIfAbsent(any())).thenReturn(Mono.just(entity));
-        when(awsGeoService.getCoordinatesForAddress(any(), any(), any(), any(), any()))
-                .thenReturn(Mono.just(buildCoordinatesResult()));
+        when(awsGeoService.getCoordinatesForAddress(any())).thenReturn(Mono.just(buildCoordinatesResult()));
 
         Mono<RegistryV2> result = registrySelfServiceV2.addRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request);
 
@@ -164,8 +164,9 @@ class RegistrySelfServiceV2Test {
         CreateRegistryRequestV2 request = createValidRegistryRequest();
         request.setEndValidity(formatter.format(convertDateToInstantAtStartOfDay(request.getStartValidity()).minus(1, ChronoUnit.DAYS)));
 
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfServiceV2.addRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request));
-        assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
+        StepVerifier.create(registrySelfServiceV2.addRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
+                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
+                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DATE_INTERVAL_ERROR);
     }
 
     @Test
@@ -173,8 +174,9 @@ class RegistrySelfServiceV2Test {
         CreateRegistryRequestV2 request = createValidRegistryRequest();
         request.setStartValidity("10/02/2022");
 
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfServiceV2.addRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request));
-        assertEquals(ExceptionTypeEnum.DATE_VALIDATION_ERROR, ex.getExceptionType());
+        StepVerifier.create(registrySelfServiceV2.addRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
+                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
+                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DATE_VALIDATION_ERROR);
     }
 
     /**
@@ -305,8 +307,14 @@ class RegistrySelfServiceV2Test {
         SelectiveUpdateRegistryRequestV2 request = selectiveUpdateRegistryRequestV2();
         request.setEndValidity(formatter.format(convertDateToInstantAtStartOfDay(request.getStartValidity()).minus(1, ChronoUnit.DAYS)));
 
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> registrySelfServiceV2.selectiveUpdateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request));
-        assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+        entity.setPartnerId(PARTNER_ID);
+        entity.setLocationId(LOCATION_ID);
+        when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.just(entity));
+
+        StepVerifier.create(registrySelfServiceV2.selectiveUpdateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
+                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
+                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DATE_INTERVAL_ERROR);
     }
 
     @Test
