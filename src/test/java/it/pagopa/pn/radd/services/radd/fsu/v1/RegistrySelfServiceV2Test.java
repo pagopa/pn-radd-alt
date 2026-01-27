@@ -166,7 +166,8 @@ class RegistrySelfServiceV2Test {
 
         StepVerifier.create(registrySelfServiceV2.addRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
                 .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
-                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DATE_INTERVAL_ERROR);
+                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DATE_INTERVAL_ERROR)
+                .verify();
     }
 
     @Test
@@ -176,7 +177,8 @@ class RegistrySelfServiceV2Test {
 
         StepVerifier.create(registrySelfServiceV2.addRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
                 .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
-                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DATE_VALIDATION_ERROR);
+                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DATE_VALIDATION_ERROR)
+                .verify();
     }
 
     /**
@@ -313,7 +315,8 @@ class RegistrySelfServiceV2Test {
 
         StepVerifier.create(registrySelfServiceV2.selectiveUpdateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
                 .expectErrorMatches(throwable -> throwable instanceof RaddGenericException &&
-                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DATE_INTERVAL_ERROR);
+                        ((RaddGenericException) throwable).getExceptionType() == ExceptionTypeEnum.DATE_INTERVAL_ERROR)
+                .verify();
     }
 
     @Test

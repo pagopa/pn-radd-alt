@@ -147,6 +147,7 @@ public class RaddRegistryUtils {
     }
 
     public static AddressEntity buildAddressEntity(AddressV2 inputAddress) {
+        if (inputAddress == null) return null;
         AddressEntity address = new AddressEntity();
         address.setAddressRow(inputAddress.getAddressRow());
         address.setCity(inputAddress.getCity());
