@@ -261,7 +261,6 @@ class RegistrySelfServiceV2Test {
         SelectiveUpdateRegistryRequestV2 request = new SelectiveUpdateRegistryRequestV2();
 
         Instant now = Instant.now();
-        formatter.format(now);
         request.setStartValidity(formatter.format(now));
         request.setEndValidity(formatter.format(now.plus(1, ChronoUnit.DAYS)));
         request.setDescription("description");
