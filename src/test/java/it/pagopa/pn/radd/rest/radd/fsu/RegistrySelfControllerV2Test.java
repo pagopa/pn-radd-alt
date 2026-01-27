@@ -51,6 +51,7 @@ class RegistrySelfControllerV2Test {
 
     private final String CREATE_PATH = "/radd-bo/api/v2/registry";
     private final String UPDATE_PATH = "/radd-bo/api/v2/registry/{locationId}";
+    private final String SELECTIVE_UPDATE_PATH = "radd-bo/api/v2/registry/{locationId}";
 
     private static final String PATTERN_FORMAT = "yyyy-MM-dd";
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(PATTERN_FORMAT).withZone(ZoneId.systemDefault());
@@ -88,6 +89,21 @@ class RegistrySelfControllerV2Test {
         request.setPhoneNumbers(List.of("+390123456789"));
         request.setExternalCodes(List.of("EXT0"));
         request.setEmail("mail@esempio.it");
+        request.setAppointmentRequired(true);
+        request.setWebsite("https://test.it");
+        return request;
+    }
+
+    private SelectiveUpdateRegistryRequestV2 buildValidSelectiveUpdateRegistryRequest() {
+        SelectiveUpdateRegistryRequestV2 request = new SelectiveUpdateRegistryRequestV2();
+
+        Instant now = Instant.now();
+        formatter.format(now);
+        request.setEndValidity(formatter.format(now.plus(1, ChronoUnit.DAYS)));
+        request.setDescription("description");
+        request.setPhoneNumbers(List.of("+390123456789"));
+        request.setExternalCodes(List.of("EXT0"));
+        request.setEmail(null);
         request.setAppointmentRequired(true);
         request.setWebsite("https://test.it");
         return request;
@@ -345,6 +361,29 @@ class RegistrySelfControllerV2Test {
                 .expectStatus()
                 .isBadRequest();
 
+    }
+
+    @Test
+    void selectiveUpdateRegistry_success() {
+        SelectiveUpdateRegistryRequestV2 request = buildValidSelectiveUpdateRegistryRequest();
+
+        RegistryV2 response = new RegistryV2();
+        response.setPartnerId(PARTNER_ID);
+        response.setLocationId(LOCATION_ID);
+
+        Mockito.when(registrySelfServiceV2.selectiveUpdateRegistry(eq(PARTNER_ID), eq(LOCATION_ID), anyString(), any()))
+               .thenReturn(Mono.just(response));
+
+        webTestClient.put()
+                     .uri(SELECTIVE_UPDATE_PATH, LOCATION_ID)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus()
+                     .isNotFound();
     }
 
 }
