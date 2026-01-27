@@ -55,8 +55,8 @@ public class RegistrySelfServiceV2 {
         log.info("Start selectiveUpdateRegistry for partnerId [{}] and locationId [{}]", partnerId, locationId);
         return Mono.fromRunnable(() -> validatorDispatcher.validate(request))
                 .then(raddRegistryDAO.find(partnerId, locationId))
-                .doOnNext(registryEntity -> validateAddressMatch(registryEntity.getAddress(), request.getAddress()))
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND, HttpStatus.NOT_FOUND)))
+                .doOnNext(registryEntity -> validateAddressMatch(registryEntity.getAddress(), request.getAddress()))
                 .flatMap(registryEntity -> raddRegistryDAO.updateRegistryEntity(mapFieldToSelectiveUpdate(registryEntity, request, uid)))
                 .map(raddRegistryMapper::toDto)
                 .doOnError(throwable -> log.error("Error during selective update registry request for partnerId: [{}] and locationId: [{}]", partnerId, locationId, throwable));
