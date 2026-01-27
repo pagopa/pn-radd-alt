@@ -14,9 +14,11 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 public class NormalizedAddressEntityV2 extends AddressEntity {
     public static final String COL_LATITUDE = "latitude";
     public static final String COL_LONGITUDE = "longitude";
+    public static final String COL_MANUAL_COORDINATES = "manualCoordinates";
 
     private String latitude;
     private String longitude;
     private BiasPointEntity biasPoint;
+    private Boolean manualCoordinates;
 
 }
