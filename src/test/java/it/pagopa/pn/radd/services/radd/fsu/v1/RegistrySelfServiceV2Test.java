@@ -297,7 +297,9 @@ class RegistrySelfServiceV2Test {
     void selectiveUpdateRegistry_NotFound() {
         when(raddRegistryDAO.find(PARTNER_ID, LOCATION_ID)).thenReturn(Mono.empty());
 
-        StepVerifier.create(registrySelfServiceV2.selectiveUpdateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, new SelectiveUpdateRegistryRequestV2()))
+        SelectiveUpdateRegistryRequestV2 request = selectiveUpdateRegistryRequestV2();
+
+        StepVerifier.create(registrySelfServiceV2.selectiveUpdateRegistry(PARTNER_ID, LOCATION_ID, PN_PAGOPA_UID, request))
                 .verifyErrorMessage(ExceptionTypeEnum.RADD_REGISTRY_NOT_FOUND.getMessage());
     }
 
