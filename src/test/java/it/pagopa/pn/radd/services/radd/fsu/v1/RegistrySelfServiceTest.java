@@ -69,7 +69,7 @@ class RegistrySelfServiceTest {
     void setUp() {
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
         registrySelfService = new RegistrySelfService(raddRegistryV2DAO, registryRequestDAO, raddRegistryRequestEntityMapper, correlationIdEventsProducer,
-                new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig, secretService, new RegistryMappingUtils(objectMapperUtil)), pnRaddFsuConfig);
+                new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil)), pnRaddFsuConfig);
     }
 
     @Test

@@ -94,7 +94,7 @@ class RegistryServiceTest {
     void setUp() {
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper());
         registryService = new RegistryService(raddRegistryRequestDAO, raddRegistryV2DAO, raddRegistryImportDAO, pnSafeStorageClient,
-                new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig, secretService, new RegistryMappingUtils(objectMapperUtil)),
+                new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil)),
                 pnRaddFsuConfig, eventBridgeProducer, objectMapperUtil, awsGeoService);
     }
 

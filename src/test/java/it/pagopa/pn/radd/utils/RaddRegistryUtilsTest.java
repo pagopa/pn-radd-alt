@@ -198,9 +198,7 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
-                                                                    new RegistryMappingUtils(objectMapperUtil));
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
@@ -238,9 +236,7 @@ class RaddRegistryUtilsTest {
 
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
-                                                                    new RegistryMappingUtils(objectMapperUtil));
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
@@ -278,9 +274,7 @@ class RaddRegistryUtilsTest {
 
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
-                                                                    new RegistryMappingUtils(objectMapperUtil));
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
@@ -717,9 +711,7 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setEvaluatedZipCodeConfigNumber(10);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig,
-                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
-                new RegistryMappingUtils(objectMapperUtil));
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil));
 
         // Act and Assert
         assertTrue(raddRegistryUtils.findActiveIntervals(new ArrayList<>()).isEmpty());
@@ -734,9 +726,7 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setEvaluatedZipCodeConfigNumber(1);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(addressMapper, objectMapperUtil, pnRaddFsuConfig,
-                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
-                new RegistryMappingUtils(objectMapperUtil));
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil));
 
         ArrayList<TimeInterval> timeIntervals = new ArrayList<>();
         Instant start = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
