@@ -427,6 +427,8 @@ components:
           description: Indirizzo email del punto di ritiro
           pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
           example: mail@esempio.it
+        coordinates:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Coordinates'
 
     SelectiveUpdateRegistryRequestV2:
       type: object
