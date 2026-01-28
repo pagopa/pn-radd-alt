@@ -1347,6 +1347,12 @@ class RaddRegistryUtilsTest {
         request.setAppointmentRequired(true);
         request.setEmail("test@example.com");
         request.setWebsite("https://newsite.it");
+        request.setAddress(new AddressV2()
+                .addressRow("addressRow")
+                .cap("cap")
+                .city("city")
+                .province("province")
+                .country("country"));
 
         String uid = "updated-by-user";
 
@@ -1360,6 +1366,11 @@ class RaddRegistryUtilsTest {
         assertEquals("https://newsite.it", updated.getWebsite());
         assertEquals(true, updated.getAppointmentRequired());
         assertEquals(Instant.parse("2025-01-27T00:00:00Z"), updated.getEndValidity());
+        assertEquals("addressRow", updated.getAddress().getAddressRow());
+        assertEquals("cap", updated.getAddress().getCap());
+        assertEquals("city", updated.getAddress().getCity());
+        assertEquals("province", updated.getAddress().getProvince());
+        assertEquals("country", updated.getAddress().getCountry());
         assertEquals(uid, updated.getUid());
         assertNotNull(updated.getUpdateTimestamp());
     }

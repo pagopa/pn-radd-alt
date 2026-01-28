@@ -32,6 +32,7 @@ import software.amazon.awssdk.services.geoplaces.model.AddressComponentMatchScor
 import software.amazon.awssdk.services.geoplaces.model.ComponentMatchScores;
 import software.amazon.awssdk.services.geoplaces.model.MatchScoreDetails;
 
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -44,6 +45,7 @@ import java.util.regex.Pattern;
 
 import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.TO_PROCESS;
 import static it.pagopa.pn.radd.utils.DateUtils.*;
+import static it.pagopa.pn.radd.utils.UrlSanitizer.sanitizeUrl;
 
 @Component
 @RequiredArgsConstructor
@@ -121,7 +123,7 @@ public class RaddRegistryUtils {
         raddRegistryEntityV2.setEndValidity(request.getEndValidity() != null ? convertDateToInstantAtStartOfDay(request.getEndValidity()) : null);
         raddRegistryEntityV2.setEmail(request.getEmail());
         raddRegistryEntityV2.setAppointmentRequired(request.getAppointmentRequired());
-        raddRegistryEntityV2.setWebsite(request.getWebsite());
+        raddRegistryEntityV2.setWebsite(sanitizeUrl(request.getWebsite()));
         raddRegistryEntityV2.setPartnerType(request.getPartnerType());
         raddRegistryEntityV2.setCreationTimestamp(Instant.now());
         raddRegistryEntityV2.setUpdateTimestamp(Instant.now());
@@ -142,6 +144,17 @@ public class RaddRegistryUtils {
         raddRegistryEntityV2.setModifiedAddress(!areAddressesEquivalent(address, normalizedAddress));
 
         return raddRegistryEntityV2;
+    }
+
+    public static AddressEntity buildAddressEntity(AddressV2 inputAddress) {
+        if (inputAddress == null) return null;
+        AddressEntity address = new AddressEntity();
+        address.setAddressRow(inputAddress.getAddressRow());
+        address.setCity(inputAddress.getCity());
+        address.setCap(inputAddress.getCap());
+        address.setProvince(inputAddress.getProvince());
+        address.setCountry(inputAddress.getCountry());
+        return address;
     }
 
     public static NormalizedAddressEntityV2 buildNormalizedAddressEntity(AwsGeoService.CoordinatesResult coordinatesResult) {
@@ -224,7 +237,7 @@ public class RaddRegistryUtils {
         }
 
         if (StringUtils.isNotBlank(request.getWebsite())) {
-            registryEntity.setWebsite(request.getWebsite());
+            registryEntity.setWebsite(sanitizeUrl(request.getWebsite()));
         }
         if (StringUtils.isNotBlank(request.getEmail())) {
             registryEntity.setEmail(request.getEmail());
@@ -243,27 +256,27 @@ public class RaddRegistryUtils {
         return registryEntity;
     }
 
-    public RaddRegistryEntityV2 mapFieldToSelectiveUpdate(RaddRegistryEntityV2 registryEntity, SelectiveUpdateRegistryRequestV2 request, String uid) {
+    public static RaddRegistryEntityV2 mapFieldToSelectiveUpdate(RaddRegistryEntityV2 registryEntity, SelectiveUpdateRegistryRequestV2 request, String uid) {
         registryEntity.setUpdateTimestamp(Instant.now());
         registryEntity.setUid(uid);
 
         registryEntity.setStartValidity(request.getStartValidity() != null ? convertDateToInstantAtStartOfDay(request.getStartValidity()) : null);
         registryEntity.setEndValidity(request.getEndValidity() != null ? convertDateToInstantAtStartOfDay(request.getEndValidity()) : null);
 
-        registryEntity.setAddress(addressMapper.toEntity(request.getAddress()));
+        registryEntity.setAddress(buildAddressEntity(request.getAddress()));
 
         registryEntity.setExternalCodes(request.getExternalCodes());
         registryEntity.setDescription(request.getDescription());
         registryEntity.setOpeningTime(request.getOpeningTime());
         registryEntity.setPhoneNumbers(request.getPhoneNumbers());
         registryEntity.setAppointmentRequired(request.getAppointmentRequired());
-        registryEntity.setWebsite(request.getWebsite());
+        registryEntity.setWebsite(sanitizeUrl(request.getWebsite()));
         registryEntity.setEmail(request.getEmail());
 
         return registryEntity;
     }
 
-    public static void validateAddressMatch(AddressEntity existingAddress, AddressV2 requestAddress)
+    public static void validateAddressMatch(@NotNull AddressEntity existingAddress, @NotNull AddressV2 requestAddress)
     {
         if (!StringUtils.equals(existingAddress.getAddressRow(), requestAddress.getAddressRow()) ||
                 !StringUtils.equals(existingAddress.getCap(), requestAddress.getCap()) ||
