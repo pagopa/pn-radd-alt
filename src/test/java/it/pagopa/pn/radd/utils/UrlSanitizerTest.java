@@ -29,6 +29,11 @@ class UrlSanitizerTest {
     }
 
     @Test
+    void sanitizeUrl_NullInput_shouldReturnNull() {
+        assertNull(UrlSanitizer.sanitizeUrl(null));
+    }
+
+    @Test
     void sanitizeUrl_withInvalidUriSyntax_shouldThrowException() {
         UrlSanitizeException ex = assertThrows(
                 UrlSanitizeException.class,

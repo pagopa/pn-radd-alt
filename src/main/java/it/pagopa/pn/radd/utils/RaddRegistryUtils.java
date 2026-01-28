@@ -52,10 +52,8 @@ import static it.pagopa.pn.radd.utils.UrlSanitizer.sanitizeUrl;
 @CustomLog
 public class RaddRegistryUtils {
 
-    private final AddressMapper addressMapper;
     private final ObjectMapperUtil objectMapperUtil;
     private final PnRaddFsuConfig pnRaddFsuConfig;
-    private final SecretService secretService;
     private final RegistryMappingUtils mapper;
     private final static String PARTNER_ID_REGEX = "^([0-9]{11})$";
 
