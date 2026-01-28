@@ -54,4 +54,10 @@ public class RegistrySelfControllerV2 implements RegistryV2Api {
                 .map(getRegistryResponseV2 -> ResponseEntity.status(HttpStatus.OK).body(getRegistryResponseV2));
     }
 
+    @Override
+    public Mono<ResponseEntity<RegistryV2>> selectiveUpdateRegistry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnUid, String locationId, Mono<SelectiveUpdateRegistryRequestV2> selectiveUpdateRegistryRequestV2, ServerWebExchange exchange) {
+        validatePartnerId(xPagopaPnCxId);
+        return selectiveUpdateRegistryRequestV2.flatMap(request -> registrySelfServiceV2.selectiveUpdateRegistry(xPagopaPnCxId, locationId, xPagopaPnUid, request))
+                                      .map(response -> ResponseEntity.status(HttpStatus.OK).body(response));
+    }
 }

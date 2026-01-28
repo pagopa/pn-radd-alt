@@ -76,5 +76,7 @@ public class RegistrySelfServiceV2 {
                 .doOnError(throwable -> log.error("Error during retrieve registry request for partnerId: {}", partnerId, throwable));
     }
 
-
+    public Mono<RegistryV2> selectiveUpdateRegistry(String partnerId, String locationId, String uid, SelectiveUpdateRegistryRequestV2 request) {
+        throw new NotImplementedException();
+    }
 }
