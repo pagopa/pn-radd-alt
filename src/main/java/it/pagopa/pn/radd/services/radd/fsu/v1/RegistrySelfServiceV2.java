@@ -13,6 +13,7 @@ import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryEntityV2;
 import it.pagopa.pn.radd.utils.OpeningHoursParser;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -116,5 +117,7 @@ public class RegistrySelfServiceV2 {
                 .doOnError(throwable -> log.error("Error during retrieve registry request for partnerId: {}", partnerId, throwable));
     }
 
-
+    public Mono<RegistryV2> selectiveUpdateRegistry(String partnerId, String locationId, String uid, SelectiveUpdateRegistryRequestV2 request) {
+        throw new NotImplementedException();
+    }
 }
