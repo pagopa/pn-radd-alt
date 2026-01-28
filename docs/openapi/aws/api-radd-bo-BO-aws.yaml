@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: YtmEISSRmpbfdYH8lbHI5XI4Li7NY5AgVBEufRstRFQ=
+  version: fjJFgxx0Iwxq6qKX9WK4Ho/DSoL5yWK5TO+L9pjeaQY=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -1797,6 +1797,8 @@ components:
           description: Indirizzo email del punto di ritiro
           pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
           example: mail@esempio.it
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
     SelectiveUpdateRegistryRequestV2:
       type: object
       required:
@@ -1896,6 +1898,12 @@ components:
                   description: Valore complessivo del bias point
                   minimum: 0
                   maximum: 1
+            manualCoordinates:
+              type: boolean
+              description: >-
+                Indica se le coordinate geografiche sono state impostate
+                manualmente (true) o ottenute tramite geocoding automatico
+                (false).
     RegistryV2:
       type: object
       properties:
@@ -1981,6 +1989,27 @@ components:
         se non inviata viene considerata la data corrente.
       pattern: ^\d{4}-\d{2}-\d{2}$
       example: '2024-03-21'
+    Coordinates:
+      type: object
+      required:
+        - latitude
+        - longitude
+      description: Coordinate geografiche manuali (sovrascrivono geocoding automatico)
+      properties:
+        latitude:
+          type: number
+          format: double
+          description: Latitudine della posizione geografica.
+          example: 41.9028
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          description: Longitudine della posizione geografica.
+          example: 12.4964
+          minimum: -180
+          maximum: 180
     CreateCoverageRequest:
       type: object
       required:
