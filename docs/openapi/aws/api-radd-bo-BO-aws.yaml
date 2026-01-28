@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: JqbbRQu4ukLUf+NN4z+U4snCTE5ae2v4rtpBesmcvmk=
+  version: sqNi49BXgO7EGPWDe6Tr8NmfJlWLX2eOf2QTEZulh48=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -889,8 +889,7 @@ paths:
         Il comportamento del sistema dipende da come vengono inviati i campi nel
         corpo della richiesta:
           - l'inserimento di un valore specifico comporta l'aggiornamento del dato sul database;
-          - l'invio di un campo con valore nullo ne provoca la cancellazione;
-          - i campi non definiti nel request body non saranno oggetto di alcuna modifica, lasciando intatto il valore attualmente memorizzato.
+          - l'invio di un campo omesso o con valore nullo ne provoca la cancellazione;
 
         È importante notare che l'indirizzo del punto di ritiro è considerato un
         dato non modificabile.  Per assicurare l'integrità della sede, il valore
