@@ -26,7 +26,7 @@ public class NormalizedAddressMapper {
         entity.setLatitude(dto.getLatitude());
         entity.setLongitude(dto.getLongitude());
         entity.setBiasPoint(toEntity(dto.getBiasPoint()));
-        entity.setManualCoordinates(dto.getManualCoordinates());
+        entity.setManualCoordinates(Boolean.TRUE.equals(dto.getManualCoordinates()));
         return entity;
     }
 
@@ -43,7 +43,7 @@ public class NormalizedAddressMapper {
         dto.setLatitude(entity.getLatitude());
         dto.setLongitude(entity.getLongitude());
         dto.setBiasPoint(toDto(entity.getBiasPoint()));
-        dto.setManualCoordinates(entity.getManualCoordinates());
+        dto.setManualCoordinates(entity.isManualCoordinates());
         return dto;
     }
 

@@ -52,7 +52,7 @@ class NormalizedAddressMapperTest {
         assertEquals("Italia", entity.getCountry());
         assertEquals("41", entity.getLatitude());
         assertEquals("12", entity.getLongitude());
-        assertTrue(entity.getManualCoordinates());
+        assertTrue(entity.isManualCoordinates());
 
         BiasPointEntity biasEntity = entity.getBiasPoint();
         assertNotNull(biasEntity);
@@ -116,6 +116,29 @@ class NormalizedAddressMapperTest {
     @Test
     void testToDto_nullInput() {
         assertNull(mapper.toDto(null));
+    }
+
+    @Test
+    void testToEntity_nullManualCoordinates_defaultsToFalse() {
+        NormalizedAddress dto = new NormalizedAddress();
+        dto.setAddressRow("Via Test");
+        dto.setManualCoordinates(null);
+
+        NormalizedAddressEntityV2 entity = mapper.toEntity(dto);
+
+        assertNotNull(entity);
+        assertFalse(entity.isManualCoordinates());
+    }
+
+    @Test
+    void testToDto_unsetManualCoordinates_defaultsToFalse() {
+        NormalizedAddressEntityV2 entity = new NormalizedAddressEntityV2();
+        entity.setAddressRow("Via Test");
+
+        NormalizedAddress dto = mapper.toDto(entity);
+
+        assertNotNull(dto);
+        assertFalse(dto.getManualCoordinates());
     }
 
     @Test
