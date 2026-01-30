@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: vNnKTT/CW3yfubW/OC4kHc1GgjEVbOpxH0f529IlPtc=
+  version: jEvvibl+Fi+ypaLBPkl0fDGbPtHTW42phXufH1g4UmI=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -1725,43 +1725,45 @@ components:
         - externalCodes
       allOf:
         - $ref: '#/components/schemas/BaseRegistryRequestV2'
-      properties:
-        openingTime:
-          $ref: '#/components/schemas/OpeningTime'
-        endValidity:
-          $ref: '#/components/schemas/EndValidity'
-        email:
-          $ref: '#/components/schemas/Email'
-        appointmentRequired:
-          $ref: '#/components/schemas/AppointmentRequired'
-        website:
-          $ref: '#/components/schemas/Website'
-        address:
-          $ref: '#/components/schemas/AddressV2'
-        startValidity:
-          $ref: '#/components/schemas/StartValidity'
-        partnerType:
-          type: string
-          description: Tipologia del punto di ritiro
-          pattern: CAF
-          default: CAF
+        - type: object
+          properties:
+            openingTime:
+              $ref: '#/components/schemas/OpeningTime'
+            endValidity:
+              $ref: '#/components/schemas/EndValidity'
+            email:
+              $ref: '#/components/schemas/Email'
+            appointmentRequired:
+              $ref: '#/components/schemas/AppointmentRequired'
+            website:
+              $ref: '#/components/schemas/Website'
+            address:
+              $ref: '#/components/schemas/AddressV2'
+            startValidity:
+              $ref: '#/components/schemas/StartValidity'
+            partnerType:
+              type: string
+              description: Tipologia del punto di ritiro
+              pattern: CAF
+              default: CAF
     UpdateRegistryRequestV2:
       type: object
       allOf:
         - $ref: '#/components/schemas/BaseRegistryRequestV2'
-      properties:
-        openingTime:
-          $ref: '#/components/schemas/OpeningTime'
-        endValidity:
-          $ref: '#/components/schemas/EndValidity'
-        email:
-          $ref: '#/components/schemas/Email'
-        appointmentRequired:
-          $ref: '#/components/schemas/AppointmentRequired'
-        website:
-          $ref: '#/components/schemas/Website'
-        coordinates:
-          $ref: '#/components/schemas/Coordinates'
+        - type: object
+          properties:
+            openingTime:
+              $ref: '#/components/schemas/OpeningTime'
+            endValidity:
+              $ref: '#/components/schemas/EndValidity'
+            email:
+              $ref: '#/components/schemas/Email'
+            appointmentRequired:
+              $ref: '#/components/schemas/AppointmentRequired'
+            website:
+              $ref: '#/components/schemas/Website'
+            coordinates:
+              $ref: '#/components/schemas/Coordinates'
     SelectiveUpdateRegistryRequestV2:
       type: object
       required:
@@ -1771,33 +1773,28 @@ components:
         - externalCodes
       allOf:
         - $ref: '#/components/schemas/BaseRegistryRequestV2'
-      properties:
-        address:
-          $ref: '#/components/schemas/AddressV2'
-        openingTime:
-          oneOf:
-            - $ref: '#/components/schemas/OpeningTime'
-            - type: 'null'
-        startValidity:
-          oneOf:
-            - $ref: '#/components/schemas/StartValidity'
-            - type: 'null'
-        endValidity:
-          oneOf:
-            - $ref: '#/components/schemas/EndValidity'
-            - type: 'null'
-        email:
-          oneOf:
-            - $ref: '#/components/schemas/Email'
-            - type: 'null'
-        appointmentRequired:
-          oneOf:
-            - $ref: '#/components/schemas/AppointmentRequired'
-            - type: 'null'
-        website:
-          oneOf:
-            - $ref: '#/components/schemas/Website'
-            - type: 'null'
+        - type: object
+          properties:
+            address:
+              $ref: '#/components/schemas/AddressV2'
+            openingTime:
+              $ref: '#/components/schemas/OpeningTime'
+              nullable: true
+            startValidity:
+              $ref: '#/components/schemas/StartValidity'
+              nullable: true
+            endValidity:
+              $ref: '#/components/schemas/EndValidity'
+              nullable: true
+            email:
+              $ref: '#/components/schemas/Email'
+              nullable: true
+            appointmentRequired:
+              $ref: '#/components/schemas/AppointmentRequired'
+              nullable: true
+            website:
+              $ref: '#/components/schemas/Website'
+              nullable: true
     GetRegistryResponseV2:
       type: object
       properties:
