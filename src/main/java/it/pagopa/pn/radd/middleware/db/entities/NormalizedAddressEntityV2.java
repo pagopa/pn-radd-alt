@@ -19,6 +19,6 @@ public class NormalizedAddressEntityV2 extends AddressEntity {
     private String latitude;
     private String longitude;
     private BiasPointEntity biasPoint;
-    private Boolean manualCoordinates;
+    private boolean manualCoordinates;
 
 }
