@@ -333,48 +333,104 @@ components:
         - phoneNumbers
         - externalCodes
       properties:
-        externalCodes:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/ExternalCodes'
-        description:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Description'
-        phoneNumbers:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/PhoneNumbers'
-        openingTime:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/OpeningTime'
-        endValidity:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/EndValidity'
-        email:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Email'
-        appointmentRequired:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AppointmentRequired'
-        website:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Website'
         address:
           $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AddressV2'
+        description:
+          type: string
+          description: Descrizione del punto di ritiro.
+          example: Sportello ABC.
+          maxLength: 200
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example: ["+390123456789","3921573273"]
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(?:\+39|0039)?((?:3\d{9,10})|(?:0[1-9]\d{5,9})|(?:800\d{6,7}))$
+        email:
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
+        openingTime:
+          type: string
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
         startValidity:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/StartValidity'
+          type: string
+          description: >-
+            Data di inizio di validità del punto di ritiro in formato (yyyy-MM-dd),
+            se non inviata viene considerata la data corrente.
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          example: '2024-03-21'
+        endValidity:
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          example: '2024-03-21'
+        externalCodes:
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
+        appointmentRequired:
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
+        website:
+          type: string
+          description: Link al sito del punto di ritiro
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
         partnerType:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/PartnerType'
+          type: string
+          description: Tipologia del punto di ritiro
+          pattern: "CAF"
+          default: "CAF"
 
     UpdateRegistryRequestV2:
       type: object
       properties:
         externalCodes:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/ExternalCodes'
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
         description:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Description'
-        phoneNumbers:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/PhoneNumbers'
+          type: string
+          description: Descrizione aggiornata dello sportello.
+          example: "Registro aggiornato dello sportello."
+          maxLength: 200
         openingTime:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/OpeningTime'
+          type: string
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example: ["+390123456789","3921573273"]
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(?:\+39|0039)?((?:3\d{9,10})|(?:0[1-9]\d{5,9})|(?:800\d{6,7}))$
         endValidity:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/EndValidity'
-        email:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Email'
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          example: '2024-03-21'
         appointmentRequired:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AppointmentRequired'
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
         website:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Website'
+          type: string
+          description: Link al sito del punto di ritiro
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
+        email:
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
         coordinates:
           $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Coordinates'
 
@@ -387,30 +443,59 @@ components:
         - externalCodes
       properties:
         externalCodes:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/ExternalCodes'
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
         description:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Description'
+          type: string
+          description: Descrizione aggiornata dello sportello.
+          example: "Registro aggiornato dello sportello."
+          maxLength: 200
         phoneNumbers:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/PhoneNumbers'
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example: [ "+390123456789","3921573273" ]
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(?:\+39|0039)?((?:3\d{9,10})|(?:0[1-9]\d{5,9})|(?:800\d{6,7}))$
         address:
           $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AddressV2'
         openingTime:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/OpeningTime'
+          type: string
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
           nullable: true
         startValidity:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/StartValidity'
+          type: string
+          description: >-
+            Data di inizio di validità del punto di ritiro in formato (yyyy-MM-dd),
+            se non inviata viene considerata la data corrente.
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          example: '2024-03-21'
           nullable: true
         endValidity:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/EndValidity'
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          example: '2024-03-21'
           nullable: true
         email:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Email'
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
           nullable: true
         appointmentRequired:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AppointmentRequired'
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
           nullable: true
         website:
-          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Website'
+          type: string
+          description: Link al sito del punto di ritiro
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
           nullable: true
 
     GetRegistryResponseV2:

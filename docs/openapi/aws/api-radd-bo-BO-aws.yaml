@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: mVxvTpit6Zp8obHbYaFcAXasuYEg2xalK3a/l5usye0=
+  version: IZoQFjYe697RQl+edb2XTxqDP6WPwxeH/j9kv23eodg=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -1700,47 +1700,107 @@ components:
         - phoneNumbers
         - externalCodes
       properties:
-        externalCodes:
-          $ref: '#/components/schemas/ExternalCodes'
-        description:
-          $ref: '#/components/schemas/Description'
-        phoneNumbers:
-          $ref: '#/components/schemas/PhoneNumbers'
-        openingTime:
-          $ref: '#/components/schemas/OpeningTime'
-        endValidity:
-          $ref: '#/components/schemas/EndValidity'
-        email:
-          $ref: '#/components/schemas/Email'
-        appointmentRequired:
-          $ref: '#/components/schemas/AppointmentRequired'
-        website:
-          $ref: '#/components/schemas/Website'
         address:
           $ref: '#/components/schemas/AddressV2'
+        description:
+          type: string
+          description: Descrizione del punto di ritiro.
+          example: Sportello ABC.
+          maxLength: 200
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example:
+            - '+390123456789'
+            - '3921573273'
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(?:\+39|0039)?((?:3\d{9,10})|(?:0[1-9]\d{5,9})|(?:800\d{6,7}))$
+        email:
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
+        openingTime:
+          type: string
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
         startValidity:
-          $ref: '#/components/schemas/StartValidity'
+          type: string
+          description: >-
+            Data di inizio di validità del punto di ritiro in formato
+            (yyyy-MM-dd), se non inviata viene considerata la data corrente.
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          example: '2024-03-21'
+        endValidity:
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          example: '2024-03-21'
+        externalCodes:
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
+        appointmentRequired:
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
+        website:
+          type: string
+          description: Link al sito del punto di ritiro
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
         partnerType:
-          $ref: '#/components/schemas/PartnerType'
+          type: string
+          description: Tipologia del punto di ritiro
+          pattern: CAF
+          default: CAF
     UpdateRegistryRequestV2:
       type: object
       properties:
         externalCodes:
-          $ref: '#/components/schemas/ExternalCodes'
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
         description:
-          $ref: '#/components/schemas/Description'
-        phoneNumbers:
-          $ref: '#/components/schemas/PhoneNumbers'
+          type: string
+          description: Descrizione aggiornata dello sportello.
+          example: Registro aggiornato dello sportello.
+          maxLength: 200
         openingTime:
-          $ref: '#/components/schemas/OpeningTime'
+          type: string
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example:
+            - '+390123456789'
+            - '3921573273'
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(?:\+39|0039)?((?:3\d{9,10})|(?:0[1-9]\d{5,9})|(?:800\d{6,7}))$
         endValidity:
-          $ref: '#/components/schemas/EndValidity'
-        email:
-          $ref: '#/components/schemas/Email'
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          example: '2024-03-21'
         appointmentRequired:
-          $ref: '#/components/schemas/AppointmentRequired'
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
         website:
-          $ref: '#/components/schemas/Website'
+          type: string
+          description: Link al sito del punto di ritiro
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
+        email:
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
         coordinates:
           $ref: '#/components/schemas/Coordinates'
     SelectiveUpdateRegistryRequestV2:
@@ -1752,36 +1812,67 @@ components:
         - externalCodes
       properties:
         externalCodes:
-          $ref: '#/components/schemas/ExternalCodes'
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
         description:
-          $ref: '#/components/schemas/Description'
+          type: string
+          description: Descrizione aggiornata dello sportello.
+          example: Registro aggiornato dello sportello.
+          maxLength: 200
         phoneNumbers:
-          $ref: '#/components/schemas/PhoneNumbers'
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example:
+            - '+390123456789'
+            - '3921573273'
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(?:\+39|0039)?((?:3\d{9,10})|(?:0[1-9]\d{5,9})|(?:800\d{6,7}))$
         address:
           $ref: '#/components/schemas/AddressV2'
         openingTime:
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
           oneOf:
-            - $ref: '#/components/schemas/OpeningTime'
+            - type: string
+              example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
             - type: 'null'
         startValidity:
+          description: >-
+            Data di inizio di validità del punto di ritiro in formato
+            (yyyy-MM-dd), se non inviata viene considerata la data corrente.
           oneOf:
-            - $ref: '#/components/schemas/StartValidity'
+            - type: string
+              pattern: ^\d{4}-\d{2}-\d{2}$
+              example: '2024-03-21'
             - type: 'null'
         endValidity:
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
           oneOf:
-            - $ref: '#/components/schemas/EndValidity'
+            - type: string
+              pattern: ^\d{4}-\d{2}-\d{2}$
+              example: '2024-03-21'
             - type: 'null'
         email:
+          description: Indirizzo email del punto di ritiro
           oneOf:
-            - $ref: '#/components/schemas/Email'
+            - type: string
+              pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+              example: mail@esempio.it
             - type: 'null'
         appointmentRequired:
+          description: Variabile booleana per indicare se necessario prendere appuntamento
           oneOf:
-            - $ref: '#/components/schemas/AppointmentRequired'
+            - type: boolean
             - type: 'null'
         website:
+          description: Link al sito del punto di ritiro
           oneOf:
-            - $ref: '#/components/schemas/Website'
+            - type: string
+              pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
             - type: 'null'
     GetRegistryResponseV2:
       type: object
@@ -1874,60 +1965,6 @@ components:
                 Indica se le coordinate geografiche sono state impostate
                 manualmente (true) o ottenute tramite geocoding automatico
                 (false).
-    Description:
-      type: string
-      description: Descrizione del punto di ritiro.
-      example: Sportello ABC.
-      maxLength: 200
-    PhoneNumbers:
-      type: array
-      description: Lista dei numeri di telefono del punto di ritiro.
-      example:
-        - '+390123456789'
-        - '3921573273'
-      minItems: 1
-      maxItems: 2
-      items:
-        type: string
-        pattern: ^(?:\+39|0039)?((?:3\d{9,10})|(?:0[1-9]\d{5,9})|(?:800\d{6,7}))$
-    Email:
-      type: string
-      description: Indirizzo email del punto di ritiro
-      pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
-      example: mail@esempio.it
-    OpeningTime:
-      type: string
-      description: Orario di apertura del punto di ritiro nel formato opening_hours
-      example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
-    StartValidity:
-      type: string
-      description: >-
-        Data di inizio di validità del punto di ritiro in formato (yyyy-MM-dd),
-        se non inviata viene considerata la data corrente.
-      pattern: ^\d{4}-\d{2}-\d{2}$
-      example: '2024-03-21'
-    EndValidity:
-      type: string
-      description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
-      pattern: ^\d{4}-\d{2}-\d{2}$
-      example: '2024-03-21'
-    ExternalCodes:
-      type: array
-      items:
-        type: string
-        description: Identificativo univoco dell'ufficio/postazione nella sede
-    AppointmentRequired:
-      type: boolean
-      description: Variabile booleana per indicare se necessario prendere appuntamento
-    Website:
-      type: string
-      description: Link al sito del punto di ritiro
-      pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
-    PartnerType:
-      type: string
-      description: Tipologia del punto di ritiro
-      pattern: CAF
-      default: CAF
     RegistryV2:
       type: object
       properties:
@@ -1946,25 +1983,58 @@ components:
             ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
           example: 123e4567-e89b-12d3-a456-426614174000
         description:
-          $ref: '#/components/schemas/Description'
+          type: string
+          description: Descrizione del punto di ritiro.
+          example: Sportello ABC.
+          maxLength: 200
         phoneNumbers:
-          $ref: '#/components/schemas/PhoneNumbers'
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example:
+            - '+390123456789'
+            - '3921573273'
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(?:\+39|0039)?((?:3\d{9,10})|(?:0[1-9]\d{5,9})|(?:800\d{6,7}))$
         email:
-          $ref: '#/components/schemas/Email'
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
         openingTime:
-          $ref: '#/components/schemas/OpeningTime'
+          type: string
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
         startValidity:
-          $ref: '#/components/schemas/StartValidity'
+          type: string
+          description: >-
+            Data di inizio di validità del punto di ritiro in formato
+            (yyyy-MM-dd), se non inviata viene considerata la data corrente.
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          example: '2024-03-21'
         endValidity:
-          $ref: '#/components/schemas/EndValidity'
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          example: '2024-03-21'
         externalCodes:
-          $ref: '#/components/schemas/ExternalCodes'
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell'ufficio/postazione nella sede
         appointmentRequired:
-          $ref: '#/components/schemas/AppointmentRequired'
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
         website:
-          $ref: '#/components/schemas/Website'
+          type: string
+          description: Link al sito del punto di ritiro
         partnerType:
-          $ref: '#/components/schemas/PartnerType'
+          type: string
+          description: Tipologia del punto di ritiro
+          pattern: CAF
+          default: CAF
         creationTimestamp:
           type: string
           description: Istante di creazione del punto di ritiro
