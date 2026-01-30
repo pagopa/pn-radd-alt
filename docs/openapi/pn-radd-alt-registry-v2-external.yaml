@@ -207,6 +207,79 @@ paths:
             application/problem+json:
               schema:
                 $ref: 'remote-refs.yaml#/components/schemas/Problem'
+    put:
+      tags:
+        - RegistryV2
+      summary: Aggiornamento selettivo punto di ritiro
+      description: >-
+        Questa operazione permette di aggiornare i dati di un'anagrafica RADD esistente seguendo una logica di modifica selettiva.
+    
+        L'API è progettata per consentire l'aggiornamento o il reset di alcune informazioni, proteggendo al contempo i dati che non devono essere variati per ragioni di coerenza o sicurezza.
+    
+        Il comportamento del sistema dipende da come vengono inviati i campi nel corpo della richiesta:
+          - l'inserimento di un valore specifico comporta l'aggiornamento del dato sul database;
+          - omettere un campo ne provoca la cancellazione;
+          - Vincolo sui valori NULL: A causa di una limitazione tecnica dell'API Gateway nella validazione dei tipi, non è consentito passare esplicitamente il valore null (es. "campo": null). 
+            Se si desidera svuotare un campo, questo deve essere rimosso dal corpo della richiesta, non settato a null.
+  
+        È importante notare che l'indirizzo del punto di ritiro è considerato un dato non modificabile. 
+        Per assicurare l'integrità della sede, il valore fornito nella richiesta deve corrispondere esattamente a quello già presente a sistema; 
+        in caso di discrepanza, l'operazione non verrà autorizzata e verrà restituito un errore.
+      operationId: selectiveUpdateRegistry
+      x-api-permissions:
+        - 'radd-registry-write'
+      parameters:
+        - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'
+        - $ref: '#/components/parameters/locationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelectiveUpdateRegistryRequestV2'
+      responses:
+        '200':
+          description: Aggiornamento completato con successo
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/RegistryV2'
+        '400':
+          description: Richiesta non valida
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '404':
+          description: Punto di ritiro non trovato
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '403':
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '405':
+          description: Not Allowed
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+        '500':
+          description: Internal error
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
     delete:
       tags:
         - RegistryV2
@@ -362,6 +435,64 @@ components:
           example: mail@esempio.it
         coordinates:
           $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Coordinates'
+
+    SelectiveUpdateRegistryRequestV2:
+      type: object
+      required:
+        - address
+        - description
+        - phoneNumbers
+        - externalCodes
+      properties:
+        externalCodes:
+          type: array
+          items:
+            type: string
+            description: Identificativo univoco dell’ufficio/postazione nella sede
+        description:
+          type: string
+          description: Descrizione aggiornata dello sportello.
+          example: "Registro aggiornato dello sportello."
+          maxLength: 200
+        phoneNumbers:
+          type: array
+          description: Lista dei numeri di telefono del punto di ritiro.
+          example: [ "+390123456789","3921573273" ]
+          minItems: 1
+          maxItems: 2
+          items:
+            type: string
+            pattern: ^(?:\+39|0039)?((?:3\d{9,10})|(?:0[1-9]\d{5,9})|(?:800\d{6,7}))$
+        address:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AddressV2'
+        openingTime:
+          type: string
+          description: Orario di apertura del punto di ritiro nel formato opening_hours
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
+        startValidity:
+          type: string
+          description: >-
+            Data di inizio di validità del punto di ritiro in formato (yyyy-MM-dd),
+            se non inviata viene considerata la data corrente.
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          example: '2024-03-21'
+        endValidity:
+          type: string
+          description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          example: '2024-03-21'
+        email:
+          type: string
+          description: Indirizzo email del punto di ritiro
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
+        appointmentRequired:
+          type: boolean
+          description: Variabile booleana per indicare se necessario prendere appuntamento
+        website:
+          type: string
+          description: Link al sito del punto di ritiro
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
 
     GetRegistryResponseV2:
       type: object

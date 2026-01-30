@@ -51,6 +51,7 @@ class RegistrySelfControllerV2Test {
 
     private final String CREATE_PATH = "/radd-bo/api/v2/registry";
     private final String UPDATE_PATH = "/radd-bo/api/v2/registry/{locationId}";
+    private final String SELECTIVE_UPDATE_PATH = "/radd-bo/api/v2/registry/{locationId}";
 
     private static final String PATTERN_FORMAT = "yyyy-MM-dd";
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(PATTERN_FORMAT).withZone(ZoneId.systemDefault());
@@ -93,6 +94,29 @@ class RegistrySelfControllerV2Test {
         return request;
     }
 
+    private SelectiveUpdateRegistryRequestV2 buildValidSelectiveUpdateRegistryRequest() {
+        AddressV2 address = new AddressV2();
+        address.setAddressRow("Via Roma 123");
+        address.setCap("00100");
+        address.setCity("Roma");
+        address.setProvince("RM");
+        address.setCountry("Italia");
+
+        SelectiveUpdateRegistryRequestV2 request = new SelectiveUpdateRegistryRequestV2();
+
+        Instant now = Instant.now();
+        formatter.format(now);
+        request.setEndValidity(formatter.format(now.plus(1, ChronoUnit.DAYS)));
+        request.setAddress(address);
+        request.setDescription("description");
+        request.setPhoneNumbers(List.of("+390123456789"));
+        request.setExternalCodes(List.of("EXT0"));
+        request.setEmail(null);
+        request.setAppointmentRequired(true);
+        request.setWebsite("https://test.it");
+        return request;
+    }
+
     @Test
     void addRegistry_success() {
         CreateRegistryRequestV2 request = buildValidCreateRequest();
@@ -100,19 +124,19 @@ class RegistrySelfControllerV2Test {
         response.setPartnerId(PARTNER_ID);
 
         Mockito.when(registrySelfServiceV2.addRegistry(eq(PARTNER_ID), anyString(), anyString(), any()))
-                .thenReturn(Mono.just(response));
+               .thenReturn(Mono.just(response));
 
         webTestClient.post()
-                .uri(CREATE_PATH)
-                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
-                .header("x-pagopa-pn-cx-id", PARTNER_ID)
-                .header(PN_PAGOPA_UID, "test-uid")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$.partnerId").isEqualTo(PARTNER_ID);
+                     .uri(CREATE_PATH)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus().isOk()
+                     .expectBody()
+                     .jsonPath("$.partnerId").isEqualTo(PARTNER_ID);
     }
 
     @Test
@@ -120,15 +144,15 @@ class RegistrySelfControllerV2Test {
         CreateRegistryRequestV2 request = buildValidCreateRequest();
 
         webTestClient.post()
-                .uri(CREATE_PATH)
-                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
-                .header("x-pagopa-pn-cx-id", INVALID_PARTNER_ID)
-                .header(PN_PAGOPA_UID, "test-uid")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchange()
-                .expectStatus()
-                .isBadRequest();
+                     .uri(CREATE_PATH)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", INVALID_PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus()
+                     .isBadRequest();
     }
 
     @Test
@@ -137,15 +161,15 @@ class RegistrySelfControllerV2Test {
         request.setAddress(null);
 
         webTestClient.post()
-                .uri(CREATE_PATH)
-                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
-                .header("x-pagopa-pn-cx-id", PARTNER_ID)
-                .header(PN_PAGOPA_UID, "test-uid")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchange()
-                .expectStatus()
-                .isBadRequest();
+                     .uri(CREATE_PATH)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus()
+                     .isBadRequest();
     }
 
     @Test
@@ -154,15 +178,15 @@ class RegistrySelfControllerV2Test {
         request.setEmail("not-an-email");
 
         webTestClient.post()
-                .uri(CREATE_PATH)
-                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
-                .header("x-pagopa-pn-cx-id", PARTNER_ID)
-                .header(PN_PAGOPA_UID, "test-uid")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchange()
-                .expectStatus()
-                .isBadRequest();
+                     .uri(CREATE_PATH)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus()
+                     .isBadRequest();
     }
 
     @Test
@@ -172,18 +196,18 @@ class RegistrySelfControllerV2Test {
         response.setPartnerId(PARTNER_ID);
 
         Mockito.when(registrySelfServiceV2.addRegistry(eq(PARTNER_ID), anyString(), anyString(), any()))
-                .thenReturn(Mono.error(new CoordinatesNotFoundException("Coordinates not found")));
+               .thenReturn(Mono.error(new CoordinatesNotFoundException("Coordinates not found")));
 
         webTestClient.post()
-                .uri(CREATE_PATH)
-                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
-                .header("x-pagopa-pn-cx-id", PARTNER_ID)
-                .header(PN_PAGOPA_UID, "test-uid")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchange()
-                .expectStatus()
-                .isBadRequest();
+                     .uri(CREATE_PATH)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus()
+                     .isBadRequest();
     }
 
     @Test
@@ -195,21 +219,21 @@ class RegistrySelfControllerV2Test {
         response.setLocationId(LOCATION_ID);
 
         Mockito.when(registrySelfServiceV2.updateRegistry(eq(PARTNER_ID), eq(LOCATION_ID), anyString(), any()))
-                .thenReturn(Mono.just(response));
+               .thenReturn(Mono.just(response));
 
         webTestClient.patch()
-                .uri(UPDATE_PATH, LOCATION_ID)
-                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
-                .header("x-pagopa-pn-cx-id", PARTNER_ID)
-                .header(PN_PAGOPA_UID, "test-uid")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchange()
-                .expectStatus()
-                .isOk()
-                .expectBody()
-                .jsonPath("$.partnerId").isEqualTo(PARTNER_ID)
-                .jsonPath("$.locationId").isEqualTo(LOCATION_ID);
+                     .uri(UPDATE_PATH, LOCATION_ID)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus()
+                     .isOk()
+                     .expectBody()
+                     .jsonPath("$.partnerId").isEqualTo(PARTNER_ID)
+                     .jsonPath("$.locationId").isEqualTo(LOCATION_ID);
     }
 
     @Test
@@ -217,15 +241,15 @@ class RegistrySelfControllerV2Test {
         UpdateRegistryRequestV2 request = buildValidUpdateRequest();
 
         webTestClient.patch()
-                .uri(UPDATE_PATH, LOCATION_ID)
-                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
-                .header("x-pagopa-pn-cx-id", INVALID_PARTNER_ID)
-                .header(PN_PAGOPA_UID, "test-uid")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchange()
-                .expectStatus()
-                .isBadRequest();
+                     .uri(UPDATE_PATH, LOCATION_ID)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", INVALID_PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus()
+                     .isBadRequest();
     }
 
     @Test
@@ -234,15 +258,15 @@ class RegistrySelfControllerV2Test {
         request.setWebsite("not-a-website");
 
         webTestClient.patch()
-                .uri(UPDATE_PATH, LOCATION_ID)
-                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
-                .header("x-pagopa-pn-cx-id", PARTNER_ID)
-                .header(PN_PAGOPA_UID, "test-uid")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchange()
-                .expectStatus()
-                .isBadRequest();
+                     .uri(UPDATE_PATH, LOCATION_ID)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus()
+                     .isBadRequest();
 
     }
 
@@ -291,13 +315,13 @@ class RegistrySelfControllerV2Test {
                 .thenReturn(Mono.empty());
 
         webTestClient.delete()
-                .uri(UPDATE_PATH, locationId)
-                .header(PN_PAGOPA_CX_TYPE, CxTypeAuthFleet.BO.getValue())
-                .header(PN_PAGOPA_CX_ID, INVALID_PARTNER_ID)
-                .header(PN_PAGOPA_UID, "my-uid")
-                .exchange()
-                .expectStatus()
-                .isBadRequest();
+                     .uri(UPDATE_PATH, locationId)
+                     .header(PN_PAGOPA_CX_TYPE, CxTypeAuthFleet.BO.getValue())
+                     .header(PN_PAGOPA_CX_ID, INVALID_PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "my-uid")
+                     .exchange()
+                     .expectStatus()
+                     .isBadRequest();
     }
 
     private GetRegistryResponseV2 getRegistryResponseV2() {
@@ -319,17 +343,17 @@ class RegistrySelfControllerV2Test {
     void retrieveRegistry_success() {
 
         Mockito.when(registrySelfServiceV2.retrieveRegistries(eq(PARTNER_ID), any(), any()))
-                .thenReturn(Mono.just(getRegistryResponseV2()));
+               .thenReturn(Mono.just(getRegistryResponseV2()));
 
         String GET_PATH = "/radd-bo/api/v2/registry";
         webTestClient.get()
-                .uri(GET_PATH)
-                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
-                .header("x-pagopa-pn-cx-id", PARTNER_ID)
-                .header(PN_PAGOPA_UID, "test-uid")
-                .exchange()
-                .expectStatus()
-                .isOk();
+                     .uri(GET_PATH)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .exchange()
+                     .expectStatus()
+                     .isOk();
 
     }
 
@@ -337,14 +361,63 @@ class RegistrySelfControllerV2Test {
     void retrieveRegistry_invalidPartnerId() {
         String GET_PATH = "/radd-bo/api/v2/registry";
         webTestClient.get()
-                .uri(GET_PATH)
-                .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
-                .header("x-pagopa-pn-cx-id", INVALID_PARTNER_ID)
-                .header(PN_PAGOPA_UID, "test-uid")
-                .exchange()
-                .expectStatus()
-                .isBadRequest();
+                     .uri(GET_PATH)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", INVALID_PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .exchange()
+                     .expectStatus()
+                     .isBadRequest();
 
+    }
+
+    @Test
+    void selectiveUpdateRegistry_success() {
+        SelectiveUpdateRegistryRequestV2 request = buildValidSelectiveUpdateRegistryRequest();
+
+        RegistryV2 response = new RegistryV2();
+        response.setPartnerId(PARTNER_ID);
+        response.setLocationId(LOCATION_ID);
+
+        Mockito.when(registrySelfServiceV2.selectiveUpdateRegistry(eq(PARTNER_ID), eq(LOCATION_ID), anyString(), any()))
+               .thenReturn(Mono.just(response));
+
+        webTestClient.put()
+                     .uri(SELECTIVE_UPDATE_PATH, LOCATION_ID)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus()
+                     .isOk()
+                     .expectBody()
+                     .jsonPath("$.partnerId").isEqualTo(PARTNER_ID)
+                     .jsonPath("$.locationId").isEqualTo(LOCATION_ID);
+    }
+    @Test
+    void selectiveUpdateRegistry_Return400() {
+        SelectiveUpdateRegistryRequestV2 request = buildValidSelectiveUpdateRegistryRequest();
+        request.setAddress(null);
+
+        RegistryV2 response = new RegistryV2();
+        response.setPartnerId(PARTNER_ID);
+        response.setLocationId(LOCATION_ID);
+
+        Mockito.when(registrySelfServiceV2.selectiveUpdateRegistry(eq(PARTNER_ID), eq(LOCATION_ID), anyString(), any()))
+               .thenReturn(Mono.just(response));
+
+        webTestClient.put()
+                     .uri(SELECTIVE_UPDATE_PATH, LOCATION_ID)
+                     .header("x-pagopa-pn-cx-type", CxTypeAuthFleet.BO.getValue())
+                     .header("x-pagopa-pn-cx-id", PARTNER_ID)
+                     .header(PN_PAGOPA_UID, "test-uid")
+                     .contentType(MediaType.APPLICATION_JSON)
+                     .bodyValue(request)
+                     .exchange()
+                     .expectStatus()
+                     .isBadRequest();
     }
 
 }

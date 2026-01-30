@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 @CustomLog
 public class UrlSanitizer {
 
+    public static final String HTTPS = "https://";
+
     private UrlSanitizer() {
         throw new IllegalStateException("UrlSanitizer is a utility class");
     }
@@ -18,31 +20,31 @@ public class UrlSanitizer {
     private static final Pattern SCHEME_REGEX = Pattern.compile("^[a-z][a-z0-9+.-]*://.*");
     private static final Pattern VALID_TLD_PATTERN = Pattern.compile(".*\\.[a-zA-Z]{2,}$");
 
-    public static String sanitizeUrl(String inputUrl) {
-        log.debug("Sanitizing URL: {}", inputUrl);
-        validateInput(inputUrl);
-
-        String url = formatUrl(inputUrl.trim().toLowerCase());
-        return normalizeUrl(url);
-    }
-
-    private static void validateInput(String inputUrl) {
+    public static void validateUrl(String inputUrl) {
         if (inputUrl == null || inputUrl.trim().isEmpty()) {
             throw new UrlSanitizeException("L'URL non può essere vuoto o nullo.");
         }
+
         if (!SAFE_CHARS.matcher(inputUrl).matches()) {
             throw new UrlSanitizeException("URL contiene caratteri non validi: " + inputUrl);
         }
-    }
 
-    private static String formatUrl(String url) {
-        if (SCHEME_REGEX.matcher(url).matches() && !url.startsWith("https://")) {
-            throw new UrlSanitizeException("Protocollo non supportato per l'URL: " + url);
+        String urlLower = inputUrl.trim().toLowerCase();
+        if (SCHEME_REGEX.matcher(urlLower).matches() && !urlLower.startsWith(HTTPS)) {
+            throw new UrlSanitizeException("Protocollo non supportato per l'URL: " + inputUrl);
         }
-        return url.startsWith("https://") ? url : "https://" + url;
     }
 
-    private static String normalizeUrl(String url) {
+    public static String sanitizeUrl(String inputUrl) {
+        if (inputUrl == null) return null;
+
+        log.debug("Sanitizing URL: {}", inputUrl);
+        String url = inputUrl.trim().toLowerCase();
+
+        if (!url.startsWith(HTTPS)) {
+            url = HTTPS + url;
+        }
+
         try {
             URI uri = new URI(url).normalize();
             String sanitizedUrl = uri.toString();

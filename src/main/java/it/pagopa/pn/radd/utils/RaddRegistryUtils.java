@@ -9,10 +9,12 @@ import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.Fil
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.AddressV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.CreateRegistryRequestV2;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.SelectiveUpdateRegistryRequestV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.UpdateRegistryRequestV2;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.mapper.AddressMapper;
 import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.pojo.*;
@@ -30,6 +32,7 @@ import software.amazon.awssdk.services.geoplaces.model.AddressComponentMatchScor
 import software.amazon.awssdk.services.geoplaces.model.ComponentMatchScores;
 import software.amazon.awssdk.services.geoplaces.model.MatchScoreDetails;
 
+import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -42,6 +45,7 @@ import java.util.regex.Pattern;
 
 import static it.pagopa.pn.radd.pojo.RaddRegistryImportStatus.TO_PROCESS;
 import static it.pagopa.pn.radd.utils.DateUtils.*;
+import static it.pagopa.pn.radd.utils.UrlSanitizer.sanitizeUrl;
 
 @Component
 @RequiredArgsConstructor
@@ -50,7 +54,6 @@ public class RaddRegistryUtils {
 
     private final ObjectMapperUtil objectMapperUtil;
     private final PnRaddFsuConfig pnRaddFsuConfig;
-    private final SecretService secretService;
     private final RegistryMappingUtils mapper;
     private final static String PARTNER_ID_REGEX = "^([0-9]{11})$";
 
@@ -63,7 +66,6 @@ public class RaddRegistryUtils {
         ));
         return pageLastEvaluatedKey;
     };
-
 
     public Mono<RaddRegistryEntity> mergeNewRegistryEntity(RaddRegistryEntity preExistingRegistryEntity, RaddRegistryRequestEntity newRegistryRequestEntity) {
         return Mono.fromCallable(() -> {
@@ -119,7 +121,7 @@ public class RaddRegistryUtils {
         raddRegistryEntityV2.setEndValidity(request.getEndValidity() != null ? convertDateToInstantAtStartOfDay(request.getEndValidity()) : null);
         raddRegistryEntityV2.setEmail(request.getEmail());
         raddRegistryEntityV2.setAppointmentRequired(request.getAppointmentRequired());
-        raddRegistryEntityV2.setWebsite(request.getWebsite());
+        raddRegistryEntityV2.setWebsite(sanitizeUrl(request.getWebsite()));
         raddRegistryEntityV2.setPartnerType(request.getPartnerType());
         raddRegistryEntityV2.setCreationTimestamp(Instant.now());
         raddRegistryEntityV2.setUpdateTimestamp(Instant.now());
@@ -140,6 +142,17 @@ public class RaddRegistryUtils {
         raddRegistryEntityV2.setModifiedAddress(!areAddressesEquivalent(address, normalizedAddress));
 
         return raddRegistryEntityV2;
+    }
+
+    public static AddressEntity buildAddressEntity(AddressV2 inputAddress) {
+        if (inputAddress == null) return null;
+        AddressEntity address = new AddressEntity();
+        address.setAddressRow(inputAddress.getAddressRow());
+        address.setCity(inputAddress.getCity());
+        address.setCap(inputAddress.getCap());
+        address.setProvince(inputAddress.getProvince());
+        address.setCountry(inputAddress.getCountry());
+        return address;
     }
 
     public static NormalizedAddressEntityV2 buildNormalizedAddressEntity(AwsGeoService.CoordinatesResult coordinatesResult) {
@@ -223,7 +236,7 @@ public class RaddRegistryUtils {
         }
 
         if (StringUtils.isNotBlank(request.getWebsite())) {
-            registryEntity.setWebsite(request.getWebsite());
+            registryEntity.setWebsite(sanitizeUrl(request.getWebsite()));
         }
         if (StringUtils.isNotBlank(request.getEmail())) {
             registryEntity.setEmail(request.getEmail());
@@ -255,6 +268,37 @@ public class RaddRegistryUtils {
         registryEntity.setUid(uid);
 
         return registryEntity;
+    }
+
+    public static RaddRegistryEntityV2 mapFieldToSelectiveUpdate(RaddRegistryEntityV2 registryEntity, SelectiveUpdateRegistryRequestV2 request, String uid) {
+        registryEntity.setUpdateTimestamp(Instant.now());
+        registryEntity.setUid(uid);
+
+        registryEntity.setStartValidity(request.getStartValidity() != null ? convertDateToInstantAtStartOfDay(request.getStartValidity()) : null);
+        registryEntity.setEndValidity(request.getEndValidity() != null ? convertDateToInstantAtStartOfDay(request.getEndValidity()) : null);
+
+        registryEntity.setAddress(buildAddressEntity(request.getAddress()));
+
+        registryEntity.setExternalCodes(request.getExternalCodes());
+        registryEntity.setDescription(request.getDescription());
+        registryEntity.setOpeningTime(request.getOpeningTime());
+        registryEntity.setPhoneNumbers(request.getPhoneNumbers());
+        registryEntity.setAppointmentRequired(request.getAppointmentRequired());
+        registryEntity.setWebsite(sanitizeUrl(request.getWebsite()));
+        registryEntity.setEmail(request.getEmail());
+
+        return registryEntity;
+    }
+
+    public static void validateAddressMatch(@NotNull AddressEntity existingAddress, @NotNull AddressV2 requestAddress)
+    {
+        if (!StringUtils.equals(existingAddress.getAddressRow(), requestAddress.getAddressRow()) ||
+                !StringUtils.equals(existingAddress.getCap(), requestAddress.getCap()) ||
+                !StringUtils.equals(existingAddress.getCity(), requestAddress.getCity()) ||
+                !StringUtils.equals(existingAddress.getProvince(), requestAddress.getProvince()) ||
+                !StringUtils.equals(existingAddress.getCountry(), requestAddress.getCountry())) {
+            throw new RaddGenericException(ExceptionTypeEnum.ADDRESS_MISMATCH, HttpStatus.BAD_REQUEST);
+        }
     }
 
     public RaddRegistryImportEntity getPnRaddRegistryImportEntity(String xPagopaPnCxId, String uid, RegistryUploadRequest request, FileCreationResponseDto fileCreationResponseDto, String requestId) {

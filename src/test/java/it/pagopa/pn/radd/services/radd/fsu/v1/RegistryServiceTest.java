@@ -8,6 +8,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RegistryUploadReque
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.RequestResponse;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.mapper.AddressMapper;
 import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryImportDAO;
 import it.pagopa.pn.radd.middleware.db.RaddRegistryRequestDAO;
@@ -84,6 +85,8 @@ class RegistryServiceTest {
     @Mock
     private EventBridgeProducer<PnEvaluatedZipCodeEvent> eventBridgeProducer;
 
+    @Mock
+    private AddressMapper addressMapper;
 
     private RegistryService registryService;
 
@@ -91,7 +94,7 @@ class RegistryServiceTest {
     void setUp() {
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new com.fasterxml.jackson.databind.ObjectMapper());
         registryService = new RegistryService(raddRegistryRequestDAO, raddRegistryV2DAO, raddRegistryImportDAO, pnSafeStorageClient,
-                new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, secretService, new RegistryMappingUtils(objectMapperUtil)),
+                new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil)),
                 pnRaddFsuConfig, eventBridgeProducer, objectMapperUtil, awsGeoService);
     }
 
