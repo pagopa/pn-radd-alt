@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: >-
     ${stageVariables.ProjectName}-${stageVariables.MicroServiceUniqueName}-${stageVariables.IntendedUsage}
-  version: IZoQFjYe697RQl+edb2XTxqDP6WPwxeH/j9kv23eodg=
+  version: gg04B27yd52LqHGV2aaqBuAf2iMUAXkaSzLAcix6h+8=
 servers:
   - url: https://${stageVariables.DnsName}/{basePath}
     variables:
@@ -889,7 +889,9 @@ paths:
         Il comportamento del sistema dipende da come vengono inviati i campi nel
         corpo della richiesta:
           - l'inserimento di un valore specifico comporta l'aggiornamento del dato sul database;
-          - l'invio di un campo omesso o con valore nullo ne provoca la cancellazione;
+          - omettere un campo ne provoca la cancellazione;
+          - Vincolo sui valori NULL: A causa di una limitazione tecnica dell'API Gateway nella validazione dei tipi, non è consentito passare esplicitamente il valore null (es. "campo": null). 
+            Se si desidera svuotare un campo, questo deve essere rimosso dal corpo della richiesta, non settato a null.
 
         È importante notare che l'indirizzo del punto di ritiro è considerato un
         dato non modificabile.  Per assicurare l'integrità della sede, il valore
@@ -1835,45 +1837,33 @@ components:
         address:
           $ref: '#/components/schemas/AddressV2'
         openingTime:
+          type: string
           description: Orario di apertura del punto di ritiro nel formato opening_hours
-          oneOf:
-            - type: string
-              example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
-            - type: 'null'
+          example: Lun 09:00-13:00, 14:00-18:00; Mar 09:30-12:30; Mer 09:00-18:00
         startValidity:
+          type: string
           description: >-
             Data di inizio di validità del punto di ritiro in formato
             (yyyy-MM-dd), se non inviata viene considerata la data corrente.
-          oneOf:
-            - type: string
-              pattern: ^\d{4}-\d{2}-\d{2}$
-              example: '2024-03-21'
-            - type: 'null'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          example: '2024-03-21'
         endValidity:
+          type: string
           description: Data di fine di validità dello sportello in formato (yyyy-MM-dd).
-          oneOf:
-            - type: string
-              pattern: ^\d{4}-\d{2}-\d{2}$
-              example: '2024-03-21'
-            - type: 'null'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          example: '2024-03-21'
         email:
+          type: string
           description: Indirizzo email del punto di ritiro
-          oneOf:
-            - type: string
-              pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
-              example: mail@esempio.it
-            - type: 'null'
+          pattern: ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$
+          example: mail@esempio.it
         appointmentRequired:
+          type: boolean
           description: Variabile booleana per indicare se necessario prendere appuntamento
-          oneOf:
-            - type: boolean
-            - type: 'null'
         website:
+          type: string
           description: Link al sito del punto di ritiro
-          oneOf:
-            - type: string
-              pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
-            - type: 'null'
+          pattern: ^(https?:\/\/)?([a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,63}(\/[^\s]*)?$
     GetRegistryResponseV2:
       type: object
       properties:
