@@ -335,29 +335,6 @@ paths:
 
 components:
   schemas:
-    BaseRegistryRequestV2:
-      type: object
-      properties:
-        externalCodes:
-          type: array
-          items:
-            type: string
-            description: Identificativo univoco dell’ufficio/postazione nella sede
-        description:
-          type: string
-          description: Descrizione del punto di ritiro.
-          example: Sportello ABC.
-          maxLength: 200
-        phoneNumbers:
-          type: array
-          description: Lista dei numeri di telefono del punto di ritiro.
-          example: [ "+390123456789","3921573273" ]
-          minItems: 1
-          maxItems: 2
-          items:
-            type: string
-            pattern: ^(?:\+39|0039)?((?:3\d{9,10})|(?:0[1-9]\d{5,9})|(?:800\d{6,7}))$
-
     CreateRegistryRequestV2:
       type: object
       required:
@@ -365,48 +342,51 @@ components:
         - description
         - phoneNumbers
         - externalCodes
-      allOf:
-        - $ref: '#/components/schemas/BaseRegistryRequestV2'
-        - type: object
-          properties:
-            openingTime:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/OpeningTime'
-            endValidity:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/EndValidity'
-            email:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Email'
-            appointmentRequired:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AppointmentRequired'
-            website:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Website'
-            address:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AddressV2'
-            startValidity:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/StartValidity'
-            partnerType:
-              type: string
-              description: Tipologia del punto di ritiro
-              pattern: "CAF"
-              default: "CAF"
+      properties:
+        externalCodes:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/ExternalCodes'
+        description:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Description'
+        phoneNumbers:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/PhoneNumbers'
+        openingTime:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/OpeningTime'
+        endValidity:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/EndValidity'
+        email:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Email'
+        appointmentRequired:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AppointmentRequired'
+        website:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Website'
+        address:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AddressV2'
+        startValidity:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/StartValidity'
+        partnerType:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/PartnerType'
 
     UpdateRegistryRequestV2:
       type: object
-      allOf:
-        - $ref: '#/components/schemas/BaseRegistryRequestV2'
-        - type: object
-          properties:
-            openingTime:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/OpeningTime'
-            endValidity:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/EndValidity'
-            email:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Email'
-            appointmentRequired:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AppointmentRequired'
-            website:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Website'
-            coordinates:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Coordinates'
+      properties:
+        externalCodes:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/ExternalCodes'
+        description:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Description'
+        phoneNumbers:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/PhoneNumbers'
+        openingTime:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/OpeningTime'
+        endValidity:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/EndValidity'
+        email:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Email'
+        appointmentRequired:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AppointmentRequired'
+        website:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Website'
+        coordinates:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Coordinates'
 
     SelectiveUpdateRegistryRequestV2:
       type: object
@@ -415,30 +395,33 @@ components:
         - description
         - phoneNumbers
         - externalCodes
-      allOf:
-        - $ref: '#/components/schemas/BaseRegistryRequestV2'
-        - type: object
-          properties:
-            address:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AddressV2'
-            openingTime:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/OpeningTime'
-              nullable: true
-            startValidity:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/StartValidity'
-              nullable: true
-            endValidity:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/EndValidity'
-              nullable: true
-            email:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Email'
-              nullable: true
-            appointmentRequired:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AppointmentRequired'
-              nullable: true
-            website:
-              $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Website'
-              nullable: true
+      properties:
+        externalCodes:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/ExternalCodes'
+        description:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Description'
+        phoneNumbers:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/PhoneNumbers'
+        address:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AddressV2'
+        openingTime:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/OpeningTime'
+          nullable: true
+        startValidity:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/StartValidity'
+          nullable: true
+        endValidity:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/EndValidity'
+          nullable: true
+        email:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Email'
+          nullable: true
+        appointmentRequired:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/AppointmentRequired'
+          nullable: true
+        website:
+          $ref: 'schemas-pn-radd-alt-registry-v2.yaml#/components/schemas/Website'
+          nullable: true
 
     GetRegistryResponseV2:
       type: object
