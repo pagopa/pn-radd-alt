@@ -26,11 +26,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -42,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.DOCUMENT_UPLOAD_ERROR;
+import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.TRANSACTION_NOT_EXIST;
 import static it.pagopa.pn.radd.utils.ZipUtils.extractPdfFromZip;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -75,6 +79,11 @@ class DocumentOperationsServiceTest {
     @Mock
     PnRaddFsuConfig pnRaddFsuConfig;
 
+    enum FailureStep {
+        GET_TRANSACTION,
+        ADD_SENDER_PA_ID
+    }
+
     @Test
     void documentDownloadACTTest() throws IOException {
         RaddTransactionEntity raddTransactionEntity = new RaddTransactionEntity();
@@ -87,11 +96,13 @@ class DocumentOperationsServiceTest {
         notificationRecipientV21Dto.setInternalId("123");
         notificationRecipientV21Dto.setDenomination("denomination");
         sentNotificationV21Dto.setRecipients(List.of(notificationRecipientV21Dto));
+        sentNotificationV21Dto.setSenderPaId("senderPaId");
 
         byte[] response = new byte[0];
         byte[] responseHex = HexFormat.of().parseHex(Hex.encodeHexString(response));
 
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV21Dto));
         when(pdfGenerator.generateCoverFile(any())).thenReturn(response);
 
@@ -99,6 +110,38 @@ class DocumentOperationsServiceTest {
                 .expectNext(responseHex)
                 .verifyComplete();
 
+    }
+
+    @ParameterizedTest(name = "{index}: Fail on {0}")
+    @EnumSource(FailureStep.class)
+    void documentDownloadACT_NonExistingTransaction_Test(FailureStep failOn) {
+        RaddTransactionEntity raddTransactionEntity = new RaddTransactionEntity();
+        raddTransactionEntity.setRecipientId("123");
+        raddTransactionEntity.setStatus(Const.STARTED);
+        raddTransactionEntity.setIun("123");
+
+        SentNotificationV25Dto sentNotificationV21Dto = new SentNotificationV25Dto();
+        NotificationRecipientV24Dto notificationRecipientV21Dto = new NotificationRecipientV24Dto();
+        notificationRecipientV21Dto.setInternalId("123");
+        notificationRecipientV21Dto.setDenomination("denomination");
+        sentNotificationV21Dto.setRecipients(List.of(notificationRecipientV21Dto));
+        sentNotificationV21Dto.setSenderPaId("senderPaId");
+
+        RaddGenericException nonExistingTransactionError = new RaddGenericException(TRANSACTION_NOT_EXIST, HttpStatus.BAD_REQUEST);
+        if (failOn.equals(FailureStep.GET_TRANSACTION)) {
+            when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.error(nonExistingTransactionError));
+        } else if (failOn.equals(FailureStep.ADD_SENDER_PA_ID)) {
+            when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+            when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.error(nonExistingTransactionError));
+            when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV21Dto));
+        } else {
+            fail("Invalid failOn value");
+        }
+
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+                .expectErrorMatches(throwable -> throwable instanceof RaddGenericException e &&
+                        e.getExceptionType() == TRANSACTION_NOT_EXIST)
+                .verify();
     }
 
     @Test
@@ -147,6 +190,7 @@ class DocumentOperationsServiceTest {
         byte[] responseHex = HexFormat.of().parseHex(Hex.encodeHexString(response));
 
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV21Dto));
         when(pdfGenerator.generateCoverFile(any())).thenReturn(response);
         when(operationsIunsDAO.getAllIunsFromTransactionId(any())).thenReturn(Flux.just(operationsIunsEntity));
@@ -175,6 +219,7 @@ class DocumentOperationsServiceTest {
         operationsIunsEntity.setTransactionId("123");
 
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV21Dto));
         when(operationsIunsDAO.getAllIunsFromTransactionId(any())).thenReturn(Flux.just(operationsIunsEntity));
 

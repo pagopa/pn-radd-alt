@@ -9,6 +9,7 @@ import static it.pagopa.pn.radd.utils.Utils.transactionIdBuilder;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Questa entità mappa la tabella pn-radd-transaction. È utilizzata sia nel caso AOR che ACT.
@@ -40,6 +41,7 @@ public class RaddTransactionEntity {
     public static final String COL_OPERATION_END_DATE = "operationEndDate";
     public static final String COL_VERSION_TOKEN = "versionToken";
     public static final String COL_ERROR_REASON = "errorReason";
+    public static final String COL_SENDER_PA_IDS = "senderPaIds";
     private static final String COL_ZIP_ATTACHMENTS = "zipAttachments";
 
     public static final String IUN_SECONDARY_INDEX = "iun-transaction-index";
@@ -49,8 +51,8 @@ public class RaddTransactionEntity {
     private static final int CX_TYPE_INDEX = 0;
     private static final int CX_ID_INDEX = 1;
 
-    private static final String COL_CREATION_TIME_STAMP = "creationTimestamp";
-    private static final String COL_UPDATE_TIME_STAMP = "updateTimestamp";
+    public static final String COL_CREATION_TIME_STAMP = "creationTimestamp";
+    public static final String COL_UPDATE_TIME_STAMP = "updateTimestamp";
 
 
 
@@ -92,6 +94,8 @@ public class RaddTransactionEntity {
     private Instant creationTimestamp;
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_UPDATE_TIME_STAMP)}))
     private Instant updateTimestamp;
+    @Getter(onMethod = @__({@DynamoDbAttribute(COL_SENDER_PA_IDS)}))
+    private Set<String> senderPaIds;
 
     public RaddTransactionEntity(String cxType, String cxId, String operationId) {
         this.setTransactionId(cxType, cxId, operationId);
