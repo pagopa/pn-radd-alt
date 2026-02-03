@@ -34,7 +34,7 @@ public class RaddAltInputEventHandler extends AbstractConsumerMessage {
     private static final String IMPORT_COMPLETED_REQUEST = "pnRaddAltImportCompletedRequestConsumer";
 
 
-    @SqsListener(value = "${pn.radd.sqs.inputQueueName}", acknowledgementMode = SqsListenerAcknowledgementMode.ALWAYS)
+    @SqsListener(value = "${pn.radd.sqs.inputQueueName}", acknowledgementMode = SqsListenerAcknowledgementMode.ON_SUCCESS)
     public void pnRaddAltInputMessage(Message<String> message) throws JsonProcessingException {
 
         initTraceId(message.getHeaders());

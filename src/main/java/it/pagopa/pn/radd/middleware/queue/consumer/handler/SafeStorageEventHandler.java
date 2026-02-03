@@ -31,7 +31,7 @@ public class SafeStorageEventHandler extends AbstractConsumerMessage {
         this.safeStorageEventService = safeStorageEventService;
     }
 
-    @SqsListener(value = "${pn.radd.sqs.safeStorageQueueName}", acknowledgementMode = SqsListenerAcknowledgementMode.ALWAYS)
+    @SqsListener(value = "${pn.radd.sqs.safeStorageQueueName}", acknowledgementMode = SqsListenerAcknowledgementMode.ON_SUCCESS)
     public void pnSafeStorageEventInboundConsumer(Message<FileDownloadResponseDto> message) {
             initTraceId(message.getHeaders());
             log.debug("Handle message from {} with content {}", PnLogger.EXTERNAL_SERVICES.PN_SAFE_STORAGE, message);
