@@ -48,16 +48,28 @@ function mapFieldsToUpdate(csvRow) {
     phoneNumbers: v => v.split('|'),
     email: v => v,
     openingTime: v => v,
+    startValidity: v => v,
     endValidity: v => v,
     externalCodes: v => v.split('|'),
     appointmentRequired: v => isBoolean(v) ? v === 'true' : v,
-    website: v => v
+    website: v => v,
+    address: () => ({
+      addressRow: csvRow.addressRow?.replace(/^"|"$/g, ''),
+      cap: csvRow.cap,
+      city: csvRow.city,
+      province: csvRow.province,
+      country: csvRow.country
+    })
   };
 
   return Object.entries(mappings).reduce((acc, [key, transform]) => {
-    const value = csvRow[key];
-    if (!isFieldEmpty(value)) {
-      acc[key] = transform(value);
+    if (key === 'address') {
+      acc[key] = transform();
+    } else {
+      const value = csvRow[key];
+      if (!isFieldEmpty(value)) {
+        acc[key] = transform(value);
+      }
     }
     return acc;
   }, {});
