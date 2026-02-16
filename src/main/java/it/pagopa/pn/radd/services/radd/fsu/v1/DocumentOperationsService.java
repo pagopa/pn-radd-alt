@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
@@ -58,19 +59,20 @@ public class DocumentOperationsService {
                         return getPdfInZipAttachment(attachmentId, raddTansactionEntity);
                     } else {
                         return checkOperationType(operationType, raddTansactionEntity)
-                                .flatMap(iun -> createCoverFile(raddTansactionEntity, iun));
+                                .flatMap(iun -> enrichSenderPaIds(iun, raddTansactionEntity))
+                                .last()
+                                .map(sentNotificationV25Dto -> checkRecipientIdAndCreatePdf(sentNotificationV25Dto, raddTansactionEntity.getRecipientId()));
                     }
                 })
                 .map(DocumentOperationsService::getHexBytes);
     }
 
-    private Mono<String> checkOperationType(String operationType, RaddTransactionEntity raddTansactionEntity) {
+    private Flux<String> checkOperationType(String operationType, RaddTransactionEntity raddTansactionEntity) {
         if (AOR.name().equals(operationType)) {
             return operationsIunsDAO.getAllIunsFromTransactionId(raddTansactionEntity.getTransactionId())
-                    .next()
                     .map(OperationsIunsEntity::getIun);
         }
-        return Mono.just(raddTansactionEntity.getIun());
+        return Flux.just(raddTansactionEntity.getIun());
     }
 
 
@@ -85,15 +87,13 @@ public class DocumentOperationsService {
         throw new ZipAttachmentNotFoundException();
     }
 
-    @NotNull
-    private Mono<byte[]> createCoverFile(RaddTransactionEntity raddTansactionEntity, String iun) {
+    Mono<SentNotificationV25Dto> enrichSenderPaIds(String iun, RaddTransactionEntity raddTransactionEntity) {
         return pnDeliveryClient.getNotifications(iun)
                 .flatMap(sentNotificationV25Dto -> {
                     String senderPaId = sentNotificationV25Dto.getSenderPaId();
-                    return raddTransactionDAO.addSenderPaId(raddTansactionEntity.getTransactionId(), raddTansactionEntity.getOperationType(), senderPaId)
+                    return raddTransactionDAO.addSenderPaId(raddTransactionEntity.getTransactionId(), raddTransactionEntity.getOperationType(), senderPaId)
                             .thenReturn(sentNotificationV25Dto);
-                })
-                .map(sentNotificationV25Dto -> checkRecipientIdAndCreatePdf(sentNotificationV25Dto, raddTansactionEntity.getRecipientId()));
+                });
     }
 
     private byte @NotNull [] checkRecipientIdAndCreatePdf(SentNotificationV25Dto sentNotificationV25Dto, String internalId) {
