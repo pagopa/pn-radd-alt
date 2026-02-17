@@ -80,7 +80,7 @@ class RegistryService {
     try {
       const finalHeaders = this.#prepareHeaders(partnerId, headers);
       const updateRequest = mapFieldsToUpdate(csvRegistry);
-      const res = await axios.patch(`${this.apiBaseUrl}/radd-bo/api/v2/registry/${locationId}`, updateRequest, { headers: finalHeaders });
+      const res = await axios.put(`${this.apiBaseUrl}/radd-bo/api/v2/registry/${locationId}`, updateRequest, { headers: finalHeaders });
       console.log(`📝 Aggiornata sede ${res.data.locationId}`);
       return { ...csvRegistry, status: 'OK', result: JSON.stringify(res.data) };
     } catch (err) {
