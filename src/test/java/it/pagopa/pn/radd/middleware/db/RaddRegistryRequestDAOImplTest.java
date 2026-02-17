@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class RaddRegistryRequestDAOImplTest extends BaseTest.WithLocalStack{
     @Autowired
-    @SpyBean
+    @MockitoSpyBean
     private RaddRegistryRequestDAO registryRequestDAO;
     private RaddRegistryRequestEntity baseEntity;
     @Autowired

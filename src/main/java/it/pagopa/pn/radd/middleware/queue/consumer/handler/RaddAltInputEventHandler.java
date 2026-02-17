@@ -1,62 +1,98 @@
 package it.pagopa.pn.radd.middleware.queue.consumer.handler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.awspring.cloud.sqs.annotation.SqsListener;
+import io.awspring.cloud.sqs.annotation.SqsListenerAcknowledgementMode;
 import it.pagopa.pn.commons.utils.MDCUtils;
+import it.pagopa.pn.radd.middleware.queue.consumer.AbstractConsumerMessage;
 import it.pagopa.pn.radd.middleware.queue.consumer.HandleEventUtils;
 import it.pagopa.pn.radd.middleware.queue.event.PnRaddAltNormalizeRequestEvent;
+import it.pagopa.pn.radd.services.radd.fsu.v1.JsonService;
 import it.pagopa.pn.radd.services.radd.fsu.v1.RegistryService;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.stereotype.Component;
 import org.springframework.messaging.Message;
 import it.pagopa.pn.radd.middleware.queue.consumer.event.ImportCompletedRequestEvent;
 
-import java.util.function.Consumer;
-@Configuration
+import static it.pagopa.pn.radd.utils.Const.IMPORT_COMPLETED;
+import static it.pagopa.pn.radd.utils.Const.RADD_NORMALIZE_REQUEST;
+
+@Component
 @CustomLog
 @RequiredArgsConstructor
-public class RaddAltInputEventHandler {
+public class RaddAltInputEventHandler extends AbstractConsumerMessage {
 
     private final RegistryService registryService;
+    private final JsonService jsonService;
+
 
     private static final String HANDLER_NORMALIZE_REQUEST = "pnRaddAltInputNormalizeRequestConsumer";
 
     private static final String IMPORT_COMPLETED_REQUEST = "pnRaddAltImportCompletedRequestConsumer";
 
-    @Bean
-    public Consumer<Message<PnRaddAltNormalizeRequestEvent.Payload>> pnRaddAltInputNormalizeRequestConsumer() {
-        return message -> {
+
+    @SqsListener(value = "${pn.radd.sqs.inputQueueName}", acknowledgementMode = SqsListenerAcknowledgementMode.ON_SUCCESS)
+    public void pnRaddAltInputMessage(Message<String> message) throws JsonProcessingException {
+
+        initTraceId(message.getHeaders());
+        String eventType = message.getHeaders().get("eventType", String.class);
+        MessageHeaders headers = message.getHeaders();
+
+        if (eventType == null) {
+            log.warn("EventType mancante nel messaggio");
+            HandleEventUtils.handleException(message.getHeaders(), new IllegalArgumentException("Missing eventType"));
+            return;
+        }
+
+        switch (eventType) {
+            case RADD_NORMALIZE_REQUEST -> {
+                log.debug(HANDLER_NORMALIZE_REQUEST + "- message: {}", message);
+                PnRaddAltNormalizeRequestEvent.Payload payload = jsonService.parse(message.getPayload(), PnRaddAltNormalizeRequestEvent.Payload.class);
+                pnRaddAltInputNormalizeRequestConsumer(payload, headers);
+            }
+            case IMPORT_COMPLETED -> {
+                log.debug(IMPORT_COMPLETED_REQUEST + "- message: {}", message);
+                ImportCompletedRequestEvent.Payload payload = jsonService.parse(message.getPayload(), ImportCompletedRequestEvent.Payload.class);
+                pnRaddAltImportCompletedRequestConsumer(payload, headers);
+            }
+            default -> {
+                log.warn("EventType NON riconosciuto: {}", eventType);
+                HandleEventUtils.handleException(message.getHeaders(), new IllegalArgumentException("Unknown eventType"));
+            }
+        }
+    }
+
+    protected void  pnRaddAltInputNormalizeRequestConsumer(PnRaddAltNormalizeRequestEvent.Payload payload, MessageHeaders headers) {
             log.logStartingProcess(HANDLER_NORMALIZE_REQUEST);
-            log.debug(HANDLER_NORMALIZE_REQUEST + "- message: {}", message);
-            MDC.put(MDCUtils.MDC_PN_CTX_REQUEST_ID, message.getPayload().getCorrelationId());
-            var monoResult = registryService.handleNormalizeRequestEvent(message.getPayload())
+
+            MDC.put(MDCUtils.MDC_PN_CTX_REQUEST_ID, payload.getCorrelationId());
+            var monoResult = registryService.handleNormalizeRequestEvent(payload)
                     .doOnSuccess(unused -> log.logEndingProcess(HANDLER_NORMALIZE_REQUEST))
                     .doOnError(throwable ->  {
                         log.logEndingProcess(HANDLER_NORMALIZE_REQUEST, false, throwable.getMessage());
-                        HandleEventUtils.handleException(message.getHeaders(), throwable);
+                        HandleEventUtils.handleException(headers, throwable);
                     });
 
             MDCUtils.addMDCToContextAndExecute(monoResult).block();
-        };
-    }
+        }
 
-    @Bean
-    public Consumer<Message<ImportCompletedRequestEvent.Payload>> pnRaddAltImportCompletedRequestConsumer() {
-        return message -> {
+
+    protected void pnRaddAltImportCompletedRequestConsumer( ImportCompletedRequestEvent.Payload payload, MessageHeaders headers) {
             log.logStartingProcess(IMPORT_COMPLETED_REQUEST);
-            log.debug(IMPORT_COMPLETED_REQUEST + "- message: {}", message);
-            MDC.put(MDCUtils.MDC_CX_ID_KEY, message.getPayload().getCxId());
-            MDC.put(MDCUtils.MDC_PN_CTX_REQUEST_ID, message.getPayload().getRequestId());
-            var monoResult = registryService.handleImportCompletedRequest(message.getPayload())
+            MDC.put(MDCUtils.MDC_CX_ID_KEY, payload.getCxId());
+            MDC.put(MDCUtils.MDC_PN_CTX_REQUEST_ID, payload.getRequestId());
+            var monoResult = registryService.handleImportCompletedRequest(payload)
                     .doOnSuccess(unused -> log.logEndingProcess(IMPORT_COMPLETED_REQUEST))
                     .doOnError(throwable ->  {
                         log.logEndingProcess(IMPORT_COMPLETED_REQUEST, false, throwable.getMessage());
-                        HandleEventUtils.handleException(message.getHeaders(), throwable);
+                        HandleEventUtils.handleException(headers, throwable);
                     });
 
             MDCUtils.addMDCToContextAndExecute(monoResult).block();
-        };
+        }
     }
 
-}
+

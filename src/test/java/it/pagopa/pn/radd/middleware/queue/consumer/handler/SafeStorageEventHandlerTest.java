@@ -1,8 +1,7 @@
-package it.pagopa.pn.radd.middleware.queue.consumer;
+package it.pagopa.pn.radd.middleware.queue.consumer.handler;
 
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.RaddGenericException;
-import it.pagopa.pn.radd.middleware.queue.consumer.handler.SafeStorageEventHandler;
 import it.pagopa.pn.radd.services.radd.fsu.v1.SafeStorageEventService;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileDownloadResponseDto;
 import org.junit.jupiter.api.Assertions;
@@ -12,7 +11,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import reactor.core.publisher.Mono;
+import java.util.Map;
 
 import static org.mockito.Mockito.*;
 
@@ -41,9 +42,11 @@ class SafeStorageEventHandlerTest {
         event.setDocumentType("DOC_TYPE");
         when(pnRaddFsuConfig.getRegistrySafeStorageDocType()).thenReturn("DOC_TYPE");
         when(message.getPayload()).thenReturn(event);
+        when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of()));
+
         when(safeStorageEventService.handleSafeStorageResponse(event)).thenReturn(Mono.empty());
 
-        safeStorageEventHandler.pnSafeStorageEventInboundConsumer().accept(message);
+        safeStorageEventHandler.pnSafeStorageEventInboundConsumer(message);
 
         verify(safeStorageEventService, times(1)).handleSafeStorageResponse(event);
     }
@@ -54,9 +57,11 @@ class SafeStorageEventHandlerTest {
         event.setDocumentType("DOC_TYPE2");
         when(pnRaddFsuConfig.getRegistrySafeStorageDocType()).thenReturn("DOC_TYPE");
         when(message.getPayload()).thenReturn(event);
+        when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of()));
+
         when(safeStorageEventService.handleSafeStorageResponse(event)).thenReturn(Mono.empty());
 
-        safeStorageEventHandler.pnSafeStorageEventInboundConsumer().accept(message);
+        safeStorageEventHandler.pnSafeStorageEventInboundConsumer(message);
 
         verify(safeStorageEventService, times(0)).handleSafeStorageResponse(event);
     }
@@ -68,7 +73,10 @@ class SafeStorageEventHandlerTest {
         event.setDocumentType("DOC_TYPE");
         when(pnRaddFsuConfig.getRegistrySafeStorageDocType()).thenReturn("DOC_TYPE");
         when(message.getPayload()).thenReturn(event);
+        when(message.getHeaders()).thenReturn(new MessageHeaders(Map.of()));
+
+
         when(safeStorageEventService.handleSafeStorageResponse(event)).thenReturn(Mono.error(mock(RaddGenericException.class)));
-        Assertions.assertThrows(RaddGenericException.class, () -> safeStorageEventHandler.pnSafeStorageEventInboundConsumer().accept(message));
+        Assertions.assertThrows(RaddGenericException.class, () -> safeStorageEventHandler.pnSafeStorageEventInboundConsumer(message));
     }
 }

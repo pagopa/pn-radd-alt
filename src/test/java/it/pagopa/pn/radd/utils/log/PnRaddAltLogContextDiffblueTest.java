@@ -10,6 +10,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.TransactionResponse
 import java.util.ArrayList;
 import java.util.List;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class PnRaddAltLogContextDiffblueTest {
@@ -184,7 +185,7 @@ class PnRaddAltLogContextDiffblueTest {
                 .addResponseStatus(new ActInquiryResponseStatus().toString());
 
         // Assert
-        assertEquals("status=ActInquiryResponseStatus(code=null, message=null)",
+        assertEquals("status=class ActInquiryResponseStatus {\n"+"    code: null\n"+"    message: null\n"+"}",
                 actualAddResponseStatusResult.logContext());
         assertSame(pnRaddAltLogContext, actualAddResponseStatusResult);
     }
@@ -200,7 +201,7 @@ class PnRaddAltLogContextDiffblueTest {
                 .addResponseStatus(new ResponseStatus().toString());
 
         // Assert
-        assertEquals("status=ResponseStatus(code=null, message=null)", actualAddResponseStatusResult.logContext());
+        assertEquals("status=class ResponseStatus {\n"+"    code: null\n"+"    message: null\n"+"}", actualAddResponseStatusResult.logContext());
         assertSame(pnRaddAltLogContext, actualAddResponseStatusResult);
     }
 
@@ -214,8 +215,8 @@ class PnRaddAltLogContextDiffblueTest {
         PnRaddAltLogContext actualAddResponseStatusResult = pnRaddAltLogContext
                 .addResponseStatus(new TransactionResponseStatus().toString());
 
-        // Assert
-        assertEquals("status=TransactionResponseStatus(code=null, message=null)",
+
+        assertEquals("status=class TransactionResponseStatus {\n"+"    code: null\n"+"    message: null\n"+"}",
                 actualAddResponseStatusResult.logContext());
         assertSame(pnRaddAltLogContext, actualAddResponseStatusResult);
     }
