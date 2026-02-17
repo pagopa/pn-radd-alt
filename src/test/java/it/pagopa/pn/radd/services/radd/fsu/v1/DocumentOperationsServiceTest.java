@@ -224,6 +224,12 @@ class DocumentOperationsServiceTest {
                 .expectNext(responseHex)
                 .verifyComplete();
 
+        // verify that multi-notification enrichment logic is executed once per IUN/notification
+        for (int i = 0; i < operationsIunsEntities.size(); i++) {
+            verify(pnDeliveryClient, times(1)).getNotifications(operationsIunsEntities.get(i).getIun());
+            verify(raddTransactionDAOImpl, times(1)).addSenderPaId(any(), any(), eq(notifications.get(i).getSenderPaId()));
+        }
+
     }
 
     private List<SentNotificationV25Dto> createNotifications(String recipientId, int max) {
