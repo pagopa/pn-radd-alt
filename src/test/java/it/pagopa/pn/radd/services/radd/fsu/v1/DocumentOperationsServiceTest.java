@@ -39,18 +39,14 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HexFormat;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.DOCUMENT_UPLOAD_ERROR;
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.TRANSACTION_NOT_EXIST;
 import static it.pagopa.pn.radd.utils.ZipUtils.extractPdfFromZip;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @Slf4j
@@ -199,6 +195,66 @@ class DocumentOperationsServiceTest {
                 .expectNext(responseHex)
                 .verifyComplete();
 
+    }
+
+    @Test
+    void documentDownloadAORMoreNotificationsTest() throws IOException {
+        String recipientId = "recipientId";
+
+        RaddTransactionEntity raddTransactionEntity = new RaddTransactionEntity();
+        raddTransactionEntity.setRecipientId(recipientId);
+        raddTransactionEntity.setStatus(Const.STARTED);
+        raddTransactionEntity.setIun("123");
+
+        List<SentNotificationV25Dto> notifications = createNotifications(recipientId, 2);
+        List<OperationsIunsEntity> operationsIunsEntities = createOperationsIunsEntities(2);
+
+        byte[] response = new byte[0];
+        byte[] responseHex = HexFormat.of().parseHex(Hex.encodeHexString(response));
+
+        when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        when(pdfGenerator.generateCoverFile(any())).thenReturn(response);
+        for (int i = 0; i < notifications.size(); i++) {
+            when(pnDeliveryClient.getNotifications(operationsIunsEntities.get(i).getIun())).thenReturn(Mono.just(notifications.get(i)));
+            when(raddTransactionDAOImpl.addSenderPaId(any(), any(), eq(notifications.get(i).getSenderPaId()))).thenReturn(Mono.empty());
+        }
+        when(operationsIunsDAO.getAllIunsFromTransactionId(any())).thenReturn(Flux.fromIterable(operationsIunsEntities));
+
+        StepVerifier.create(documentOperationsService.documentDownload("AOR", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+                .expectNext(responseHex)
+                .verifyComplete();
+
+        // verify that multi-notification enrichment logic is executed once per IUN/notification
+        for (int i = 0; i < operationsIunsEntities.size(); i++) {
+            verify(pnDeliveryClient, times(1)).getNotifications(operationsIunsEntities.get(i).getIun());
+            verify(raddTransactionDAOImpl, times(1)).addSenderPaId(any(), any(), eq(notifications.get(i).getSenderPaId()));
+        }
+
+    }
+
+    private List<SentNotificationV25Dto> createNotifications(String recipientId, int max) {
+        List<SentNotificationV25Dto> notifications = new ArrayList<>();
+        for (int i = 0; i < max; i++) {
+            SentNotificationV25Dto notification = new SentNotificationV25Dto();
+            NotificationRecipientV24Dto recipient = new NotificationRecipientV24Dto();
+            recipient.setInternalId(recipientId);
+            recipient.setDenomination("denomination" + i);
+            notification.setRecipients(List.of(recipient));
+            notification.setSenderPaId("senderPaId" + i);
+            notifications.add(notification);
+        }
+        return notifications;
+    }
+
+    private List<OperationsIunsEntity> createOperationsIunsEntities(int max) {
+        List<OperationsIunsEntity> operationsIunsEntities = new ArrayList<>();
+        for (int i = 0; i < max; i++) {
+            OperationsIunsEntity operationsIunsEntity = new OperationsIunsEntity();
+            operationsIunsEntity.setIun("IUN_" + i);
+            operationsIunsEntity.setTransactionId("transactionId" + i);
+            operationsIunsEntities.add(operationsIunsEntity);
+        }
+        return operationsIunsEntities;
     }
 
     @Test
