@@ -54,14 +54,15 @@ public class DocumentOperationsService {
     public Mono<byte[]> documentDownload(String operationType, String operationId, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String attachmentId) {
         return validateOperationTypeAndOperationId(operationType, operationId)
                 .flatMap(isValid -> checkTransactionIsAlreadyExistsInCompletedErrorOrAborted(transactionIdBuilder(xPagopaPnCxType, xPagopaPnCxId, operationId), operationType))
-                .flatMap(raddTansactionEntity -> {
+                .flatMap(raddTransactionEntity -> {
                     if (StringUtils.hasText(attachmentId)) {
-                        return getPdfInZipAttachment(attachmentId, raddTansactionEntity);
+                        return getPdfInZipAttachment(attachmentId, raddTransactionEntity);
                     } else {
-                        return checkOperationType(operationType, raddTansactionEntity)
-                                .flatMap(iun -> enrichSenderPaIds(iun, raddTansactionEntity))
-                                .last()
-                                .map(sentNotificationV25Dto -> checkRecipientIdAndCreatePdf(sentNotificationV25Dto, raddTansactionEntity.getRecipientId()));
+                        return checkOperationType(operationType, raddTransactionEntity)
+                                .concatMap(iun -> enrichSenderPaIds(iun, raddTransactionEntity))
+                                .takeLast(1)
+                                .singleOrEmpty()
+                                .map(sentNotificationV25Dto -> checkRecipientIdAndCreatePdf(sentNotificationV25Dto, raddTransactionEntity.getRecipientId()));
                     }
                 })
                 .map(DocumentOperationsService::getHexBytes);
@@ -87,7 +88,7 @@ public class DocumentOperationsService {
         throw new ZipAttachmentNotFoundException();
     }
 
-    Mono<SentNotificationV25Dto> enrichSenderPaIds(String iun, RaddTransactionEntity raddTransactionEntity) {
+    private Mono<SentNotificationV25Dto> enrichSenderPaIds(String iun, RaddTransactionEntity raddTransactionEntity) {
         return pnDeliveryClient.getNotifications(iun)
                 .flatMap(sentNotificationV25Dto -> {
                     String senderPaId = sentNotificationV25Dto.getSenderPaId();

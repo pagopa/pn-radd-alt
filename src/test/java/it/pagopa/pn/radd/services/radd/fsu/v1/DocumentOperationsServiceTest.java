@@ -198,7 +198,7 @@ class DocumentOperationsServiceTest {
     }
 
     @Test
-    void documentDownloadAOR_MoreNotifications_Test() throws IOException {
+    void documentDownloadAORMoreNotificationsTest() throws IOException {
         String recipientId = "recipientId";
 
         RaddTransactionEntity raddTransactionEntity = new RaddTransactionEntity();
