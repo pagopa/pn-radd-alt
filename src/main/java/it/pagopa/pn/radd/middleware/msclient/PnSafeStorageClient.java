@@ -66,7 +66,7 @@ public class PnSafeStorageClient extends BaseClient {
         }
         log.debug("Req params : {}", fileKey);
         log.trace("GET FILE TICK {}", new Date().getTime());
-        return fileDownloadApi.getFile(fileKey, this.pnRaddFsuConfig.getSafeStorageCxId(), false)
+        return fileDownloadApi.getFile(fileKey, this.pnRaddFsuConfig.getSafeStorageCxId(), false, false)
                 .retryWhen(
                         Retry.backoff(2, Duration.ofMillis(500))
                                 .filter(throwable -> throwable instanceof TimeoutException || throwable instanceof ConnectException)
