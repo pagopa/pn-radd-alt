@@ -43,6 +43,7 @@ public class RaddTransactionEntity {
     public static final String COL_ERROR_REASON = "errorReason";
     public static final String COL_SENDER_PA_IDS = "senderPaIds";
     private static final String COL_ZIP_ATTACHMENTS = "zipAttachments";
+    private static final String COL_DOC_ATTACHMENTS = "docAttachments";
 
     public static final String IUN_SECONDARY_INDEX = "iun-transaction-index";
     public static final String RECIPIENT_SECONDARY_INDEX = "recipient-transaction-index";
@@ -90,6 +91,8 @@ public class RaddTransactionEntity {
     private String errorReason;
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_ZIP_ATTACHMENTS)}))
     private Map<String, String> zipAttachments;
+    @Getter(onMethod = @__({@DynamoDbAttribute(COL_DOC_ATTACHMENTS)}))
+    private Map<String, String> docAttachments;
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_CREATION_TIME_STAMP)}))
     private Instant creationTimestamp;
     @Getter(onMethod = @__({@DynamoDbAttribute(COL_UPDATE_TIME_STAMP)}))
