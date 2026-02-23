@@ -15,11 +15,18 @@
       <strong>${denomination}</strong>
     </p>
 
-    <p class="cost-section">
+    <p>
       <strong>Il servizio di stampa e ritiro di questo documento costa 1,40 €</strong>
       (pi&ugrave; IVA se prevista). Eventuali spese per servizi aggiuntivi resi
       dall&apos;esercente non sono incluse nel servizio di stampa e ritiro.
     </p>
+
+    <#if numberOfPages??>
+      <p class="pages-section">
+        Totale pagine:<br />
+        <strong>${numberOfPages}</strong>
+      </p>
+    </#if>
 
     <p class="disclaimer">
       Se hai dubbi sul contenuto degli atti o sull&apos;eventuale pagamento
