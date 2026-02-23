@@ -100,7 +100,7 @@ class DocumentOperationsServiceTest {
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
         when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV21Dto));
-        when(pdfGenerator.generateCoverFile(any())).thenReturn(response);
+        when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
 
         StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
                 .expectNext(responseHex)
@@ -188,7 +188,7 @@ class DocumentOperationsServiceTest {
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
         when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV21Dto));
-        when(pdfGenerator.generateCoverFile(any())).thenReturn(response);
+        when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
         when(operationsIunsDAO.getAllIunsFromTransactionId(any())).thenReturn(Flux.just(operationsIunsEntity));
 
         StepVerifier.create(documentOperationsService.documentDownload("AOR", "ACT", CxTypeAuthFleet.PF, "cxId", null))
@@ -213,7 +213,7 @@ class DocumentOperationsServiceTest {
         byte[] responseHex = HexFormat.of().parseHex(Hex.encodeHexString(response));
 
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
-        when(pdfGenerator.generateCoverFile(any())).thenReturn(response);
+        when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
         for (int i = 0; i < notifications.size(); i++) {
             when(pnDeliveryClient.getNotifications(operationsIunsEntities.get(i).getIun())).thenReturn(Mono.just(notifications.get(i)));
             when(raddTransactionDAOImpl.addSenderPaId(any(), any(), eq(notifications.get(i).getSenderPaId()))).thenReturn(Mono.empty());
@@ -255,6 +255,176 @@ class DocumentOperationsServiceTest {
             operationsIunsEntities.add(operationsIunsEntity);
         }
         return operationsIunsEntities;
+    }
+
+    @Test
+    void calculateTotalPages_withValidAttachments_returnsSumPlusOne() {
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setDocAttachments(Map.of("key1", 3, "key2", 5, "key3", 1));
+        entity.setZipAttachments(Map.of("zipKey", "https://some-url"));
+
+        Integer result = documentOperationsService.calculateTotalPages(entity);
+
+        assertEquals(11, result); // 3 + 5 + 1 + 1 (frontespizio) + 1 (file zip)
+    }
+
+    @Test
+    void calculateTotalPages_withValidAttachmentsAndNoZip_returnsSumPlusFrontespizioOnly() {
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setDocAttachments(Map.of("key1", 3, "key2", 5, "key3", 1));
+        // no zipAttachments set
+
+        Integer result = documentOperationsService.calculateTotalPages(entity);
+
+        assertEquals(10, result); // 3 + 5 + 1 + 1 (frontespizio only, no zip)
+    }
+
+    @Test
+    void calculateTotalPages_withNullDocAttachments_returnsNull() {
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setDocAttachments(null);
+
+        assertNull(documentOperationsService.calculateTotalPages(entity));
+    }
+
+    @Test
+    void calculateTotalPages_withEmptyDocAttachments_returnsNull() {
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setDocAttachments(Collections.emptyMap());
+
+        assertNull(documentOperationsService.calculateTotalPages(entity));
+    }
+
+    @Test
+    void calculateTotalPages_withSomeNullPages_returnsNull() {
+        Map<String, Integer> attachments = new HashMap<>();
+        attachments.put("key1", 3);
+        attachments.put("key2", null);
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setDocAttachments(attachments);
+
+        assertNull(documentOperationsService.calculateTotalPages(entity));
+    }
+
+    @Test
+    void calculateTotalPages_withZeroPages_returnsNull() {
+        Map<String, Integer> attachments = new HashMap<>();
+        attachments.put("key1", 3);
+        attachments.put("key2", 0);
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setDocAttachments(attachments);
+
+        assertNull(documentOperationsService.calculateTotalPages(entity));
+    }
+
+    @Test
+    void calculateTotalPages_withNegativePages_returnsNull() {
+        Map<String, Integer> attachments = new HashMap<>();
+        attachments.put("key1", 3);
+        attachments.put("key2", -1);
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setDocAttachments(attachments);
+
+        assertNull(documentOperationsService.calculateTotalPages(entity));
+    }
+
+    @Test
+    void documentDownloadACT_withDocAttachments_generatesCoverWithPageCount() throws IOException {
+        RaddTransactionEntity raddTransactionEntity = new RaddTransactionEntity();
+        raddTransactionEntity.setRecipientId("123");
+        raddTransactionEntity.setStatus(Const.STARTED);
+        raddTransactionEntity.setIun("123");
+
+        Map<String, Integer> docAttachments = new HashMap<>();
+        docAttachments.put("key1", 3);
+        docAttachments.put("key2", 5);
+        raddTransactionEntity.setDocAttachments(docAttachments);
+        raddTransactionEntity.setZipAttachments(Map.of("zipKey", "https://some-url"));
+
+        SentNotificationV25Dto sentNotificationV25Dto = new SentNotificationV25Dto();
+        NotificationRecipientV24Dto recipient = new NotificationRecipientV24Dto();
+        recipient.setInternalId("123");
+        recipient.setDenomination("denomination");
+        sentNotificationV25Dto.setRecipients(List.of(recipient));
+        sentNotificationV25Dto.setSenderPaId("senderPaId");
+
+        byte[] response = new byte[0];
+        byte[] responseHex = HexFormat.of().parseHex(Hex.encodeHexString(response));
+
+        when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
+        when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV25Dto));
+        when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
+
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+                .expectNext(responseHex)
+                .verifyComplete();
+
+        verify(pdfGenerator).generateCoverFile("denomination", 10);
+    }
+
+    @Test
+    void documentDownloadACT_withNullDocAttachments_generatesCoverWithoutPageCount() throws IOException {
+        RaddTransactionEntity raddTransactionEntity = new RaddTransactionEntity();
+        raddTransactionEntity.setRecipientId("123");
+        raddTransactionEntity.setStatus(Const.STARTED);
+        raddTransactionEntity.setIun("123");
+        raddTransactionEntity.setDocAttachments(null);
+
+        SentNotificationV25Dto sentNotificationV25Dto = new SentNotificationV25Dto();
+        NotificationRecipientV24Dto recipient = new NotificationRecipientV24Dto();
+        recipient.setInternalId("123");
+        recipient.setDenomination("denomination");
+        sentNotificationV25Dto.setRecipients(List.of(recipient));
+        sentNotificationV25Dto.setSenderPaId("senderPaId");
+
+        byte[] response = new byte[0];
+        byte[] responseHex = HexFormat.of().parseHex(Hex.encodeHexString(response));
+
+        when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
+        when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV25Dto));
+        when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
+
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+                .expectNext(responseHex)
+                .verifyComplete();
+
+        verify(pdfGenerator).generateCoverFile("denomination", null);
+    }
+
+    @Test
+    void documentDownloadACT_withPartiallyNullPages_generatesCoverWithoutPageCount() throws IOException {
+        Map<String, Integer> partialAttachments = new HashMap<>();
+        partialAttachments.put("key1", 3);
+        partialAttachments.put("key2", null);
+
+        RaddTransactionEntity raddTransactionEntity = new RaddTransactionEntity();
+        raddTransactionEntity.setRecipientId("123");
+        raddTransactionEntity.setStatus(Const.STARTED);
+        raddTransactionEntity.setIun("123");
+        raddTransactionEntity.setDocAttachments(partialAttachments);
+
+        SentNotificationV25Dto sentNotificationV25Dto = new SentNotificationV25Dto();
+        NotificationRecipientV24Dto recipient = new NotificationRecipientV24Dto();
+        recipient.setInternalId("123");
+        recipient.setDenomination("denomination");
+        sentNotificationV25Dto.setRecipients(List.of(recipient));
+        sentNotificationV25Dto.setSenderPaId("senderPaId");
+
+        byte[] response = new byte[0];
+        byte[] responseHex = HexFormat.of().parseHex(Hex.encodeHexString(response));
+
+        when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
+        when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV25Dto));
+        when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
+
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+                .expectNext(responseHex)
+                .verifyComplete();
+
+        verify(pdfGenerator).generateCoverFile("denomination", null);
     }
 
     @Test

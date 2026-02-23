@@ -38,10 +38,10 @@ class LegalFactPdfGeneratorTest {
     }
 
     @Test
-    void generateNotificationReceivedLegalFactTest() throws IOException {
+    void generateNotificationReceivedLegalFactTest() {
         Path filePath = Paths.get(TEST_DIR_NAME + File.separator + "test_ReceivedLegalFact.pdf");
         Assertions.assertDoesNotThrow(() -> Files.write(filePath,
-                pdfUtils.generateCoverFile("denomination")));
+                pdfUtils.generateCoverFile("denomination", null)));
         System.out.print("*** Received pdf successfully created at: " + filePath);
     }
     private ObjectMapper buildObjectMapper() {
