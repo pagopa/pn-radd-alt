@@ -10,11 +10,11 @@ import it.pagopa.pn.radd.middleware.db.RaddTransactionDAO;
 import it.pagopa.pn.radd.middleware.db.entities.OperationsIunsEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity;
 import it.pagopa.pn.radd.pojo.RaddTransactionStatusEnum;
+import it.pagopa.pn.radd.pojo.TransactionData;
 import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.DateUtils;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -267,6 +267,16 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
                 .filter(updated -> updated.getZipAttachments().equals(entity.getZipAttachments()))
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_UPDATE_STATUS)));
+    }
+
+    @Override
+    public Mono<RaddTransactionEntity> updateDocAttachments(RaddTransactionEntity entity, TransactionData transactionData) {
+        entity.setDocAttachments(transactionData.getDocAttachments());
+        entity.setUpdateTimestamp(Instant.now());
+        return this.updateItem(entity)
+                   .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
+                   .filter(updated -> updated.getDocAttachments().equals(entity.getDocAttachments()))
+                   .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_UPDATE_STATUS)));
     }
 
     @Override

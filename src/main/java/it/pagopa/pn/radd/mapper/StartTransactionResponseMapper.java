@@ -63,6 +63,14 @@ public class StartTransactionResponseMapper {
         return downloadUrlList;
     }
 
+    @NotNull
+    public static DownloadUrl getDownloadUrl(String url) {
+            DownloadUrl downloadUrlItem = new DownloadUrl();
+            downloadUrlItem.setUrl(url);
+            downloadUrlItem.setNeedAuthentication(false);
+            downloadUrlItem.setDocumentType(DocumentTypeEnum.AAR.name());
+        return downloadUrlItem;
+    }
 
     public static StartTransactionResponse fromException(RaddGenericException ex) {
         StartTransactionResponse response = new StartTransactionResponse();
