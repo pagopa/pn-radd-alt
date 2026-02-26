@@ -131,7 +131,7 @@ public class DocumentOperationsService {
             }
             attachmentPages += entry.getValue();
         }
-        if (!CollectionUtils.isEmpty(entity.getZipAttachments())) attachmentPages++; //+1 for the zip file
+        if (!CollectionUtils.isEmpty(entity.getZipAttachments())) attachmentPages += entity.getZipAttachments().size(); //+1 for every zip file
         return attachmentPages;
     }
 
