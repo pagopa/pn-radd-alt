@@ -5,6 +5,8 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.DownloadUrl;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.pojo.DocumentTypeEnum;
+import it.pagopa.pn.radd.services.radd.fsu.v1.dto.DocumentInfoDto;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 
@@ -73,6 +75,15 @@ public class Utils {
         downloadUrl.setDocumentType(documentType);
 
         return downloadUrl;
+    }
+
+    public static DocumentInfoDto getCoverFileDocumentInfo(String pnRaddAltBasepath, String operationType, String operationId) {
+        DownloadUrl downloadUrl = getDocumentDownloadUrl(pnRaddAltBasepath, operationType, operationId, null, DocumentTypeEnum.COVER_FILE.name());
+        return DocumentInfoDto.builder()
+                              .fileKey(null)
+                              .numberOfPages(null)
+                              .downloadUrl(downloadUrl)
+                              .build();
     }
 
     public static String getFileKeyFromPresignedUrl(String presignedUrl) {

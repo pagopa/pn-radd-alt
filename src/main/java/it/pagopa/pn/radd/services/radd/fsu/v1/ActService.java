@@ -19,6 +19,7 @@ import it.pagopa.pn.radd.middleware.msclient.PnDeliveryClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryPushClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
 import it.pagopa.pn.radd.pojo.*;
+import it.pagopa.pn.radd.services.radd.fsu.v1.dto.DocumentInfoDto;
 import it.pagopa.pn.radd.utils.DateUtils;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
 import it.pagopa.pn.radd.utils.Utils;
@@ -36,10 +37,7 @@ import reactor.core.publisher.ParallelFlux;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -220,13 +218,21 @@ public class ActService extends BaseService {
     @NotNull
     private Mono<StartTransactionResponse> retrieveDocumentsAndAttachments(ActStartTransactionRequest request, Tuple2<TransactionData, SentNotificationV25Dto> transactionAndSentNotification) {
         log.debug("Retrieving document and attachments");
-        Flux<DownloadUrl> urlDocuments = getUrlDoc(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
-        Flux<DownloadUrl> urlAttachments = getUrlsAttachments(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
-        Flux<DownloadUrl> urlLegalFacts = legalFact(transactionAndSentNotification.getT1());
-        return ParallelFlux.from(urlDocuments, urlAttachments, urlLegalFacts)
-                .sequential()
-                .collectList()
-                .map(resultList -> StartTransactionResponseMapper.fromResult(resultList, OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath(), pnRaddFsuConfig.getDocumentTypeEnumFilter()));
+        Flux<DocumentInfoDto> infoDocuments = getUrlDoc(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
+        Flux<DocumentInfoDto> infoAttachments = getUrlsAttachments(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
+        Flux<DocumentInfoDto> infoLegalFacts = legalFact(transactionAndSentNotification.getT1());
+
+        return ParallelFlux.from(infoDocuments, infoAttachments, infoLegalFacts)
+                           .sequential()
+                           .filter(documentInfoDto -> !pnRaddFsuConfig.getDocumentTypeEnumFilter().contains(DocumentTypeEnum.valueOf(documentInfoDto.getDownloadUrl().getDocumentType())))
+                           .map(documentInfoDto -> {
+                                    documentInfoDto.getDownloadUrl().setDocumentType(DocumentTypeEnum.valueOf(documentInfoDto.getDownloadUrl().getDocumentType()).getValue());
+                                    return documentInfoDto;
+                           })
+                           .collectList()
+                           .flatMap(resultList -> updateDocAttachments(transactionAndSentNotification.getT1(), resultList))
+                           .map(documentInfoDtos -> documentInfoDtos.stream().map(DocumentInfoDto::getDownloadUrl).collect(Collectors.toCollection( ArrayList::new)))
+                           .map(resultList -> StartTransactionResponseMapper.fromResult(resultList, OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath(), pnRaddFsuConfig.getDocumentTypeEnumFilter()));
     }
 
     @NotNull
@@ -321,7 +327,7 @@ public class ActService extends BaseService {
                 );
     }
 
-    private Flux<DownloadUrl> legalFact(TransactionData transaction) {
+    private Flux<DocumentInfoDto> legalFact(TransactionData transaction) {
         return pnDeliveryPushClient.getNotificationLegalFacts(transaction.getEnsureRecipientId(), transaction.getIun())
                 .filter(filterLegalFacts(transaction))
                 .flatMap(item ->
@@ -334,7 +340,18 @@ public class ActService extends BaseService {
                 .collectList()
                 .flatMap(legalFactInfoList -> updateZipAttachments(transaction, legalFactInfoList))
                 .flatMapMany(Flux::fromIterable)
-                .map(legalFactInfo -> getDownloadUrl(transaction, legalFactInfo))
+                .map(legalFactInfo -> {
+                    DownloadUrl downloadUrl = getDownloadUrl(transaction, legalFactInfo);
+                    String fileKey = legalFactInfo.getKey();
+                    Integer numberOfPages = legalFactInfo.getNumberOfPages();
+
+                    return DocumentInfoDto.builder()
+                            .fileKey(fileKey)
+                            .numberOfPages(numberOfPages)
+                            .downloadUrl(downloadUrl)
+                            .build();
+
+                })
                 .doOnError(throwable -> log.error(throwable.getMessage()));
     }
 
@@ -383,6 +400,7 @@ public class ActService extends BaseService {
             legalFactInfo.setKey(item.getLegalFactsId().getKey());
         }
         legalFactInfo.setUrl(legalFact.getUrl());
+        legalFactInfo.setNumberOfPages(legalFactInfo.getNumberOfPages());
         legalFactInfo.setContentType(legalFact.getContentType());
         legalFactInfo.setCategory(item.getLegalFactsId().getCategory());
         return legalFactInfo;
@@ -408,6 +426,19 @@ public class ActService extends BaseService {
     }
 
     @NotNull
+    private Mono<List<DocumentInfoDto>> updateDocAttachments(TransactionData transaction, List<DocumentInfoDto> documentInfoList) {
+        Map<String, Integer> docAttachments = documentInfoList
+                .stream()
+                .filter(documentInfoDto -> CONTENT_TYPE_PDF.equals(documentInfoDto.getContentType()))
+                .collect(Collectors.toMap(DocumentInfoDto::getFileKey, DocumentInfoDto::getNumberOfPages));
+        transaction.setDocAttachments(docAttachments);
+
+        return raddTransactionDAO.getTransaction(transaction.getTransactionId(), OperationTypeEnum.ACT)
+                                 .flatMap(entity -> raddTransactionDAO.updateDocAttachments(entity, docAttachments))
+                                 .thenReturn(documentInfoList);
+    }
+
+    @NotNull
     private static DownloadUrl getDownloadUrl(String url, String documentType) {
         DownloadUrl downloadUrl = new DownloadUrl();
         downloadUrl.setUrl(url);
@@ -416,12 +447,24 @@ public class ActService extends BaseService {
         return downloadUrl;
     }
 
-    private Flux<DownloadUrl> getUrlDoc(TransactionData transaction, SentNotificationV25Dto sentDTO) {
+    private Flux<DocumentInfoDto> getUrlDoc(TransactionData transaction, SentNotificationV25Dto sentDTO) {
         return Flux.fromStream(sentDTO.getDocuments().stream())
                 .flatMap(doc -> this.pnDeliveryClient.getPresignedUrlDocument(transaction.getIun(), doc.getDocIdx(), transaction.getEnsureRecipientId())
                         .map(notificationMetadata -> new NotificationAttachment(DOCUMENT, notificationMetadata))
-                        .mapNotNull(ActService::getNotificationAttachmentUrl))
-                .map(url -> getDownloadUrl(url, DocumentTypeEnum.DOCUMENT.name()));
+                        .map(attachment ->{
+                            Integer numberOfPages = attachment.getNotificationMetadata().getNumberOfPages();
+                            String fileKey = doc.getRef().getKey();
+
+                            String url = getNotificationAttachmentUrl(attachment);
+                            DownloadUrl downloadUrl = getDownloadUrl(url, DocumentTypeEnum.DOCUMENT.name());
+
+                            return DocumentInfoDto.builder()
+                                                  .fileKey(fileKey)
+                                                  .numberOfPages(numberOfPages)
+                                                  .downloadUrl(downloadUrl)
+                                                  .contentType(attachment.getNotificationMetadata().getContentType())
+                                                  .build();
+                        }));
     }
 
     @Nullable
@@ -441,22 +484,57 @@ public class ActService extends BaseService {
         }
     }
 
-    private Flux<DownloadUrl> getUrlsAttachments(TransactionData transactionData, SentNotificationV25Dto sentDTO) {
-        if (sentDTO.getRecipients().isEmpty())
+    private Flux<DocumentInfoDto> getUrlsAttachments(TransactionData transactionData, SentNotificationV25Dto sentDTO) {
+        if (sentDTO.getRecipients().isEmpty()) {
             return Flux.empty();
+        }
+
         return Flux.fromStream(sentDTO.getRecipients().stream())
-                .filter(recipient -> recipient.getInternalId().equalsIgnoreCase(transactionData.getEnsureRecipientId()))
-                .filter(recipient -> recipient.getPayments() != null)
-                .doOnError(e -> log.error(e.getMessage()))
-                .flatMap(notificationRecipientV21Dto -> Flux.concat
-                        (Flux.fromStream(notificationRecipientV21Dto.getPayments().stream())
-                                        .index()
-                                        .flatMap(item -> getPagoPAAttachmentDownloadMetadataResponse(transactionData, item.getT2(), Math.toIntExact(item.getT1()))),
-                                Flux.fromStream(notificationRecipientV21Dto.getPayments().stream())
-                                        .index()
-                                        .flatMap(item -> getF24AttachmentDownloadMetadataResponseDto(transactionData, item.getT2(), Math.toIntExact(item.getT1())))))
-                .mapNotNull(ActService::getNotificationAttachmentUrl)
-                .map(url -> getDownloadUrl(url, DocumentTypeEnum.ATTACHMENT.name()));
+                   .filter(recipient -> recipient.getInternalId().equalsIgnoreCase(transactionData.getEnsureRecipientId()))
+                   .filter(recipient -> recipient.getPayments() != null)
+                   .doOnError(e -> log.error(e.getMessage()))
+                   .flatMap(notificationRecipientV21Dto -> Flux.concat(
+                           Flux.fromStream(notificationRecipientV21Dto.getPayments().stream())
+                               .index() // Tuple2<Long, PaymentDto>
+                               .flatMap(item -> {
+                                   long index = item.getT1();
+                                   var payment = item.getT2();
+
+                                   return getPagoPAAttachmentDownloadMetadataResponse(transactionData, payment, Math.toIntExact(index))
+                                           .map(attachment -> {
+                                               String fileKey = sentDTO.getDocuments().get(Math.toIntExact(index)).getRef().getKey();
+                                               Integer numberOfPages = attachment.getNotificationMetadata().getNumberOfPages();
+                                               String url = getNotificationAttachmentUrl(attachment);
+                                               DownloadUrl downloadUrl = getDownloadUrl(url, DocumentTypeEnum.ATTACHMENT.name());
+
+                                               return DocumentInfoDto.builder()
+                                                                     .fileKey(fileKey)
+                                                                     .numberOfPages(numberOfPages)
+                                                                     .downloadUrl(downloadUrl)
+                                                                     .build();
+                                           });
+                               }),
+                           Flux.fromStream(notificationRecipientV21Dto.getPayments().stream())
+                               .index()
+                               .flatMap(item -> {
+                                   long index = item.getT1();
+                                   var payment = item.getT2();
+
+                                   return getF24AttachmentDownloadMetadataResponseDto(transactionData, payment, Math.toIntExact(index))
+                                           .map(attachment -> {
+                                               String fileKey = sentDTO.getDocuments().get(Math.toIntExact(index)).getRef().getKey();
+                                               Integer numberOfPages = attachment.getNotificationMetadata().getNumberOfPages();
+                                               String url = getNotificationAttachmentUrl(attachment);
+                                               DownloadUrl downloadUrl = getDownloadUrl(url, DocumentTypeEnum.ATTACHMENT.name());
+
+                                               return DocumentInfoDto.builder()
+                                                                     .fileKey(fileKey)
+                                                                     .numberOfPages(numberOfPages)
+                                                                     .downloadUrl(downloadUrl)
+                                                                     .build();
+                                           });
+                               })
+                                                                      ));
     }
 
     private Mono<NotificationAttachment> getPagoPAAttachmentDownloadMetadataResponse(TransactionData transactionData, NotificationPaymentItemDto item, Integer attachmentIdx) {
