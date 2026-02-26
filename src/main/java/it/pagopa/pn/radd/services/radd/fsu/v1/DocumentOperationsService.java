@@ -64,7 +64,7 @@ public class DocumentOperationsService {
                                 .concatMap(iun -> enrichSenderPaIds(iun, raddTransactionEntity))
                                 .takeLast(1)
                                 .singleOrEmpty()
-                                .map(sentNotificationV25Dto -> checkRecipientIdAndCreatePdf(sentNotificationV25Dto, raddTransactionEntity.getRecipientId(), raddTransactionEntity));
+                                .map(sentNotificationV25Dto -> checkRecipientIdAndCreatePdf(sentNotificationV25Dto, raddTransactionEntity));
                     }
                 })
                 .map(DocumentOperationsService::getHexBytes);
@@ -99,9 +99,9 @@ public class DocumentOperationsService {
                 });
     }
 
-    private byte @NotNull [] checkRecipientIdAndCreatePdf(SentNotificationV25Dto sentNotificationV25Dto, String internalId, RaddTransactionEntity entity) {
+    private byte @NotNull [] checkRecipientIdAndCreatePdf(SentNotificationV25Dto sentNotificationV25Dto, RaddTransactionEntity entity) {
         Optional<NotificationRecipientV24Dto> recipient = sentNotificationV25Dto.getRecipients().stream()
-                .filter(notificationRecipient -> internalId.equals(notificationRecipient.getInternalId()))
+                .filter(notificationRecipient -> entity.getRecipientId().equals(notificationRecipient.getInternalId()))
                 .findFirst();
         if (recipient.isPresent()) {
             return generatePdf(recipient.get(), entity);
