@@ -3,6 +3,7 @@ package it.pagopa.pn.radd.middleware.db;
 import it.pagopa.pn.radd.middleware.db.entities.OperationsIunsEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity;
 import it.pagopa.pn.radd.pojo.RaddTransactionStatusEnum;
+import it.pagopa.pn.radd.pojo.TransactionData;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -31,4 +32,6 @@ public interface RaddTransactionDAO {
     Mono<RaddTransactionEntity> updateZipAttachments(RaddTransactionEntity entity, Map<String, String> zipAttachments);
 
     Mono<Void> addSenderPaId(String transactionId, String operationType, String senderPaIdToAdd);
+
+    Mono<RaddTransactionEntity> updateDocAttachments(RaddTransactionEntity entity, TransactionData transactionData);
 }
