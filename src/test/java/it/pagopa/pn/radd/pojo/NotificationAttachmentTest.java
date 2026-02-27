@@ -10,7 +10,7 @@ class NotificationAttachmentTest {
      * Methods under test:
      *
      * <ul>
-     *   <li>{@link NotificationAttachment#NotificationAttachment(NotificationAttachment.AttachmentType, NotificationAttachmentDownloadMetadataResponseDto)}
+     *   <li>{@link NotificationAttachment#NotificationAttachment(NotificationAttachment.AttachmentType, NotificationAttachmentDownloadMetadataResponseDto, String)}
      *   <li>{@link NotificationAttachment#setType(NotificationAttachment.AttachmentType)}
      *   <li>{@link NotificationAttachment#getType()}
      * </ul>
@@ -18,7 +18,7 @@ class NotificationAttachmentTest {
     @Test
     void testConstructor() {
         NotificationAttachment actualNotificationAttachment = new NotificationAttachment(
-                NotificationAttachment.AttachmentType.PAGOPA, new NotificationAttachmentDownloadMetadataResponseDto());
+                NotificationAttachment.AttachmentType.PAGOPA, new NotificationAttachmentDownloadMetadataResponseDto(), "fileKey");
         actualNotificationAttachment.setType(NotificationAttachment.AttachmentType.PAGOPA);
         assertEquals(NotificationAttachment.AttachmentType.PAGOPA, actualNotificationAttachment.getType());
     }
