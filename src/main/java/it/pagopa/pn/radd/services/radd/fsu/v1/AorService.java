@@ -162,7 +162,7 @@ public class AorService extends BaseService {
                                                                   .toList();
 
                                          Map<String, Integer> docAttachments = infos.stream()
-                                                                  .collect(Collectors.toMap(DocumentInfoDto::getFileKey, DocumentInfoDto::getNumberOfPages));
+                                                                  .collect(Collectors.toMap(DocumentInfoDto::getFileKey, dto -> dto.getNumberOfPages() != null ? dto.getNumberOfPages() : 0));
                                          transactionData.setUrls(urls);
                                          transactionData.setDocAttachments(docAttachments);
                                          return updateDocAttachments(transactionData)
