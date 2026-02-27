@@ -7,10 +7,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.*;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.*;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileDownloadResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.OperationResultCodeResponseDto;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.ActStartTransactionRequest;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.StartTransactionResponse;
-import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.StartTransactionResponseStatus;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.PnInvalidInputException;
@@ -23,6 +20,7 @@ import it.pagopa.pn.radd.middleware.msclient.PnDataVaultClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryPushClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
+import it.pagopa.pn.radd.services.radd.fsu.v1.dto.DocumentInfoDto;
 import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -125,6 +123,9 @@ class ActServiceStartTransactionTest {
         notificationRecipientDto.setInternalId("internalId");
         NotificationDocumentDto notificationDocumentDto =new NotificationDocumentDto();
         notificationDocumentDto.setDocIdx("0");
+        NotificationAttachmentBodyRefDto ref = new NotificationAttachmentBodyRefDto();
+        ref.setKey("fileKey");
+        notificationDocumentDto.setRef(ref);
 
         SentNotificationV25Dto sentNotificationDto = new SentNotificationV25Dto ();
         sentNotificationDto.setRecipients(List.of(notificationRecipientDto));
@@ -149,6 +150,7 @@ class ActServiceStartTransactionTest {
 
     @Test
     void testStartTransactionWithEntity() {
+
         ActStartTransactionRequest request = createActStartTransactionRequest();
         RaddTransactionEntity raddTransactionEntity = createRaddTransactionEntity();
         ResponseCheckAarDtoDto responseCheckAarDtoDto = new ResponseCheckAarDtoDto();
@@ -177,10 +179,11 @@ class ActServiceStartTransactionTest {
         LegalFactDownloadMetadataWithContentTypeResponseDto legalFactDownloadMetadataResponseDto = new LegalFactDownloadMetadataWithContentTypeResponseDto();
         legalFactDownloadMetadataResponseDto.setUrl("http://safestorage/UrlLegalFact?");
         legalFactDownloadMetadataResponseDto.setContentType("application/pdf");
+        Mockito.when(raddTransactionDAOImpl.updateDocAttachments(any(), any()))
+               .thenReturn(Mono.just(raddTransactionEntity));
         Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any())).thenReturn(Mono.just(legalFactDownloadMetadataResponseDto));
-
         Mockito.when(raddTransactionDAOImpl.updateZipAttachments(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
-        StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", request).block();
+        StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER",request).block();
         assertNotNull(startTransactionResponse);
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_0, startTransactionResponse.getStatus().getCode());
         assertEquals(Const.OK, startTransactionResponse.getStatus().getMessage());
@@ -304,4 +307,17 @@ class ActServiceStartTransactionTest {
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG operationId=Id iun=FakeIun");
     }
 
+
+    private DocumentInfoDto buildDoc(String url) {
+        return DocumentInfoDto.builder()
+                              .fileKey("test-file-key")          // opzionale
+                              .numberOfPages(1)                  // opzionale
+                              .downloadUrl(
+                                      new DownloadUrl()
+                                              .url(url)
+                                              .needAuthentication(false)
+                                              .documentType("ATTO_NOTIFICATO")
+                                          )
+                              .build();
+    }
 }

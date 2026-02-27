@@ -5,9 +5,10 @@ import lombok.Data;
 
 @Data
 public class NotificationAttachment {
-    public NotificationAttachment(AttachmentType attachmentType, NotificationAttachmentDownloadMetadataResponseDto notificationAttachmentDownloadMetadataResponseDto) {
+    public NotificationAttachment(AttachmentType attachmentType, NotificationAttachmentDownloadMetadataResponseDto notificationAttachmentDownloadMetadataResponseDto, String fileKey) {
         this.type = attachmentType;
         this.notificationMetadata = notificationAttachmentDownloadMetadataResponseDto;
+        this.fileKey = fileKey;
     }
 
     public enum AttachmentType {
@@ -19,6 +20,8 @@ public class NotificationAttachment {
     private AttachmentType type;
 
     private NotificationAttachmentDownloadMetadataResponseDto notificationMetadata;
+
+    private String fileKey;
 
     public AttachmentType getType() {
         return type;
