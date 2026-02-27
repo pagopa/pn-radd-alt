@@ -343,12 +343,11 @@ public class ActService extends BaseService {
                 .map(legalFactInfo -> {
                     DownloadUrl downloadUrl = getDownloadUrl(transaction, legalFactInfo);
                     return DocumentInfoDto.builder()
-                            .fileKey(legalFactInfo.getKey())
+                            .fileKey(removeSafeStoragePrefix(legalFactInfo.getKey()))
                             .numberOfPages(legalFactInfo.getNumberOfPages())
                             .downloadUrl(downloadUrl)
                             .contentType(legalFactInfo.getContentType())
                             .build();
-
                 })
                 .doOnError(throwable -> log.error(throwable.getMessage()));
     }
@@ -455,7 +454,7 @@ public class ActService extends BaseService {
                             DownloadUrl downloadUrl = getDownloadUrl(url, DocumentTypeEnum.DOCUMENT.name());
 
                             return DocumentInfoDto.builder()
-                                                  .fileKey(attachment.getFileKey())
+                                                  .fileKey(removeSafeStoragePrefix(attachment.getFileKey()))
                                                   .numberOfPages(numberOfPages)
                                                   .downloadUrl(downloadUrl)
                                                   .contentType(attachment.getNotificationMetadata().getContentType())
@@ -503,7 +502,7 @@ public class ActService extends BaseService {
                                                DownloadUrl downloadUrl = getDownloadUrl(url, DocumentTypeEnum.ATTACHMENT.name());
 
                                                return DocumentInfoDto.builder()
-                                                                     .fileKey(attachment.getFileKey())
+                                                                     .fileKey(removeSafeStoragePrefix(attachment.getFileKey()))
                                                                      .numberOfPages(numberOfPages)
                                                                      .downloadUrl(downloadUrl)
                                                                      .contentType(attachment.getNotificationMetadata().getContentType())
@@ -523,7 +522,7 @@ public class ActService extends BaseService {
                                                DownloadUrl downloadUrl = getDownloadUrl(url, DocumentTypeEnum.ATTACHMENT.name());
 
                                                return DocumentInfoDto.builder()
-                                                                     .fileKey(attachment.getFileKey())
+                                                                     .fileKey(removeSafeStoragePrefix(attachment.getFileKey()))
                                                                      .numberOfPages(numberOfPages)
                                                                      .downloadUrl(downloadUrl)
                                                                      .contentType(attachment.getNotificationMetadata().getContentType())
