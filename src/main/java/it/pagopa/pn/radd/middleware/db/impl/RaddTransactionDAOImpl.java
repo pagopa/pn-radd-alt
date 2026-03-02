@@ -270,6 +270,16 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
     }
 
     @Override
+    public Mono<RaddTransactionEntity> updateDocAttachments(RaddTransactionEntity entity, Map<String, Integer> docAttachments) {
+    entity.setDocAttachments(docAttachments);
+    entity.setUpdateTimestamp(Instant.now());
+    return this.updateItem(entity)
+                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
+                .filter(updated -> updated.getDocAttachments().equals(entity.getDocAttachments()))
+                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_UPDATE_STATUS)));
+    }
+
+    @Override
     public Mono<Void> addSenderPaId(String transactionId, String operationType, String senderPaIdToAdd) {
         Map<String, AttributeValue> key = Map.of(
                 COL_TRANSACTION_ID, AttributeValue.builder().s(transactionId).build(),

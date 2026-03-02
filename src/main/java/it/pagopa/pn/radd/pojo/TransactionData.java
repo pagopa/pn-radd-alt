@@ -33,6 +33,7 @@ public class TransactionData {
     private List<String> iuns = new ArrayList<>();
     private List<String> urls = new ArrayList<>();
     private Map<String, String> zipAttachments;
+    private Map<String, Integer> docAttachments;
     private Set<String> senderPaIds;
 
 
