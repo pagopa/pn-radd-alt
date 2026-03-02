@@ -10,7 +10,6 @@ import it.pagopa.pn.radd.middleware.db.RaddTransactionDAO;
 import it.pagopa.pn.radd.middleware.db.entities.OperationsIunsEntity;
 import it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity;
 import it.pagopa.pn.radd.pojo.RaddTransactionStatusEnum;
-import it.pagopa.pn.radd.pojo.TransactionData;
 import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.DateUtils;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
@@ -270,13 +269,13 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
     }
 
     @Override
-    public Mono<RaddTransactionEntity> updateDocAttachments(RaddTransactionEntity entity, TransactionData transactionData) {
-        entity.setDocAttachments(transactionData.getDocAttachments());
-        entity.setUpdateTimestamp(Instant.now());
-        return this.updateItem(entity)
-                   .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
-                   .filter(updated -> updated.getDocAttachments().equals(entity.getDocAttachments()))
-                   .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_UPDATE_STATUS)));
+    public Mono<RaddTransactionEntity> updateDocAttachments(RaddTransactionEntity entity, Map<String, Integer> docAttachments) {
+    entity.setDocAttachments(docAttachments);
+    entity.setUpdateTimestamp(Instant.now());
+    return this.updateItem(entity)
+                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
+                .filter(updated -> updated.getDocAttachments().equals(entity.getDocAttachments()))
+                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_UPDATE_STATUS)));
     }
 
     @Override

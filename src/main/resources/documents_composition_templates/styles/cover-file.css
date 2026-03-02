@@ -35,10 +35,12 @@ body {
   margin-bottom: 5.3mm;
 }
 
-.cost-section {
-  margin-bottom: 10.5mm;
+.pages-section {
+  margin-top: 10.5mm;
+  margin-bottom: 5.3mm;
 }
 
 .disclaimer {
-  margin-bottom: 10.5mm;
+   margin-top: 5.3mm;
+   margin-bottom: 5.3mm;
 }
