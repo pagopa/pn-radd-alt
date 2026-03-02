@@ -397,7 +397,7 @@ public class ActService extends BaseService {
             legalFactInfo.setKey(item.getLegalFactsId().getKey());
         }
         legalFactInfo.setUrl(legalFact.getUrl());
-        legalFactInfo.setNumberOfPages(legalFactInfo.getNumberOfPages());
+        legalFactInfo.setNumberOfPages(legalFact.getNumberOfPages());
         legalFactInfo.setContentType(legalFact.getContentType());
         legalFactInfo.setCategory(item.getLegalFactsId().getCategory());
         return legalFactInfo;
