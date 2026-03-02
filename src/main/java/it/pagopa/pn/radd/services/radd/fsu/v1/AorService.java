@@ -215,13 +215,13 @@ public class AorService extends BaseService {
                .map(file -> {
                    DocumentInfoDto dto = new DocumentInfoDto();
                    if (file.getDownload() != null && file.getDownload().getRetryAfter() != null && file.getDownload().getRetryAfter().intValue() != 0) {
-                       log.info("Found document with retry after {}", file.getDownload().getRetryAfter());
+                       log.debug("Found document with retry after {}", file.getDownload().getRetryAfter());
                        throw new RaddGenericException(RETRY_AFTER, file.getDownload().getRetryAfter());
                    }
                    if (file.getDownload() != null) {
-                       log.info("File : {}", file.getVersionId());
-                       log.info("URL : {}", file.getDownload().getUrl());
-                       log.info("Pages : {}", retrieveNumberOfPages(file.getTags()));
+                       log.debug("File : {}", file.getVersionId());
+                       log.debug("URL : {}", file.getDownload().getUrl());
+                       log.debug("Pages : {}", retrieveNumberOfPages(file.getTags()));
                        dto.setFileKey(file.getKey());
                        dto.setNumberOfPages(retrieveNumberOfPages(file.getTags()));
                        dto.setDownloadUrl(getDownloadUrl(file.getDownload().getUrl()));
