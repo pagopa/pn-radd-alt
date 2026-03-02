@@ -9,13 +9,18 @@ import freemarker.template.Configuration;
 import freemarker.template.Version;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class LegalFactPdfGeneratorTest {
     private static final String TEST_DIR_NAME = "target" + File.separator + "generated-test-PDF";
@@ -37,13 +42,22 @@ class LegalFactPdfGeneratorTest {
         }
     }
 
-    @Test
-    void generateNotificationReceivedLegalFactTest() throws IOException {
-        Path filePath = Paths.get(TEST_DIR_NAME + File.separator + "test_ReceivedLegalFact.pdf");
+    static Stream<Arguments> provider() {
+        return Stream.of(
+                arguments(null, "test_ReceivedLegalFact.pdf"),
+                arguments(1, "test_ReceivedLegalFact_withNumberOfPages.pdf")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provider")
+    void generateNotificationReceivedLegalFactTest(Integer numberOfPages, String pdfFileName) {
+        Path filePath = Paths.get(TEST_DIR_NAME + File.separator + pdfFileName);
         Assertions.assertDoesNotThrow(() -> Files.write(filePath,
-                pdfUtils.generateCoverFile("denomination")));
+                pdfUtils.generateCoverFile("denomination", numberOfPages)));
         System.out.print("*** Received pdf successfully created at: " + filePath);
     }
+
     private ObjectMapper buildObjectMapper() {
         ObjectMapper objectMapper = ((JsonMapper.Builder) ((JsonMapper.Builder) JsonMapper.builder()
                 .configure(MapperFeature.DEFAULT_VIEW_INCLUSION, false))
