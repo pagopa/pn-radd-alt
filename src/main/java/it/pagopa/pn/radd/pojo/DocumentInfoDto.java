@@ -14,4 +14,5 @@ public class DocumentInfoDto {
     private String fileKey;
     private Integer numberOfPages;
     private DownloadUrl downloadUrl;
+    private String contentType;
 }

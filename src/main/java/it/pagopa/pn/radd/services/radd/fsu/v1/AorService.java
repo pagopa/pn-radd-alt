@@ -13,6 +13,7 @@ import it.pagopa.pn.radd.middleware.msclient.PnDataVaultClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryPushClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
 import it.pagopa.pn.radd.pojo.DocumentInfoDto;
+import it.pagopa.pn.radd.pojo.DocumentTypeEnum;
 import it.pagopa.pn.radd.pojo.RaddTransactionStatusEnum;
 import it.pagopa.pn.radd.pojo.TransactionData;
 import it.pagopa.pn.radd.utils.DateUtils;
@@ -151,24 +152,30 @@ public class AorService extends BaseService {
                 .doOnNext(transactionData -> pnRaddAltAuditLog.getContext().addRecipientInternalId(transactionData.getEnsureRecipientId())
                         .addDelegateInternalId(transactionData.getEnsureDelegateId()))
                 .flatMap(transactionData -> setIunsOfNotificationFailed(transactionData, pnRaddAltAuditLog))
-                .flatMap(transaction -> this.createAorTransaction(uid, transaction))
                 .flatMap(this::verifyCheckSum)
                 .flatMap(transactionData ->
-                                 this.getDocInfo(transactionData.getUrls()).sequential().collectList()
-                                     .flatMap(infos -> {
+                                 this.getDocInfo(transactionData.getUrls())
+                                     .filter(documentInfoDto -> !pnRaddFsuConfig.getDocumentTypeEnumFilter().contains(DocumentTypeEnum.valueOf(documentInfoDto.getDownloadUrl().getDocumentType())))
+                                     .map(documentInfoDto -> {
+                                          documentInfoDto.getDownloadUrl().setDocumentType(DocumentTypeEnum.valueOf(documentInfoDto.getDownloadUrl().getDocumentType()).getValue());
+                                          return documentInfoDto;
+                                     })
+                                     .sequential()
+                                     .collectList()
+                                     .map(infos -> {
                                          List<String> urls = infos.stream()
                                                                   .map(DocumentInfoDto::getDownloadUrl)
                                                                   .map(DownloadUrl::getUrl)
                                                                   .toList();
-
                                          Map<String, Integer> docAttachments = infos.stream()
+                                                                  .filter(documentInfoDto -> CONTENT_TYPE_PDF.equals(documentInfoDto.getContentType()))
                                                                   .collect(Collectors.toMap(DocumentInfoDto::getFileKey, dto -> dto.getNumberOfPages() != null ? dto.getNumberOfPages() : 0));
                                          transactionData.setUrls(urls);
                                          transactionData.setDocAttachments(docAttachments);
-                                         return updateDocAttachments(transactionData)
-                                                 .thenReturn(transactionData);
+                                         return transactionData;
                                      })
                         )
+                .flatMap(transaction -> this.createAorTransaction(uid, transaction))
                 .flatMap(this::updateFileMetadata)
                 .doOnNext(transactionData -> log.debug("End AOR startTransaction"))
                 .map(data -> {
@@ -192,18 +199,13 @@ public class AorService extends BaseService {
                     return Mono.error(ex);
                 })
                 .onErrorResume(RaddGenericException.class, ex -> this.settingErrorReason(ex, request.getOperationId(), AOR, xPagopaPnCxType, xPagopaPnCxId)
+                                .switchIfEmpty(Mono.just(new RaddTransactionEntity()))
                                 .map(entity -> StartTransactionResponseMapper.fromException(ex))
                                 .doOnNext(startTransactionResponse -> {
                                     pnRaddAltAuditLog.getContext().addResponseStatus(startTransactionResponse.getStatus().toString());
                                     pnRaddAltAuditLog.generateFailure(END_AOR_START_TRANSACTION_WITH_ERROR, ex.getMessage(), ex);
                                 })
                 );
-    }
-
-    private Mono<Void> updateDocAttachments(TransactionData transaction) {
-       return raddTransactionDAO.getTransaction(transaction.getTransactionId(), AOR)
-                          .flatMap(entity -> raddTransactionDAO.updateDocAttachments(entity, transaction))
-                          .then();
     }
 
     public ParallelFlux<DocumentInfoDto> getDocInfo(List<String> listFileKey) {
@@ -223,6 +225,7 @@ public class AorService extends BaseService {
                        dto.setFileKey(file.getKey());
                        dto.setNumberOfPages(retrieveNumberOfPages(file.getTags()));
                        dto.setDownloadUrl(getDownloadUrl(file.getDownload().getUrl()));
+                       dto.setContentType(file.getContentType());
                    }
                    return dto;
                });

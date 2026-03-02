@@ -198,12 +198,6 @@ class AorServiceTest {
 
         Mockito.when(pnRaddFsuConfig.getApplicationBasepath()).thenReturn("123");
 
-
-        RaddTransactionEntity raddTransactionEntity = createRaddTransactionEntity();
-        Mockito.when(raddTransactionDAOImpl.updateDocAttachments(any(), any()))
-               .thenReturn(Mono.just(raddTransactionEntity));
-        Mockito.when(raddTransactionDAOImpl.getTransaction(anyString(), eq(OperationTypeEnum.AOR))).thenReturn(Mono.just(raddTransactionEntity));
-
         StartTransactionResponse response = this.aorService.startTransaction("uid", startTransactionRequest, CxTypeAuthFleet.valueOf("PF"), "1",String.valueOf(RaddRole.RADD_UPLOADER)).block();
 
         assertNotNull(response);
