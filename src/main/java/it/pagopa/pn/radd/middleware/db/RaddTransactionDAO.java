@@ -30,5 +30,7 @@ public interface RaddTransactionDAO {
 
     Mono<RaddTransactionEntity> updateZipAttachments(RaddTransactionEntity entity, Map<String, String> zipAttachments);
 
+    Mono<RaddTransactionEntity> updateDocAttachments(RaddTransactionEntity entity, Map<String, Integer> docAttachments);
+
     Mono<Void> addSenderPaId(String transactionId, String operationType, String senderPaIdToAdd);
 }

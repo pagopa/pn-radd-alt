@@ -14,7 +14,6 @@ import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.DateUtils;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -266,6 +265,16 @@ public class RaddTransactionDAOImpl extends BaseDao<RaddTransactionEntity> imple
         return this.updateItem(entity)
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
                 .filter(updated -> updated.getZipAttachments().equals(entity.getZipAttachments()))
+                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_UPDATE_STATUS)));
+    }
+
+    @Override
+    public Mono<RaddTransactionEntity> updateDocAttachments(RaddTransactionEntity entity, Map<String, Integer> docAttachments) {
+    entity.setDocAttachments(docAttachments);
+    entity.setUpdateTimestamp(Instant.now());
+    return this.updateItem(entity)
+                .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)))
+                .filter(updated -> updated.getDocAttachments().equals(entity.getDocAttachments()))
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_UPDATE_STATUS)));
     }
 
