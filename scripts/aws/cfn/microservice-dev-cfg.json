@@ -29,6 +29,6 @@
     "ThrottlingPeriodSeconds": "60",
     "BlockImportLocations": "false",
     "AwsGeoRegionCode": "eu-central-1",
-    "documentPageCountEnabled": "false"
+    "DocumentPageCountEnabled": "false"
   }
 }
