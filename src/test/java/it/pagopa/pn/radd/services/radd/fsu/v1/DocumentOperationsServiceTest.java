@@ -330,6 +330,8 @@ class DocumentOperationsServiceTest {
 
     @Test
     void documentDownloadACT_withDocAttachments_generatesCoverWithPageCount() throws IOException {
+
+        when(pnRaddFsuConfig.isDocumentPageCountEnabled()).thenReturn(true);
         RaddTransactionEntity raddTransactionEntity = new RaddTransactionEntity();
         raddTransactionEntity.setRecipientId("123");
         raddTransactionEntity.setStatus(Const.STARTED);
@@ -361,6 +363,44 @@ class DocumentOperationsServiceTest {
                 .verifyComplete();
 
         verify(pdfGenerator).generateCoverFile("denomination", 10);
+    }
+
+
+    @Test
+    void documentDownloadACT_withDocAttachments_isDocumentPageCountDisabled() throws IOException {
+
+        when(pnRaddFsuConfig.isDocumentPageCountEnabled()).thenReturn(false);
+        RaddTransactionEntity raddTransactionEntity = new RaddTransactionEntity();
+        raddTransactionEntity.setRecipientId("123");
+        raddTransactionEntity.setStatus(Const.STARTED);
+        raddTransactionEntity.setIun("123");
+
+        Map<String, Integer> docAttachments = new HashMap<>();
+        docAttachments.put("key1", 3);
+        docAttachments.put("key2", 5);
+        raddTransactionEntity.setDocAttachments(docAttachments);
+        raddTransactionEntity.setZipAttachments(Map.of("zipKey", "https://some-url"));
+
+        SentNotificationV25Dto sentNotificationV25Dto = new SentNotificationV25Dto();
+        NotificationRecipientV24Dto recipient = new NotificationRecipientV24Dto();
+        recipient.setInternalId("123");
+        recipient.setDenomination("denomination");
+        sentNotificationV25Dto.setRecipients(List.of(recipient));
+        sentNotificationV25Dto.setSenderPaId("senderPaId");
+
+        byte[] response = new byte[0];
+        byte[] responseHex = HexFormat.of().parseHex(Hex.encodeHexString(response));
+
+        when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        when(raddTransactionDAOImpl.addSenderPaId(any(), any(), any())).thenReturn(Mono.empty());
+        when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV25Dto));
+        when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
+
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+                    .expectNext(responseHex)
+                    .verifyComplete();
+
+        verify(pdfGenerator).generateCoverFile("denomination", null);
     }
 
     @Test
