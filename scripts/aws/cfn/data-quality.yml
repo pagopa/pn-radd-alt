@@ -85,6 +85,7 @@ Resources:
               qrCode:struct<NULL:boolean,S:string>,
               recipientId:struct<S:string>,
               recipientType:struct<S:string>,
+              senderPaIds:struct<L:array<struct<S:string>>,NULL:boolean>,
               uid:struct<S:string>,
               versionToken:struct<S:string>,
               zipAttachments:struct<
