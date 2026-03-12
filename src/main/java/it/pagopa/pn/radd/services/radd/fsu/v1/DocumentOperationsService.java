@@ -111,7 +111,9 @@ public class DocumentOperationsService {
 
     private byte @NotNull [] generatePdf(NotificationRecipientV24Dto recipient, RaddTransactionEntity entity) {
         try {
-            Integer numberOfPages = calculateTotalPages(entity);
+            Integer numberOfPages = pnRaddFsuConfig.isDocumentPageCountEnabled()
+                    ? calculateTotalPages(entity)
+                    : null;
             return pdfGenerator.generateCoverFile(recipient.getDenomination(), numberOfPages);
         } catch (IOException e) {
             throw new RaddGenericException(e.getMessage());
