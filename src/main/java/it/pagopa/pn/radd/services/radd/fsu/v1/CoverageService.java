@@ -47,7 +47,7 @@ public class CoverageService {
             return Mono.error(new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST));
         }
 
-        if(!isEndDateInTheFuture(endValidity)){
+        if(!isEndValidityInTheFuture(endValidity)){
             return Mono.error( new RaddGenericException(ExceptionTypeEnum.END_VALIDITY_IN_THE_PAST, HttpStatus.BAD_REQUEST));
         }
         return Mono.empty();

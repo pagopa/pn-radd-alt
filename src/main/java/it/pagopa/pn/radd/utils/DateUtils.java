@@ -124,14 +124,14 @@ public class DateUtils {
     /**
      * Controlla se la data di fine è nel futuro rispetto alla data odierna.
      * Se la data di fine è null, viene considerata valida (ritorna true).
-     * @param endDate
+     * @param endValidity
      * @return true se la data di fine è null o è nel futuro, false se è nel passato.
      */
-    public static boolean isEndDateInTheFuture(LocalDate endDate){
+    public static boolean isEndValidityInTheFuture(LocalDate endValidity){
 
-        if(endDate == null) return true;
+        if(endValidity == null) return true;
 
-        return endDate.isAfter(LocalDate.now());
+        return endValidity.isAfter(LocalDate.now());
     }
 
 
