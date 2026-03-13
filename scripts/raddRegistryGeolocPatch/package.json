@@ -1,7 +1,7 @@
 {
-  "name": "coverage-validity-patch",
+  "name": "radd-registry-geoloc-patch",
   "version": "1.0.0",
-  "description": "Script per aggiornare le date di validità delle coperture RADD via PATCH usando autenticazione Cognito",
+  "description": "Script per aggiornare le coordinate geografiche dei punti di ritiro RADD via PATCH usando autenticazione Cognito",
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
@@ -13,10 +13,9 @@
     "axios": "^1.6.8",
     "csv-parser": "^3.2.0",
     "dotenv": "^16.3.1",
-    "@aws-sdk/client-cognito-identity-provider": "3.995.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.645.0",
     "yargs": "^17.7.2"
   },
-  "author": "Alessandro Masci",
+  "author": "Matteo Turra",
   "license": "ISC"
 }
-

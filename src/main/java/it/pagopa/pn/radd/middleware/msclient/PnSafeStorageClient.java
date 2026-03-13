@@ -45,7 +45,7 @@ public class PnSafeStorageClient extends BaseClient {
         log.debug(String.format("URL %s ", this.pnRaddFsuConfig.getClientSafeStorageBasepath()));
         log.debug(String.format("storage id %s ", this.pnRaddFsuConfig.getSafeStorageCxId()));
         log.trace("CREATE FILE TICK {}", new Date().getTime());
-        return this.fileUploadApi.createFile(this.pnRaddFsuConfig.getSafeStorageCxId(), Const.X_CHECKSUM, checksum, fileCreationRequestDto)
+        return this.fileUploadApi.createFile(this.pnRaddFsuConfig.getSafeStorageCxId(), checksum, Const.X_CHECKSUM, fileCreationRequestDto)
                 .map(item -> {
                     log.trace("CREATE FILE TOCK {}", new Date().getTime());
                     return item;
