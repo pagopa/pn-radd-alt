@@ -122,6 +122,20 @@ public class DateUtils {
     }
 
     /**
+     * Controlla se la data di fine è nel futuro rispetto alla data odierna.
+     * Se la data di fine è null, viene considerata valida (ritorna true).
+     * @param endDate
+     * @return true se la data di fine è null o è nel futuro, false se è nel passato.
+     */
+    public static boolean isEndDateInTheFuture(LocalDate endDate){
+
+        if(endDate == null) return true;
+
+        return endDate.isAfter(LocalDate.now());
+    }
+
+
+    /**
      * Verifica se una data di riferimento è inclusa in un intervallo di date.
      * <p>
      * Se né startDate né endDate sono valorizzati, l'intervallo non è definito

@@ -147,13 +147,29 @@ class CoverageServiceTest {
 
     @Test
     void updateCoverage_InvalidIntervalDates() {
-
         UpdateCoverageRequest request = buildValidUpdateRequest();
         request.setEndValidity(LocalDate.now().minusDays(5L));
 
-        RaddGenericException ex = Assertions.assertThrows(RaddGenericException.class, () -> coverageService.updateCoverage(U_ID, CAP, LOCALITY, request));
-        Assertions.assertEquals(ExceptionTypeEnum.DATE_INTERVAL_ERROR, ex.getExceptionType());
+        StepVerifier.create(coverageService.updateCoverage(U_ID, CAP, LOCALITY, request))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof RaddGenericException ex &&
+                                ex.getExceptionType() == ExceptionTypeEnum.DATE_INTERVAL_ERROR
+                )
+                .verify();
+    }
 
+
+    @Test
+    void updateCoverage_EndValidityInThePast() {
+        UpdateCoverageRequest request = buildValidUpdateRequest();
+        request.setEndValidity(LocalDate.now());
+
+        StepVerifier.create(coverageService.updateCoverage(U_ID, CAP, LOCALITY, request))
+                .expectErrorMatches(throwable ->
+                        throwable instanceof RaddGenericException ex &&
+                                ex.getExceptionType() == ExceptionTypeEnum.END_VALIDITY_IN_THE_PAST
+                )
+                .verify();
     }
 
     @Test
