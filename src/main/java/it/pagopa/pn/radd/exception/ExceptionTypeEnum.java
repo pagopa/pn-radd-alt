@@ -8,7 +8,7 @@ public enum ExceptionTypeEnum {
     DATE_NOTICE_ERROR("DATE_NOTICE_ERROR","La data di fine validità non rispetta il preavviso minimo richiesto", 99),
     DATE_INTERVAL_ERROR("DATE_INTERVAL_ERROR","La data di fine validità non può essere precedente alla data di inizio validità", 99),
     DATE_INVALID_ERROR("DATE_INVALID_ERROR","formato della data non valido", 99),
-    END_VALIDITY_IN_THE_PAST("END_VALIDITY_IN_THE_PAST","La data 'endValidity' è nel passato", 99),
+        END_VALIDITY_IN_THE_PAST("END_VALIDITY_IN_THE_PAST","La data 'endValidity' deve essere nel futuro", 99),
     START_VALIDITY_IN_THE_PAST("START_VALIDITY_IN_THE_PAST","La data 'startValidity' è nel passato", 99),
     IUN_NOT_FOUND("IUN_NOT_FOUND", "Iun not found with params", 99),
     TRANSACTION_NOT_SAVED("TRANSACTION_NOT_SAVED", "La transazione non è stata salvata", 99),
