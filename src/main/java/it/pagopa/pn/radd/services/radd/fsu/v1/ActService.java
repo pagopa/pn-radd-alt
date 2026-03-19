@@ -38,7 +38,6 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -192,25 +191,17 @@ public class ActService extends BaseService {
                         }));
     }
 
-    private Mono<StartTransactionResponse> handleTransactionFlow(
-            PnRaddAltAuditLog pnRaddAltAuditLog,
-            TransactionData transactionData,
-            String uid,
-            ActStartTransactionRequest request) {
-
-        AtomicReference<TransactionData> enrichedTransactionRef = new AtomicReference<>();
+    private Mono<StartTransactionResponse> handleTransactionFlow(PnRaddAltAuditLog pnRaddAltAuditLog, TransactionData transactionData, String uid, ActStartTransactionRequest request) {
 
         return hasNotificationsCancelled(transactionData.getIun()).thenReturn(transactionData)
                 .zipWhen(data -> hasDocumentsAvailable(data.getIun()))
                 .doOnNext(this::enrichTransactionDataWithSenderPaId)
                 .flatMap(tuple -> this.createRaddTransaction(uid, tuple.getT1())
                         .map(createdTransactionData -> Tuples.of(createdTransactionData, tuple.getT2())))
-                .doOnNext(tuple -> {
-                    enrichedTransactionRef.set(tuple.getT1());
-                    pnRaddAltAuditLog.getContext()
-                            .addTransactionId(tuple.getT1().getTransactionId())
-                            .addIun(tuple.getT1().getIun());
-                })
+                .doOnNext(tuple ->
+                        pnRaddAltAuditLog.getContext()
+                                .addTransactionId(tuple.getT1().getTransactionId())
+                                .addIun(tuple.getT1().getIun()))
                 .flatMap(tuple -> verifyCheckSum(tuple.getT1())
                         .map(verifiedTransactionData -> Tuples.of(verifiedTransactionData, tuple.getT2())))
                 .zipWhen(transactionAndSentNotification ->
@@ -220,25 +211,22 @@ public class ActService extends BaseService {
                         this.updateFileMetadata(transactionAndResponse.getT1()), (in, out) -> in.getT2())
                 .onErrorResume(RaddGenericException.class, ex -> {
                     if (DOCUMENT_UNAVAILABLE.equals(ex.getExceptionType())) {
-                        // ← usa enrichedTransactionRef se disponibile, altrimenti transactionData originale
-                        TransactionData txData = enrichedTransactionRef.get() != null
-                                ? enrichedTransactionRef.get()
-                                : transactionData;
-                        return legalFact(txData)
-                                .collectList()
-                                .map(list -> list.stream()
-                                        .map(DocumentInfoDto::getDownloadUrl)
-                                        .collect(Collectors.toCollection(ArrayList::new)))
-                                .map(downloadUrls -> StartTransactionResponseMapper.fromResultOnlyLegalFacts(
-                                        downloadUrls,
-                                        OperationTypeEnum.ACT.name(),
-                                        request.getOperationId(),
-                                        pnRaddFsuConfig.getApplicationBasepath()));
+                        return buildLegalFactsOnlyResponse(transactionData, request);
                     }
                     return Mono.error(ex);
                 });
     }
 
+    private Mono<StartTransactionResponse> buildLegalFactsOnlyResponse(
+            TransactionData transactionData,
+            ActStartTransactionRequest request) {
+        return legalFact(transactionData)
+                .collectList()
+                .map(list -> list.stream()
+                        .map(DocumentInfoDto::getDownloadUrl)
+                        .collect(Collectors.toCollection(ArrayList::new)))
+                .map(downloadUrls -> StartTransactionResponseMapper.fromResultOnlyLegalFacts(downloadUrls, OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath()));
+    }
 
 
     private void enrichTransactionDataWithSenderPaId(Tuple2<TransactionData, SentNotificationV25Dto> tuple) {
@@ -254,11 +242,8 @@ public class ActService extends BaseService {
     @NotNull
     private Mono<StartTransactionResponse> retrieveDocumentsAndAttachments(ActStartTransactionRequest request, Tuple2<TransactionData, SentNotificationV25Dto> transactionAndSentNotification) {
         log.debug("Retrieving document and attachments");
-
         Flux<DocumentInfoDto> infoDocuments = getUrlDoc(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
-
         Flux<DocumentInfoDto> infoAttachments = getUrlsAttachments(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
-
         Flux<DocumentInfoDto> infoLegalFacts = legalFact(transactionAndSentNotification.getT1());
 
         return ParallelFlux.from(infoDocuments, infoAttachments, infoLegalFacts)
@@ -641,15 +626,6 @@ public class ActService extends BaseService {
                         return Mono.error(new RaddGenericException(DOCUMENT_UNAVAILABLE));
                     }
                     return Mono.just(response);
-                });
-    }
-
-    private Mono<SentNotificationV25Dto> getNotification(String iun) {
-        return this.pnDeliveryClient.getNotifications(iun)
-                .doOnNext(response -> {
-                    if (response.getDocumentsAvailable() != null && Boolean.FALSE.equals(response.getDocumentsAvailable())) {
-                        log.info("documents not available for iun {}", iun);
-                    }
                 });
     }
 
