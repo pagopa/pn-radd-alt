@@ -38,6 +38,7 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -162,7 +163,7 @@ public class ActService extends BaseService {
                         .map(s -> setIun(transactionData, s)))
                 .flatMap(transactionData -> hasNotificationsCancelled(transactionData.getIun())
                         .thenReturn(transactionData))
-                .zipWhen(transactionData -> hasDocumentsAvailable(transactionData.getIun()))
+                .zipWhen(transactionData -> getNotification(transactionData.getIun()))
                 .doOnNext(this::enrichTransactionDataWithSenderPaId)
                 .flatMap(tuple -> this.createRaddTransaction(uid, tuple.getT1())
                         .map(createdTransactionData -> Tuples.of(createdTransactionData, tuple.getT2())))
@@ -205,6 +206,30 @@ public class ActService extends BaseService {
                         }));
     }
 
+/*
+    private Mono<StartTransactionResponse> pippo(PnRaddAltAuditLog pnRaddAltAuditLog, TransactionData transactionData, String uid, ActStartTransactionRequest request)
+    {
+        return hasNotificationsCancelled(transactionData.getIun()).thenReturn(transactionData)
+                .zipWhen(data -> hasDocumentsAvailable(data.getIun()))
+                .doOnNext(this::enrichTransactionDataWithSenderPaId)
+                .flatMap(tuple -> this.createRaddTransaction(uid, tuple.getT1())
+                        .map(createdTransactionData -> Tuples.of(createdTransactionData, tuple.getT2())))
+                .doOnNext(tuple ->
+                        pnRaddAltAuditLog.getContext().addTransactionId(tuple.getT1().getTransactionId())
+                                .addIun(tuple.getT1().getIun())
+                )
+                .flatMap(tuple -> verifyCheckSum(tuple.getT1())
+                        .map(verifiedTransactionData -> Tuples.of(verifiedTransactionData, tuple.getT2())))
+                .zipWhen(transactionAndSentNotification -> retrieveDocumentsAndAttachments(request, transactionAndSentNotification),
+                        (tupla, response) -> Tuples.of(tupla.getT1(), response))
+                .zipWhen(transactionAndResponse -> this.updateFileMetadata(transactionAndResponse.getT1()), (in, out) -> in.getT2())
+                .onErrorResume(RaddGenericException.class, ex ->{
+
+                    return legalFact(transactionData).collectList().map( documentInfoDtos -> );
+                });
+    }
+*/
+
     private void enrichTransactionDataWithSenderPaId(Tuple2<TransactionData, SentNotificationV25Dto> tuple) {
         TransactionData transactionData = tuple.getT1();
         SentNotificationV25Dto notification = tuple.getT2();
@@ -218,8 +243,29 @@ public class ActService extends BaseService {
     @NotNull
     private Mono<StartTransactionResponse> retrieveDocumentsAndAttachments(ActStartTransactionRequest request, Tuple2<TransactionData, SentNotificationV25Dto> transactionAndSentNotification) {
         log.debug("Retrieving document and attachments");
-        Flux<DocumentInfoDto> infoDocuments = getUrlDoc(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
-        Flux<DocumentInfoDto> infoAttachments = getUrlsAttachments(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
+
+        AtomicBoolean documentUnavailable= new AtomicBoolean(false);
+
+        Flux<DocumentInfoDto> infoDocuments = getUrlDoc(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2())
+                .onErrorResume(RaddGenericException.class, ex ->{
+                    if (DOCUMENT_UNAVAILABLE.equals(ex.getExceptionType())){
+                        log.info("Documents unavailable (410 GONE) for iun {}, prooceding with legal facts only",transactionAndSentNotification.getT1().getIun());
+                        documentUnavailable.set(true);
+                        return Flux.empty();
+                    }
+                    return Flux.error(ex);
+                });
+
+        Flux<DocumentInfoDto> infoAttachments = getUrlsAttachments(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2())
+                .onErrorResume(RaddGenericException.class, ex -> {
+                    if(DOCUMENT_UNAVAILABLE.equals(ex.getExceptionType())){
+                        log.info("Attachments unavailable (410 GONE) for iun {}, prooceding with legal facts only", transactionAndSentNotification.getT1().getIun());
+                        documentUnavailable.set(true);
+                        return Flux.empty();
+                    }
+                    return Flux.error(ex);
+                });
+
         Flux<DocumentInfoDto> infoLegalFacts = legalFact(transactionAndSentNotification.getT1());
 
         return ParallelFlux.from(infoDocuments, infoAttachments, infoLegalFacts)
@@ -232,7 +278,9 @@ public class ActService extends BaseService {
                            .collectList()
                            .flatMap(resultList -> updateDocAttachments(transactionAndSentNotification.getT1(), resultList))
                            .map(documentInfoDtos -> documentInfoDtos.stream().map(DocumentInfoDto::getDownloadUrl).collect(Collectors.toCollection(ArrayList::new)))
-                           .map(resultList -> StartTransactionResponseMapper.fromResult(resultList, OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath(), pnRaddFsuConfig.getDocumentTypeEnumFilter()));
+                           .map(resultList -> documentUnavailable.get()
+                               ? StartTransactionResponseMapper.fromResultOnlyLegalFacts( resultList, OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath())
+                               : StartTransactionResponseMapper.fromResult(resultList, OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath(), pnRaddFsuConfig.getDocumentTypeEnumFilter()));
     }
 
     @NotNull
@@ -602,6 +650,15 @@ public class ActService extends BaseService {
                         return Mono.error(new RaddGenericException(DOCUMENT_UNAVAILABLE));
                     }
                     return Mono.just(response);
+                });
+    }
+
+    private Mono<SentNotificationV25Dto> getNotification(String iun) {
+        return this.pnDeliveryClient.getNotifications(iun)
+                .doOnNext(response -> {
+                    if (response.getDocumentsAvailable() != null && Boolean.FALSE.equals(response.getDocumentsAvailable())) {
+                        log.info("documents not available for iun {}", iun);
+                    }
                 });
     }
 
