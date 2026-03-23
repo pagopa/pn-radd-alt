@@ -167,7 +167,7 @@ class CoverageServiceTest {
         StepVerifier.create(coverageService.updateCoverage(U_ID, CAP, LOCALITY, request))
                 .expectErrorMatches(throwable ->
                         throwable instanceof RaddGenericException ex &&
-                                ex.getExceptionType() == ExceptionTypeEnum.END_VALIDITY_IN_THE_PAST
+                                ex.getExceptionType() == ExceptionTypeEnum.END_VALIDITY_NOT_IN_FUTURE
                 )
                 .verify();
     }

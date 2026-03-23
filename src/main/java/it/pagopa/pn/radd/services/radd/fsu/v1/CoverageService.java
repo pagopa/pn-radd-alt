@@ -48,7 +48,7 @@ public class CoverageService {
         }
 
         if(!isEndValidityInTheFuture(endValidity)){
-            return Mono.error( new RaddGenericException(ExceptionTypeEnum.END_VALIDITY_IN_THE_PAST, HttpStatus.BAD_REQUEST));
+            return Mono.error( new RaddGenericException(ExceptionTypeEnum.END_VALIDITY_NOT_IN_FUTURE, HttpStatus.BAD_REQUEST));
         }
         return Mono.empty();
     }
