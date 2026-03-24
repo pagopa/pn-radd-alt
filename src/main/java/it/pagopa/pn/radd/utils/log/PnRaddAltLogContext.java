@@ -7,6 +7,8 @@ import it.pagopa.pn.radd.utils.Utils;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static it.pagopa.pn.commons.utils.LogUtils.maskTaxId;
+
 public class PnRaddAltLogContext {
     private String uid = "";
     private String cxId = "";
@@ -22,6 +24,7 @@ public class PnRaddAltLogContext {
     private String iun = "";
     private String iuns = "";
     private String aarFilekeys = "";
+    private String taxCode = "";
 
     public PnRaddAltLogContext addUid(String uid) {
         this.uid = "uid=%s ".formatted(uid);
@@ -99,8 +102,13 @@ public class PnRaddAltLogContext {
         return this;
     }
 
+    public PnRaddAltLogContext addTaxCode(String taxCode) {
+        this.taxCode = "taxCode=%s ".formatted(maskTaxId(taxCode));
+        return this;
+    }
+
     public String logContext() {
-        String context = uid + cxId + cxType + operationId + transactionId + recipientInternalId + delegateInternalId + requestFileKey
+        String context = uid + cxId + cxType + taxCode + operationId + transactionId + recipientInternalId + delegateInternalId + requestFileKey
                 + iun + downloadedFilekeys + aarFilekeys + iuns + result + status;
         return context.trim();
     }
