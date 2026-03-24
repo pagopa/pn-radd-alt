@@ -225,8 +225,11 @@ public class ActService extends BaseService {
                 .map(list -> list.stream()
                         .map(DocumentInfoDto::getDownloadUrl)
                         .collect(Collectors.toCollection(ArrayList::new)))
-                .map(downloadUrls -> StartTransactionResponseMapper.fromResultOnlyLegalFacts(downloadUrls, OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath()));
-    }
+                .map(downloadUrls -> StartTransactionResponseMapper.fromResultOnlyLegalFacts(downloadUrls, OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath()))
+                .onErrorResume(ex -> {
+                    log.info("Legal facts retrieval failed, returning DOCUMENT_UNAVAILABLE response: {}", ex.getMessage());
+                    return Mono.just(StartTransactionResponseMapper.fromResultOnlyLegalFacts(new ArrayList<>(), OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath()));
+                });    }
 
 
     private void enrichTransactionDataWithSenderPaId(Tuple2<TransactionData, SentNotificationV25Dto> tuple) {

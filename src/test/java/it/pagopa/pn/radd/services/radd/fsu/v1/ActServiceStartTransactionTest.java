@@ -376,17 +376,25 @@ class ActServiceStartTransactionTest {
         Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any()))
                 .thenReturn(Flux.error(new PnRaddException(webEx)));
 
-        // settingErrorReason chiamato perché legalFact propaga PnRaddException
-        Mockito.when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(raddTransactionEntity));
-        Mockito.when(raddTransactionDAOImpl.updateStatus(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        // NON servono più getTransaction/updateStatus — l'errore non si propaga
 
-        StepVerifier.create(actService.startTransaction(
-                        "test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", request))
-                .expectError(PnRaddException.class)
-                .verify();
+        StartTransactionResponse response = actService.startTransaction(
+                "test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", request).block();
 
+        assertNotNull(response);
+        // code=4 perché documentsAvailable=false
+        assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_4, response.getStatus().getCode());
+        assertEquals(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE.getMessage(), response.getStatus().getMessage());
+        // lista vuota — legal facts falliti ma errore swallowed da buildLegalFactsOnlyResponse
+        assertNotNull(response.getDownloadUrlList());
+        assertTrue(response.getDownloadUrlList().isEmpty());
+
+        // createRaddTransaction NON chiamato — chain interrotta prima
         Mockito.verify(raddTransactionDAOImpl, Mockito.never()).createRaddTransaction(any(), any());
+        // settingErrorReason NON chiamato — nessun errore propagato
+        Mockito.verify(raddTransactionDAOImpl, Mockito.never()).updateStatus(any(), any());
     }
+
 
 
     private DocumentInfoDto buildDoc(String url) {

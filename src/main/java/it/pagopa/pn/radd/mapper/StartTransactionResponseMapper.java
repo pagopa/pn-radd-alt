@@ -36,8 +36,11 @@ public class StartTransactionResponseMapper {
     public static StartTransactionResponse fromResultOnlyLegalFacts(List<DownloadUrl> legalFactsResult, String operationType, String operationId, String pnRaddAltBasepath) {
 
         StartTransactionResponse response = new StartTransactionResponse();
-        DownloadUrl firstDownloadUrl = getDocumentDownloadUrl(pnRaddAltBasepath, operationType, operationId, null, DocumentTypeEnum.COVER_FILE.name());
-        legalFactsResult.add(0, firstDownloadUrl);
+
+        if (!legalFactsResult.isEmpty()) {
+            DownloadUrl firstDownloadUrl = getDocumentDownloadUrl(pnRaddAltBasepath, operationType, operationId, null, DocumentTypeEnum.COVER_FILE.name());
+            legalFactsResult.add(0, firstDownloadUrl);
+        }
 
         StartTransactionResponseStatus status = new StartTransactionResponseStatus();
         status.setCode(StartTransactionResponseStatus.CodeEnum.NUMBER_4);
@@ -46,8 +49,8 @@ public class StartTransactionResponseMapper {
         response.setStatus(status);
         response.setDownloadUrlList(legalFactsResult);
         return response;
-
     }
+
 
     @NotNull
     public static List<DownloadUrl> getDownloadUrls(List<String> result) {
