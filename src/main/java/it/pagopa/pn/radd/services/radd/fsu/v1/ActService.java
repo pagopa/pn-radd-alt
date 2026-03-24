@@ -74,7 +74,8 @@ public class ActService extends BaseService {
                         .addIun(iun)
                         .addCxId(xPagopaPnCxId)
                         .addCxType(xPagopaPnCxType.toString())
-                )
+                        .addTaxCode(recipientTaxId)
+                        )
                 .build()
                 .log();
 
