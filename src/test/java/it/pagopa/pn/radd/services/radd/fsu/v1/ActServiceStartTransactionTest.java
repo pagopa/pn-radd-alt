@@ -5,6 +5,7 @@ import de.neuland.assertj.logging.ExpectedLoggingAssertions;
 import it.pagopa.pn.commons.log.PnAuditLog;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.*;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.*;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.NotificationStatusV26Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileDownloadResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.OperationResultCodeResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
@@ -332,9 +333,8 @@ class ActServiceStartTransactionTest {
         legalFactDto.setContentType("application/pdf");
         Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any())).thenReturn(Mono.just(legalFactDto));
 
-        // updateZipAttachments richiede getTransaction + updateZipAttachments
-        Mockito.when(raddTransactionDAOImpl.getTransaction(anyString(), eq(OperationTypeEnum.ACT))).thenReturn(Mono.just(raddTransactionEntity));
-        Mockito.when(raddTransactionDAOImpl.updateZipAttachments(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        Mockito.when(raddTransactionDAOImpl.getTransaction(anyString(), eq(OperationTypeEnum.ACT)))
+                .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)));
 
         StartTransactionResponse response = actService.startTransaction(
                 "test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", request).block();
@@ -356,7 +356,6 @@ class ActServiceStartTransactionTest {
     @Test
     void testStartTransactionWhenHasDocumentsAvailableReturnsFalseAndLegalFactsFailThenReturnCode4WithEmptyList() {
         ActStartTransactionRequest request = createActStartTransactionRequest();
-        RaddTransactionEntity raddTransactionEntity = createRaddTransactionEntity();
         ResponseCheckAarDtoDto responseCheckAarDtoDto = new ResponseCheckAarDtoDto();
         responseCheckAarDtoDto.setIun("testIun");
 
@@ -376,7 +375,6 @@ class ActServiceStartTransactionTest {
         Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any()))
                 .thenReturn(Flux.error(new PnRaddException(webEx)));
 
-        // NON servono più getTransaction/updateStatus — l'errore non si propaga
 
         StartTransactionResponse response = actService.startTransaction(
                 "test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", request).block();
@@ -395,6 +393,43 @@ class ActServiceStartTransactionTest {
         Mockito.verify(raddTransactionDAOImpl, Mockito.never()).updateStatus(any(), any());
     }
 
+    @Test
+    void shouldReturnLegalFactsWhenDocumentUnavailableAndTransactionNotExist() {
+
+        ResponseCheckAarDtoDto checkAarDto = new ResponseCheckAarDtoDto();
+        checkAarDto.setIun("test-iun");
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any())).thenReturn(Mono.just(checkAarDto));
+        Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(0));
+        Mockito.when(pnDeliveryPushClient.getNotificationHistory(any())).thenReturn(Mono.just(new NotificationHistoryResponseDto()));
+        Mockito.when(pnDataVaultClient.getEnsureFiscalCode(any(), any())).thenReturn(Mono.just("FISCALCODE123"));
+
+        SentNotificationV25Dto sentNotificationDto = createSentNotificationDto();
+        sentNotificationDto.setDocumentsAvailable(false);
+        Mockito.when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationDto));
+
+
+
+        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any()))
+                .thenReturn(Flux.fromStream(createLegalFactListElementDto()));
+
+        LegalFactDownloadMetadataWithContentTypeResponseDto legalFactDto = new LegalFactDownloadMetadataWithContentTypeResponseDto();
+        legalFactDto.setUrl("http://safestorage/UrlLegalFact?");
+        legalFactDto.setContentType("application/pdf");
+        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any())).thenReturn(Mono.just(legalFactDto));
+
+        Mockito.when(raddTransactionDAOImpl.getTransaction(anyString(), eq(OperationTypeEnum.ACT)))
+                .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)));
+
+
+        ActStartTransactionRequest request = createActStartTransactionRequest();
+
+        StepVerifier.create(actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", request))
+                .assertNext(response -> {
+                    assertNotNull(response.getDownloadUrlList());
+                    assertFalse(response.getDownloadUrlList().isEmpty());
+                })
+                .verifyComplete();
+    }
 
 
     private DocumentInfoDto buildDoc(String url) {

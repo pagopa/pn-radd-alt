@@ -446,9 +446,18 @@ public class ActService extends BaseService {
         transaction.setZipAttachments(zipAttachments);
         return raddTransactionDAO.getTransaction(transaction.getTransactionId(), OperationTypeEnum.ACT)
                 .flatMap(entity -> raddTransactionDAO.updateZipAttachments(entity, zipAttachments))
-                .thenReturn(legalFactInfoList);
+                .thenReturn(legalFactInfoList)
+                .onErrorResume(
+                        this::isTransactionNotExist,
+                        ex -> Mono.just(legalFactInfoList)
+                );
     }
 
+
+    private boolean isTransactionNotExist(Throwable ex) {
+        return ex instanceof RaddGenericException &&
+                ((RaddGenericException) ex).getExceptionType() == ExceptionTypeEnum.TRANSACTION_NOT_EXIST;
+    }
     @NotNull
     private Mono<List<DocumentInfoDto>> updateDocAttachments(TransactionData transaction, List<DocumentInfoDto> documentInfoList) {
         Map<String, Integer> docAttachments = documentInfoList
