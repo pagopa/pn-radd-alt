@@ -87,7 +87,7 @@ Resources:
               recipientType:struct<S:string>,
               senderPaIds:struct<L:array<struct<S:string>>,NULL:boolean>,
               creationTimestamp:struct<S:string>,
-              updateTimestamp:struct<S:string>,
+              updateTimestamp:struct<S:string,NULL:boolean>,
               uid:struct<S:string>,
               versionToken:struct<S:string>,
               zipAttachments:struct<
