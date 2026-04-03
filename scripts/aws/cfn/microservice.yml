@@ -502,6 +502,7 @@ Resources:
         ContainerEnvEntry44: !Sub 'PN_RADD_EVENTBUS_NAME=arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-CoreEventBus'
         ContainerEnvEntry45: !Sub 'PN_RADD_DAO_RADDCOVERAGETABLE=${RaddCoverageDynamoTableName}'
         ContainerEnvEntry46: !Sub 'PN_RADD_DOCUMENTPAGECOUNTENABLED=${DocumentPageCountEnabled}'
+        ContainerEnvEntry47: !Sub 'PN_RADD_CLIENT_TIMELINE_SERVICE_BASEPATH=http://${ApplicationLoadBalancerDomain}:8080'
         MappedPaths: '/radd-net/*,/radd-net-private/*,/radd-alt/*,/radd-bo/*'
         ECSClusterName: !Ref ECSClusterName
         Subnets: !Ref VpcEgressSubnetsIds
