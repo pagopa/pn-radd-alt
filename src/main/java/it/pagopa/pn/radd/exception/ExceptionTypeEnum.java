@@ -53,7 +53,8 @@ public enum ExceptionTypeEnum {
     ERROR_CODE_PN_RADD_ALT_UNSUPPORTED_LAST_EVALUATED_KEY("PN_RADD_ALT_UNSUPPORTED_LAST_EVALUATED_KEY", "Impossibile deserializzare la lastEvaluatedKey", 99),
     COORDINATES_NOT_FOUND("COORDINATES_NOT_FOUND", "Coordinate non trovate per l'indirizzo fornito", 99),
     INVALID_URL("INVALID_URL", "L'URL non è valido.", 99),
-    INVALID_PARTNER_ID("INVALID_PARTNER_ID", "Il partnerId fornito non è valido. Deve essere un CF.", 99);
+    INVALID_PARTNER_ID("INVALID_PARTNER_ID", "Il partnerId fornito non è valido. Deve essere un CF.", 99),
+    ADDRESS_MISMATCH("ADDRESS_MISMATCH", "L'indirizzo fornito è diverso da quello salvato.", 99);
 
     private final String title;
     private final String message;

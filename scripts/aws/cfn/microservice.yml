@@ -190,6 +190,14 @@ Parameters:
       - true
       - false
 
+  DocumentPageCountEnabled:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: 'Enable or disable Document page count calculation for cover file generation'
+
   PnCronAnalyzer:
     Type: String
     Default: '-'
@@ -493,6 +501,7 @@ Resources:
         ContainerEnvEntry43: !Sub 'PN_RADD_EVALUATED_ZIP_CODE_CONFIG_NUMBER=${EvaluatedZipCodeConfigNumber}'
         ContainerEnvEntry44: !Sub 'PN_RADD_EVENTBUS_NAME=arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-CoreEventBus'
         ContainerEnvEntry45: !Sub 'PN_RADD_DAO_RADDCOVERAGETABLE=${RaddCoverageDynamoTableName}'
+        ContainerEnvEntry46: !Sub 'PN_RADD_DOCUMENTPAGECOUNTENABLED=${DocumentPageCountEnabled}'
         MappedPaths: '/radd-net/*,/radd-net-private/*,/radd-alt/*,/radd-bo/*'
         ECSClusterName: !Ref ECSClusterName
         Subnets: !Ref VpcEgressSubnetsIds

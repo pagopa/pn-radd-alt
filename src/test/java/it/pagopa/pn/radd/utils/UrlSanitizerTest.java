@@ -2,76 +2,35 @@ package it.pagopa.pn.radd.utils;
 
 import it.pagopa.pn.radd.exception.UrlSanitizeException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class UrlSanitizerTest {
 
-    @Test
-    void sanitizeUrl_withValidHttpsUrl_shouldReturnSanitizedUrl() {
-        String input = "https://example.com/test";
-        String expected = "https://example.com/test";
+    @ParameterizedTest
+    @MethodSource("provideSanitizeUrlValidCases")
+    void sanitizeUrl_withValidInputs_shouldReturnExpectedOutput(String input, String expected) {
         String result = UrlSanitizer.sanitizeUrl(input);
         assertEquals(expected, result);
     }
 
-    @Test
-    void sanitizeUrl_withValidUrlWithoutProtocol_shouldAddHttps() {
-        String input = "example.com/test";
-        String expected = "https://example.com/test";
-        String result = UrlSanitizer.sanitizeUrl(input);
-        assertEquals(expected, result);
+    private static Stream<Arguments> provideSanitizeUrlValidCases() {
+        return Stream.of(
+                Arguments.of("https://example.com/test", "https://example.com/test"),
+                Arguments.of("example.com/test", "https://example.com/test"),
+                Arguments.of("https://example.com:8443/test", "https://example.com:8443/test"),
+                Arguments.of("example.com/test?foo=bar", "https://example.com/test?foo=bar")
+        );
     }
 
     @Test
-    void sanitizeUrl_withPort_shouldPreservePort() {
-        String input = "https://example.com:8443/test";
-        String expected = "https://example.com:8443/test";
-        String result = UrlSanitizer.sanitizeUrl(input);
-        assertEquals(expected, result);
-    }
-
-    @Test
-    void sanitizeUrl_withQueryString_shouldPreserveQuery() {
-        String input = "example.com/test?foo=bar";
-        String expected = "https://example.com/test?foo=bar";
-        String result = UrlSanitizer.sanitizeUrl(input);
-        assertEquals(expected, result);
-    }
-
-    @Test
-    void sanitizeUrl_withNull_shouldThrowException() {
-        UrlSanitizeException ex = assertThrows(
-                UrlSanitizeException.class,
-                () -> UrlSanitizer.sanitizeUrl(null)
-                                              );
-        assertTrue(ex.getMessage().contains("vuoto o nullo"));
-    }
-
-    @Test
-    void sanitizeUrl_withEmptyString_shouldThrowException() {
-        UrlSanitizeException ex = assertThrows(
-                UrlSanitizeException.class,
-                () -> UrlSanitizer.sanitizeUrl("   ")
-                                              );
-        assertTrue(ex.getMessage().contains("vuoto o nullo"));
-    }
-
-    @Test
-    void sanitizeUrl_withDangerousCharacters_shouldThrowException() {
-        UrlSanitizeException ex = assertThrows(
-                UrlSanitizeException.class,
-                () -> UrlSanitizer.sanitizeUrl("example.com/<script>")
-                                              );
-        assertTrue(ex.getMessage().contains("caratteri non validi"));
-    }
-
-    @Test
-    void sanitizeUrl_withUnsupportedProtocol_shouldThrowException() {
-        UrlSanitizeException ex = assertThrows(
-                UrlSanitizeException.class,
-                () -> UrlSanitizer.sanitizeUrl("http://example.com")
-                                              );
-        assertTrue(ex.getMessage().contains("Protocollo non supportato"));
+    void sanitizeUrl_NullInput_shouldReturnNull() {
+        assertNull(UrlSanitizer.sanitizeUrl(null));
     }
 
     @Test
@@ -79,7 +38,7 @@ class UrlSanitizerTest {
         UrlSanitizeException ex = assertThrows(
                 UrlSanitizeException.class,
                 () -> UrlSanitizer.sanitizeUrl("https://")
-                                              );
+        );
         assertTrue(ex.getMessage().contains("Errore nella sanitizzazione"));
     }
 
@@ -88,8 +47,43 @@ class UrlSanitizerTest {
         UrlSanitizeException ex = assertThrows(
                 UrlSanitizeException.class,
                 () -> UrlSanitizer.sanitizeUrl("www.esempio")
-                                              );
+        );
         assertTrue(ex.getMessage().contains("TLD non valido"));
+    }
+    @Test
+    void validateUrl_withNull_shouldThrowException() {
+        UrlSanitizeException ex = assertThrows(
+                UrlSanitizeException.class,
+                () -> UrlSanitizer.validateUrl(null)
+                                              );
+        assertTrue(ex.getMessage().contains("vuoto o nullo"));
+    }
+
+    @Test
+    void validateUrl_withEmptyString_shouldThrowException() {
+        UrlSanitizeException ex = assertThrows(
+                UrlSanitizeException.class,
+                () -> UrlSanitizer.validateUrl("   ")
+                                              );
+        assertTrue(ex.getMessage().contains("vuoto o nullo"));
+    }
+
+    @Test
+    void validateUrl_withDangerousCharacters_shouldThrowException() {
+        UrlSanitizeException ex = assertThrows(
+                UrlSanitizeException.class,
+                () -> UrlSanitizer.validateUrl("example.com/<script>")
+                                              );
+        assertTrue(ex.getMessage().contains("caratteri non validi"));
+    }
+
+    @Test
+    void validateUrl_withUnsupportedProtocol_shouldThrowException() {
+        UrlSanitizeException ex = assertThrows(
+                UrlSanitizeException.class,
+                () -> UrlSanitizer.validateUrl("http://example.com")
+                                              );
+        assertTrue(ex.getMessage().contains("Protocollo non supportato"));
     }
 
 }

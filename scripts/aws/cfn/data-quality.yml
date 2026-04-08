@@ -42,6 +42,20 @@ Parameters:
        Glue table name for pn-RaddRegistryV2, accept only lowercase values numbers char and underscores.
     Default: pn_radd_registry_v2
 
+  RaddCoverageDynamoTableName:
+    Type: String
+    Description: |
+      DynamoDb table name for pn-RaddCoverage,
+      valorized by the related output in the storage.yaml template,
+      used also for identifying the S3 bucket directory where related CDC files are stored.
+
+  RaddCoverageGlueTableName:
+    Type: String
+    AllowedPattern: '^[a-z0-9_]+$'
+    ConstraintDescription: |
+       Glue table name for pn-RaddCoverage, accept only lowercase values numbers char and underscores.
+    Default: pn_radd_coverage
+
 Resources:
   PnRaddTransactionDataQualityStack:
     Type: AWS::CloudFormation::Stack
@@ -136,4 +150,29 @@ Resources:
               uid:struct<S:string>,
               updateTimestamp:struct<S:string>,
               website:struct<S:string,NULL:boolean>
+            >
+
+  PnRaddCoverageDataQualityStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/cdc-glue.yaml"
+      Parameters:
+        DynamoTableName: !Ref RaddCoverageDynamoTableName
+        GlueTableName: !Ref RaddCoverageGlueTableName
+        GlueServiceRoleArn: !Ref GlueServiceRoleArn
+        LogsBucketName: !Ref LogsBucketName
+        GlueDatabaseName: !Ref GlueDatabaseName
+        DynamoDBKeysStructure: |
+            struct<cap:struct<S:string>,locality:struct<S:string>>
+        DynamoDBNewImageStructure: |
+            struct<
+              cap:struct<S:string>,
+              locality:struct<S:string>,
+              uid:struct<S:string>,
+              province:struct<S:string,NULL:boolean>,
+              cadastralCode:struct<S:string,NULL:boolean>,
+              creationTimestamp:struct<S:string>,
+              updateTimestamp:struct<S:string>,
+              startValidity:struct<S:string,NULL:boolean>,
+              endValidity:struct<S:string,NULL:boolean>
             >

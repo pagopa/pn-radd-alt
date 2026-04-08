@@ -8,6 +8,7 @@ import it.pagopa.pn.api.dto.events.PnEvaluatedZipCodeEvent;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileCreationRequestDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileCreationResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.SelectiveUpdateRegistryRequestV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.UpdateRegistryRequestV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.CreateRegistryRequestV2;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.AddressV2;
@@ -15,6 +16,7 @@ import it.pagopa.pn.radd.config.CachedSecretsManagerConsumer;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.mapper.AddressMapper;
 import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.pojo.*;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -61,6 +64,9 @@ class RaddRegistryUtilsTest {
 
     @Mock
     private RegistryMappingUtils registryMappingUtils;
+
+    @Mock
+    private AddressMapper addressMapper;
 
     /**
      * Method under test:
@@ -192,9 +198,7 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
-                new RegistryMappingUtils(objectMapperUtil));
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
@@ -232,9 +236,7 @@ class RaddRegistryUtilsTest {
 
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
-                                                                    new RegistryMappingUtils(objectMapperUtil));
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
@@ -272,9 +274,7 @@ class RaddRegistryUtilsTest {
 
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setRegistryImportUploadFileTtl(1L);
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                                                                    new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
-                                                                    new RegistryMappingUtils(objectMapperUtil));
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil));
         RegistryUploadRequest request = new RegistryUploadRequest();
 
         // Act
@@ -711,9 +711,7 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setEvaluatedZipCodeConfigNumber(10);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
-                new RegistryMappingUtils(objectMapperUtil));
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil));
 
         // Act and Assert
         assertTrue(raddRegistryUtils.findActiveIntervals(new ArrayList<>()).isEmpty());
@@ -728,9 +726,7 @@ class RaddRegistryUtilsTest {
         PnRaddFsuConfig pnRaddFsuConfig = new PnRaddFsuConfig();
         pnRaddFsuConfig.setEvaluatedZipCodeConfigNumber(1);
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
-        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig,
-                new SecretService(new CachedSecretsManagerConsumer(mock(SecretsManagerClient.class))),
-                new RegistryMappingUtils(objectMapperUtil));
+        RaddRegistryUtils raddRegistryUtils = new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil));
 
         ArrayList<TimeInterval> timeIntervals = new ArrayList<>();
         Instant start = LocalDate.of(1970, 1, 1).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
@@ -1326,6 +1322,49 @@ class RaddRegistryUtilsTest {
         assertNotNull(updated.getUpdateTimestamp());
     }
 
+
+    @Test
+    void testUpdateSelectiveFields() {
+        RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
+
+        SelectiveUpdateRegistryRequestV2 request = new SelectiveUpdateRegistryRequestV2();
+        request.setStartValidity(null);
+        request.setEndValidity("2025-01-27");
+        request.setExternalCodes(List.of("EX123"));
+        request.setDescription("New description");
+        request.setOpeningTime("08:00-12:00");
+        request.setPhoneNumbers(List.of("123456789"));
+        request.setAppointmentRequired(true);
+        request.setEmail("test@example.com");
+        request.setWebsite("https://newsite.it");
+        request.setAddress(new AddressV2()
+                .addressRow("addressRow")
+                .cap("cap")
+                .city("city")
+                .province("province")
+                .country("country"));
+
+        String uid = "updated-by-user";
+
+        RaddRegistryEntityV2 updated = raddRegistryUtils.mapFieldToSelectiveUpdate(entity, request, uid);
+
+        assertEquals("New description", updated.getDescription());
+        assertEquals("test@example.com", updated.getEmail());
+        assertEquals("08:00-12:00", updated.getOpeningTime());
+        assertEquals(List.of("EX123"), updated.getExternalCodes());
+        assertEquals(List.of("123456789"), updated.getPhoneNumbers());
+        assertEquals("https://newsite.it", updated.getWebsite());
+        assertEquals(true, updated.getAppointmentRequired());
+        assertEquals(Instant.parse("2025-01-27T00:00:00Z"), updated.getEndValidity());
+        assertEquals("addressRow", updated.getAddress().getAddressRow());
+        assertEquals("cap", updated.getAddress().getCap());
+        assertEquals("city", updated.getAddress().getCity());
+        assertEquals("province", updated.getAddress().getProvince());
+        assertEquals("country", updated.getAddress().getCountry());
+        assertEquals(uid, updated.getUid());
+        assertNotNull(updated.getUpdateTimestamp());
+    }
+
     @Test
     void testIgnoreNullAndBlankFields() {
         RaddRegistryEntityV2 entity = new RaddRegistryEntityV2();
@@ -1361,4 +1400,55 @@ class RaddRegistryUtilsTest {
                              RaddRegistryUtils.mapFieldToUpdate(entity, request, "uid")
                     );
     }
+
+    @Test
+    void validateAddressMatch_Success() {
+        String addressRow = "Via Roma 1";
+        String cap = "00100";
+        String city = "Roma";
+        String province = "RM";
+        String country = "IT";
+
+        AddressEntity existing = buildAddressEntity(addressRow, cap, city, province, country);
+        AddressV2 request = buildAddressV2(addressRow, cap, city, province, country);
+
+        assertDoesNotThrow(() -> validateAddressMatch(existing, request));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "Via A, 001, Roma, RM, IT, Via B, 001, Roma, RM, IT", // Via diversa
+            "Via A, 001, Roma, RM, IT, Via A, 999, Roma, RM, IT", // CAP diverso
+            "Via A, 001, Roma, RM, IT, Via A, 001, Milano, RM, IT", // Città diversa
+            "Via A, 001, Roma, RM, IT, Via A, 001, Roma, MI, IT", // Provincia diversa
+            "Via A, 001, Roma, RM, IT, Via A, 001, Roma, RM, FR"  // Paese diverso
+    })
+    void validateAddressMatch_MultipleFailures(String a1, String c1, String ci1, String p1, String co1,
+                                               String a2, String c2, String ci2, String p2, String co2) {
+        AddressEntity existing = buildAddressEntity(a1, c1, ci1, p1, co1);
+        AddressV2 request = buildAddressV2(a2, c2, ci2, p2, co2);
+
+        RaddGenericException ex = assertThrows(RaddGenericException.class, () -> validateAddressMatch(existing, request));
+        assertEquals(ExceptionTypeEnum.ADDRESS_MISMATCH, ex.getExceptionType());
+    }
+
+    private AddressEntity buildAddressEntity(String addressRow, String cap, String city, String province, String country) {
+        AddressEntity address = new AddressEntity();
+        address.setAddressRow(addressRow);
+        address.setCap(cap);
+        address.setCity(city);
+        address.setProvince(province);
+        address.setCountry(country);
+        return address;
+    }
+
+    private AddressV2 buildAddressV2(String addressRow, String cap, String city, String province, String country) {
+        return new AddressV2()
+                .addressRow(addressRow)
+                .cap(cap)
+                .city(city)
+                .province(province)
+                .country(country);
+    }
+
 }

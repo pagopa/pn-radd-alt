@@ -9,4 +9,5 @@ public class LegalFactInfo {
     String url;
     String contentType;
     LegalFactCategoryV20Dto category;
+    Integer numberOfPages;
 }

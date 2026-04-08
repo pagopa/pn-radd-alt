@@ -41,6 +41,8 @@ public class PnRaddFsuConfig {
     private Integer maxPageNumber;
     private Integer maxPrintRequests;
 
+    private String documentNumberOfPagesTagKey;
+    private boolean documentPageCountEnabled;
 
     private String evaluatedZipCodeConfigType;
     private Integer evaluatedZipCodeConfigNumber;

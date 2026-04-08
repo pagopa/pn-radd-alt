@@ -10,6 +10,7 @@ import java.util.*;
 @Slf4j
 public class PdfGenerator {
     private static final String FIELD_DENOMINATION = "denomination";
+    private static final String FIELD_NUMBER_OF_PAGES = "numberOfPages";
 
     private final DocumentComposition documentComposition;
 
@@ -17,10 +18,11 @@ public class PdfGenerator {
         this.documentComposition = documentComposition;
     }
 
-    public byte[] generateCoverFile(String denomination) throws IOException {
+    public byte[] generateCoverFile(String denomination, Integer numberOfPages) throws IOException {
 
         Map<String, Object> templateModel = new HashMap<>();
         templateModel.put(FIELD_DENOMINATION, denomination);
+        if (numberOfPages != null) { templateModel.put(FIELD_NUMBER_OF_PAGES, numberOfPages); }
         return documentComposition.executePdfTemplate(
                 DocumentComposition.TemplateType.COVER_FILE,
                 templateModel

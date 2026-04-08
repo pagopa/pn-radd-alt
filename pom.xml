@@ -9,7 +9,7 @@
         <relativePath/>
     </parent>
     <artifactId>pn-radd-alt</artifactId>
-    <version>2.16.0-SNAPSHOT</version>
+    <version>2.17.0-SNAPSHOT</version>
     <name>pn-radd-alt</name>
     <description>RADD alt microservice</description>
     <scm>
@@ -447,7 +447,7 @@
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <inputSpec>https://raw.githubusercontent.com/pagopa/pn-delivery/d120971effba9a36803d66d52714ba62364e5fa4/docs/openapi/api-private.yaml</inputSpec>
+                            <inputSpec>https://raw.githubusercontent.com/pagopa/pn-delivery/f3da006bd691a7997f8d1d486df95254977531b5/docs/openapi/api-private.yaml</inputSpec>
                             <generatorName>java</generatorName>
                             <library>webclient</library>
                             <generateApiDocumentation>false</generateApiDocumentation>
@@ -473,7 +473,7 @@
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <inputSpec>https://raw.githubusercontent.com/pagopa/pn-delivery-push/30ada13a28acbe8eb5770e74f0e98ac86f9af132/docs/openapi/api-private.yaml</inputSpec>
+                            <inputSpec>https://raw.githubusercontent.com/pagopa/pn-delivery-push/b9fd2f4a4bfb67b7afd2a7cc16520274cf90b778/docs/openapi/api-private.yaml</inputSpec>
                             <generatorName>java</generatorName>
                             <library>webclient</library>
                             <generateApiDocumentation>false</generateApiDocumentation>
@@ -498,7 +498,7 @@
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <inputSpec>${project.basedir}/docs/wsclients/pn-safe-storage/pn-safestorage-api-v1.yaml</inputSpec>
+                            <inputSpec>https://raw.githubusercontent.com/pagopa/pn-ss/e46d61b9797bd4236e62ac4eca2aa4758d23f2b8/docs/openapi/pn-safestorage-v1.1-api.yaml</inputSpec>
                             <generatorName>java</generatorName>
                             <library>webclient</library>
                             <generateApiDocumentation>false</generateApiDocumentation>
