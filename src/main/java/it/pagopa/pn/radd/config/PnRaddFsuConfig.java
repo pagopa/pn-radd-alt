@@ -22,6 +22,7 @@ public class PnRaddFsuConfig {
     private String clientDeliveryBasepath;
     private String clientDeliveryPushBasepath;
     private String clientDeliveryPushInternalBasepath;
+    private String clientTimelineServiceBasepath;
     private String clientDatavaultBasepath;
     private String clientSafeStorageBasepath;
     private String safeStorageCxId;

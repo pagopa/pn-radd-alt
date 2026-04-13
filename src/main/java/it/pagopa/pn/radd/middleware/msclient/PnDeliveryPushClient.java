@@ -3,7 +3,6 @@ package it.pagopa.pn.radd.middleware.msclient;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.api.EventComunicationApi;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.api.LegalFactsPrivateApi;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.api.PaperNotificationFailedApi;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.api.TimelineAndStatusApi;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.*;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.PnRaddException;
@@ -31,7 +30,6 @@ import java.util.concurrent.TimeoutException;
 public class PnDeliveryPushClient extends BaseClient {
     private static final String RADD_TYPE = "ALT";
     private final EventComunicationApi eventComunicationApi;
-    private final TimelineAndStatusApi timelineAndStatusApi;
     private final PaperNotificationFailedApi paperNotificationFailedApi;
     private final LegalFactsPrivateApi legalFactsApi;
 
@@ -64,26 +62,6 @@ public class PnDeliveryPushClient extends BaseClient {
                     log.trace("GET LEGAL FACT TOCK {}", new Date().getTime());
                     return item;
                 }).onErrorResume(WebClientResponseException.class, ex -> Mono.error(new PnRaddException(ex)));
-    }
-
-
-    public Mono<NotificationHistoryResponseDto> getNotificationHistory(String iun){
-        log.debug("IUN : {}", iun);
-        log.trace("NOTIFICATION HISTORY TICK {}", new Date().getTime());
-        return this.timelineAndStatusApi.getNotificationHistory(iun, 1, DateUtils.getOffsetDateTimeFromDate(new Date()))
-                .retryWhen(
-                        Retry.backoff(2, Duration.ofMillis(500))
-                                .filter(throwable -> throwable instanceof TimeoutException || throwable instanceof ConnectException)
-                ).map(item -> {
-                    log.trace("NOTIFICATION HISTORY TOCK {}", new Date().getTime());
-                    return item;
-                })
-                .onErrorResume(WebClientResponseException.class, ex -> {
-                    log.trace("NOTIFICATION HISTORY TOCK {}", new Date().getTime());
-                    ex.getStackTrace();
-                    log.error(ex.getResponseBodyAsString());
-                    return Mono.error(new PnRaddException(ex));
-                });
     }
 
     public Mono<ResponseNotificationViewedDtoDto> notifyNotificationRaddRetrieved(RaddTransactionEntity entity, Date operationDate){

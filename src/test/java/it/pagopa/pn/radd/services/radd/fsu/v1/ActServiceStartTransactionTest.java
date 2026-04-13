@@ -20,6 +20,7 @@ import it.pagopa.pn.radd.middleware.msclient.PnDataVaultClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryPushClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
+import it.pagopa.pn.radd.middleware.msclient.PnTimelineServiceClient;
 import it.pagopa.pn.radd.services.radd.fsu.v1.dto.DocumentInfoDto;
 import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
@@ -61,6 +62,9 @@ class ActServiceStartTransactionTest {
 
     @Mock
     PnDeliveryPushClient pnDeliveryPushClient;
+
+    @Mock
+    PnTimelineServiceClient pnTimelineServiceClient;
 
     @Mock
     PnDeliveryClient pnDeliveryClient;
@@ -164,7 +168,7 @@ class ActServiceStartTransactionTest {
         Mockito.when(raddTransactionDAOImpl.createRaddTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
         Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(0));
         FileDownloadResponseDto fileDownloadResponseDto = createFileDownloadResponseDto();
-        Mockito.when(pnDeliveryPushClient.getNotificationHistory(any())).thenReturn(Mono.just(new NotificationHistoryResponseDto()));
+        Mockito.when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
 
         Mockito.when(safeStorage.getFile(any())).thenReturn(Mono.just(fileDownloadResponseDto));
         Mockito.when(safeStorage.updateFileMetadata(any())).thenReturn(Mono.just(new OperationResultCodeResponseDto()));
@@ -222,7 +226,7 @@ class ActServiceStartTransactionTest {
         Mockito.when(raddTransactionDAOImpl.updateStatus(any(), any())).thenReturn(Mono.just(new RaddTransactionEntity()));
         Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(),any())).thenReturn(Mono.just(0));
 
-        Mockito.when(pnDeliveryPushClient.getNotificationHistory(any())).thenReturn(Mono.just(new NotificationHistoryResponseDto()));
+        Mockito.when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
 
         StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", request).block();
         assertNotNull(startTransactionResponse);
@@ -283,7 +287,7 @@ class ActServiceStartTransactionTest {
         Mockito.when(raddTransactionDAOImpl.createRaddTransaction(any(), any())).thenThrow(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_ALREADY_EXIST));
         Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(),any())).thenReturn(Mono.just(0));
 
-        Mockito.when(pnDeliveryPushClient.getNotificationHistory(any())).thenReturn(Mono.just(new NotificationHistoryResponseDto()));
+        Mockito.when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
 
         Mockito.when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(new RaddTransactionEntity()));
         Mockito.when(raddTransactionDAOImpl.updateStatus(any(), any())).thenReturn(Mono.just(new RaddTransactionEntity()));
