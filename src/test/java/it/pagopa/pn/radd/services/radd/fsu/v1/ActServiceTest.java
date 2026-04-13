@@ -290,7 +290,7 @@ class ActServiceTest  {
         assertThat(response.getStatus().getCode()).isEqualTo(StartTransactionResponseStatus.CodeEnum.NUMBER_3);
         assertThat(response.getStatus().getMessage()).isEqualTo("Limite di 1 stampa superato");
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=id cxId=cxId cxType=PF operationId=id iun=iun");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Limite di 1 stampa superato - uid=id cxId=cxId cxType=PF operationId=id recipientInternalId=123 iun=iun status=StartTransactionResponseStatus(code=3, message=Limite di 1 stampa superato, retryAfter=null)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Limite di 1 stampa superato - uid=id cxId=cxId cxType=PF operationId=id recipientInternalId=123 iun=iun status=class StartTransactionResponseStatus {\n" +"    code: 3\n" + "    message: Limite di 1 stampa superato\n" + "    retryAfter: null\n" + "}");
     }
 
 
@@ -309,7 +309,7 @@ class ActServiceTest  {
 
         assertEquals(ExceptionTypeEnum.TRANSACTION_ALREADY_COMPLETED.getMessage(), completeTransactionResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT completeTransaction - uid=test cxId=cxId cxType=PF operationId=operationIdTest");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT completeTransaction with error La transazione risulta già completa - uid=test cxId=cxId cxType=PF operationId=operationIdTest status=TransactionResponseStatus(code=2, message=La transazione risulta già completa)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT completeTransaction with error La transazione risulta già completa - uid=test cxId=cxId cxType=PF operationId=operationIdTest status=class TransactionResponseStatus {\n"+"    code: 2\n"+"    message: La transazione risulta già completa\n"+"}");
     }
 
     @Test
@@ -326,7 +326,7 @@ class ActServiceTest  {
 
         assertEquals(ExceptionTypeEnum.TRANSACTION_ALREADY_ABORTED.getMessage(), completeTransactionResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT completeTransaction - uid=test cxId=cxId cxType=PF operationId=operationIdTest");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT completeTransaction with error La transazione risulta annullata - uid=test cxId=cxId cxType=PF operationId=operationIdTest status=TransactionResponseStatus(code=2, message=La transazione risulta annullata)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT completeTransaction with error La transazione risulta annullata - uid=test cxId=cxId cxType=PF operationId=operationIdTest status=class TransactionResponseStatus {\n"+"    code: 2\n"+"    message: La transazione risulta annullata\n"+"}");
     }
 
     @Test
@@ -342,7 +342,7 @@ class ActServiceTest  {
         assertEquals(TransactionResponseStatus.CodeEnum.NUMBER_99, completeTransactionResponse.getStatus().getCode());
         assertEquals(ExceptionTypeEnum.TRANSACTION_ERROR_STATUS.getMessage(), completeTransactionResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT completeTransaction - uid=test cxId=cxId cxType=PF operationId=operationIdTest");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT completeTransaction with error La transazione risulta in errore - uid=test cxId=cxId cxType=PF operationId=operationIdTest status=TransactionResponseStatus(code=99, message=La transazione risulta in errore)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT completeTransaction with error La transazione risulta in errore - uid=test cxId=cxId cxType=PF operationId=operationIdTest status=class TransactionResponseStatus {\n"+"    code: 99\n"+"    message: La transazione risulta in errore\n"+"}");
     }
 
     @Test
@@ -404,7 +404,7 @@ class ActServiceTest  {
         assertEquals(TransactionResponseStatus.CodeEnum.NUMBER_1, responseError1.getStatus().getCode());
         assertEquals(ExceptionTypeEnum.TRANSACTION_NOT_EXIST.getMessage(), responseError1.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT completeTransaction - uid=test cxId=cxId cxType=PF operationId=OperationIdTestNotExist");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT completeTransaction with error Transazione inesistente - uid=test cxId=cxId cxType=PF operationId=OperationIdTestNotExist status=TransactionResponseStatus(code=1, message=Transazione inesistente)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT completeTransaction with error Transazione inesistente - uid=test cxId=cxId cxType=PF operationId=OperationIdTestNotExist status=class TransactionResponseStatus {\n"+"    code: 1\n"+"    message: Transazione inesistente\n"+"}");
     }
 
     // ----------------- //
@@ -434,7 +434,7 @@ class ActServiceTest  {
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.IUN_NOT_FOUND.getMessage(), monoResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Iun not found with params - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun= status=ActInquiryResponseStatus(code=99, message=Iun not found with params)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Iun not found with params - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun= status=class ActInquiryResponseStatus {\n"+"    code: 99\n"+"    message: Iun not found with params\n"+"}");
     }
 
     @Test
@@ -446,7 +446,7 @@ class ActServiceTest  {
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.GENERIC_ERROR.getMessage(), monoResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessageMatching(".*\\[AUD_RADD_ACTINQUIRY\\] FAILURE - End ACT Inquiry with error.*");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error 500 Internal server Error - uid=test cxId=123 cxType=PF iun= status=class ActInquiryResponseStatus {\n"+"    code: 99\n"+"    message: Si è verificato un errore\n"+"}");
     }
 
     @Test
@@ -467,7 +467,7 @@ class ActServiceTest  {
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.NOTIFICATION_CANCELLED.getMessage(), monoResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Questa notifica è stata annullata dall’ente mittente - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun=iun status=ActInquiryResponseStatus(code=80, message=Questa notifica è stata annullata dall’ente mittente)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Questa notifica è stata annullata dall’ente mittente - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun=iun status=class ActInquiryResponseStatus {\n"+"    code: 80\n"+"    message: Questa notifica è stata annullata dall’ente mittente\n"+"}");
     }
 
     @Test
@@ -494,7 +494,7 @@ class ActServiceTest  {
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE.getMessage(), monoResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Documenti non disponibili - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun=iun status=ActInquiryResponseStatus(code=4, message=Documenti non disponibili)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Documenti non disponibili - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun=iun status=class ActInquiryResponseStatus {\n"+"    code: 4\n"+"    message: Documenti non disponibili\n"+"}");
     }
 
     @Test
@@ -552,11 +552,11 @@ class ActServiceTest  {
         assertNotNull(response.getStatus());
         assertEquals(TransactionResponseStatus.CodeEnum.NUMBER_0, response.getStatus().getCode());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT abortTransaction - uid=test cxId=cxId cxType=PF operationId=Id");
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] SUCCESS - End ACT abortTransaction - uid=test cxId=cxId cxType=PF operationId=Id status=TransactionResponseStatus(code=0, message=OK)");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] SUCCESS - End ACT abortTransaction - uid=test cxId=cxId cxType=PF operationId=Id status=class TransactionResponseStatus {\n"+"    code: 0\n"+"    message: OK\n"+"}");
     }
 
     @Test
-    void abortTransactionReturnsRaddGenericException(){
+    void abortTransactionReturnsRaddGenericException() {
         AbortTransactionRequest request = new AbortTransactionRequest();
         request.setOperationId("Id");
         request.setReason("reason");
@@ -571,9 +571,7 @@ class ActServiceTest  {
                       return Mono.empty();
                   }).block();
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT abortTransaction - uid=test cxId=cxId cxType=PF operationId=Id");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT abortTransaction with error Si è verificato un errore - uid=test cxId=cxId cxType=PF operationId=Id status=TransactionResponseStatus(code=99, message=Si è verificato un errore)");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT abortTransaction with error Si è verificato un errore - uid=test cxId=cxId cxType=PF operationId=Id status=class TransactionResponseStatus {\n"+"    code: 99\n" + "    message: Si è verificato un errore\n" + "}");
     }
-
-
 
 }

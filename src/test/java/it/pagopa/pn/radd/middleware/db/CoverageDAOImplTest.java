@@ -7,7 +7,7 @@ import lombok.CustomLog;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -20,11 +20,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CoverageDAOImplTest extends BaseTest.WithLocalStack {
 
     @Autowired
-    @SpyBean
+    @MockitoSpyBean
     private CoverageDAO raddCoverageDAO;
 
     @Autowired
-    @SpyBean
+    @MockitoSpyBean
     private RestExceptionHandler exceptionHandler;
 
     @Autowired
