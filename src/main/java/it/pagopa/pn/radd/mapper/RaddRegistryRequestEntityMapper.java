@@ -1,6 +1,5 @@
 package it.pagopa.pn.radd.mapper;
 
-import com.amazonaws.util.CollectionUtils;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CreateRegistryRequest;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.GeoLocation;
 import it.pagopa.pn.radd.middleware.db.entities.RaddRegistryImportEntity;
@@ -139,7 +138,7 @@ public class RaddRegistryRequestEntityMapper {
         originalRequest.setExternalCode(request.getExternalCode());
         originalRequest.setCapacity(request.getCapacita());
 
-        if (!CollectionUtils.isNullOrEmpty(errors)) {
+        if (!errors.isEmpty()) {
             wrappedRaddRegistryOriginalRequest.setErrors(errors);
         }
         wrappedRaddRegistryOriginalRequest.setRequest(originalRequest);
@@ -173,7 +172,7 @@ public class RaddRegistryRequestEntityMapper {
             requestEntity.setUid(importEntity.getUid());
 
             checkRequiredFieldsAndUpdateError(wrappedRaddRegistryOriginalRequest);
-            if (!CollectionUtils.isNullOrEmpty(wrappedRaddRegistryOriginalRequest.getErrors())) {
+            if (wrappedRaddRegistryOriginalRequest.getErrors() != null && !wrappedRaddRegistryOriginalRequest.getErrors().isEmpty()) {
                 requestEntity.setStatus(RegistryRequestStatus.REJECTED.name());
                 requestEntity.setError(String.join(", ", wrappedRaddRegistryOriginalRequest.getErrors()));
             } else {
