@@ -172,7 +172,7 @@ public class RaddRegistryRequestEntityMapper {
             requestEntity.setUid(importEntity.getUid());
 
             checkRequiredFieldsAndUpdateError(wrappedRaddRegistryOriginalRequest);
-            if (wrappedRaddRegistryOriginalRequest.getErrors() != null && !wrappedRaddRegistryOriginalRequest.getErrors().isEmpty()) {
+            if (!wrappedRaddRegistryOriginalRequest.getErrors().isEmpty()) {
                 requestEntity.setStatus(RegistryRequestStatus.REJECTED.name());
                 requestEntity.setError(String.join(", ", wrappedRaddRegistryOriginalRequest.getErrors()));
             } else {
