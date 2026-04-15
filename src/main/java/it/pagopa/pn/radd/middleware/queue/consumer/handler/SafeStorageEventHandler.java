@@ -44,7 +44,7 @@ public class SafeStorageEventHandler extends AbstractConsumerMessage {
                             log.logEndingProcess(HANDLER_REQUEST);
                         })
                         .doOnError(throwable -> {
-                            log.logEndingProcess(HANDLER_REQUEST, false, throwable.getMessage());
+                            log.logEndingProcess(HANDLER_REQUEST, false, throwable.getMessage(), throwable);
                             MDC.remove(MDCUtils.MDC_PN_CTX_SAFESTORAGE_FILEKEY);
                             HandleEventUtils.handleException(message.getHeaders(), throwable);
                         });

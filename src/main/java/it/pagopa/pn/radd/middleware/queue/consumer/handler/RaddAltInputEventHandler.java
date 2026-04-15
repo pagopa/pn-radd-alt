@@ -72,7 +72,7 @@ public class RaddAltInputEventHandler extends AbstractConsumerMessage {
             var monoResult = registryService.handleNormalizeRequestEvent(payload)
                     .doOnSuccess(unused -> log.logEndingProcess(HANDLER_NORMALIZE_REQUEST))
                     .doOnError(throwable ->  {
-                        log.logEndingProcess(HANDLER_NORMALIZE_REQUEST, false, throwable.getMessage());
+                        log.logEndingProcess(HANDLER_NORMALIZE_REQUEST, false, throwable.getMessage(), throwable);
                         HandleEventUtils.handleException(headers, throwable);
                     });
 
@@ -87,7 +87,7 @@ public class RaddAltInputEventHandler extends AbstractConsumerMessage {
             var monoResult = registryService.handleImportCompletedRequest(payload)
                     .doOnSuccess(unused -> log.logEndingProcess(IMPORT_COMPLETED_REQUEST))
                     .doOnError(throwable ->  {
-                        log.logEndingProcess(IMPORT_COMPLETED_REQUEST, false, throwable.getMessage());
+                        log.logEndingProcess(IMPORT_COMPLETED_REQUEST, false, throwable.getMessage(), throwable);
                         HandleEventUtils.handleException(headers, throwable);
                     });
 
