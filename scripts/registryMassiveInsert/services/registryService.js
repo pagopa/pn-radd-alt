@@ -12,7 +12,8 @@ function isSocketHangUpError(error) {
     error.errno,
     error?.cause?.message,
     error?.cause?.code,
-    error?.response?.data?.message
+    error?.response?.data?.message,
+    error?.cause?.response?.data?.message
   ]
     .filter(Boolean)
     .map(v => String(v).toLowerCase());
@@ -35,7 +36,13 @@ async function withSocketHangUpRetry(fn, maxRetries = 5, delayMs = 1000) {
       }
 
       if (attempt === maxRetries) {
-        throw new Error('Socket Hang Up 5 Retry');
+        const finalError = new Error(
+          `Socket Hang Up after ${maxRetries} retries`,
+          { cause: error }
+        );
+        finalError.code = error?.code;
+        finalError.response = error?.response;
+        throw finalError;
       }
 
       console.warn(`Socket hang up rilevato. Retry ${attempt}/${maxRetries - 1} tra ${delayMs} ms...`);
@@ -62,7 +69,8 @@ class RegistryService {
   // Private helper to extract error message
   #getErrorMessage(error) {
     if (error?.response?.data) return JSON.stringify(error.response.data);
-    return error?.message || String(error);
+    if (error?.cause?.response?.data) return JSON.stringify(error.cause.response.data);
+    return error?.message || error?.cause?.message || String(error);
   }
 
   async getRegistriesByPartnerId(partnerId, headers = {}) {
@@ -111,7 +119,6 @@ class RegistryService {
       console.log(`✅ Eliminata sede ${locationId}`);
     } catch (err) {
       console.error(`❌ Errore eliminazione sede ${locationId}: ${this.#getErrorMessage(err)}`);
-      throw err;
     }
   }
 
