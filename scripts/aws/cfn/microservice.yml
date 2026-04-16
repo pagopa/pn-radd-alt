@@ -640,6 +640,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/applicative-throttling.yaml"
       Parameters:
+        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
         ApplicationLoadBalancerArn: !Ref ApplicationLoadBalancerArn
         ThrottledPathsRegexp: '/radd-net/.*'
         ThrottlingGroupString: 'radd-by-cf'
