@@ -474,6 +474,9 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <inputSpec>https://raw.githubusercontent.com/pagopa/pn-delivery-push/b9fd2f4a4bfb67b7afd2a7cc16520274cf90b778/docs/openapi/api-private.yaml</inputSpec>
+                            <!-- WORKAROUND: i DTO generati non estendono la classe base, causando
+                                 InvalidTypeIdException.-->
+                            <templateDirectory>${project.basedir}/src/main/resources/templates/7.12.0/client</templateDirectory>
                             <generatorName>java</generatorName>
                             <library>webclient</library>
                             <generateApiDocumentation>false</generateApiDocumentation>

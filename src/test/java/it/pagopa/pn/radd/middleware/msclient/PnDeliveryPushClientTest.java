@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -154,5 +155,26 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
             fail("Badly type exception");
             return Mono.empty();
         }).blockFirst();
+    }
+
+    /**
+     * Regression test — PN-19039 / errore del 2026-04-15 in dev.
+     *
+     * Verifica che la risposta di pn-delivery-push con un elemento di timeline con
+     * categoryType = "VALIDATE_NORMALIZE_ADDRESSES_REQUEST" venga deserializzata
+     * correttamente senza eccezioni.
+     *
+     * Prima del fix (override di typeInfoAnnotation.mustache) il DTO generato
+     * (ValidateNormalizeAddressDetailsDto) non estendeva TimelineElementDetailsV28Dto,
+     * causando InvalidTypeIdException avvolto in DecodingException.
+     */
+    @Test
+    void testGetNotificationHistory_timelineWithValidateNormalizeAddresses_returnsSuccessfully() {
+        String iun = "YDPM-EKJA-DQGQ-202604-E-1";
+
+        StepVerifier.create(pnDeliveryPushClient.getNotificationHistory(iun))
+                .expectNextMatches(response ->
+                        NotificationStatusV26Dto.ACCEPTED == response.getNotificationStatus())
+                .verifyComplete();
     }
 }
