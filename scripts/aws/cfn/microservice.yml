@@ -415,6 +415,11 @@ Parameters:
     AllowedValues: [60, 120, 300, 600]
     Description: 'Throttling period in seconds'
 
+  RaddAltApplicativeThrottlingLogRetentionDays:
+    Type: Number
+    Default: 14
+    Description: Retention in days for applicative throttling WAF logs
+
   BlockImportLocations:
     Type: String
     AllowedValues:
@@ -641,6 +646,7 @@ Resources:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/applicative-throttling.yaml"
       Parameters:
         AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+        LogRetentionDays: !Ref RaddAltApplicativeThrottlingLogRetentionDays
         ApplicationLoadBalancerArn: !Ref ApplicationLoadBalancerArn
         ThrottledPathsRegexp: '/radd-net/.*'
         ThrottlingGroupString: 'radd-by-cf'
