@@ -158,14 +158,15 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
     }
 
     /**
-     * Regression test — PN-19039 / errore del 2026-04-15 in dev.
+     * Regression test — PN-17480 / errore del 2026-04-15 in dev.
      *
      * Verifica che la risposta di pn-delivery-push con un elemento di timeline con
      * categoryType = "VALIDATE_NORMALIZE_ADDRESSES_REQUEST" venga deserializzata
      * correttamente senza eccezioni.
      *
-     * Prima del fix (override di typeInfoAnnotation.mustache) il DTO generato
-     * (ValidateNormalizeAddressDetailsDto) non estendeva TimelineElementDetailsV28Dto,
+     * Prima del fix (useOneOfInterfaces=true nella generazione del client pn-delivery-push)
+     * il generatore emetteva @JsonTypeInfo/@JsonSubTypes sulla classe base, ma i DTO concreti
+     * (es. ValidateNormalizeAddressDetailsDto) non estendevano TimelineElementDetailsV28Dto,
      * causando InvalidTypeIdException avvolto in DecodingException.
      */
     @Test
