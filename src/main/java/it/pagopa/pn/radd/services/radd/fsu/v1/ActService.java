@@ -7,6 +7,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.SentNo
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactCategoryV20Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactDownloadMetadataWithContentTypeResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactListElementV20Dto;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.NotificationStatusV26Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.*;
@@ -17,7 +18,6 @@ import it.pagopa.pn.radd.middleware.msclient.PnDataVaultClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryPushClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
-import it.pagopa.pn.radd.middleware.msclient.PnTimelineServiceClient;
 import it.pagopa.pn.radd.pojo.*;
 import it.pagopa.pn.radd.services.radd.fsu.v1.dto.DocumentInfoDto;
 import it.pagopa.pn.radd.utils.DateUtils;
@@ -52,17 +52,15 @@ import static org.springframework.util.StringUtils.hasText;
 public class ActService extends BaseService {
     private final PnDeliveryClient pnDeliveryClient;
     private final PnDeliveryPushClient pnDeliveryPushClient;
-    private final PnTimelineServiceClient pnTimelineServiceClient;
     private final TransactionDataMapper transactionDataMapper;
     private final PnRaddFsuConfig pnRaddFsuConfig;
     private final Predicate<Throwable> isStartTransactionAcceptedException = ex -> ex instanceof IunAlreadyExistsException
             || ex instanceof TransactionAlreadyExistsException;
 
-    public ActService(RaddTransactionDAO raddTransactionDAO, PnDeliveryClient pnDeliveryClient, PnDeliveryPushClient pnDeliveryPushClient, PnTimelineServiceClient pnTimelineServiceClient, PnDataVaultClient pnDataVaultClient, PnSafeStorageClient safeStorageClient, TransactionDataMapper transactionDataMapper, PnRaddFsuConfig pnRaddFsuConfig) {
+    public ActService(RaddTransactionDAO raddTransactionDAO, PnDeliveryClient pnDeliveryClient, PnDeliveryPushClient pnDeliveryPushClient, PnDataVaultClient pnDataVaultClient, PnSafeStorageClient safeStorageClient, TransactionDataMapper transactionDataMapper, PnRaddFsuConfig pnRaddFsuConfig) {
         super(pnDataVaultClient, raddTransactionDAO, safeStorageClient);
         this.pnDeliveryClient = pnDeliveryClient;
         this.pnDeliveryPushClient = pnDeliveryPushClient;
-        this.pnTimelineServiceClient = pnTimelineServiceClient;
         this.transactionDataMapper = transactionDataMapper;
         this.pnRaddFsuConfig = pnRaddFsuConfig;
     }
@@ -608,11 +606,13 @@ public class ActService extends BaseService {
     }
 
     private Mono<String> hasNotificationsCancelled(String iun) {
-        return this.pnTimelineServiceClient.getCancellationRequest(iun)
-                .hasElement()
-                .flatMap(isCancelled -> isCancelled
-                        ? Mono.error(new RaddGenericException(NOTIFICATION_CANCELLED))
-                        : Mono.just(iun));
+        return this.pnDeliveryPushClient.getNotificationHistory(iun)
+                .flatMap(response -> {
+                    if (response.getNotificationStatus() == NotificationStatusV26Dto.CANCELLED) {
+                        return Mono.error(new RaddGenericException(NOTIFICATION_CANCELLED));
+                    }
+                    return Mono.just(iun);
+                });
     }
 
     private Mono<TransactionData> createRaddTransaction(String uid, TransactionData transactionData) {
