@@ -415,6 +415,10 @@ Parameters:
     AllowedValues: [60, 120, 300, 600]
     Description: 'Throttling period in seconds'
 
+  LogRetention:
+    Type: Number
+    Default: 14
+
   BlockImportLocations:
     Type: String
     AllowedValues:
@@ -641,6 +645,8 @@ Resources:
     Properties:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/applicative-throttling.yaml"
       Parameters:
+        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+        LogRetentionDays: !Ref LogRetention
         ApplicationLoadBalancerArn: !Ref ApplicationLoadBalancerArn
         ThrottledPathsRegexp: '/radd-net/.*'
         ThrottlingGroupString: 'radd-by-cf'

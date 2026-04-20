@@ -14,12 +14,10 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.UpdateRegistryReque
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
-import it.pagopa.pn.radd.mapper.AddressMapper;
 import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
 import it.pagopa.pn.radd.middleware.db.entities.*;
 import it.pagopa.pn.radd.pojo.*;
 import it.pagopa.pn.radd.services.radd.fsu.v1.AwsGeoService;
-import it.pagopa.pn.radd.services.radd.fsu.v1.SecretService;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -32,7 +30,7 @@ import software.amazon.awssdk.services.geoplaces.model.AddressComponentMatchScor
 import software.amazon.awssdk.services.geoplaces.model.ComponentMatchScores;
 import software.amazon.awssdk.services.geoplaces.model.MatchScoreDetails;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
