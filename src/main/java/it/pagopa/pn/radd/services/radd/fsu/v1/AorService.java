@@ -64,6 +64,7 @@ public class AorService extends BaseService {
                         .addUid(uid)
                         .addCxId(xPagopaPnCxId)
                         .addCxType(xPagopaPnCxType.toString())
+                        .addTaxCode(recipientTaxId)
                 )
                 .build()
                 .log();
