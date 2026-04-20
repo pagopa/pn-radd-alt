@@ -449,7 +449,7 @@ class ActServiceTest  {
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.GENERIC_ERROR.getMessage(), monoResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF taxCode=test iun=");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error 500 Internal server Error - uid=test cxId=123 cxType=PF iun= status=class ActInquiryResponseStatus {\n"+"    code: 99\n"+"    message: Si è verificato un errore\n"+"}");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error 500 Internal server Error - uid=test cxId=123 cxType=PF taxCode=test iun= status=class ActInquiryResponseStatus {\n"+"    code: 99\n"+"    message: Si è verificato un errore\n"+"}");
     }
 
     @Test
