@@ -495,7 +495,6 @@
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <templateDirectory>${project.basedir}/src/main/resources/templates/5.4.0/client</templateDirectory>
                             <inputSpec>https://raw.githubusercontent.com/pagopa/pn-timeline-service/da347d797bb5a74464d6c877562fc5e9c9970718/docs/openapi/pn-timeline-service-private.yaml</inputSpec>
                             <generatorName>java</generatorName>
                             <library>webclient</library>
@@ -504,6 +503,8 @@
                             <generateModelTests>false</generateModelTests>
                             <generateSupportingFiles>true</generateSupportingFiles>
                             <configOptions>
+                                <useOneOfInterfaces>true</useOneOfInterfaces>
+                                <useJakartaEe>true</useJakartaEe>
                                 <swaggerAnnotations>false</swaggerAnnotations>
                                 <openApiNullable>false</openApiNullable>
                             </configOptions>
