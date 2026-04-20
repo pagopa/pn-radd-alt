@@ -7,7 +7,6 @@ import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.SentNo
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactCategoryV20Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactDownloadMetadataWithContentTypeResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactListElementV20Dto;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.NotificationStatusV26Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.*;
@@ -18,6 +17,7 @@ import it.pagopa.pn.radd.middleware.msclient.PnDataVaultClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryPushClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
+import it.pagopa.pn.radd.middleware.msclient.PnTimelineServiceClient;
 import it.pagopa.pn.radd.pojo.*;
 import it.pagopa.pn.radd.services.radd.fsu.v1.dto.DocumentInfoDto;
 import it.pagopa.pn.radd.utils.DateUtils;
@@ -52,15 +52,17 @@ import static org.springframework.util.StringUtils.hasText;
 public class ActService extends BaseService {
     private final PnDeliveryClient pnDeliveryClient;
     private final PnDeliveryPushClient pnDeliveryPushClient;
+    private final PnTimelineServiceClient pnTimelineServiceClient;
     private final TransactionDataMapper transactionDataMapper;
     private final PnRaddFsuConfig pnRaddFsuConfig;
     private final Predicate<Throwable> isStartTransactionAcceptedException = ex -> ex instanceof IunAlreadyExistsException
             || ex instanceof TransactionAlreadyExistsException;
 
-    public ActService(RaddTransactionDAO raddTransactionDAO, PnDeliveryClient pnDeliveryClient, PnDeliveryPushClient pnDeliveryPushClient, PnDataVaultClient pnDataVaultClient, PnSafeStorageClient safeStorageClient, TransactionDataMapper transactionDataMapper, PnRaddFsuConfig pnRaddFsuConfig) {
+    public ActService(RaddTransactionDAO raddTransactionDAO, PnDeliveryClient pnDeliveryClient, PnDeliveryPushClient pnDeliveryPushClient, PnTimelineServiceClient pnTimelineServiceClient, PnDataVaultClient pnDataVaultClient, PnSafeStorageClient safeStorageClient, TransactionDataMapper transactionDataMapper, PnRaddFsuConfig pnRaddFsuConfig) {
         super(pnDataVaultClient, raddTransactionDAO, safeStorageClient);
         this.pnDeliveryClient = pnDeliveryClient;
         this.pnDeliveryPushClient = pnDeliveryPushClient;
+        this.pnTimelineServiceClient = pnTimelineServiceClient;
         this.transactionDataMapper = transactionDataMapper;
         this.pnRaddFsuConfig = pnRaddFsuConfig;
     }
@@ -161,21 +163,7 @@ public class ActService extends BaseService {
                 })
                 .flatMap(transactionData -> checkQrCodeOrIun(request.getRecipientType().getValue(), request.getQrCode(), request.getIun(), transactionData.getEnsureRecipientId())
                         .map(s -> setIun(transactionData, s)))
-                .flatMap(transactionData -> hasNotificationsCancelled(transactionData.getIun())
-                        .thenReturn(transactionData))
-                .zipWhen(transactionData -> hasDocumentsAvailable(transactionData.getIun()))
-                .doOnNext(this::enrichTransactionDataWithSenderPaId)
-                .flatMap(tuple -> this.createRaddTransaction(uid, tuple.getT1())
-                        .map(createdTransactionData -> Tuples.of(createdTransactionData, tuple.getT2())))
-                .doOnNext(tuple ->
-                        pnRaddAltAuditLog.getContext().addTransactionId(tuple.getT1().getTransactionId())
-                                .addIun(tuple.getT1().getIun())
-                )
-                .flatMap(tuple -> verifyCheckSum(tuple.getT1())
-                        .map(verifiedTransactionData -> Tuples.of(verifiedTransactionData, tuple.getT2())))
-                .zipWhen(transactionAndSentNotification -> retrieveDocumentsAndAttachments(request, transactionAndSentNotification),
-                        (tupla, response) -> Tuples.of(tupla.getT1(), response))
-                .zipWhen(transactionAndResponse -> this.updateFileMetadata(transactionAndResponse.getT1()), (in, out) -> in.getT2())
+                .flatMap( transactionData -> handleTransactionFlow( pnRaddAltAuditLog, transactionData, uid, request))
                 .map(response -> {
                     log.trace("START ACT TRANSACTION TOCK {}", new Date().getTime());
                     pnRaddAltAuditLog.getContext().addDownloadFilekeys(response.getDownloadUrlList()).addResponseStatus(response.getStatus().toString());
@@ -205,6 +193,47 @@ public class ActService extends BaseService {
                             pnRaddAltAuditLog.generateFailure(END_ACT_START_TRANSACTION_WITH_ERROR, ex.getMessage(), ex);
                         }));
     }
+
+    private Mono<StartTransactionResponse> handleTransactionFlow(PnRaddAltAuditLog pnRaddAltAuditLog, TransactionData transactionData, String uid, ActStartTransactionRequest request) {
+
+        return hasNotificationsCancelled(transactionData.getIun()).thenReturn(transactionData)
+                .zipWhen(data -> hasDocumentsAvailable(data.getIun()))
+                .doOnNext(this::enrichTransactionDataWithSenderPaId)
+                .flatMap(tuple -> this.createRaddTransaction(uid, tuple.getT1())
+                        .map(createdTransactionData -> Tuples.of(createdTransactionData, tuple.getT2())))
+                .doOnNext(tuple ->
+                        pnRaddAltAuditLog.getContext()
+                                .addTransactionId(tuple.getT1().getTransactionId())
+                                .addIun(tuple.getT1().getIun()))
+                .flatMap(tuple -> verifyCheckSum(tuple.getT1())
+                        .map(verifiedTransactionData -> Tuples.of(verifiedTransactionData, tuple.getT2())))
+                .zipWhen(transactionAndSentNotification ->
+                                retrieveDocumentsAndAttachments(request, transactionAndSentNotification),
+                        (tupla, response) -> Tuples.of(tupla.getT1(), response))
+                .zipWhen(transactionAndResponse ->
+                        this.updateFileMetadata(transactionAndResponse.getT1()), (in, out) -> in.getT2())
+                .onErrorResume(RaddGenericException.class, ex -> {
+                    if (DOCUMENT_UNAVAILABLE.equals(ex.getExceptionType())) {
+                        return buildLegalFactsOnlyResponse(transactionData, request);
+                    }
+                    return Mono.error(ex);
+                });
+    }
+
+    private Mono<StartTransactionResponse> buildLegalFactsOnlyResponse(
+            TransactionData transactionData,
+            ActStartTransactionRequest request) {
+        return legalFact(transactionData)
+                .collectList()
+                .map(list -> list.stream()
+                        .map(DocumentInfoDto::getDownloadUrl)
+                        .collect(Collectors.toCollection(ArrayList::new)))
+                .map(downloadUrls -> StartTransactionResponseMapper.fromResultOnlyLegalFacts(downloadUrls, OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath()))
+                .onErrorResume(ex -> {
+                    log.info("Legal facts retrieval failed, returning DOCUMENT_UNAVAILABLE response: {}", ex.getMessage());
+                    return Mono.just(StartTransactionResponseMapper.fromResultOnlyLegalFacts(new ArrayList<>(), OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath()));
+                });    }
+
 
     private void enrichTransactionDataWithSenderPaId(Tuple2<TransactionData, SentNotificationV25Dto> tuple) {
         TransactionData transactionData = tuple.getT1();
@@ -420,9 +449,18 @@ public class ActService extends BaseService {
         transaction.setZipAttachments(zipAttachments);
         return raddTransactionDAO.getTransaction(transaction.getTransactionId(), OperationTypeEnum.ACT)
                 .flatMap(entity -> raddTransactionDAO.updateZipAttachments(entity, zipAttachments))
-                .thenReturn(legalFactInfoList);
+                .thenReturn(legalFactInfoList)
+                .onErrorResume(
+                        this::isTransactionNotExist,
+                        ex -> Mono.just(legalFactInfoList)
+                );
     }
 
+
+    private boolean isTransactionNotExist(Throwable ex) {
+        return ex instanceof RaddGenericException &&
+                ((RaddGenericException) ex).getExceptionType() == ExceptionTypeEnum.TRANSACTION_NOT_EXIST;
+    }
     @NotNull
     private Mono<List<DocumentInfoDto>> updateDocAttachments(TransactionData transaction, List<DocumentInfoDto> documentInfoList) {
         Map<String, Integer> docAttachments = documentInfoList
@@ -607,13 +645,11 @@ public class ActService extends BaseService {
     }
 
     private Mono<String> hasNotificationsCancelled(String iun) {
-        return this.pnDeliveryPushClient.getNotificationHistory(iun)
-                .flatMap(response -> {
-                    if (response.getNotificationStatus() == NotificationStatusV26Dto.CANCELLED) {
-                        return Mono.error(new RaddGenericException(NOTIFICATION_CANCELLED));
-                    }
-                    return Mono.just(iun);
-                });
+        return this.pnTimelineServiceClient.getCancellationRequest(iun)
+                .hasElement()
+                .flatMap(isCancelled -> isCancelled
+                        ? Mono.error(new RaddGenericException(NOTIFICATION_CANCELLED))
+                        : Mono.just(iun));
     }
 
     private Mono<TransactionData> createRaddTransaction(String uid, TransactionData transactionData) {
