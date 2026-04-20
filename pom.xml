@@ -484,6 +484,7 @@
                                 <useJakartaEe>true</useJakartaEe>
                                 <swaggerAnnotations>false</swaggerAnnotations>
                                 <openApiNullable>false</openApiNullable>
+                                <useOneOfInterfaces>true</useOneOfInterfaces>
                             </configOptions>
                             <modelPackage>${project.groupId}.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto</modelPackage>
                             <apiPackage>${project.groupId}.radd.alt.generated.openapi.msclient.pndeliverypush.v1.api
