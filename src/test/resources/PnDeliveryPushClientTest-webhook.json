@@ -202,5 +202,31 @@
         ]
       }
     }
+  },
+  {
+    "httpRequest": {
+      "path": "/delivery-push-private/YDPM-EKJA-DQGQ-202604-E-1/history",
+      "method": "GET"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "content-type": ["application/json"]
+      },
+      "body": {
+        "notificationStatus": "ACCEPTED",
+        "notificationStatusHistory": [],
+        "timeline": [
+          {
+            "elementId": "VALIDATE_NORMALIZE_ADDRESSES_REQUEST.IUN_YDPM-EKJA-DQGQ-202604-E-1",
+            "timestamp": "2026-04-15T10:09:11Z",
+            "category": "VALIDATE_NORMALIZE_ADDRESSES_REQUEST",
+            "details": {
+              "categoryType": "VALIDATE_NORMALIZE_ADDRESSES_REQUEST"
+            }
+          }
+        ]
+      }
+    }
   }
 ]
