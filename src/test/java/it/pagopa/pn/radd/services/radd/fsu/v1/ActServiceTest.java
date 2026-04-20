@@ -5,7 +5,8 @@ import de.neuland.assertj.logging.ExpectedLoggingAssertions;
 import it.pagopa.pn.commons.log.PnAuditLog;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.ResponseCheckAarDtoDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.SentNotificationV25Dto;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.pntimelineservice.v1.dto.CancellationRequestResponseDto;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.NotificationHistoryResponseDto;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.NotificationStatusV26Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.*;
@@ -15,7 +16,6 @@ import it.pagopa.pn.radd.middleware.db.impl.RaddTransactionDAOImpl;
 import it.pagopa.pn.radd.middleware.msclient.PnDataVaultClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryPushClient;
-import it.pagopa.pn.radd.middleware.msclient.PnTimelineServiceClient;
 import it.pagopa.pn.radd.pojo.TransactionData;
 import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
@@ -57,9 +57,6 @@ class ActServiceTest  {
 
     @Mock
     PnDeliveryPushClient pnDeliveryPushClient;
-
-    @Mock
-    PnTimelineServiceClient pnTimelineServiceClient;
 
     @Mock
     PnDeliveryClient pnDeliveryClient;
@@ -461,7 +458,9 @@ class ActServiceTest  {
         when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(1));
         when(pnRaddFsuConfig.getMaxPrintRequests()).thenReturn(0);
 
-        when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.just(new CancellationRequestResponseDto()));
+        NotificationHistoryResponseDto notificationHistoryResponseDto = new NotificationHistoryResponseDto();
+        notificationHistoryResponseDto.setNotificationStatus(NotificationStatusV26Dto.CANCELLED);
+        when(pnDeliveryPushClient.getNotificationHistory(any())).thenReturn(Mono.just(notificationHistoryResponseDto));
         ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "").block();
         assertNotNull(monoResponse);
         assertNotNull(monoResponse.getResult());
@@ -480,7 +479,9 @@ class ActServiceTest  {
         when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(1));
         when(pnRaddFsuConfig.getMaxPrintRequests()).thenReturn(0);
 
-        when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
+        NotificationHistoryResponseDto notificationHistoryResponseDto = new NotificationHistoryResponseDto();
+        notificationHistoryResponseDto.setNotificationStatus(NotificationStatusV26Dto.DELIVERED);
+        when(pnDeliveryPushClient.getNotificationHistory(any())).thenReturn(Mono.just(notificationHistoryResponseDto));
 
         SentNotificationV25Dto sentNotificationV23Dto = new SentNotificationV25Dto();
         sentNotificationV23Dto.setDocumentsAvailable(false);
