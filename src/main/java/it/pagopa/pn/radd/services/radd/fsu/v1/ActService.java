@@ -162,21 +162,7 @@ public class ActService extends BaseService {
                 })
                 .flatMap(transactionData -> checkQrCodeOrIun(request.getRecipientType().getValue(), request.getQrCode(), request.getIun(), transactionData.getEnsureRecipientId())
                         .map(s -> setIun(transactionData, s)))
-                .flatMap(transactionData -> hasNotificationsCancelled(transactionData.getIun())
-                        .thenReturn(transactionData))
-                .zipWhen(transactionData -> hasDocumentsAvailable(transactionData.getIun()))
-                .doOnNext(this::enrichTransactionDataWithSenderPaId)
-                .flatMap(tuple -> this.createRaddTransaction(uid, tuple.getT1())
-                        .map(createdTransactionData -> Tuples.of(createdTransactionData, tuple.getT2())))
-                .doOnNext(tuple ->
-                        pnRaddAltAuditLog.getContext().addTransactionId(tuple.getT1().getTransactionId())
-                                .addIun(tuple.getT1().getIun())
-                )
-                .flatMap(tuple -> verifyCheckSum(tuple.getT1())
-                        .map(verifiedTransactionData -> Tuples.of(verifiedTransactionData, tuple.getT2())))
-                .zipWhen(transactionAndSentNotification -> retrieveDocumentsAndAttachments(request, transactionAndSentNotification),
-                        (tupla, response) -> Tuples.of(tupla.getT1(), response))
-                .zipWhen(transactionAndResponse -> this.updateFileMetadata(transactionAndResponse.getT1()), (in, out) -> in.getT2())
+                .flatMap( transactionData -> handleTransactionFlow( pnRaddAltAuditLog, transactionData, uid, request))
                 .map(response -> {
                     log.trace("START ACT TRANSACTION TOCK {}", new Date().getTime());
                     pnRaddAltAuditLog.getContext().addDownloadFilekeys(response.getDownloadUrlList()).addResponseStatus(response.getStatus().toString());
@@ -206,6 +192,47 @@ public class ActService extends BaseService {
                             pnRaddAltAuditLog.generateFailure(END_ACT_START_TRANSACTION_WITH_ERROR, ex.getMessage(), ex);
                         }));
     }
+
+    private Mono<StartTransactionResponse> handleTransactionFlow(PnRaddAltAuditLog pnRaddAltAuditLog, TransactionData transactionData, String uid, ActStartTransactionRequest request) {
+
+        return hasNotificationsCancelled(transactionData.getIun()).thenReturn(transactionData)
+                .zipWhen(data -> hasDocumentsAvailable(data.getIun()))
+                .doOnNext(this::enrichTransactionDataWithSenderPaId)
+                .flatMap(tuple -> this.createRaddTransaction(uid, tuple.getT1())
+                        .map(createdTransactionData -> Tuples.of(createdTransactionData, tuple.getT2())))
+                .doOnNext(tuple ->
+                        pnRaddAltAuditLog.getContext()
+                                .addTransactionId(tuple.getT1().getTransactionId())
+                                .addIun(tuple.getT1().getIun()))
+                .flatMap(tuple -> verifyCheckSum(tuple.getT1())
+                        .map(verifiedTransactionData -> Tuples.of(verifiedTransactionData, tuple.getT2())))
+                .zipWhen(transactionAndSentNotification ->
+                                retrieveDocumentsAndAttachments(request, transactionAndSentNotification),
+                        (tupla, response) -> Tuples.of(tupla.getT1(), response))
+                .zipWhen(transactionAndResponse ->
+                        this.updateFileMetadata(transactionAndResponse.getT1()), (in, out) -> in.getT2())
+                .onErrorResume(RaddGenericException.class, ex -> {
+                    if (DOCUMENT_UNAVAILABLE.equals(ex.getExceptionType())) {
+                        return buildLegalFactsOnlyResponse(transactionData, request);
+                    }
+                    return Mono.error(ex);
+                });
+    }
+
+    private Mono<StartTransactionResponse> buildLegalFactsOnlyResponse(
+            TransactionData transactionData,
+            ActStartTransactionRequest request) {
+        return legalFact(transactionData)
+                .collectList()
+                .map(list -> list.stream()
+                        .map(DocumentInfoDto::getDownloadUrl)
+                        .collect(Collectors.toCollection(ArrayList::new)))
+                .map(downloadUrls -> StartTransactionResponseMapper.fromResultOnlyLegalFacts(downloadUrls, OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath()))
+                .onErrorResume(ex -> {
+                    log.info("Legal facts retrieval failed, returning DOCUMENT_UNAVAILABLE response: {}", ex.getMessage());
+                    return Mono.just(StartTransactionResponseMapper.fromResultOnlyLegalFacts(new ArrayList<>(), OperationTypeEnum.ACT.name(), request.getOperationId(), pnRaddFsuConfig.getApplicationBasepath()));
+                });    }
+
 
     private void enrichTransactionDataWithSenderPaId(Tuple2<TransactionData, SentNotificationV25Dto> tuple) {
         TransactionData transactionData = tuple.getT1();
@@ -421,9 +448,18 @@ public class ActService extends BaseService {
         transaction.setZipAttachments(zipAttachments);
         return raddTransactionDAO.getTransaction(transaction.getTransactionId(), OperationTypeEnum.ACT)
                 .flatMap(entity -> raddTransactionDAO.updateZipAttachments(entity, zipAttachments))
-                .thenReturn(legalFactInfoList);
+                .thenReturn(legalFactInfoList)
+                .onErrorResume(
+                        this::isTransactionNotExist,
+                        ex -> Mono.just(legalFactInfoList)
+                );
     }
 
+
+    private boolean isTransactionNotExist(Throwable ex) {
+        return ex instanceof RaddGenericException &&
+                ((RaddGenericException) ex).getExceptionType() == ExceptionTypeEnum.TRANSACTION_NOT_EXIST;
+    }
     @NotNull
     private Mono<List<DocumentInfoDto>> updateDocAttachments(TransactionData transaction, List<DocumentInfoDto> documentInfoList) {
         Map<String, Integer> docAttachments = documentInfoList
