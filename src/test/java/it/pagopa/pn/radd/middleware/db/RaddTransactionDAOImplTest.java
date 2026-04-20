@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -33,7 +33,7 @@ class RaddTransactionDAOImplTest extends BaseTest.WithLocalStack {
 
     private final Duration d = Duration.ofMillis(3000);
     @Autowired
-    @SpyBean
+    @MockitoSpyBean
     private RaddTransactionDAO raddTransactionDAO;
     private RaddTransactionEntity baseEntity;
     private final List<OperationsIunsEntity> iunsEntities = new ArrayList<>();
