@@ -5,8 +5,7 @@ import de.neuland.assertj.logging.ExpectedLoggingAssertions;
 import it.pagopa.pn.commons.log.PnAuditLog;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.ResponseCheckAarDtoDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.SentNotificationV25Dto;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.NotificationHistoryResponseDto;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.NotificationStatusV26Dto;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pntimelineservice.v1.dto.CancellationRequestResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.*;
@@ -16,6 +15,7 @@ import it.pagopa.pn.radd.middleware.db.impl.RaddTransactionDAOImpl;
 import it.pagopa.pn.radd.middleware.msclient.PnDataVaultClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryPushClient;
+import it.pagopa.pn.radd.middleware.msclient.PnTimelineServiceClient;
 import it.pagopa.pn.radd.pojo.TransactionData;
 import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
@@ -57,6 +57,9 @@ class ActServiceTest  {
 
     @Mock
     PnDeliveryPushClient pnDeliveryPushClient;
+
+    @Mock
+    PnTimelineServiceClient pnTimelineServiceClient;
 
     @Mock
     PnDeliveryClient pnDeliveryClient;
@@ -433,8 +436,8 @@ class ActServiceTest  {
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.IUN_NOT_FOUND.getMessage(), monoResponse.getStatus().getMessage());
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Iun not found with params - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun= status=class ActInquiryResponseStatus {\n"+"    code: 99\n"+"    message: Iun not found with params\n"+"}");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF taxCode=test iun=");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Iun not found with params - uid=test cxId=123 cxType=PF taxCode=test recipientInternalId=ABCDEF12G34H567I iun= status=class ActInquiryResponseStatus {\n"+"    code: 99\n"+"    message: Iun not found with params\n"+"}");
     }
 
     @Test
@@ -445,8 +448,8 @@ class ActServiceTest  {
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.GENERIC_ERROR.getMessage(), monoResponse.getStatus().getMessage());
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error 500 Internal server Error - uid=test cxId=123 cxType=PF iun= status=class ActInquiryResponseStatus {\n"+"    code: 99\n"+"    message: Si è verificato un errore\n"+"}");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF taxCode=test iun=");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error 500 Internal server Error - uid=test cxId=123 cxType=PF taxCode=test iun= status=class ActInquiryResponseStatus {\n"+"    code: 99\n"+"    message: Si è verificato un errore\n"+"}");
     }
 
     @Test
@@ -458,16 +461,14 @@ class ActServiceTest  {
         when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(1));
         when(pnRaddFsuConfig.getMaxPrintRequests()).thenReturn(0);
 
-        NotificationHistoryResponseDto notificationHistoryResponseDto = new NotificationHistoryResponseDto();
-        notificationHistoryResponseDto.setNotificationStatus(NotificationStatusV26Dto.CANCELLED);
-        when(pnDeliveryPushClient.getNotificationHistory(any())).thenReturn(Mono.just(notificationHistoryResponseDto));
+        when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.just(new CancellationRequestResponseDto()));
         ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "").block();
         assertNotNull(monoResponse);
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.NOTIFICATION_CANCELLED.getMessage(), monoResponse.getStatus().getMessage());
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Questa notifica è stata annullata dall’ente mittente - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun=iun status=class ActInquiryResponseStatus {\n"+"    code: 80\n"+"    message: Questa notifica è stata annullata dall’ente mittente\n"+"}");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF taxCode=test iun=");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Questa notifica è stata annullata dall’ente mittente - uid=test cxId=123 cxType=PF taxCode=test recipientInternalId=ABCDEF12G34H567I iun=iun status=class ActInquiryResponseStatus {\n"+"    code: 80\n"+"    message: Questa notifica è stata annullata dall’ente mittente\n"+"}");
     }
 
     @Test
@@ -479,9 +480,7 @@ class ActServiceTest  {
         when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(1));
         when(pnRaddFsuConfig.getMaxPrintRequests()).thenReturn(0);
 
-        NotificationHistoryResponseDto notificationHistoryResponseDto = new NotificationHistoryResponseDto();
-        notificationHistoryResponseDto.setNotificationStatus(NotificationStatusV26Dto.DELIVERED);
-        when(pnDeliveryPushClient.getNotificationHistory(any())).thenReturn(Mono.just(notificationHistoryResponseDto));
+        when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
 
         SentNotificationV25Dto sentNotificationV23Dto = new SentNotificationV25Dto();
         sentNotificationV23Dto.setDocumentsAvailable(false);
@@ -493,8 +492,8 @@ class ActServiceTest  {
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
         assertEquals(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE.getMessage(), monoResponse.getStatus().getMessage());
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF iun=");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Documenti non disponibili - uid=test cxId=123 cxType=PF recipientInternalId=ABCDEF12G34H567I iun=iun status=class ActInquiryResponseStatus {\n"+"    code: 4\n"+"    message: Documenti non disponibili\n"+"}");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF taxCode=test iun=");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Documenti non disponibili - uid=test cxId=123 cxType=PF taxCode=test recipientInternalId=ABCDEF12G34H567I iun=iun status=class ActInquiryResponseStatus {\n"+"    code: 4\n"+"    message: Documenti non disponibili\n"+"}");
     }
 
     @Test
@@ -573,5 +572,7 @@ class ActServiceTest  {
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT abortTransaction - uid=test cxId=cxId cxType=PF operationId=Id");
         ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT abortTransaction with error Si è verificato un errore - uid=test cxId=cxId cxType=PF operationId=Id status=class TransactionResponseStatus {\n"+"    code: 99\n" + "    message: Si è verificato un errore\n" + "}");
     }
+
+
 
 }
