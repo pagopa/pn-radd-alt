@@ -205,6 +205,30 @@
   },
   {
     "httpRequest": {
+      "path": "/delivery-push-private/LJLH-GNTJ-DVXR-202209-J-1/download/legal-facts/gone_fact",
+      "queryStringParameters" : {
+        "recipientInternalId" : [ "gone_recipient" ]
+      },
+      "method": "GET"
+    },
+    "httpResponse": {
+      "statusCode": 500,
+      "headers": {
+        "content-type": ["application/json"]
+      },
+      "body": {
+        "type": "GENERIC_ERROR",
+        "status": 500,
+        "title": "Internal Server Error",
+        "detail": "Allegato non disponibile: superati i termini di conservazione.",
+        "errors": [
+          {"code": "PN_DELIVERYPUSH_FILE_GONE", "element": null, "detail": "none"}
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
       "path": "/delivery-push-private/YDPM-EKJA-DQGQ-202604-E-1/history",
       "method": "GET"
     },
