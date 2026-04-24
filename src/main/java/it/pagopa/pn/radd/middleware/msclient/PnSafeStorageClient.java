@@ -64,7 +64,8 @@ public class PnSafeStorageClient extends BaseClient {
         if (fileKey.startsWith(SAFESTORAGE_PREFIX)) {
             fileKey = fileKey.replace(SAFESTORAGE_PREFIX, "");
         }
-        log.debug("Req params : {}", fileKey);
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_SAFE_STORAGE, "getFile");
+        log.debug("getFile - fileKey: {}", fileKey);
         log.trace("GET FILE TICK {}", new Date().getTime());
         return fileDownloadApi.getFile(fileKey, this.pnRaddFsuConfig.getSafeStorageCxId(), false, true)
                 .retryWhen(
@@ -84,6 +85,7 @@ public class PnSafeStorageClient extends BaseClient {
     }
 
     public Mono<OperationResultCodeResponseDto> updateFileMetadata(String fileKey) {
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_SAFE_STORAGE, "updateFileMetadata");
         log.debug("Req params : {}", fileKey);
         log.trace("UPDATE FILE METADATA TICK {}", new Date().getTime());
 
