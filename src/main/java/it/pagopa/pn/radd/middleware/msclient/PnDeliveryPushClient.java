@@ -65,8 +65,8 @@ public class PnDeliveryPushClient extends BaseClient {
                     log.trace("GET LEGAL FACT TOCK {}", new Date().getTime());
                     return item;
                 }).onErrorResume(WebClientResponseException.class, ex -> {
-                    if (ex.getRawStatusCode() == HttpResponseStatus.GONE.code()
-                            || ex.getResponseBodyAsString().contains("PN_DELIVERYPUSH_FILE_GONE")) {
+                    if (ex.getStatusCode().value() == HttpResponseStatus.GONE.code())
+                    {
                         return Mono.error(new RaddGenericException(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE));
                     }
                     return Mono.error(new PnRaddException(ex));

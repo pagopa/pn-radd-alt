@@ -212,14 +212,14 @@
       "method": "GET"
     },
     "httpResponse": {
-      "statusCode": 500,
+      "statusCode": 410,
       "headers": {
         "content-type": ["application/json"]
       },
       "body": {
         "type": "GENERIC_ERROR",
-        "status": 500,
-        "title": "Internal Server Error",
+        "status": 410,
+        "title": "Gone",
         "detail": "Allegato non disponibile: superati i termini di conservazione.",
         "errors": [
           {"code": "PN_DELIVERYPUSH_FILE_GONE", "element": null, "detail": "none"}
