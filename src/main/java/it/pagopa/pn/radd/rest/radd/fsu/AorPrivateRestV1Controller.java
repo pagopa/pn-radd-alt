@@ -4,12 +4,14 @@ package it.pagopa.pn.radd.rest.radd.fsu;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.AorOperationsApi;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.services.radd.fsu.v1.AorService;
+import lombok.CustomLog;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+@CustomLog
 @RestController
 public class AorPrivateRestV1Controller implements AorOperationsApi {
     private final AorService aorService;
@@ -41,6 +43,7 @@ public class AorPrivateRestV1Controller implements AorOperationsApi {
 
     @Override
     public Mono<ResponseEntity<StartTransactionResponse>> startAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, Mono<AorStartTransactionRequest> aorStartTransactionRequest, String xPagopaPnCxRole, ServerWebExchange exchange) {
+        log.info("startAorTransaction headers: {}", exchange.getRequest().getHeaders());
         return aorStartTransactionRequest
                 .zipWhen(req -> aorService.startTransaction(uid, req, xPagopaPnCxType, xPagopaPnCxId,xPagopaPnCxRole), (req, resp) -> resp)
                 .map(m -> ResponseEntity.status(HttpStatus.OK).body(m));
