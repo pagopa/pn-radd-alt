@@ -11,8 +11,9 @@ import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.PnRaddException;
 import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.middleware.msclient.common.BaseClient;
+import it.pagopa.pn.commons.log.PnLogger;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -23,8 +24,8 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.TimeoutException;
 
+@CustomLog
 @Component
-@Slf4j
 @AllArgsConstructor
 public class PnDeliveryClient extends BaseClient {
     private final InternalOnlyApi deliveryApi;
@@ -32,6 +33,8 @@ public class PnDeliveryClient extends BaseClient {
 
 
     public Mono<ResponseCheckAarDtoDto> getCheckAar(String recipientType, String recipientInternalId, String qrCode) {
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY, "checkAarQrCode");
+        log.debug("getCheckAar - recipientInternalId: {}", recipientInternalId);
         RequestCheckAarDtoDto request = new RequestCheckAarDtoDto();
         request.setAarQrCodeValue(qrCode);
         if (qrCode.contains("aar=")) {
@@ -64,6 +67,8 @@ public class PnDeliveryClient extends BaseClient {
     }
 
     public Mono<SentNotificationV25Dto> getNotifications(String iun) {
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY, "getSentNotificationPrivate");
+        log.debug("getNotifications - iun: {}", iun);
         log.trace("GET NOTIFICATIONS TICK {}", new Date().getTime());
         return this.deliveryApi.getSentNotificationPrivate(iun)
                 .retryWhen(
@@ -79,6 +84,8 @@ public class PnDeliveryClient extends BaseClient {
 
 
     public Mono<NotificationAttachmentDownloadMetadataResponseDto> getPresignedUrlDocument(String iun, String docXid, String recipientTaxId) {
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY, "getReceivedNotificationDocumentPrivate");
+        log.debug("getPresignedUrlDocument - iun: {}, docXid: {}", iun, docXid);
         log.trace("SINGLE PRESIGNED DOCUMENT TICK {}", new Date().getTime());
         return this.deliveryApi.getReceivedNotificationDocumentPrivate(iun, Integer.valueOf(docXid), recipientTaxId, null)
                 .retryWhen(
@@ -97,6 +104,8 @@ public class PnDeliveryClient extends BaseClient {
     }
 
     public Mono<NotificationAttachmentDownloadMetadataResponseDto> getPresignedUrlPaymentDocument(String iun, String attachmentName, String recipientTaxId, Integer attachmentIdx) {
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY, "getReceivedNotificationAttachmentPrivate");
+        log.debug("getPresignedUrlPaymentDocument - iun: {}, attachmentName: {}", iun, attachmentName);
         log.trace("SINGLE PRESIGNED ATTACHEMENT TICK {}", new Date().getTime());
         return this.deliveryApi.getReceivedNotificationAttachmentPrivate(iun, attachmentName, recipientTaxId, null, attachmentIdx)
                 .retryWhen(
@@ -115,7 +124,8 @@ public class PnDeliveryClient extends BaseClient {
     }
 
     public Mono<Void> checkIunAndInternalId(String iun, String recipientInternalId) {
-        log.info("checkIunAndInternalId");
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY, "checkIUNAndInternalId");
+        log.debug("checkIunAndInternalId - iun: {}, recipientInternalId: {}", iun, recipientInternalId);
         return this.deliveryApi.checkIUNAndInternalId(iun, recipientInternalId, null, null, null)
                 .retryWhen(
                         Retry.backoff(2, Duration.ofMillis(500))

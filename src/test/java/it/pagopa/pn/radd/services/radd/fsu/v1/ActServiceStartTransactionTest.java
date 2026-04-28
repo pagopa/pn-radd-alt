@@ -433,6 +433,37 @@ class ActServiceStartTransactionTest {
     }
 
 
+        @Test
+    void testStartTransactionWhenLegalFactFileGoneThenReturnCode4() {
+        ActStartTransactionRequest request = createActStartTransactionRequest();
+        RaddTransactionEntity raddTransactionEntity = createRaddTransactionEntity();
+        ResponseCheckAarDtoDto responseCheckAarDtoDto = new ResponseCheckAarDtoDto();
+        responseCheckAarDtoDto.setIun("testIun");
+
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
+        Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getRecipientTaxId(), request.getRecipientType().getValue())).thenReturn(Mono.just("recipientTaxIdResult"));
+        Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF)).thenReturn(Mono.just("delegateTaxIdResult"));
+        Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(0));
+        Mockito.when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
+        Mockito.when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(createSentNotificationDto()));
+        Mockito.when(raddTransactionDAOImpl.createRaddTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
+        Mockito.when(safeStorage.getFile(any())).thenReturn(Mono.just(createFileDownloadResponseDto()));
+        NotificationAttachmentDownloadMetadataResponseDto docResponse = new NotificationAttachmentDownloadMetadataResponseDto();
+        docResponse.setUrl("http://safestorage/UrlDocument?");
+        Mockito.when(pnDeliveryClient.getPresignedUrlDocument(any(), any(), any())).thenReturn(Mono.just(docResponse));
+        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any())).thenReturn(Flux.fromStream(createLegalFactListElementDto()));
+        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any()))
+               .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE)));
+
+        StartTransactionResponse response = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", request).block();
+
+        assertNotNull(response);
+        assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_4, response.getStatus().getCode());
+        assertEquals(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE.getMessage(), response.getStatus().getMessage());
+        assertNotNull(response.getDownloadUrlList());
+        assertTrue(response.getDownloadUrlList().isEmpty());
+    }
+
     private DocumentInfoDto buildDoc(String url) {
         return DocumentInfoDto.builder()
                               .fileKey("test-file-key")          // opzionale
