@@ -2,6 +2,7 @@ package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.ActOperationsApi;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.services.radd.fsu.v1.ActService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +16,11 @@ public class ActPrivateRestV1Controller implements ActOperationsApi {
 
 
     ActService actService;
+    private final PnRaddFsuConfig pnRaddFsuConfig;
 
-    public ActPrivateRestV1Controller(ActService actService) {
+    public ActPrivateRestV1Controller(ActService actService, PnRaddFsuConfig pnRaddFsuConfig) {
         this.actService = actService;
+        this.pnRaddFsuConfig = pnRaddFsuConfig;
     }
 
     @Override
@@ -28,7 +31,7 @@ public class ActPrivateRestV1Controller implements ActOperationsApi {
     @Override
     public Mono<ResponseEntity<StartTransactionResponse>> startActTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, Mono<ActStartTransactionRequest> actStartTransactionRequest, String xPagopaPnCxRole, ServerWebExchange exchange) {
         return actStartTransactionRequest
-                .zipWhen(request -> actService.startTransaction(uid, xPagopaPnCxId, xPagopaPnCxType, xPagopaPnCxRole, request), (req, resp) -> resp)
+                .zipWhen(request -> actService.startTransaction(uid, xPagopaPnCxId, xPagopaPnCxType, xPagopaPnCxRole, pnRaddFsuConfig.getApplicationBasepath(), request), (req, resp) -> resp)
                 .map(m -> ResponseEntity.status(HttpStatus.OK).body(m));
     }
 

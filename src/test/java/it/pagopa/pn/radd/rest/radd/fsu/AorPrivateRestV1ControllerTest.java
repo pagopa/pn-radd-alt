@@ -2,6 +2,7 @@ package it.pagopa.pn.radd.rest.radd.fsu;
 
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.services.radd.fsu.v1.AorService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -28,6 +29,9 @@ class AorPrivateRestV1ControllerTest {
 
     @MockitoBean
     private AorService aorService;
+
+    @MockitoBean
+    private PnRaddFsuConfig pnRaddFsuConfig;
 
     @Test
     void aorInquiryTest() {
@@ -70,7 +74,7 @@ class AorPrivateRestV1ControllerTest {
 
         String path = "/radd-net/api/v1/aor/transaction/start";
         Mockito.when(aorService
-                .startTransaction(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())
+                .startTransaction(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())
         ).thenReturn(Mono.just(response));
 
         webTestClient.post()
