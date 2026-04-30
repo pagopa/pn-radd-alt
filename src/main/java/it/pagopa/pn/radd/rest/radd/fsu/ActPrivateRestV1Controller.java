@@ -26,9 +26,9 @@ public class ActPrivateRestV1Controller implements ActOperationsApi {
     }
 
     @Override
-    public Mono<ResponseEntity<StartTransactionResponse>> startActTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, Mono<ActStartTransactionRequest> actStartTransactionRequest, String xPagopaPnCxRole, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<StartTransactionResponse>> startActTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh, Mono<ActStartTransactionRequest> actStartTransactionRequest, String xPagopaPnCxRole, ServerWebExchange exchange) {
         return actStartTransactionRequest
-                .zipWhen(request -> actService.startTransaction(uid, xPagopaPnCxId, xPagopaPnCxType, xPagopaPnCxRole, request), (req, resp) -> resp)
+                .zipWhen(request -> actService.startTransaction(uid, xPagopaPnCxId, xPagopaPnCxType, xPagopaPnCxRole, xPagopaPnSrcCh, request), (req, resp) -> resp)
                 .map(m -> ResponseEntity.status(HttpStatus.OK).body(m));
     }
 

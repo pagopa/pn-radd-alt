@@ -126,7 +126,7 @@ class ActPrivateRestV1ControllerTest {
 
         String path = "/radd-net/api/v1/act/transaction/start";
         Mockito.when(actService
-                .startTransaction(Mockito.anyString(), Mockito.any(), Mockito.any(),Mockito.any(), Mockito.any())
+                .startTransaction(Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())
         ).thenReturn(Mono.just(response));
 
         webTestClient.post()
@@ -135,6 +135,7 @@ class ActPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_CX_ID, "cxId")
                 .header(PN_PAGOPA_CX_TYPE, "PA")
                 .header(PN_PAGOPA_CX_ROLE, "role")
+                .header("x-pagopa-pn-src-ch", "B2B")
                 .accept(MediaType.APPLICATION_JSON)
                 .body(Mono.just(req), ActStartTransactionRequest.class)
                 .exchange()

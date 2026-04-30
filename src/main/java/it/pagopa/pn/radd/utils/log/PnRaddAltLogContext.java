@@ -25,6 +25,7 @@ public class PnRaddAltLogContext {
     private String iuns = "";
     private String aarFilekeys = "";
     private String taxCode = "";
+    private String sourceChannel = "";
 
     public PnRaddAltLogContext addUid(String uid) {
         this.uid = "uid=%s ".formatted(uid);
@@ -107,9 +108,16 @@ public class PnRaddAltLogContext {
         return this;
     }
 
+    public PnRaddAltLogContext addSourceChannel(String sourceChannel) {
+        if (org.springframework.util.StringUtils.hasText(sourceChannel)) {
+            this.sourceChannel = "sourceChannel=%s ".formatted(sourceChannel);
+        }
+        return this;
+    }
+
     public String logContext() {
         String context = uid + cxId + cxType + taxCode + operationId + transactionId + recipientInternalId + delegateInternalId + requestFileKey
-                + iun + downloadedFilekeys + aarFilekeys + iuns + result + status;
+                + iun + downloadedFilekeys + aarFilekeys + iuns + result + status + sourceChannel;
         return context.trim();
     }
 
