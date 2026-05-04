@@ -139,7 +139,7 @@ public class ActService extends BaseService {
                 .doOnError(err -> log.error(err.getMessage()));
     }
 
-    public Mono<StartTransactionResponse> startTransaction(String uid, String xPagopaPnCxId, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxRole, String xPagopaPnSrcCh, ActStartTransactionRequest request) {
+    public Mono<StartTransactionResponse> startTransaction(String uid, String xPagopaPnCxId, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxRole, String xPagopaPnSrcCh, String resolvedBasepath, ActStartTransactionRequest request) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_ACTTRAN)
                 .msg(START_ACT_START_TRANSACTION)

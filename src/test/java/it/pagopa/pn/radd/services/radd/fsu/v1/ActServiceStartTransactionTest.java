@@ -187,7 +187,7 @@ class ActServiceStartTransactionTest {
                .thenReturn(Mono.just(raddTransactionEntity));
         Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any())).thenReturn(Mono.just(legalFactDownloadMetadataResponseDto));
         Mockito.when(raddTransactionDAOImpl.updateZipAttachments(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
-        StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, request).block();
+        StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
         assertNotNull(startTransactionResponse);
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_0, startTransactionResponse.getStatus().getCode());
         assertEquals(Const.OK, startTransactionResponse.getStatus().getMessage());
@@ -228,7 +228,7 @@ class ActServiceStartTransactionTest {
 
         Mockito.when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
 
-        StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, request).block();
+        StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
         assertNotNull(startTransactionResponse);
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_2, startTransactionResponse.getStatus().getCode());
         assertEquals(new BigDecimal(20), startTransactionResponse.getStatus().getRetryAfter());
@@ -247,7 +247,7 @@ class ActServiceStartTransactionTest {
         Mockito.when(raddTransactionDAOImpl.updateStatus(any(), any())).thenReturn(Mono.just(new RaddTransactionEntity()));
 
 
-        StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, request).block();
+        StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
         assertNotNull(startTransactionResponse);
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_99, startTransactionResponse.getStatus().getCode());
         assertEquals(ExceptionTypeEnum.IUN_NOT_FOUND.getMessage(), startTransactionResponse.getStatus().getMessage());
@@ -267,7 +267,7 @@ class ActServiceStartTransactionTest {
         Mockito.when(raddTransactionDAOImpl.updateStatus(any(), any())).thenReturn(Mono.just(new RaddTransactionEntity()));
 
 
-        StepVerifier.create(actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, request))
+        StepVerifier.create(actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request))
                     .expectError(PnRaddException.class).verify();
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG operationId=Id iun=null");
         ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Internal server Error - uid=test cxId=cxId cxType=PG operationId=Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=null");
@@ -293,7 +293,7 @@ class ActServiceStartTransactionTest {
         Mockito.when(raddTransactionDAOImpl.updateStatus(any(), any())).thenReturn(Mono.just(new RaddTransactionEntity()));
 
 
-        StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, request).block();
+        StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
         assertNotNull(startTransactionResponse);
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_5, startTransactionResponse.getStatus().getCode());
         assertEquals(ExceptionTypeEnum.TRANSACTION_ALREADY_EXIST.getMessage(), startTransactionResponse.getStatus().getMessage());
@@ -306,7 +306,7 @@ class ActServiceStartTransactionTest {
         ActStartTransactionRequest request = createActStartTransactionRequest();
         request.setIun("FakeIun");
 
-        StepVerifier.create(actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, request))
+        StepVerifier.create(actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request))
                     .expectError(PnInvalidInputException.class).verify();
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG operationId=Id iun=FakeIun");
     }
@@ -340,7 +340,7 @@ class ActServiceStartTransactionTest {
                 .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)));
 
         StartTransactionResponse response = actService.startTransaction(
-                "test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, request).block();
+                "test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
 
         assertNotNull(response);
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_4, response.getStatus().getCode());
@@ -380,7 +380,7 @@ class ActServiceStartTransactionTest {
 
 
         StartTransactionResponse response = actService.startTransaction(
-                "test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, request).block();
+                "test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
 
         assertNotNull(response);
         // code=4 perché documentsAvailable=false
@@ -424,7 +424,7 @@ class ActServiceStartTransactionTest {
 
         ActStartTransactionRequest request = createActStartTransactionRequest();
 
-        StepVerifier.create(actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, request))
+        StepVerifier.create(actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request))
                 .assertNext(response -> {
                     assertNotNull(response.getDownloadUrlList());
                     assertFalse(response.getDownloadUrlList().isEmpty());
@@ -455,7 +455,7 @@ class ActServiceStartTransactionTest {
         Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any()))
                .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE)));
 
-        StartTransactionResponse response = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, request).block();
+        StartTransactionResponse response = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
 
         assertNotNull(response);
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_4, response.getStatus().getCode());

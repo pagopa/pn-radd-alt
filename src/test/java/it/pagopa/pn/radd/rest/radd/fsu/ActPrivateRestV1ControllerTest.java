@@ -1,6 +1,7 @@
 package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.services.radd.fsu.v1.ActService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -29,6 +30,9 @@ class ActPrivateRestV1ControllerTest {
 
     @MockitoBean
     private ActService actService;
+
+    @MockitoBean
+    private PnRaddFsuConfig pnRaddFsuConfig;
 
     @Test
     void actInquiryTest() {
