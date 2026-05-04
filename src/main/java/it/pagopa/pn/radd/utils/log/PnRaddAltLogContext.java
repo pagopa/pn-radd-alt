@@ -7,6 +7,8 @@ import it.pagopa.pn.radd.utils.Utils;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.util.StringUtils;
+
 import static it.pagopa.pn.commons.utils.LogUtils.maskTaxId;
 
 public class PnRaddAltLogContext {
@@ -109,7 +111,7 @@ public class PnRaddAltLogContext {
     }
 
     public PnRaddAltLogContext addSourceChannel(String sourceChannel) {
-        if (org.springframework.util.StringUtils.hasText(sourceChannel)) {
+        if (StringUtils.hasText(sourceChannel)) {
             this.sourceChannel = "sourceChannel=%s ".formatted(sourceChannel);
         }
         return this;

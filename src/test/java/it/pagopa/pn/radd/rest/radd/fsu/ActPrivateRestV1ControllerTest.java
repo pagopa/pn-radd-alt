@@ -130,7 +130,7 @@ class ActPrivateRestV1ControllerTest {
 
         String path = "/radd-net/api/v1/act/transaction/start";
         Mockito.when(actService
-                .startTransaction(Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())
+                .startTransaction(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.anyString(), Mockito.eq("B2B"), Mockito.any(), Mockito.any())
         ).thenReturn(Mono.just(response));
 
         webTestClient.post()
@@ -144,6 +144,10 @@ class ActPrivateRestV1ControllerTest {
                 .body(Mono.just(req), ActStartTransactionRequest.class)
                 .exchange()
                 .expectStatus().isOk();
+
+        Mockito.verify(actService).startTransaction(
+                Mockito.anyString(), Mockito.anyString(), Mockito.any(),
+                Mockito.anyString(), Mockito.eq("B2B"), Mockito.any(), Mockito.any());
     }
 
 }
