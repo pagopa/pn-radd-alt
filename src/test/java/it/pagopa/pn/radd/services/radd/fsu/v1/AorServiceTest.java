@@ -113,18 +113,18 @@ class AorServiceTest {
         request.setFileKey("test");
         request.setChecksum("checksum");
         request.setVersionToken("versionToken");
-        StepVerifier.create(aorService.startTransaction("uid", "http://localhost", request, CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_UPLOADER)))
+        StepVerifier.create(aorService.startTransaction("uid", "http://localhost", request, CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_UPLOADER), null))
                 .expectError(PnInvalidInputException.class).verify();
 
         request.setOperationId("1234AOR");
-        StepVerifier.create(aorService.startTransaction("uid", "http://localhost", request, it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_UPLOADER)))
+        StepVerifier.create(aorService.startTransaction("uid", "http://localhost", request, it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_UPLOADER), null))
                 .expectError(PnInvalidInputException.class).verify();
     }
 
     @Test
     void testStartTransactionReturnErrorRaddUploaderWithoutFileKey(){
         AorStartTransactionRequest request = new AorStartTransactionRequest();
-        StepVerifier.create(aorService.startTransaction("uid", "http://localhost", request, CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_UPLOADER)) )
+        StepVerifier.create(aorService.startTransaction("uid","http://localhost",request,CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_UPLOADER), null) )
                 .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
                         "Campo fileKey obbligatorio mancante".equals(throwable.getMessage()))
                 .verify();
@@ -132,7 +132,7 @@ class AorServiceTest {
 
     @Test
     void testStartTransactionReturnErrorRaddStandardWithFileKey(){
-        StepVerifier.create(aorService.startTransaction("uid", "http://localhost", startTransactionRequest,CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_STANDARD)))
+        StepVerifier.create(aorService.startTransaction("uid","http://localhost",startTransactionRequest,CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_STANDARD), null))
                 .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
                         "Campo fileKey inaspettato".equals(throwable.getMessage()))
                 .verify();
@@ -143,7 +143,7 @@ class AorServiceTest {
         AorStartTransactionRequest request = new AorStartTransactionRequest();
         request.setFileKey("fileKey");
         request.setChecksum("checksum");
-        StepVerifier.create(aorService.startTransaction("uid", "http://localhost", request, CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_UPLOADER)) )
+        StepVerifier.create(aorService.startTransaction("uid","http://localhost",request,CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_UPLOADER), null) )
                 .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
                         "Campo versionToken obbligatorio mancante".equals(throwable.getMessage()))
                 .verify();
@@ -153,7 +153,7 @@ class AorServiceTest {
     void testStartTransactionReturnErrorRaddStandardWithVerionToken(){
         AorStartTransactionRequest request = new AorStartTransactionRequest();
         request.setVersionToken("versionToken");
-        StepVerifier.create(aorService.startTransaction("uid", "http://localhost", request, CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_STANDARD)))
+        StepVerifier.create(aorService.startTransaction("uid","http://localhost",request,CxTypeAuthFleet.valueOf("PF"), "xPagopaPnCxId",String.valueOf(RaddRole.RADD_STANDARD), null))
                 .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
                         "Campo versionToken inaspettato".equals(throwable.getMessage()))
                 .verify();
@@ -199,7 +199,7 @@ class AorServiceTest {
 
         Mockito.when(pnRaddFsuConfig.getApplicationBasepath()).thenReturn("123");
 
-        StartTransactionResponse response = this.aorService.startTransaction("uid", "http://localhost", startTransactionRequest, CxTypeAuthFleet.valueOf("PF"), "1",String.valueOf(RaddRole.RADD_UPLOADER)).block();
+        StartTransactionResponse response = this.aorService.startTransaction("uid", "http://localhost", startTransactionRequest, CxTypeAuthFleet.valueOf("PF"), "1",String.valueOf(RaddRole.RADD_UPLOADER), null).block();
 
         assertNotNull(response);
         // assertNotNull(response.getUrlList());

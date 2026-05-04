@@ -439,6 +439,7 @@ paths:
       - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
       - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
       - $ref: '#/components/parameters/cxRoleAuthFleet'                       # NO EXTERNAL
+      - $ref: 'remote-refs.yaml#/components/parameters/headerSourceChannel'   # NO EXTERNAL
     post:
       tags:
         - actOperations
@@ -546,6 +547,7 @@ paths:
       - $ref: 'remote-refs.yaml#/components/parameters/cxTypeAuthFleet'       # NO EXTERNAL
       - $ref: 'remote-refs.yaml#/components/parameters/cxIdAuthFleet'         # NO EXTERNAL
       - $ref: '#/components/parameters/cxRoleAuthFleet'                       # NO EXTERNAL
+      - $ref: 'remote-refs.yaml#/components/parameters/headerSourceChannel'   # NO EXTERNAL
     post:
       tags:
         - aorOperations
