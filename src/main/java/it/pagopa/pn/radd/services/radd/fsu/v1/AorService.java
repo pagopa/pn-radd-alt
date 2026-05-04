@@ -134,7 +134,7 @@ public class AorService extends BaseService {
                 );
     }
 
-    public Mono<StartTransactionResponse> startTransaction(String uid, AorStartTransactionRequest request, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnCxRole) {
+    public Mono<StartTransactionResponse> startTransaction(String uid, String resolvedBasepath, AorStartTransactionRequest request, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnCxRole) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_AORTRAN)
                 .msg(START_AOR_START_TRANSACTION)
