@@ -1,0 +1,756 @@
+openapi: 3.0.1
+info:
+  termsOfService: https://notifichedigitali.pagopa.it/radd/index.html
+  x-api-id: api-radd-vpce
+  title: 'Piattaforma Notifiche: API RADD tramite VPC endpoint'
+  x-summary: 'Piattaforma Notifiche: API RADD tramite VPC endpoint'
+  version: '1.0.0'
+  description: >
+    # Abstract
+
+      API utilizzate dagli operatori RADD integrati con SEND tramite connessione
+      privata su VPC endpoint. Le operazioni permettono di verificare la presenza
+      di documenti o AAR da stampare, avviare la transazione, scaricare il
+      frontespizio e chiudere o annullare l'operazione.
+
+      La superficie API e' dedicata alle integrazioni raggiungibili dalla rete
+      privata autorizzata. Il client non deve invocare la procedura di upload dei
+      documenti: eventuali documenti e metadati sono gestiti fuori da questa API.
+
+      Esistono due casi d'uso RADD:
+
+      - **ACT**: Richiesta degli atti di una determinata notifica tramite i dati
+      presenti nell'avviso di avvenuta ricezione (AAR).
+
+      - **AOR**: Richiesta degli avvisi di avvenuta ricezione (AAR) non
+      recapitati per irreperibilita'.
+
+      # Autenticazione e autorizzazione
+
+      Le richieste sono abilitate dalla connessione privata tramite VPC endpoint e
+      dalle relative policy di rete. Non e' richiesto l'invio del token JWT
+      nell'header Authorization e la specifica non espone uno schema bearer.
+
+      ## Identificativo utente
+
+      Nelle API che richiedono il parametro *uid* questo deve essere valorizzato
+      con un identificativo pseudo-anonimizzato dell'operatore dello sportello
+      rete RADD. Il valore deve contenere l'id utente e l'id sede, corrispondente
+      al campo externalCode dell'anagrafica delle sedi, separati dal carattere @.
+      Questo campo serve in caso di indagine per individuare l'operatore dello
+      sportello che ha eseguito l'operazione. E' cura del software dello
+      sportello valorizzarlo con un identificativo che non riporti dati personali
+      come email, user name o codice fiscale.
+
+      # CASO D'USO ACT
+
+      Cittadini in possesso della AAR richiedono allo sportello RADD la stampa
+      degli atti della notifica.
+
+      1. **Verifica della presenza della notifica**
+
+         Il software di gestione dello sportello RADD chiama l'operazione
+      [actInquiry](#/actOperations/actInquiry) per verificare l'esistenza della
+      notifica tramite *qrCode* o, in assenza del lettore ottico, tramite lo
+      *IUN*, entrambi presenti nell'AAR. Il servizio risponde con *result* true e
+      *status.code* uguale a 0 se sono presenti documenti da stampare.
+
+      2. **Richiesta documenti da stampare**
+
+         Se sono presenti documenti da stampare, il software invoca
+      [startActTransaction](#/actOperations/startActTransaction) per ottenere la
+      lista dei documenti da stampare, compreso il frontespizio. Per questa
+      integrazione non sono richiesti *fileKey*, *checksum* o *versionToken*.
+
+      3. **Download documenti**
+
+         Per ogni URL restituita dalla start transaction, eseguire una richiesta
+      GET tramite la connessione VPC endpoint. Non deve essere inviato un JWT.
+
+      4. **Chiusura dell'operazione**
+
+         Alla consegna dei documenti stampati deve essere invocata
+      [completeActTransaction](#/actOperations/completeActTransaction). In caso di
+      operazione conclusa senza successo o per qualsiasi problema deve essere
+      invocata [abortActTransaction](#/actOperations/abortActTransaction).
+
+      # CASO D'USO AOR
+
+      Cittadini risultati irreperibili nell'invio cartaceo dell'AAR, muniti di
+      codice fiscale e sprovvisti di accesso digitale, richiedono la stampa delle
+      AAR non consegnate presso lo sportello RADD.
+
+      1. **Verifica della presenza della notifica**
+
+         Il software di gestione dello sportello RADD chiama l'operazione
+      [aorInquiry](#/aorOperations/aorInquiry) per verificare l'esistenza di
+      notifiche per le quali l'utente e' risultato irreperibile e che non sono
+      state stampate in precedenza.
+
+      2. **Richiesta documenti da stampare**
+
+         Se sono presenti documenti da stampare, il software invoca
+      [startAorTransaction](#/aorOperations/startAorTransaction) per ottenere
+      l'elenco delle URL degli AAR da stampare, compreso il frontespizio. Per
+      questa integrazione non sono richiesti *fileKey*, *checksum* o
+      *versionToken*.
+
+      3. **Download documenti**
+
+         Per ogni URL restituita dalla start transaction, eseguire una richiesta
+      GET tramite la connessione VPC endpoint. Non deve essere inviato un JWT.
+
+      4. **Chiusura dell'operazione**
+
+         Alla consegna dei documenti stampati deve essere invocata
+      [completeAorTransaction](#/aorOperations/completeAorTransaction). In caso di
+      operazione conclusa senza successo o per qualsiasi problema deve essere
+      invocata [abortAorTransaction](#/aorOperations/abortAorTransaction).
+
+  contact:
+    email: pn-supporto-radd@pagopa.it
+  license:
+    name: Licenza di PN
+    url: 'https://notifichedigitali.pagopa.it/radd/index.html'
+
+servers:
+  - url: https://{vpceDnsName}
+    description: Endpoint privato di produzione raggiungibile tramite VPC endpoint
+    variables:
+      vpceDnsName:
+        default: api-radd-vpce.notifichedigitali.it
+        description: DNS name associato al VPC endpoint di produzione
+  - url: https://{vpceDnsName}
+    description: Endpoint privato di collaudo UAT raggiungibile tramite VPC endpoint
+    variables:
+      vpceDnsName:
+        default: api-radd-vpce.uat.notifichedigitali.it
+        description: DNS name associato al VPC endpoint di collaudo UAT
+
+security: []
+
+tags:
+  - name: actOperations
+    description: API di interrogazione per il recupero dei documenti della notifica dall'AAR.
+  - name: aorOperations
+    description: API di interrogazione per il recupero di avvisi di avvenuta ricezione per destinatari irreperibili.
+  - name: documentOperations
+    description: API download documenti tramite VPC endpoint.
+
+paths:
+  /api-radd-vpce/api/v1/download/{operationType}/{operationId}:
+    ## SLA - Tempo risposta medio: < 10s; Timeout :20s
+    parameters:
+      - $ref: '#/components/parameters/operationType'
+      - $ref: '#/components/parameters/operationId'
+      - $ref: '#/components/parameters/attachmentId'
+    get:
+      tags:
+        - documentOperations
+      summary: Download frontespizio
+      operationId: documentDownload
+      description: API utilizzata per il download del frontespizio tramite connessione VPC endpoint.
+      responses:
+        200:
+          description: Ritorna il PDF del frontespizio
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        400:
+          $ref: '#/components/responses/Invalid'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        405:
+          $ref: '#/components/responses/NotAllowed'
+        500:
+          $ref: '#/components/responses/InternalError'
+
+  /api-radd-vpce/api/v1/act/inquiry:
+    ## SLA - Tempo risposta medio: < 1s; Timeout :3s
+    parameters:
+      - $ref: '#/components/parameters/uid'
+      - $ref: '#/components/parameters/recipientTaxId'
+      - $ref: '#/components/parameters/recipientType'
+      - $ref: '#/components/parameters/qrCode'
+      - $ref: '#/components/parameters/iun'
+    get:
+      tags:
+        - actOperations
+      summary: Verifica presenza documenti ACT
+      operationId: actInquiry
+      x-pagopa-pn-custom-throttling-group: 'radd-by-cf'
+      x-pagopa-pn-custom-throttling-value: 'method.request.querystring.recipientTaxId'
+      description: API utilizzata per la verifica della presenza a sistema di atti e attestazioni tramite iun o qrCode.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActInquiryResponse'
+        400:
+          $ref: '#/components/responses/Invalid'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        405:
+          $ref: '#/components/responses/NotAllowed'
+        500:
+          $ref: '#/components/responses/InternalError'
+
+  /api-radd-vpce/api/v1/aor/inquiry:
+    ## SLA - Tempo risposta medio: < 1s; Timeout :3s
+    parameters:
+      - $ref: '#/components/parameters/uid'
+      - $ref: '#/components/parameters/recipientTaxId'
+      - $ref: '#/components/parameters/recipientType'
+    get:
+      tags:
+        - aorOperations
+      summary: Verifica presenza documenti AOR
+      operationId: aorInquiry
+      x-pagopa-pn-custom-throttling-group: 'radd-by-cf'
+      x-pagopa-pn-custom-throttling-value: 'method.request.querystring.recipientTaxId'
+      description: API utilizzata per la verifica della presenza a sistema di avvisi di avvenuta ricezione per il cliente.
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AORInquiryResponse'
+        400:
+          $ref: '#/components/responses/Invalid'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        405:
+          $ref: '#/components/responses/NotAllowed'
+        500:
+          $ref: '#/components/responses/InternalError'
+
+  /api-radd-vpce/api/v1/act/transaction/start:
+    ## SLA - Tempo risposta medio: < 10s; Timeout: 20s. Tempo massimo polling (response.status.code = 0): 10s
+    parameters:
+      - $ref: '#/components/parameters/uid'
+    post:
+      tags:
+        - actOperations
+      summary: Avvio transazione ACT
+      operationId: startActTransaction
+      x-pagopa-pn-custom-throttling-group: 'radd-by-cf'
+      x-pagopa-pn-custom-throttling-value: 'method.request.body.recipientTaxId'
+      description: API utilizzata per la richiesta di avvio dell'operazione di scaricamento e consegna dell'atto e delle eventuali attestazioni tramite VPC endpoint.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActStartTransactionRequest'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartTransactionResponse'
+        400:
+          $ref: '#/components/responses/Invalid'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        405:
+          $ref: '#/components/responses/NotAllowed'
+        500:
+          $ref: '#/components/responses/InternalError'
+
+  /api-radd-vpce/api/v1/act/transaction/complete:
+    ## SLA - Tempo risposta medio: < 1s, Timeout :3s
+    parameters:
+      - $ref: '#/components/parameters/uid'
+    post:
+      tags:
+        - actOperations
+      summary: Completamento transazione ACT
+      operationId: completeActTransaction
+      description: API utilizzata per la notifica del completamento dell'operazione di consegna dell'atto e delle eventuali attestazioni.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteTransactionRequest'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteTransactionResponse'
+        400:
+          $ref: '#/components/responses/Invalid'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        405:
+          $ref: '#/components/responses/NotAllowed'
+        500:
+          $ref: '#/components/responses/InternalError'
+
+  /api-radd-vpce/api/v1/act/transaction/abort:
+    ## SLA - Tempo risposta medio: < 1s; Timeout :3s
+    parameters:
+      - $ref: '#/components/parameters/uid'
+    post:
+      tags:
+        - actOperations
+      summary: Annullamento transazione ACT
+      operationId: abortActTransaction
+      description: API utilizzata per la notifica dell'annullamento dell'operazione di consegna dell'atto e delle eventuali attestazioni.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbortTransactionRequest'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbortTransactionResponse'
+        400:
+          $ref: '#/components/responses/Invalid'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        405:
+          $ref: '#/components/responses/NotAllowed'
+        500:
+          $ref: '#/components/responses/InternalError'
+
+  /api-radd-vpce/api/v1/aor/transaction/start:
+    ## SLA - Tempo risposta medio: < 1s; Timeout: 3s. Tempo massimo polling(response.status.code = 0): 10s
+    parameters:
+      - $ref: '#/components/parameters/uid'
+    post:
+      tags:
+        - aorOperations
+      summary: Avvio transazione AOR
+      operationId: startAorTransaction
+      x-pagopa-pn-custom-throttling-group: 'radd-by-cf'
+      x-pagopa-pn-custom-throttling-value: 'method.request.body.recipientTaxId'
+      description: API utilizzata per la richiesta di avvio dell'operazione di scaricamento e consegna degli avvisi di avvenuta ricezione tramite VPC endpoint.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AorStartTransactionRequest'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartTransactionResponse'
+        400:
+          $ref: '#/components/responses/Invalid'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        405:
+          $ref: '#/components/responses/NotAllowed'
+        500:
+          $ref: '#/components/responses/InternalError'
+
+  /api-radd-vpce/api/v1/aor/transaction/complete:
+    ## SLA - Tempo risposta medio: < 1s; Timeout :3s
+    parameters:
+      - $ref: '#/components/parameters/uid'
+    post:
+      tags:
+        - aorOperations
+      summary: Completamento transazione AOR
+      operationId: completeAorTransaction
+      description: API utilizzata per la notifica del completamento dell'operazione di consegna dell'atto.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteTransactionRequest'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteTransactionResponse'
+        400:
+          $ref: '#/components/responses/Invalid'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        405:
+          $ref: '#/components/responses/NotAllowed'
+        500:
+          $ref: '#/components/responses/InternalError'
+
+  /api-radd-vpce/api/v1/aor/transaction/abort:
+    ## SLA - Tempo risposta medio: < 1s; Timeout :3s
+    parameters:
+      - $ref: '#/components/parameters/uid'
+    post:
+      tags:
+        - aorOperations
+      summary: Annullamento transazione AOR
+      operationId: abortAorTransaction
+      description: API utilizzata per la notifica dell'annullamento dell'operazione di consegna del/degli avviso/i di avvenuta ricezione.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbortTransactionRequest'
+        required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbortTransactionResponse'
+        400:
+          $ref: '#/components/responses/Invalid'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        405:
+          $ref: '#/components/responses/NotAllowed'
+        500:
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    ActInquiryResponse:
+      description: Response di verifica presenza atto ed eventuali attestazione opponibili a terzi
+      type: object
+      properties:
+        result:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/ActInquiryResponseStatus'
+
+    AORInquiryResponse:
+      description: Response di verifica presenza AAR.
+      type: object
+      properties:
+        result:
+          type: boolean
+          example: true
+        status:
+          $ref: '#/components/schemas/ResponseStatus'
+
+    ActStartTransactionRequest:
+      description: Richiesta di avvio operazione ACT tramite VPC endpoint.
+      allOf:
+        - $ref: '#/components/schemas/AorStartTransactionRequest'
+        - type: object
+          properties:
+            qrCode:
+              description: in alternativa allo iun
+              type: string
+            iun:
+              description: in alternativa al qrCode
+              type: string
+
+    AorStartTransactionRequest:
+      description: Richiesta di avvio operazione AOR tramite VPC endpoint.
+      type: object
+      required:
+        - operationId
+        - recipientTaxId
+        - recipientType
+      properties:
+        operationId:
+          type: string
+          description: identificativo univoco dell'operazione all'interno del dominio dell'operatore RADD
+          example: "5d2d53ad-6306-40fe-8126-51ccdd917cef"
+        recipientTaxId:
+          type: string
+          example: "TNTGTR76E21H751S"
+        recipientType:
+          type: string
+          enum: ["PF", "PG"]
+          example: "PF"
+        delegateTaxId:
+          type: string
+          example: "RFRGRZ66E21H751B"
+        operationDate:
+          type: string
+          format: date-time
+          description: Data/ora di inizio della transazione in formato RFC3339.
+          example: "2022-06-21T11:44:28Z"
+
+    StartTransactionResponse:
+      description: Response alla richiesta di avvio della transazione
+      type: object
+      properties:
+        downloadUrlList:
+          type: array
+          items:
+            $ref: '#/components/schemas/DownloadUrl'
+        status:
+          $ref: '#/components/schemas/StartTransactionResponseStatus'
+
+    DownloadUrl:
+      description: contiene l'url per il download del documento tramite VPC endpoint
+      type: object
+      properties:
+        url:
+          type: string
+          description: url per il download del documento tramite VPC endpoint
+        documentType:
+          type: string
+          description: categoria del documento, ATTO_NOTIFICATO oppure ATTESTAZIONE_OPPONIBILE_A_TERZI
+
+    CompleteTransactionRequest:
+      description: Richiesta di chiusura della transazione
+      type: object
+      required:
+        - operationId
+        - operationDate
+      properties:
+        operationId:
+          type: string
+          description: identificativo univoco dell'operazione all'interno del dominio dell'operatore RADD
+          example: "5d2d53ad-6306-40fe-8126-51ccdd917cef"
+        operationDate:
+          type: string
+          format: date-time
+          description: Data/ora di completamento della transazione, espressa in formato RFC3339.
+          example: "2022-06-21T11:44:28Z"
+
+    CompleteTransactionResponse:
+      description: Response alla richiesta di chiusura della transazione
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/TransactionResponseStatus'
+
+    AbortTransactionRequest:
+      description: Richiesta di cancellazione della transazione
+      type: object
+      required:
+        - operationId
+        - operationDate
+      properties:
+        operationId:
+          type: string
+          description: identificativo univoco dell'operazione all'interno del dominio dell'operatore RADD
+          example: "5d2d53ad-6306-40fe-8126-51ccdd917cef"
+        reason:
+          type: string
+          default: "abort"
+        operationDate:
+          type: string
+          format: date-time
+          description: Data/ora di annullamento della transazione, espressa in formato RFC3339.
+          example: "2022-06-21T11:44:28Z"
+
+    AbortTransactionResponse:
+      description: Response alla richiesta di chiusura della transazione
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/TransactionResponseStatus'
+
+    ResponseStatus:
+      description: Risposta di stato restituita al chiamante
+      type: object
+      properties:
+        code:
+          description: |
+            Return code.
+            * 0 -> OK
+            * 99 -> KO
+          type: number
+          enum: [0, 99]
+        message:
+          type: string
+          example: OK
+
+    StartTransactionResponseStatus:
+      description: Risposta di stato restituita al chiamante
+      allOf:
+        - $ref: '#/components/schemas/ResponseStatus'
+        - type: object
+          properties:
+            code:
+              description: |
+                Return code.
+                * 0 -> OK
+                * 2 -> NotReady (documenti temporaneamente non disponibili per ragioni tecniche, ritentare dopo il tempo specificato nel retryAfter con una nuova transaction)
+                * 3 -> Stampa gia' eseguita
+                * 4 -> Documenti non disponibili
+                * 5 -> Codice operationId gia' presente
+                * 10 -> Input non valido
+                * 80 -> Notifica annullata dalla PA
+                * 99 -> KO
+              type: number
+              enum: [0, 2, 3, 4, 5, 10, 80, 99]
+            retryAfter:
+              description: Tempo, espresso in ms comunicato al chiamante, trascorso il quale e' possibile effettuare un nuovo tentativo di avvio della transazione.
+              type: number
+              example: 670
+
+    TransactionResponseStatus:
+      description: Risposta di stato restituita al chiamante
+      allOf:
+        - $ref: '#/components/schemas/ResponseStatus'
+        - type: object
+          properties:
+            code:
+              description: |
+                Return code.
+                * 0 -> OK (anche in caso di chiamata successiva con identici parametri)
+                * 1 -> Transazione inesistente
+                * 2 -> Transazione gia' completata
+                * 99 -> KO
+              type: number
+              enum: [0, 1, 2, 99]
+
+    ActInquiryResponseStatus:
+      description: Risposta di stato restituita al chiamante
+      allOf:
+        - $ref: '#/components/schemas/ResponseStatus'
+        - type: object
+          properties:
+            code:
+              description: |
+                Return code.
+                * 0 -> OK
+                * 2 -> NotReady (documenti temporaneamente non disponibili per ragioni tecniche, ritentare dopo il tempo specificato nel retryAfter)
+                * 3 -> Stampa gia' eseguita
+                * 4 -> Documento non piu' disponibili
+                * 10 -> Input non valido
+                * 80 -> Notifica annullata dalla PA
+                * 99 -> KO generico
+              type: number
+              enum: [0, 2, 3, 4, 10, 80, 99]
+
+    ErrorResponse:
+      description: Risposta di errore
+      type: object
+      properties:
+        type:
+          type: string
+          description: descrizione tipologia errore
+        status:
+          type: number
+          description: codice http dell'errore
+        title:
+          type: string
+          description: descrizione errore
+        detail:
+          type: string
+          description: dettaglio errore
+        traceId:
+          type: string
+          description: id traccia
+        timestamp:
+          type: string
+          description: timestamp dell'evento
+        errors:
+          type: array
+          description: dettagli relativi all'errore
+          items:
+            type: string
+
+  parameters:
+    uid:
+      name: uid
+      description: Identificativo pseudo-anonimizzato dell'operatore RADD deve contenere l'id utente e l'id sede che corrisponde al campo externalCode dell'anagrafica delle sedi separati dal carattere @.
+      in: header
+      required: true
+      schema:
+        type: string
+      example: USR1029@UFFRO129
+    recipientTaxId:
+      name: recipientTaxId
+      description: Codice Fiscale Destinatario
+      in: query
+      required: true
+      schema:
+        type: string
+      example: TNTGTR76E21H751S
+    recipientType:
+      name: recipientType
+      description: Sigla, Persona Fisica o Persona Giuridica
+      in: query
+      required: true
+      schema:
+        type: string
+        enum: ["PF", "PG"]
+      example: PF
+    qrCode:
+      name: qrCode
+      description: QrCode presente sull'Avviso di Avvenuta Ricezione (AAR). Da usare in alternativa a "iun".
+      in: query
+      required: false
+      schema:
+        type: string
+      example: "UkdESC1BS01QLVFWWE4tMjAyMzA4LUctMV9QRi1lZjJkZWI0NS0zYzBlLTRiY2UtYWRjMC1hODFlN2Q2YjM1NGVfY2M5ZDkyMTktMWQxMi00ZTBhLWJlZDQtNmE1YWMyYzlhZmZh"
+    iun:
+      name: iun
+      description: Identificativo Univoco della Notifica. Da usare in alternativa a "qrCode".
+      in: query
+      required: false
+      schema:
+        type: string
+      example: "RGDH-AKMP-QVXN-202308-G-1"
+    operationId:
+      name: operationId
+      description: identificativo univoco dell'operazione all'interno del dominio dell'operatore RADD
+      in: path
+      required: true
+      schema:
+        type: string
+      example: "5d2d53ad-6306-40fe-8126-51ccdd917cef"
+    operationType:
+      name: operationType
+      description: Tipo di operazione aor o act
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: ["aor", "act"]
+      example: aor
+    attachmentId:
+      name: attachmentId
+      description: Identificativo file
+      in: query
+      required: false
+      schema:
+        type: string
+
+  responses:
+    Forbidden:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Invalid:
+      description: Bad Request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotAllowed:
+      description: Method not allowed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal Server Error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
