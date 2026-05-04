@@ -287,7 +287,6 @@
                             <generateApiTests>false</generateApiTests>
                             <generateModelTests>false</generateModelTests>
                             <configOptions>
-                                <containerDefaultToNull>true</containerDefaultToNull>
                                 <useSpringBoot3>true</useSpringBoot3>
                                 <dateLibrary>java11</dateLibrary>
                                 <delegatePattern>true</delegatePattern>
