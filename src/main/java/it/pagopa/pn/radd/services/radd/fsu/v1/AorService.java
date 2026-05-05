@@ -182,7 +182,7 @@ public class AorService extends BaseService {
                 .map(data -> {
                     List<DownloadUrl> downloadUrls = getDownloadUrls(data.getUrls());
                     pnRaddAltAuditLog.getContext().addTransactionId(data.getTransactionId()).addDownloadFilekeys(downloadUrls);
-                    return StartTransactionResponseMapper.fromResult(downloadUrls, AOR.name(), data.getOperationId(), pnRaddFsuConfig.getApplicationBasepath(), pnRaddFsuConfig.getDocumentTypeEnumFilter());
+                    return StartTransactionResponseMapper.fromResult(downloadUrls, AOR.name(), data.getOperationId(), resolvedBasepath, pnRaddFsuConfig.getDocumentTypeEnumFilter());
                 })
                 .doOnNext(startTransactionResponse -> {
                     pnRaddAltAuditLog.getContext().addResponseStatus(startTransactionResponse.getStatus().toString());
