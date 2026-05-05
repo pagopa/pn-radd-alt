@@ -197,8 +197,6 @@ class AorServiceTest {
         Mockito.when(pnSafeStorageClient.getFile("//url:safestorage"))
                 .thenReturn(Mono.just(file1));
 
-        Mockito.when(pnRaddFsuConfig.getApplicationBasepath()).thenReturn("123");
-
         StartTransactionResponse response = this.aorService.startTransaction("uid", "http://localhost", startTransactionRequest, CxTypeAuthFleet.valueOf("PF"), "1",String.valueOf(RaddRole.RADD_UPLOADER)).block();
 
         assertNotNull(response);
