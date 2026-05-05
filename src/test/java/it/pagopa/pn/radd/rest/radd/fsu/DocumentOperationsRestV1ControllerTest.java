@@ -55,42 +55,34 @@ class DocumentOperationsRestV1ControllerTest {
                 .header(PN_PAGOPA_UID, "myUid")
                 .header(PN_PAGOPA_CX_ID, "cxId")
                 .header(PN_PAGOPA_CX_TYPE, "PA")
+                .header("x-pagopa-pn-src-ch", "B2B")
                 .exchange()
                 .expectStatus().isOk();
     }
 
-    /**
-     * Method under test: {@link DocumentOperationsRestV1Controller#documentDownload(String, String, CxTypeAuthFleet, String, String, ServerWebExchange)}
-     */
     @Test
     void testDocumentDownload3() {
         when(documentOperationsService.documentDownload(Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.any(), Mockito.anyString())).thenReturn(mock(Mono.class));
-        documentOperationsRestV1Controller.documentDownload("Operation Type", "42", CxTypeAuthFleet.PA, "42", "attach", null);
+        documentOperationsRestV1Controller.documentDownload("Operation Type", "42", CxTypeAuthFleet.PA, "42", "B2B", "attach", null);
         verify(documentOperationsService).documentDownload(Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.any(), Mockito.anyString());
     }
 
-    /**
-     * Method under test: {@link DocumentOperationsRestV1Controller#documentDownload(String, String, CxTypeAuthFleet, String, String, ServerWebExchange)}
-     */
     @Test
     void testDocumentDownload4() {
         when(documentOperationsService.documentDownload(Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.any(), Mockito.anyString())).thenReturn(mock(Mono.class));
-        documentOperationsRestV1Controller.documentDownload("Operation Type", "42", CxTypeAuthFleet.PF, "42", "attach", null);
+        documentOperationsRestV1Controller.documentDownload("Operation Type", "42", CxTypeAuthFleet.PF, "42", "B2B", "attach", null);
         verify(documentOperationsService).documentDownload(Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.any(), Mockito.anyString());
     }
 
-    /**
-     * Method under test: {@link DocumentOperationsRestV1Controller#documentDownload(String, String, CxTypeAuthFleet, String, String, ServerWebExchange)}
-     */
     @Test
     void testDocumentDownload5() {
         when(documentOperationsService.documentDownload(Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.any(), Mockito.anyString())).thenReturn(mock(Mono.class));
-        documentOperationsRestV1Controller.documentDownload("Operation Type", "42", CxTypeAuthFleet.PG, "42", "attach", null);
+        documentOperationsRestV1Controller.documentDownload("Operation Type", "42", CxTypeAuthFleet.PG, "42", "B2B", "attach", null);
         verify(documentOperationsService).documentDownload(Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.any(), Mockito.anyString());
     }
@@ -109,9 +101,10 @@ class DocumentOperationsRestV1ControllerTest {
         webTestClient.post()
                 .uri(path)
                 .header(PN_PAGOPA_UID, "myUid")
-                .header( PN_PAGOPA_CX_ID, "cxId")
-                .header( PN_PAGOPA_CX_TYPE, "PA")
+                .header(PN_PAGOPA_CX_ID, "cxId")
+                .header(PN_PAGOPA_CX_TYPE, "PA")
                 .header(PN_PAGOPA_CX_ROLE, "role")
+                .header("x-pagopa-pn-src-ch", "B2B")
                 .body(Mono.just(req), DocumentUploadRequest.class)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
