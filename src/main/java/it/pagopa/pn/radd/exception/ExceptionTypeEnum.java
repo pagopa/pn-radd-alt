@@ -55,7 +55,8 @@ public enum ExceptionTypeEnum {
     COORDINATES_NOT_FOUND("COORDINATES_NOT_FOUND", "Coordinate non trovate per l'indirizzo fornito", 99),
     INVALID_URL("INVALID_URL", "L'URL non è valido.", 99),
     INVALID_PARTNER_ID("INVALID_PARTNER_ID", "Il partnerId fornito non è valido. Deve essere un CF.", 99),
-    ADDRESS_MISMATCH("ADDRESS_MISMATCH", "L'indirizzo fornito è diverso da quello salvato.", 99);
+    ADDRESS_MISMATCH("ADDRESS_MISMATCH", "L'indirizzo fornito è diverso da quello salvato.", 99),
+    MISSING_BASE_URL_HEADER("MISSING_BASE_URL_HEADER", "Header x-pagopa-pn-base-url obbligatorio non presente.", 99);
 
     private final String title;
     private final String message;

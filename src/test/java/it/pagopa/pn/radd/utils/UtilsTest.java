@@ -7,6 +7,8 @@ import it.pagopa.pn.radd.exception.RaddGenericException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatus;
 import reactor.test.StepVerifier;
 
@@ -111,9 +113,11 @@ class UtilsTest {
                 .verifyComplete();
     }
 
-    @Test
-    void requireBaseUrl_blankValue_shouldEmitInternalServerError() {
-        StepVerifier.create(Utils.requireBaseUrl("   "))
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "   "})
+    void requireBaseUrl_invalidValue_shouldEmitInternalServerError(String value) {
+        StepVerifier.create(Utils.requireBaseUrl(value))
                 .expectErrorMatches(ex -> ex instanceof RaddGenericException
                         && ((RaddGenericException) ex).getStatus() == HttpStatus.INTERNAL_SERVER_ERROR)
                 .verify();

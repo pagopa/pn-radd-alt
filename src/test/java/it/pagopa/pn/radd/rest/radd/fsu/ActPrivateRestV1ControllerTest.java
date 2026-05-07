@@ -1,8 +1,11 @@
 package it.pagopa.pn.radd.rest.radd.fsu;
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
+import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.services.radd.fsu.v1.ActService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
@@ -167,11 +170,15 @@ class ActPrivateRestV1ControllerTest {
                 .accept(MediaType.APPLICATION_JSON)
                 .body(Mono.just(req), ActStartTransactionRequest.class)
                 .exchange()
-                .expectStatus().is5xxServerError();
+                .expectStatus().is5xxServerError()
+                .expectBody()
+                .jsonPath("$.status").isEqualTo(500)
+                .jsonPath("$.detail").isEqualTo(ExceptionTypeEnum.MISSING_BASE_URL_HEADER.getMessage());
     }
 
-    @Test
-    void startActTransactionBlankBaseUrlTest() {
+    @ParameterizedTest
+    @ValueSource(strings = {"", "   "})
+    void startActTransactionInvalidBaseUrlTest(String baseUrl) {
         ActStartTransactionRequest req = new ActStartTransactionRequest();
         req.setQrCode("abcQrcode");
         req.setVersionToken("123TokenDocument");
@@ -190,11 +197,14 @@ class ActPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_CX_ID, "cxId")
                 .header(PN_PAGOPA_CX_TYPE, "PA")
                 .header(PN_PAGOPA_CX_ROLE, "role")
-                .header(PN_PAGOPA_BASE_URL, "   ")
+                .header(PN_PAGOPA_BASE_URL, baseUrl)
                 .accept(MediaType.APPLICATION_JSON)
                 .body(Mono.just(req), ActStartTransactionRequest.class)
                 .exchange()
-                .expectStatus().is5xxServerError();
+                .expectStatus().is5xxServerError()
+                .expectBody()
+                .jsonPath("$.status").isEqualTo(500)
+                .jsonPath("$.detail").isEqualTo(ExceptionTypeEnum.MISSING_BASE_URL_HEADER.getMessage());
     }
 
 }

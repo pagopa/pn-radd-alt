@@ -8,7 +8,6 @@ import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.pojo.DocumentTypeEnum;
 import it.pagopa.pn.radd.services.radd.fsu.v1.dto.DocumentInfoDto;
 import org.apache.commons.lang3.StringUtils;
-import it.pagopa.pn.radd.exception.RaddGenericException;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 
@@ -119,7 +118,7 @@ public class Utils {
 
     public static Mono<String> requireBaseUrl(String value) {
         if (StringUtils.isBlank(value)) {
-            return Mono.error(new RaddGenericException("Missing required header x-pagopa-pn-base-url"));
+            return Mono.error(new RaddGenericException(ExceptionTypeEnum.MISSING_BASE_URL_HEADER, HttpStatus.INTERNAL_SERVER_ERROR));
         }
         return Mono.just(value);
     }
