@@ -28,7 +28,6 @@ public class PnRaddFsuConfig {
     private String safeStorageCxId;
     private String safeStorageDocType;
     public String registrySafeStorageDocType;
-    private String applicationBasepath;
     private Sqs sqs;
     private Dao dao;
     private int registryDefaultEndValidity;
