@@ -61,7 +61,7 @@ public class DocumentOperationsService {
                     if (StringUtils.hasText(attachmentId)) {
                         return getPdfInZipAttachment(attachmentId, raddTransactionEntity);
                     } else {
-                        log.debug("AttachmentId non valorizzato, procedo con il recupero del frontespizio");
+                        log.debug("AttachmentId not set, proceeding with cover page retrieval");
                         return checkOperationType(operationType, raddTransactionEntity)
                                 .concatMap(iun -> enrichSenderPaIds(iun, raddTransactionEntity))
                                 .takeLast(1)
