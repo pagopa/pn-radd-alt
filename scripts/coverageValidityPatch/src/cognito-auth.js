@@ -9,7 +9,7 @@
  *  - AUTH_MODE=local → USER_PASSWORD_AUTH (default se COGNITO_USERNAME e COGNITO_PASSWORD presenti)
  *
  * Variabili ambiente per SSO:
- *  - COGNITO_DOMAIN          (es. your-domain.auth.eu-central-1.amazoncognito.com)
+ *  - COGNITO_DOMAIN          (es. your-domain.auth.eu-south-1.amazoncognito.com)
  *  - COGNITO_CLIENT_ID       (lo stesso usato per local)
  *  - COGNITO_REDIRECT_PORT   (default 8087)
  *  - COGNITO_SCOPES          (default "openid email profile")
@@ -324,7 +324,7 @@ class CognitoAuth {
         throw new Error(
           `Variabili mancanti per SSO: ${missing.join(', ')}.\n` +
           `Configura nel .env:\n` +
-          `  COGNITO_DOMAIN=your-domain.auth.eu-central-1.amazoncognito.com\n` +
+          `  COGNITO_DOMAIN=your-domain.auth.eu-south-1.amazoncognito.com\n` +
           `  COGNITO_CLIENT_ID=xxxxxxxx\n` +
           `  AUTH_MODE=sso`
         );
@@ -385,7 +385,7 @@ class CognitoAuth {
 
       // Se manca il dominio ma abbiamo l'ambiente, lo costruiamo
       if (!cognitoDomain && env) {
-        cognitoDomain = `pn-helpdesk-${env}.auth.eu-central-1.amazoncognito.com`;
+        cognitoDomain = `pn-helpdesk-${env}.auth.eu-south-1.amazoncognito.com`;
         console.log(`[CognitoAuth] Ambiente rilevato: ${env}. Utilizzo dominio: ${cognitoDomain}`);
         // Se l'IDP name è quello di default, lo adattiamo alla convenzione GoogleSAML-<env>
         if (idpName === 'Google') {
