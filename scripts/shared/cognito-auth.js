@@ -77,7 +77,7 @@ function openBrowser(url) {
  * @param {object} opts
  * @param {string} opts.cognitoDomain - Dominio Cognito Hosted UI
  * @param {string} opts.clientId - App Client ID
- * @param {number} [opts.port=8087] - Porta locale per il callback
+ * @param {number} [opts.port=3000] - Porta locale per il callback
  * @param {string} [opts.scopes='openid email profile'] - OAuth scopes
  * @param {string} [opts.idpName='Google'] - Nome IdP in Cognito
  * @param {boolean} [opts.useIdToken=true] - Ritorna IdToken anziché AccessToken
@@ -87,7 +87,7 @@ async function authenticateWithSSO(opts) {
   const {
     cognitoDomain,
     clientId,
-    port = 8087,
+    port = 3000,
     scopes = 'openid email profile',
     idpName = 'Google',
     useIdToken = true,
@@ -169,6 +169,7 @@ async function authenticateWithSSO(opts) {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end('<html><body><h2>Autenticazione riuscita!</h2><p>Puoi chiudere questa finestra e tornare al terminale.</p></body></html>');
         server.close();
+        server.unref();
         resolve({ token: selectedToken, expiresAt });
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -385,7 +386,7 @@ class CognitoAuth {
 
       // Se manca il dominio ma abbiamo l'ambiente, lo costruiamo
       if (!cognitoDomain && env) {
-        cognitoDomain = `pn-helpdesk-${env}.auth.eu-central-1.amazoncognito.com`;
+        cognitoDomain = `pn-helpdesk-${env}.auth.eu-south-1.amazoncognito.com`;
         console.log(`[CognitoAuth] Ambiente rilevato: ${env}. Utilizzo dominio: ${cognitoDomain}`);
         // Se l'IDP name è quello di default, lo adattiamo alla convenzione GoogleSAML-<env>
         if (idpName === 'Google') {
@@ -397,7 +398,7 @@ class CognitoAuth {
       result = await authenticateWithSSO({
         cognitoDomain,
         clientId: process.env.COGNITO_CLIENT_ID,
-        port: parseInt(process.env.COGNITO_REDIRECT_PORT || '8087', 10),
+        port: parseInt(process.env.COGNITO_REDIRECT_PORT || '3000', 10),
         scopes: process.env.COGNITO_SCOPES || 'openid email profile',
         idpName,
         useIdToken: this.useIdToken,

@@ -125,6 +125,7 @@ class Authenticator {
           res.writeHead(200, { "Content-Type": "text/plain" });
           res.end("OK");
           server.close();
+          server.unref();
           console.log('[Authenticator] Token ricevuto automaticamente.');
           resolve(reqUrl.query.id_token);
           return;
