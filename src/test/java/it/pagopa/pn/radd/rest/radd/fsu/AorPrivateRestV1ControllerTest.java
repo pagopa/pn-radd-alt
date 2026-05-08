@@ -2,7 +2,6 @@ package it.pagopa.pn.radd.rest.radd.fsu;
 
 
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
-import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.services.radd.fsu.v1.AorService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -29,9 +28,6 @@ class AorPrivateRestV1ControllerTest {
 
     @MockitoBean
     private AorService aorService;
-
-    @MockitoBean
-    private PnRaddFsuConfig pnRaddFsuConfig;
 
     @Test
     void aorInquiryTest() {
