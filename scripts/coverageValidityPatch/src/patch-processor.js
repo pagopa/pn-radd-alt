@@ -1,7 +1,7 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const axios = require('axios');
-const { CognitoAuth } = require('../../shared/cognito-auth');
+const { CognitoAuth } = require('./cognito-auth');
 require('dotenv').config();
 
 class CoverageValidityPatchProcessor {

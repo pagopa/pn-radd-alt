@@ -10,22 +10,35 @@ const RegistryService = require('./services/registryService');
   const allowedEnvs = ['dev', 'test', 'uat', 'hotfix', 'prod'];
   const args = process.argv.slice(2);
 
-  // Supporto modalità SSO: node index.js --sso <env> <clientId> <csvFilePath>
+  // Supporto modalità token:  node index.js --token <token> <env> <clientId> <csvFilePath>
+  // Supporto modalità SSO:    node index.js --sso <env> <clientId> <csvFilePath>
   // Supporto modalità locale: node index.js <env> <username> <password> <clientId> <csvFilePath>
   const ssoMode = args.includes('--sso');
+  const tokenIndex = args.indexOf('--token');
+  const profileIndex = args.indexOf('--profile');
+  const poolIndex = args.indexOf('--user-pool-id');
+  
+  const directToken = tokenIndex !== -1 ? args[tokenIndex + 1] : null;
+  const awsProfile = profileIndex !== -1 ? args[profileIndex + 1] : (process.env.AWS_PROFILE || null);
+  const userPoolId = poolIndex !== -1 ? args[poolIndex + 1] : (process.env.COGNITO_USER_POOL_ID || null);
 
   let env, username, password, clientId, csvFilePath;
 
-  if (ssoMode) {
-    const filtered = args.filter(a => a !== '--sso');
+  if (ssoMode || directToken) {
+    const filtered = args.filter(a => 
+      a !== '--sso' && 
+      a !== '--token' && a !== directToken &&
+      a !== '--profile' && a !== awsProfile && 
+      a !== '--user-pool-id' && a !== userPoolId
+    );
     [env, clientId, ...csvPathParts] = filtered;
     csvFilePath = csvPathParts.join(' ');
     username = null;
     password = null;
 
     if (!env || !clientId || !csvFilePath) {
-      console.error('Uso SSO: node index.js --sso <env> <clientId> <csvFilePath>');
-      console.error('Richiede COGNITO_DOMAIN (variabile ambiente o nel .env)');
+      console.error('Uso token:  node index.js --token <token> <env> <clientId> <csvFilePath>');
+      console.error('Uso SSO:    node index.js --sso <env> <clientId> <csvFilePath>');
       process.exit(1);
     }
   } else {
@@ -53,8 +66,18 @@ const RegistryService = require('./services/registryService');
     process.exit(1);
   }
 
-  const authenticator = new Authenticator(username, password, clientId);
-  const jwt = await authenticator.generateJwtToken();
+  let jwt;
+  if (directToken) {
+    console.log('[Info] Uso token passato direttamente.');
+    jwt = directToken;
+  } else {
+    const authenticator = new Authenticator(username, password, clientId, { 
+      env, 
+      awsProfile,
+      userPoolId 
+    });
+    jwt = await authenticator.generateJwtToken();
+  }
   const headers = { ...HEADERS, Authorization: `Bearer ${jwt}` };
 
   const csvRegistries = await readCsv(csvFilePath);
