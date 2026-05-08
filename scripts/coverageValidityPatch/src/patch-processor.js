@@ -1,7 +1,7 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const axios = require('axios');
-const { CognitoIdentityProviderClient, InitiateAuthCommand } = require('@aws-sdk/client-cognito-identity-provider');
+const { CognitoAuth } = require('../../shared/cognito-auth');
 require('dotenv').config();
 
 class CoverageValidityPatchProcessor {
@@ -12,69 +12,12 @@ class CoverageValidityPatchProcessor {
     this.dryRun = !!options.dryRun;
     this.useIdToken = !!options.useIdToken;
 
-    // Supporto token statico alternativo
-    this.staticApiToken = process.env.API_TOKEN || null;
-    this.requiredEnv = ['COGNITO_REGION', 'COGNITO_CLIENT_ID', 'COGNITO_USERNAME', 'COGNITO_PASSWORD'];
-
-    this.cognitoClient = new CognitoIdentityProviderClient({ region: process.env.COGNITO_REGION });
-    this.cognitoToken = null;
-    this.cognitoTokenExpiry = 0;
-    this._tokenPromise = null;
-    this._tokenMarginSeconds = parseInt(process.env.COGNITO_TOKEN_MARGIN || '30', 10);
-
-    this.validateEnvironment();
-  }
-
-  validateEnvironment() {
-    if (this.staticApiToken) {
-      console.log('ℹ️ Uso API_TOKEN (JWT statico), salto autenticazione Cognito.');
-      return;
-    }
-    const missing = this.requiredEnv.filter(k => !process.env[k] || process.env[k].trim() === '');
-    if (missing.length) {
-      throw new Error(`Variabili Cognito mancanti: ${missing.join(', ')}. Esempio .env:\nCOGNITO_REGION=eu-central-1\nCOGNITO_CLIENT_ID=xxxxxxxx\nCOGNITO_USERNAME=utente@example.com\nCOGNITO_PASSWORD=Password123!`);
-    }
-  }
-
-  decodeJwt(token) {
-    const parts = token.split('.');
-    if (parts.length < 2) return null;
-    const b64 = (s) => Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
-    try { return JSON.parse(b64(parts[1])); } catch { return null; }
+    // Usa il modulo condiviso per l'autenticazione (supporta local + SSO)
+    this.auth = new CognitoAuth({ useIdToken: this.useIdToken });
   }
 
   async getAuthToken() {
-    if (this.staticApiToken) {
-      return this.staticApiToken;
-    }
-    const now = Math.floor(Date.now() / 1000);
-    if (this.cognitoToken && now < (this.cognitoTokenExpiry - this._tokenMarginSeconds)) {
-      return this.cognitoToken;
-    }
-    if (this._tokenPromise) return this._tokenPromise;
-
-    this._tokenPromise = (async () => {
-      const clientId = process.env.COGNITO_CLIENT_ID;
-      if (!clientId) throw new Error('COGNITO_CLIENT_ID mancante: definisci la variabile o usa API_TOKEN');
-      const params = {
-        AuthFlow: 'USER_PASSWORD_AUTH',
-        ClientId: clientId,
-        AuthParameters: {
-          USERNAME: process.env.COGNITO_USERNAME,
-          PASSWORD: process.env.COGNITO_PASSWORD
-        }
-      };
-      const command = new InitiateAuthCommand(params);
-      const resp = await this.cognitoClient.send(command);
-      const token = this.useIdToken ? resp.AuthenticationResult.IdToken : resp.AuthenticationResult.AccessToken;
-      const payload = this.decodeJwt(token);
-      if (!payload || !payload.exp) throw new Error('Token Cognito privo di exp');
-      this.cognitoToken = token;
-      this.cognitoTokenExpiry = payload.exp;
-      console.log(`🔐 Token (${this.useIdToken ? 'ID' : 'Access'}) ottenuto. TTL ${(this.cognitoTokenExpiry - now)}s`);
-      return token;
-    })();
-    try { return await this._tokenPromise; } finally { this._tokenPromise = null; }
+    return this.auth.getToken();
   }
 
   validateDate(value, fieldName) {
@@ -133,7 +76,7 @@ class CoverageValidityPatchProcessor {
       if (record.cadastralCode) bodyPreview.cadastralCode = record.cadastralCode;
       const encodedLocality = this.encodePathParam(record.locality);
       const pathShown = encodedLocality !== record.locality ? `${record.cap}/${encodedLocality} (raw: ${record.locality})` : `${record.cap}/${encodedLocality}`;
-      console.log(`📝 [dry-run] PATCH /coverages/${pathShown} body:`, bodyPreview);
+      console.log(`[dry-run] PATCH /coverages/${pathShown} body:`, bodyPreview);
       this.successCount++;
       return;
     }
@@ -147,7 +90,7 @@ class CoverageValidityPatchProcessor {
       if (record.province) body.province = record.province;
       if (record.cadastralCode) body.cadastralCode = record.cadastralCode;
       if (Object.keys(body).length === 0) {
-        console.log(`⚠️ Nessun campo da aggiornare per ${record.cap}/${record.locality}, salto.`);
+        console.log(`Nessun campo da aggiornare per ${record.cap}/${record.locality}, salto.`);
         this.successCount++;
         return;
       }
@@ -159,14 +102,14 @@ class CoverageValidityPatchProcessor {
         timeout: 10000
       });
       if (encodedLocality !== record.locality) {
-        console.log(`✅ PATCH ok ${record.cap}/${record.locality} (encoded: ${encodedLocality}) ->`, body);
+        console.log(`PATCH ok ${record.cap}/${record.locality} (encoded: ${encodedLocality}) ->`, body);
       } else {
-        console.log(`✅ PATCH ok ${record.cap}/${record.locality} ->`, body);
+        console.log(`PATCH ok ${record.cap}/${record.locality} ->`, body);
       }
       this.successCount++;
       return resp.data;
     } catch (error) {
-      console.error(`❌ PATCH fallita ${record.cap}/${record.locality}:`, error.response?.data || error.message);
+      console.error(`PATCH fallita ${record.cap}/${record.locality}:`, error.response?.data || error.message);
       this.errorCount++;
       return null;
     }
@@ -182,17 +125,17 @@ class CoverageValidityPatchProcessor {
             const mapped = this.mapRow(row);
             records.push(mapped);
           } catch (e) {
-            console.warn(`⚠️ Riga ignorata (${e.message})`, row);
+            console.warn(`Riga ignorata (${e.message})`, row);
           }
         })
         .on('end', async () => {
-          console.log(`📊 Record validi da processare: ${records.length}`);
+          console.log(`Record validi da processare: ${records.length}`);
           await this.processBatches(records, batchSize, delayMs);
-          console.log(`\n📈 Completato: ✅ ${this.successCount} ❌ ${this.errorCount} 📦 ${this.successCount + this.errorCount}`);
+          console.log(`\nCompletato: OK ${this.successCount} | KO ${this.errorCount} | Totale ${this.successCount + this.errorCount}`);
           resolve({ success: this.successCount, errors: this.errorCount, total: this.successCount + this.errorCount });
         })
         .on('error', (err) => {
-          console.error('❌ Errore lettura CSV:', err);
+          console.error('Errore lettura CSV:', err);
           reject(err);
         });
     });
@@ -201,10 +144,10 @@ class CoverageValidityPatchProcessor {
   async processBatches(records, batchSize, delayMs) {
     for (let i = 0; i < records.length; i += batchSize) {
       const batch = records.slice(i, i + batchSize);
-      console.log(`🔄 Batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(records.length / batchSize)} (${batch.length})`);
+      console.log(`Batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(records.length / batchSize)} (${batch.length})`);
       await Promise.all(batch.map(r => this.patchCoverage(r)));
       if (i + batchSize < records.length) {
-        console.log(`⏳ Attesa ${delayMs}ms...`);
+        console.log(`Attesa ${delayMs}ms...`);
         await new Promise(r => setTimeout(r, delayMs));
       }
     }

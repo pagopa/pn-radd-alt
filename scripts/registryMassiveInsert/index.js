@@ -8,12 +8,35 @@ const RegistryService = require('./services/registryService');
 
 (async () => {
   const allowedEnvs = ['dev', 'test', 'uat', 'hotfix', 'prod'];
-  const [,, env, username, password, clientId, ...csvPathParts] = process.argv;
-  // accetto gli spazi nel nome del file
-  const csvFilePath = csvPathParts.join(' ');
-  if (!env || !username || !password || !clientId || !csvFilePath) {
-    console.error('Uso: node index.js <env> <username> <password> <clientId> <csvFilePath>');
-    process.exit(1);
+  const args = process.argv.slice(2);
+
+  // Supporto modalità SSO: node index.js --sso <env> <clientId> <csvFilePath>
+  // Supporto modalità locale: node index.js <env> <username> <password> <clientId> <csvFilePath>
+  const ssoMode = args.includes('--sso');
+
+  let env, username, password, clientId, csvFilePath;
+
+  if (ssoMode) {
+    const filtered = args.filter(a => a !== '--sso');
+    [env, clientId, ...csvPathParts] = filtered;
+    csvFilePath = csvPathParts.join(' ');
+    username = null;
+    password = null;
+
+    if (!env || !clientId || !csvFilePath) {
+      console.error('Uso SSO: node index.js --sso <env> <clientId> <csvFilePath>');
+      console.error('Richiede COGNITO_DOMAIN (variabile ambiente o nel .env)');
+      process.exit(1);
+    }
+  } else {
+    [env, username, password, clientId, ...csvPathParts] = args;
+    // accetto gli spazi nel nome del file
+    csvFilePath = csvPathParts.join(' ');
+    if (!env || !username || !password || !clientId || !csvFilePath) {
+      console.error('Uso locale: node index.js <env> <username> <password> <clientId> <csvFilePath>');
+      console.error('Uso SSO:    node index.js --sso <env> <clientId> <csvFilePath>');
+      process.exit(1);
+    }
   }
 
   if (!allowedEnvs.includes(env)) {

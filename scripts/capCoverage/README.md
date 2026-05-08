@@ -23,22 +23,62 @@ cd scripts/capCoverage
 npm install
 ```
 
-### Esempio `.env`
+### Esempio `.env` — Login locale (username/password)
 ```env
 API_BASE_URL=https://your-api-server.com
 
-# Cognito
-COGNITO_USE_ID_TOKEN=true
+# Modalità autenticazione: "local" o "sso" (auto-detect se omesso)
+AUTH_MODE=local
+
+# Cognito locale
 COGNITO_REGION=eu-central-1
 COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
 COGNITO_USERNAME=your.username@example.com
 COGNITO_PASSWORD=YourSecurePassword123!
-# Margine secondi prima della scadenza per refresh
+COGNITO_USE_ID_TOKEN=true
 COGNITO_TOKEN_MARGIN=30
 ```
 
-## 📄 Utilizzo
+### Esempio `.env` — SSO Google
+```env
+API_BASE_URL=https://your-api-server.com
 
+# Modalità autenticazione
+AUTH_MODE=sso
+
+# Cognito SSO (Hosted UI con Google)
+COGNITO_DOMAIN=your-domain.auth.eu-central-1.amazoncognito.com
+COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
+COGNITO_IDP_NAME=GoogleSAML-dev    # Nome del provider SAML (es. GoogleSAML-dev, GoogleSAML-uat)
+COGNITO_REDIRECT_PORT=8087         # Default 8087. Deve essere configurato nei Redirect URL del client Cognito
+COGNITO_USE_ID_TOKEN=true
+COGNITO_TOKEN_MARGIN=30
+```
+
+> **Nota sull'SSO**: Per utilizzare la modalità SSO con Google, è necessario che l'URL `http://localhost:8087/callback` sia censito tra i "Callback URLs" del Client Cognito su AWS.
+
+## 🏃 Esempi di utilizzo
+
+### Modalità Locale (Username/Password)
+Assicurarsi di avere `AUTH_MODE=local` o di aver configurato `COGNITO_USERNAME` e `COGNITO_PASSWORD` nel `.env`.
+```bash
+node index.js data.csv
+```
+
+### Modalità SSO (Google)
+Assicurarsi di avere `AUTH_MODE=sso` e `COGNITO_DOMAIN` nel `.env`.
+```bash
+node index.js data.csv
+```
+
+In modalità SSO, lo script aprirà automaticamente il browser predefinito per il login Google. Una volta completato il login, il browser mostrerà un messaggio di successo e potrai chiudere la tab; lo script riprenderà l'esecuzione nel terminale.
+
+### Dry-run (Simulazione)
+```bash
+DRY_RUN=true node index.js data.csv
+```
+
+## 📄 Utilizzo Avanzato
 ```bash
 # Formato storico
 node index.js data/sample.csv --api-url https://your-api-server.com
@@ -88,11 +128,24 @@ Il payload inviato al POST deriva dai campi trovati:
 }
 ```
 
-## 🔐 Autenticazione Cognito
-- USER_PASSWORD_AUTH con le variabili fornite.
-- Il token (Access o Id in base a `COGNITO_USE_ID_TOKEN`) viene riutilizzato finché non è in prossimità della scadenza (`COGNITO_TOKEN_MARGIN`).
+## 🔐 Autenticazione
+
+Lo script supporta **due modalità** di autenticazione verso il pool Cognito:
+
+### Modalità 1: Login locale (username/password)
+- Flusso `USER_PASSWORD_AUTH` con le variabili `COGNITO_USERNAME` e `COGNITO_PASSWORD`.
+- Il token viene riutilizzato finché non è in prossimità della scadenza (`COGNITO_TOKEN_MARGIN`).
+
+### Modalità 2: SSO Google (Authorization Code + PKCE)
+- Lo script avvia un server locale sulla porta `COGNITO_REDIRECT_PORT` (default 8087).
+- Si apre il browser sulla Hosted UI di Cognito che redirige a Google.
+- Dopo il login Google, il callback locale riceve il codice e lo scambia per i token.
+- Il token viene riutilizzato come nella modalità locale.
+
+### Comune a entrambe
 - Header: `Authorization: Bearer <token>`.
 - Se ti serve il claim custom `custom:backoffice_tags` usa l'ID token (`COGNITO_USE_ID_TOKEN=true`).
+- Supporto alternativo: puoi fornire `API_TOKEN` con un JWT statico per bypassare completamente Cognito.
 
 ## 🗓️ Validità
 Per gestire start/end validity utilizza invece lo script di patch (`scripts/coverageValidityPatch/`), che invia questi campi via PATCH.

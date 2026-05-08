@@ -16,12 +16,12 @@ try {
   const dotenv = require('dotenv');
   const result = dotenv.config({ path: envPathToLoad });
   if (result.error) {
-    console.warn(`⚠️ .env non caricato da '${envPathToLoad}' (${result.error.message}). Userò variabili shell.`);
+    console.warn(`.env non caricato da '${envPathToLoad}' (${result.error.message}). Userò variabili shell.`);
   } else {
-    console.log(`🔧 Variabili ambiente caricate da '${envPathToLoad}'.`);
+    console.log(`Variabili ambiente caricate da '${envPathToLoad}'.`);
   }
 } catch (e) {
-  console.warn(`⚠️ Impossibile caricare .env: ${e.message}`);
+  console.warn(`Impossibile caricare .env: ${e.message}`);
 }
 
 const Processor = require('./src/patch-processor');
@@ -73,15 +73,15 @@ const argv = yargs(hideBin(process.argv))
 async function main() {
   const csvFilePath = argv.file;
   if (!fs.existsSync(csvFilePath)) {
-    console.error('❌ File CSV non trovato:', csvFilePath);
+    console.error('File CSV non trovato:', csvFilePath);
     process.exit(1);
   }
   const processor = new Processor(argv.apiUrl, { useIdToken: argv.useIdToken, dryRun: argv.dryRun });
   try {
     const stats = await processor.processCsvFile(csvFilePath, argv.batchSize, argv.delay);
-    console.log('\n✅ Risultato finale:', stats);
+    console.log('\nRisultato finale:', stats);
   } catch (e) {
-    console.error('💥 Errore esecuzione:', e.message);
+    console.error('Errore esecuzione:', e.message);
     process.exit(1);
   }
 }
