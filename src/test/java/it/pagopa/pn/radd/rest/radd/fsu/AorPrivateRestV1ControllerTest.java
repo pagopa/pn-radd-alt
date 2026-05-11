@@ -26,6 +26,7 @@ class AorPrivateRestV1ControllerTest {
     public static final String PN_PAGOPA_CX_ROLE = "x-pagopa-pn-cx-role";
     public static final String PN_PAGOPA_UID = "uid";
     public static final String PN_PAGOPA_BASE_URL = "x-pagopa-pn-base-url";
+    public static final String PN_PAGOPA_SRC_CH = "x-pagopa-pn-src-ch";
 
     @Autowired
     WebTestClient webTestClient;
@@ -51,7 +52,7 @@ class AorPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_UID, "myUid")
                 .header(PN_PAGOPA_CX_ID, "cxId")
                 .header(PN_PAGOPA_CX_TYPE, "PA")
-                .header("x-pagopa-pn-src-ch", "B2B")
+                .header(PN_PAGOPA_SRC_CH, "B2B")
                 .exchange()
                 .expectStatus().isOk();
 
@@ -89,7 +90,7 @@ class AorPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_CX_TYPE, "PA")
                 .header(PN_PAGOPA_CX_ROLE, "role")
                 .header(PN_PAGOPA_BASE_URL, "https://example.com")
-                .header("x-pagopa-pn-src-ch", "B2B")
+                .header(PN_PAGOPA_SRC_CH, "B2B")
                 .accept(MediaType.APPLICATION_JSON)
                 .body(Mono.just(req), AorStartTransactionRequest.class)
                 .exchange()
@@ -120,6 +121,7 @@ class AorPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_CX_TYPE, "PA")
                 .header(PN_PAGOPA_CX_ROLE, "role")
                 // PN_PAGOPA_BASE_URL header omitted intentionally
+                .header(PN_PAGOPA_SRC_CH, "B2B")
                 .accept(MediaType.APPLICATION_JSON)
                 .body(Mono.just(req), AorStartTransactionRequest.class)
                 .exchange()
@@ -150,6 +152,7 @@ class AorPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_CX_TYPE, "PA")
                 .header(PN_PAGOPA_CX_ROLE, "role")
                 .header(PN_PAGOPA_BASE_URL, baseUrl)
+                .header(PN_PAGOPA_SRC_CH, "B2B")
                 .accept(MediaType.APPLICATION_JSON)
                 .body(Mono.just(req), AorStartTransactionRequest.class)
                 .exchange()
@@ -180,7 +183,7 @@ class AorPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_UID, "myUid")
                 .header(PN_PAGOPA_CX_ID, "cxId")
                 .header(PN_PAGOPA_CX_TYPE, "PA")
-                .header("x-pagopa-pn-src-ch", "B2B")
+                .header(PN_PAGOPA_SRC_CH, "B2B")
                 .accept(MediaType.APPLICATION_JSON)
                 .body(Mono.just(req), CompleteTransactionRequest.class)
                 .exchange()
@@ -210,7 +213,7 @@ class AorPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_UID, "myUid")
                 .header(PN_PAGOPA_CX_ID, "cxId")
                 .header(PN_PAGOPA_CX_TYPE, "PA")
-                .header("x-pagopa-pn-src-ch", "B2B")
+                .header(PN_PAGOPA_SRC_CH, "B2B")
                 .accept(MediaType.APPLICATION_JSON)
                 .body(Mono.just(req), AbortTransactionRequest.class)
                 .exchange()

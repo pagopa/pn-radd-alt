@@ -40,10 +40,10 @@ public class AorPrivateRestV1Controller implements AorOperationsApi {
     }
 
     @Override
-    public Mono<ResponseEntity<StartTransactionResponse>> startAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh Mono<AorStartTransactionRequest> aorStartTransactionRequest, String xPagopaPnCxRole, String xPagopaPnBaseUrl, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<StartTransactionResponse>> startAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh, Mono<AorStartTransactionRequest> aorStartTransactionRequest, String xPagopaPnCxRole, String xPagopaPnBaseUrl, ServerWebExchange exchange) {
         return Utils.requireBaseUrl(xPagopaPnBaseUrl)
                 .flatMap(baseUrl -> aorStartTransactionRequest
-                .zipWhen(req -> aorService.startTransaction(uid, baseUrl, req, xPagopaPnCxType, xPagopaPnCxId,xPagopaPnSrcCh, xPagopaPnCxRole), (req, resp) -> resp))
+                .zipWhen(req -> aorService.startTransaction(uid, baseUrl, req, xPagopaPnCxType, xPagopaPnCxId, xPagopaPnCxRole, xPagopaPnSrcCh), (req, resp) -> resp))
                 .map(m -> ResponseEntity.status(HttpStatus.OK).body(m));
     }
 }

@@ -30,7 +30,7 @@ public class ActPrivateRestV1Controller implements ActOperationsApi {
     public Mono<ResponseEntity<StartTransactionResponse>> startActTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh, Mono<ActStartTransactionRequest> actStartTransactionRequest, String xPagopaPnCxRole, String xPagopaPnBaseUrl, ServerWebExchange exchange) {
         return Utils.requireBaseUrl(xPagopaPnBaseUrl)
                 .flatMap(baseUrl -> actStartTransactionRequest
-                .zipWhen(request -> actService.startTransaction(uid, xPagopaPnCxId, xPagopaPnCxType, xPagopaPnCxRole, baseUrl,xPagopaPnSrcCh, request), (req, resp) -> resp))
+                .zipWhen(request -> actService.startTransaction(uid, xPagopaPnCxId, xPagopaPnCxType, xPagopaPnCxRole, xPagopaPnSrcCh, baseUrl, request), (req, resp) -> resp))
                 .map(m -> ResponseEntity.status(HttpStatus.OK).body(m));
     }
 
