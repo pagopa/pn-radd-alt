@@ -4,6 +4,7 @@ package it.pagopa.pn.radd.rest.radd.fsu;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.AorOperationsApi;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.services.radd.fsu.v1.AorService;
+import it.pagopa.pn.radd.utils.Utils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,9 +40,10 @@ public class AorPrivateRestV1Controller implements AorOperationsApi {
     }
 
     @Override
-    public Mono<ResponseEntity<StartTransactionResponse>> startAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh, Mono<AorStartTransactionRequest> aorStartTransactionRequest, String xPagopaPnCxRole, ServerWebExchange exchange) {
-        return aorStartTransactionRequest
-                .zipWhen(req -> aorService.startTransaction(uid,null, req, xPagopaPnCxType, xPagopaPnCxId, xPagopaPnCxRole, xPagopaPnSrcCh), (req, resp) -> resp)
+    public Mono<ResponseEntity<StartTransactionResponse>> startAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh, Mono<AorStartTransactionRequest> aorStartTransactionRequest, String xPagopaPnCxRole, String xPagopaPnBaseUrl, ServerWebExchange exchange) {
+        return Utils.requireBaseUrl(xPagopaPnBaseUrl)
+                .flatMap(baseUrl -> aorStartTransactionRequest
+                .zipWhen(req -> aorService.startTransaction(uid, baseUrl, req, xPagopaPnCxType, xPagopaPnCxId, xPagopaPnCxRole, xPagopaPnSrcCh), (req, resp) -> resp))
                 .map(m -> ResponseEntity.status(HttpStatus.OK).body(m));
     }
 }
