@@ -41,7 +41,7 @@ class ActPrivateRestV1ControllerTest {
 
         String path = "/radd-net/api/v1/act/inquiry";
         Mockito.when(actService
-                .actInquiry(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString())
+                .actInquiry(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.eq("B2B"))
         ).thenReturn(Mono.just(response));
 
         webTestClient.get()
@@ -54,8 +54,13 @@ class ActPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_UID, "myUid")
                 .header(PN_PAGOPA_CX_ID, "cxId")
                 .header(PN_PAGOPA_CX_TYPE, "PA")
+                .header("x-pagopa-pn-src-ch", "B2B")
                 .exchange()
                 .expectStatus().isOk();
+
+        Mockito.verify(actService).actInquiry(
+                Mockito.anyString(), Mockito.anyString(), Mockito.any(),
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.eq("B2B"));
     }
 
     @Test
@@ -71,7 +76,7 @@ class ActPrivateRestV1ControllerTest {
 
         String path = "/radd-net/api/v1/act/transaction/complete";
         Mockito.when(actService
-                .completeTransaction(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())
+                .completeTransaction(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq("B2B"))
         ).thenReturn(Mono.just(response));
 
         webTestClient.post()
@@ -79,10 +84,14 @@ class ActPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_UID, "myUid")
                 .header(PN_PAGOPA_CX_ID, "cxId")
                 .header(PN_PAGOPA_CX_TYPE, "PA")
+                .header("x-pagopa-pn-src-ch", "B2B")
                 .accept(MediaType.APPLICATION_JSON)
                 .body(Mono.just(req), CompleteTransactionRequest.class)
                 .exchange()
                 .expectStatus().isOk();
+
+        Mockito.verify(actService).completeTransaction(
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq("B2B"));
     }
 
     @Test
@@ -97,7 +106,7 @@ class ActPrivateRestV1ControllerTest {
         req.setOperationDate(new Date());
 
         String path = "/radd-net/api/v1/act/transaction/abort";
-        Mockito.when(actService.abortTransaction(Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any())
+        Mockito.when(actService.abortTransaction(Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq("B2B"))
         ).thenReturn(Mono.just(response));
 
         webTestClient.post()
@@ -105,10 +114,14 @@ class ActPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_UID, "myUid")
                 .header(PN_PAGOPA_CX_ID, "cxId")
                 .header(PN_PAGOPA_CX_TYPE, "PA")
+                .header("x-pagopa-pn-src-ch", "B2B")
                 .accept(MediaType.APPLICATION_JSON)
                 .body(Mono.just(req), AbortTransactionRequest.class)
                 .exchange()
                 .expectStatus().isOk();
+
+        Mockito.verify(actService).abortTransaction(
+                Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq("B2B"));
     }
 
     @Test
@@ -130,7 +143,7 @@ class ActPrivateRestV1ControllerTest {
 
         String path = "/radd-net/api/v1/act/transaction/start";
         Mockito.when(actService
-                .startTransaction(Mockito.anyString(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())
+                .startTransaction(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.anyString(), Mockito.eq("B2B"), Mockito.any(), Mockito.any())
         ).thenReturn(Mono.just(response));
 
         webTestClient.post()
@@ -140,10 +153,15 @@ class ActPrivateRestV1ControllerTest {
                 .header(PN_PAGOPA_CX_TYPE, "PA")
                 .header(PN_PAGOPA_CX_ROLE, "role")
                 .header(PN_PAGOPA_BASE_URL, "https://example.com")
+                .header("x-pagopa-pn-src-ch", "B2B")
                 .accept(MediaType.APPLICATION_JSON)
                 .body(Mono.just(req), ActStartTransactionRequest.class)
                 .exchange()
                 .expectStatus().isOk();
+
+        Mockito.verify(actService).startTransaction(
+                Mockito.anyString(), Mockito.anyString(), Mockito.any(),
+                Mockito.anyString(), Mockito.eq("B2B"), Mockito.any(), Mockito.any());
     }
 
     @Test

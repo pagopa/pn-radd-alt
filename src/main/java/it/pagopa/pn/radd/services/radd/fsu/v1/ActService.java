@@ -67,7 +67,7 @@ public class ActService extends BaseService {
         this.pnRaddFsuConfig = pnRaddFsuConfig;
     }
 
-    public Mono<ActInquiryResponse> actInquiry(String uid, String xPagopaPnCxId, CxTypeAuthFleet xPagopaPnCxType, String recipientTaxId, String recipientType, String qrCode, String iun) {
+    public Mono<ActInquiryResponse> actInquiry(String uid, String xPagopaPnCxId, CxTypeAuthFleet xPagopaPnCxType, String recipientTaxId, String recipientType, String qrCode, String iun, String xPagopaPnSrcCh) {
         PnRaddAltAuditLog raddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_ACTINQUIRY)
                 .msg(START_ACT_INQUIRY)
@@ -77,6 +77,7 @@ public class ActService extends BaseService {
                         .addCxId(xPagopaPnCxId)
                         .addCxType(xPagopaPnCxType.toString())
                         .addTaxCode(recipientTaxId)
+                        .addSourceChannel(xPagopaPnSrcCh)
                         )
                 .build()
                 .log();
@@ -139,7 +140,7 @@ public class ActService extends BaseService {
                 .doOnError(err -> log.error(err.getMessage()));
     }
 
-    public Mono<StartTransactionResponse> startTransaction(String uid, String xPagopaPnCxId, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxRole, String resolvedBasepath, ActStartTransactionRequest request) {
+    public Mono<StartTransactionResponse> startTransaction(String uid, String xPagopaPnCxId, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxRole, String xPagopaPnSrcCh, String resolvedBasepath, ActStartTransactionRequest request) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_ACTTRAN)
                 .msg(START_ACT_START_TRANSACTION)
@@ -148,7 +149,8 @@ public class ActService extends BaseService {
                         .addIun(request.getIun())
                         .addCxType(xPagopaPnCxType.toString())
                         .addCxId(xPagopaPnCxId)
-                        .addOperationId(request.getOperationId()))
+                        .addOperationId(request.getOperationId())
+                        .addSourceChannel(xPagopaPnSrcCh))
                 .build()
                 .log();
 
@@ -273,7 +275,7 @@ public class ActService extends BaseService {
     }
 
     public Mono<CompleteTransactionResponse> completeTransaction(String uid, CompleteTransactionRequest
-            completeTransactionRequest, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId) {
+            completeTransactionRequest, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_ACTTRAN)
                 .msg(START_ACT_COMPLETE_TRANSACTION)
@@ -281,7 +283,8 @@ public class ActService extends BaseService {
                         .addUid(uid)
                         .addCxType(xPagopaPnCxType.toString())
                         .addCxId(xPagopaPnCxId)
-                        .addOperationId(completeTransactionRequest.getOperationId()))
+                        .addOperationId(completeTransactionRequest.getOperationId())
+                        .addSourceChannel(xPagopaPnSrcCh))
                 .build()
                 .log();
 
@@ -317,7 +320,7 @@ public class ActService extends BaseService {
                 );
     }
 
-    public Mono<AbortTransactionResponse> abortTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, AbortTransactionRequest req) {
+    public Mono<AbortTransactionResponse> abortTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, AbortTransactionRequest req, String xPagopaPnSrcCh) {
         if (req == null || !StringUtils.hasText(req.getOperationId())
                 || !StringUtils.hasText(req.getReason())) {
             log.error("Missing input parameters");
@@ -331,7 +334,8 @@ public class ActService extends BaseService {
                         .addUid(uid)
                         .addCxType(xPagopaPnCxType.toString())
                         .addCxId(xPagopaPnCxId)
-                        .addOperationId(req.getOperationId()))
+                        .addOperationId(req.getOperationId())
+                        .addSourceChannel(xPagopaPnSrcCh))
                 .build()
                 .log();
         return raddTransactionDAO.getTransaction(String.valueOf(xPagopaPnCxType), xPagopaPnCxId, req.getOperationId(), OperationTypeEnum.ACT)

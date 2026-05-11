@@ -21,30 +21,29 @@ public class AorPrivateRestV1Controller implements AorOperationsApi {
 
 
     @Override
-    public Mono<ResponseEntity<AORInquiryResponse>> aorInquiry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String uid, String recipientTaxId,
-                                                               String recipientType, ServerWebExchange exchange) {
-        return aorService.aorInquiry(uid, recipientTaxId, recipientType, xPagopaPnCxType, xPagopaPnCxId).map(m -> ResponseEntity.status(HttpStatus.OK).body(m));
+    public Mono<ResponseEntity<AORInquiryResponse>> aorInquiry(CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh, String uid, String recipientTaxId, String recipientType, ServerWebExchange exchange) {
+        return aorService.aorInquiry(uid, recipientTaxId, recipientType, xPagopaPnCxType, xPagopaPnCxId, xPagopaPnSrcCh).map(m -> ResponseEntity.status(HttpStatus.OK).body(m));
     }
 
     @Override
-    public Mono<ResponseEntity<AbortTransactionResponse>> abortAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, Mono<AbortTransactionRequest> abortTransactionRequest, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<AbortTransactionResponse>> abortAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh, Mono<AbortTransactionRequest> abortTransactionRequest, ServerWebExchange exchange) {
         return abortTransactionRequest
-                .zipWhen(req -> aorService.abortTransaction(uid, xPagopaPnCxType, xPagopaPnCxId, req), (req, resp) -> resp)
+                .zipWhen(req -> aorService.abortTransaction(uid, xPagopaPnCxType, xPagopaPnCxId, req, xPagopaPnSrcCh), (req, resp) -> resp)
                 .map(m -> ResponseEntity.status(HttpStatus.OK).body(m));
     }
 
     @Override
-    public Mono<ResponseEntity<CompleteTransactionResponse>> completeAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, Mono<CompleteTransactionRequest> completeTransactionRequest, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<CompleteTransactionResponse>> completeAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh, Mono<CompleteTransactionRequest> completeTransactionRequest, ServerWebExchange exchange) {
         return completeTransactionRequest
-                .zipWhen(req -> aorService.completeTransaction(uid, req, xPagopaPnCxType, xPagopaPnCxId), (req, resp) -> resp)
+                .zipWhen(req -> aorService.completeTransaction(uid, req, xPagopaPnCxType, xPagopaPnCxId, xPagopaPnSrcCh), (req, resp) -> resp)
                 .map(m -> ResponseEntity.status(HttpStatus.OK).body(m));
     }
 
     @Override
-    public Mono<ResponseEntity<StartTransactionResponse>> startAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, Mono<AorStartTransactionRequest> aorStartTransactionRequest, String xPagopaPnCxRole, String xPagopaPnBaseUrl, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<StartTransactionResponse>> startAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh Mono<AorStartTransactionRequest> aorStartTransactionRequest, String xPagopaPnCxRole, String xPagopaPnBaseUrl, ServerWebExchange exchange) {
         return Utils.requireBaseUrl(xPagopaPnBaseUrl)
                 .flatMap(baseUrl -> aorStartTransactionRequest
-                .zipWhen(req -> aorService.startTransaction(uid, baseUrl, req, xPagopaPnCxType, xPagopaPnCxId, xPagopaPnCxRole), (req, resp) -> resp))
+                .zipWhen(req -> aorService.startTransaction(uid, baseUrl, req, xPagopaPnCxType, xPagopaPnCxId,xPagopaPnSrcCh, xPagopaPnCxRole), (req, resp) -> resp))
                 .map(m -> ResponseEntity.status(HttpStatus.OK).body(m));
     }
 }
