@@ -136,7 +136,7 @@ public class AorService extends BaseService {
                 );
     }
 
-    public Mono<StartTransactionResponse> startTransaction(String uid, String resolvedBasepath, AorStartTransactionRequest request, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnCxRole, String xPagopaPnSrcCh) {
+    public Mono<StartTransactionResponse> startTransaction(String uid, String xPagopaPnBaseUrl, AorStartTransactionRequest request, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnCxRole, String xPagopaPnSrcCh) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_AORTRAN)
                 .msg(START_AOR_START_TRANSACTION)
@@ -186,7 +186,7 @@ public class AorService extends BaseService {
                 .map(data -> {
                     List<DownloadUrl> downloadUrls = getDownloadUrls(data.getUrls());
                     pnRaddAltAuditLog.getContext().addTransactionId(data.getTransactionId()).addDownloadFilekeys(downloadUrls);
-                    return StartTransactionResponseMapper.fromResult(downloadUrls, AOR.name(), data.getOperationId(), resolvedBasepath, pnRaddFsuConfig.getDocumentTypeEnumFilter());
+                    return StartTransactionResponseMapper.fromResult(downloadUrls, AOR.name(), data.getOperationId(), xPagopaPnBaseUrl, pnRaddFsuConfig.getDocumentTypeEnumFilter());
                 })
                 .doOnNext(startTransactionResponse -> {
                     pnRaddAltAuditLog.getContext().addResponseStatus(startTransactionResponse.getStatus().toString());
