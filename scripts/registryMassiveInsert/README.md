@@ -21,21 +21,33 @@ API.
 
 ## Utilizzo
 
-Lo script supporta **due modalità** di autenticazione:
+Lo script supporta **tre modalità** di autenticazione:
 
 ### Login SSO Google (Raccomandato)
 
 In questa modalità lo script apre il browser per il login aziendale. Non occorre passare password né configurare il dominio manualmente: lo script lo costruisce automaticamente in base all'ambiente.
 
 ```bash
-# Esempio comando per ambiente uat:
-node index.js --sso uat <clientId> ./input/data.csv
+# Esempio comando per ambiente dev:
+node index.js --sso dev <clientId> ./input/data.csv
 ```
 
 Lo script utilizzerà automaticamente il dominio:
-`pn-helpdesk-uat.auth.eu-central-1.amazoncognito.com`
+`pn-helpdesk-dev.auth.eu-south-1.amazoncognito.com`
 e il provider:
-`GoogleSAML-uat`
+`GoogleSAML-dev`
+
+> **Nota sull'SSO**: Per il corretto funzionamento, l'URL `http://localhost:3000/callback` deve essere autorizzato nel Client Cognito.
+
+---
+
+### Login con token diretto
+
+Se hai già un token (es. dal portale helpdesk), puoi passarlo direttamente:
+
+```bash
+node index.js --token <IL_TUO_ID_TOKEN> dev <clientId> ./input/data.csv
+```
 
 ---
 
@@ -45,41 +57,17 @@ e il provider:
 node index.js dev <username> <password> <clientId> ./input/data.csv
 ```
 
-### Parametri e Variabili Ambiente
+### Parametri
 
-| Parametro / Var  | Descrizione                                                                   |
+| Parametro        | Descrizione                                                                   |
 |------------------|-------------------------------------------------------------------------------|
 | `--sso`          | Flag per attivare il login tramite browser (Google SSO)                       |
-| `<env>`          | Ambiente: `dev`, `uat`, `prod`, ecc.                                          |
+| `--token <jwt>`  | Passa un JWT direttamente, senza autenticazione                              |
+| `<env>`          | Ambiente: `dev`, `test`, `uat`, `hotfix`, `prod`                              |
 | `<clientId>`     | Client ID di Cognito (ApiClient)                                              |
-| `<csvFilePath>`  | Percorso del file CSV da processare                                           |
-| `COGNITO_DOMAIN` | Dominio Cognito (es: `prefix-dev.auth.eu-central-1.amazoncognito.com`)        |
-| `COGNITO_IDP`    | (Var Ambiente) Nome del provider Google in Cognito (es: `GoogleSAML-dev`)     |
-
-> **Nota sull'SSO**: Per il corretto funzionamento, l'URL `http://localhost:8087/callback` deve essere autorizzato nel Client Cognito.
+| `<csvFilePath>`  | Percorso del file CSV. Il nome deve essere `<partnerId>-<descrizione>.csv`    |
+| `<username>`     | Username per autenticazione Cognito (solo modo locale)                        |
 | `<password>`     | Password per autenticazione Cognito (solo modo locale)                        |
-| `<clientId>`     | Client ID per autenticazione Cognito                                          |
-| `<csvFilePath>`  | Percorso completo al file CSV. Il nome del file deve essere `<partnerId>.csv` |
-| `--sso`          | Abilita login SSO Google (non richiede username/password)                     |
-
-### Variabili ambiente per SSO
-
-| Variabile               | Descrizione                                      | Default    |
-|-------------------------|--------------------------------------------------|------------|
-| `COGNITO_DOMAIN`        | Dominio Cognito Hosted UI (obbligatorio per SSO) | -          |
-| `COGNITO_REDIRECT_PORT` | Porta locale per il callback                     | `8087`     |
-| `COGNITO_IDP_NAME`      | Nome Identity Provider configurato in Cognito    | `Google`   |
-
-### Esempi
-
-```bash
-# Login locale
-node index.js test myuser mypass abc123 ./csv/12345678901.csv
-
-# SSO Google
-export COGNITO_DOMAIN=pn-radd.auth.eu-central-1.amazoncognito.com
-node index.js --sso test abc123 ./csv/12345678901.csv
-```
 
 ## Cosa fa lo script
 

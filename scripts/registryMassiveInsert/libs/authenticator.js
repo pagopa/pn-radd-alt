@@ -82,7 +82,7 @@ class Authenticator {
   async _authenticateLocalhost() {
     return new Promise((resolve, reject) => {
       const port = 3000;
-      const callbackUrl = `http://localhost:${port}`;
+      const callbackUrl = `http://localhost:${port}/callback`;
       const domain = "pn-helpdesk-dev";
       const region = "eu-south-1";
       
@@ -91,7 +91,7 @@ class Authenticator {
       const server = http.createServer((req, res) => {
         const reqUrl = url.parse(req.url, true);
 
-        if (reqUrl.pathname === "/") {
+        if (reqUrl.pathname === "/callback") {
           // Cognito implicit flow restituisce il token nel fragment (#).
           // Il server non lo riceve, quindi serviamo una pagina che lo estrae via JS.
           res.writeHead(200, { "Content-Type": "text/html" });
@@ -105,7 +105,7 @@ class Authenticator {
     var t = p.get('id_token');
     if (t) {
       var x = new XMLHttpRequest();
-      x.open('GET', '/callback?id_token=' + t);
+      x.open('GET', '/callback/token?id_token=' + t);
       x.onload = function() {
         document.body.innerHTML = '<h1>Login completato!</h1><p>Puoi chiudere questa finestra.</p>';
       };
@@ -121,7 +121,7 @@ class Authenticator {
           return;
         }
 
-        if (reqUrl.pathname === "/callback" && reqUrl.query.id_token) {
+        if (reqUrl.pathname === "/callback/token" && reqUrl.query.id_token) {
           res.writeHead(200, { "Content-Type": "text/plain" });
           res.end("OK");
           server.close();

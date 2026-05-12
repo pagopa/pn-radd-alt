@@ -31,7 +31,7 @@ API_BASE_URL=https://your-api-server.com
 AUTH_MODE=local
 
 # Cognito locale
-COGNITO_REGION=eu-central-1
+COGNITO_REGION=eu-south-1
 COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
 COGNITO_USERNAME=your.username@example.com
 COGNITO_PASSWORD=YourSecurePassword123!
@@ -47,15 +47,15 @@ API_BASE_URL=https://your-api-server.com
 AUTH_MODE=sso
 
 # Cognito SSO (Hosted UI con Google)
-COGNITO_DOMAIN=your-domain.auth.eu-central-1.amazoncognito.com
 COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
 COGNITO_IDP_NAME=GoogleSAML-dev    # Nome del provider SAML (es. GoogleSAML-dev, GoogleSAML-uat)
-COGNITO_REDIRECT_PORT=8087         # Default 8087. Deve essere configurato nei Redirect URL del client Cognito
+COGNITO_REDIRECT_PORT=3000         # Default 3000. Deve essere configurato nei Redirect URL del client Cognito
 COGNITO_USE_ID_TOKEN=true
 COGNITO_TOKEN_MARGIN=30
+ENV=dev                            # Ambiente (dev, uat, prod). Il dominio Cognito viene costruito automaticamente
 ```
 
-> **Nota sull'SSO**: Per utilizzare la modalità SSO con Google, è necessario che l'URL `http://localhost:8087/callback` sia censito tra i "Callback URLs" del Client Cognito su AWS.
+> **Nota sull'SSO**: Per utilizzare la modalità SSO con Google, è necessario che l'URL `http://localhost:3000/callback` sia censito tra i "Callback URLs" del Client Cognito su AWS. Il dominio Cognito viene costruito automaticamente come `pn-helpdesk-<ENV>.auth.eu-south-1.amazoncognito.com`.
 
 ## 🏃 Esempi di utilizzo
 
@@ -137,7 +137,7 @@ Lo script supporta **due modalità** di autenticazione verso il pool Cognito:
 - Il token viene riutilizzato finché non è in prossimità della scadenza (`COGNITO_TOKEN_MARGIN`).
 
 ### Modalità 2: SSO Google (Authorization Code + PKCE)
-- Lo script avvia un server locale sulla porta `COGNITO_REDIRECT_PORT` (default 8087).
+- Lo script avvia un server locale sulla porta `COGNITO_REDIRECT_PORT` (default 3000).
 - Si apre il browser sulla Hosted UI di Cognito che redirige a Google.
 - Dopo il login Google, il callback locale riceve il codice e lo scambia per i token.
 - Il token viene riutilizzato come nella modalità locale.

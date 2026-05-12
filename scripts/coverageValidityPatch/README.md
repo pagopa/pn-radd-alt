@@ -25,7 +25,7 @@ npm install
 ```env
 API_BASE_URL=https://api.radd.notifichedigitali.it
 AUTH_MODE=local
-COGNITO_REGION=eu-central-1
+COGNITO_REGION=eu-south-1
 COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
 COGNITO_USERNAME=user@example.com
 COGNITO_PASSWORD=SuperPassword123!
@@ -37,15 +37,15 @@ COGNITO_TOKEN_MARGIN=45            # opzionale (default 30)
 ```env
 API_BASE_URL=https://api.radd.notifichedigitali.it
 AUTH_MODE=sso
-COGNITO_DOMAIN=your-domain.auth.eu-central-1.amazoncognito.com
 COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
-COGNITO_REDIRECT_PORT=8087         # Default 8087. Deve essere configurato nei Redirect URL del client Cognito
+COGNITO_REDIRECT_PORT=3000         # Default 3000. Deve essere configurato nei Redirect URL del client Cognito
 COGNITO_IDP_NAME=GoogleSAML-dev    # Nome del provider SAML (es. GoogleSAML-dev, GoogleSAML-uat)
 COGNITO_USE_ID_TOKEN=true          # opzionale
 COGNITO_TOKEN_MARGIN=45            # opzionale (default 30)
+ENV=dev                            # Ambiente (dev, uat, prod). Il dominio Cognito viene costruito automaticamente
 ```
 
-> **Nota sull'SSO**: Per utilizzare la modalità SSO con Google, è necessario che l'URL `http://localhost:8087/callback` sia censito tra i "Callback URLs" del Client Cognito su AWS.
+> **Nota sull'SSO**: Per utilizzare la modalità SSO con Google, è necessario che l'URL `http://localhost:3000/callback` sia censito tra i "Callback URLs" del Client Cognito su AWS. Il dominio viene costruito automaticamente come `pn-helpdesk-<ENV>.auth.eu-south-1.amazoncognito.com`.
 
 ## 🏃 Esempi di utilizzo
 
@@ -57,7 +57,7 @@ node index.js data.csv
 ### Forzare modalità SSO da riga di comando
 Se il `.env` non è configurato per l'SSO, puoi passare le variabili inline:
 ```bash
-AUTH_MODE=sso COGNITO_DOMAIN=pn-helpdesk-dev.auth.eu-central-1.amazoncognito.com node index.js data.csv
+AUTH_MODE=sso COGNITO_CLIENT_ID=xxxxxxxxxx ENV=dev node index.js data.csv
 ```
 
 ### Dry-run (Simulazione)
