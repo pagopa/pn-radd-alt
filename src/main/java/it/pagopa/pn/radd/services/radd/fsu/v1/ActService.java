@@ -149,6 +149,7 @@ public class ActService extends BaseService {
                         .addIun(request.getIun())
                         .addCxType(xPagopaPnCxType.toString())
                         .addCxId(xPagopaPnCxId)
+                        .addCxRole(xPagopaPnCxRole)
                         .addOperationId(request.getOperationId())
                         .addSourceChannel(xPagopaPnSrcCh))
                 .build()

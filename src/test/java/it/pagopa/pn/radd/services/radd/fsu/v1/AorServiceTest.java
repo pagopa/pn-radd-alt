@@ -203,8 +203,8 @@ class AorServiceTest {
         // assertNotNull(response.getUrlList());
         //  assertFalse(response.getUrlList().isEmpty());
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_0, response.getStatus().getCode());
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_AORTRAN] BEFORE - Start AOR startTransaction - uid=uid cxId=1 cxType=PF operationId=12345 requestFileKey=file-key-test");
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_AORTRAN] SUCCESS - End AOR starTransaction - uid=uid cxId=1 cxType=PF operationId=12345 transactionId=PF#1#12345 recipientInternalId=PF-4fc75df3-0913-407e-bdaa-e50329708b7d delegateInternalId=null requestFileKey=file-key-test downloadedFilekeys=[ PN_AAR_0000 ] iuns=[ ABC-123-IUN ] status=class StartTransactionResponseStatus {\n"+"    code: 0\n"+"    message: OK\n"+"    retryAfter: null\n"+"}");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_AORTRAN] BEFORE - Start AOR startTransaction - uid=uid cxId=1 cxType=PF cxRole=RADD_UPLOADER operationId=12345 requestFileKey=file-key-test");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_AORTRAN] SUCCESS - End AOR starTransaction - uid=uid cxId=1 cxType=PF cxRole=RADD_UPLOADER operationId=12345 transactionId=PF#1#12345 recipientInternalId=PF-4fc75df3-0913-407e-bdaa-e50329708b7d delegateInternalId=null requestFileKey=file-key-test downloadedFilekeys=[ PN_AAR_0000 ] iuns=[ ABC-123-IUN ] status=class StartTransactionResponseStatus {\n"+"    code: 0\n"+"    message: OK\n"+"    retryAfter: null\n"+"}");
     }
 
 

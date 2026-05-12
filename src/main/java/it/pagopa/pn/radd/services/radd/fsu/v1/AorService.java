@@ -144,6 +144,7 @@ public class AorService extends BaseService {
                         .addUid(uid)
                         .addCxType(xPagopaPnCxType.toString())
                         .addCxId(xPagopaPnCxId)
+                        .addCxRole(xPagopaPnCxRole)
                         .addOperationId(request.getOperationId())
                         .addRequestFileKey(request.getFileKey())
                         .addSourceChannel(xPagopaPnSrcCh)
