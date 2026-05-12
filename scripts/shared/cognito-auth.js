@@ -38,6 +38,15 @@ function base64url(buffer) {
     .replace(/=+$/, '');
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function generateCodeVerifier() {
   return base64url(crypto.randomBytes(32));
 }
@@ -50,21 +59,19 @@ function generateCodeChallenge(verifier) {
 // --------------- Browser open (cross-platform) ---------------
 
 function openBrowser(url) {
-  const { exec } = require('child_process');
-  const platform = process.platform;
-  let cmd;
-  if (platform === 'darwin') {
-    cmd = `open "${url}"`;
-  } else if (platform === 'win32') {
-    cmd = `start "" "${url}"`;
-  } else {
-    cmd = `xdg-open "${url}"`;
-  }
-  exec(cmd, (err) => {
+  const { execFile } = require('child_process');
+  const onOpen = (err) => {
     if (err) {
       console.error('Impossibile aprire il browser automaticamente. Apri manualmente:', url);
     }
-  });
+  };
+  if (process.platform === 'darwin') {
+    execFile('open', [url], onOpen);
+  } else if (process.platform === 'win32') {
+    execFile('cmd', ['/c', 'start', '', url], onOpen);
+  } else {
+    execFile('xdg-open', [url], onOpen);
+  }
 }
 
 // --------------- SSO Flow (Authorization Code + PKCE) ---------------
@@ -175,8 +182,9 @@ async function authenticateWithSSO(opts) {
         server.unref();
         resolve({ token: selectedToken, expiresAt });
       } catch (err) {
+        const safeMessage = escapeHtml(err && err.message ? err.message : String(err));
         res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(`<html><body><h2>Errore</h2><p>${err.message}</p></body></html>`);
+        res.end(`<html><body><h2>Errore</h2><p>${safeMessage}</p></body></html>`);
         server.closeAllConnections();
         server.close();
         reject(err);

@@ -4,7 +4,7 @@ const {
   AdminInitiateAuthCommand
 } = require('@aws-sdk/client-cognito-identity-provider');
 const http = require('http');
-const { exec } = require('child_process');
+const { execFile, execFileSync } = require('child_process');
 const url = require('url');
 
 class Authenticator {
@@ -83,10 +83,13 @@ class Authenticator {
     return new Promise((resolve, reject) => {
       const port = 3000;
       const callbackUrl = `http://localhost:${port}/callback`;
-      const domain = "pn-helpdesk-dev";
-      const region = "eu-south-1";
       
-      const loginUrl = `https://${domain}.auth.${region}.amazoncognito.com/oauth2/authorize?identity_provider=${this.idpName}&client_id=${this.clientId}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(callbackUrl)}`;
+      if (!this.cognitoDomain) {
+        reject(new Error("Dominio Cognito non configurato. Passa --env o imposta ENV nel .env"));
+        return;
+      }
+
+      const loginUrl = `https://${this.cognitoDomain}/oauth2/authorize?identity_provider=${this.idpName}&client_id=${this.clientId}&response_type=token&scope=email+openid+profile&redirect_uri=${encodeURIComponent(callbackUrl)}`;
 
       const server = http.createServer((req, res) => {
         const reqUrl = url.parse(req.url, true);
@@ -136,8 +139,18 @@ class Authenticator {
       server.listen(port, () => {
         console.log(`[Authenticator] Server in ascolto su porta ${port}...`);
         console.log(`[Authenticator] Apertura browser per login SSO...`);
-        const start = process.platform === 'darwin' ? 'open' : (process.platform === 'win32' ? 'start' : 'xdg-open');
-        exec(`${start} "${loginUrl}"`);
+        const onOpen = (err) => {
+          if (err) {
+            console.error('Impossibile aprire il browser automaticamente. Apri manualmente:', loginUrl);
+          }
+        };
+        if (process.platform === 'darwin') {
+          execFile('open', [loginUrl], onOpen);
+        } else if (process.platform === 'win32') {
+          execFile('cmd', ['/c', 'start', '', loginUrl], onOpen);
+        } else {
+          execFile('xdg-open', [loginUrl], onOpen);
+        }
       });
 
       server.on('error', (err) => {
@@ -167,9 +180,12 @@ class Authenticator {
     if (!targetUsername && (this.awsProfile || process.env.AWS_PROFILE)) {
       try {
         console.log(`[Authenticator] Tentativo recupero username da profilo AWS...`);
-        const { execSync } = require('child_process');
         const profile = this.awsProfile || process.env.AWS_PROFILE;
-        const identity = execSync(`aws sts get-caller-identity --profile ${profile} --query "Arn" --output text`).toString().trim();
+        const identity = execFileSync(
+          'aws',
+          ['sts', 'get-caller-identity', '--profile', profile, '--query', 'Arn', '--output', 'text'],
+          { encoding: 'utf8' }
+        ).trim();
         console.log(`[Authenticator] ARN rilevato: ${identity}`);
         // L'ARN solitamente contiene l'email alla fine dopo / per utenti SSO
         if (identity.includes('/')) {
@@ -196,9 +212,9 @@ class Authenticator {
     ];
 
     let lastError = null;
-    for (const usernameToTry of usernamesToTry) {
+    for (const [index, usernameToTry] of usernamesToTry.entries()) {
       try {
-        console.log(`[Authenticator] Login via CLI (Admin Auth) - User: ${usernameToTry}...`);
+        console.log(`[Authenticator] Login via CLI (Admin Auth) - Tentativo ${index + 1}/${usernamesToTry.length}...`);
         
         const { AdminInitiateAuthCommand } = require('@aws-sdk/client-cognito-identity-provider');
 
@@ -217,11 +233,11 @@ class Authenticator {
         });
 
         const response = await this.client.send(command);
-        console.log(`[Authenticator] Login riuscito per ${usernameToTry}!`);
+        console.log(`[Authenticator] Login riuscito (tentativo ${index + 1}/${usernamesToTry.length}).`);
         return response.AuthenticationResult.IdToken;
       } catch (error) {
         lastError = error;
-        console.log(`[Authenticator] Fallito per ${usernameToTry}: ${error.name} - ${error.message}`);
+        console.log(`[Authenticator] Tentativo ${index + 1}/${usernamesToTry.length} fallito: ${error.name}`);
         continue;
       }
     }
