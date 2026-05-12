@@ -208,7 +208,7 @@ async function authenticateWithSSO(opts) {
       }
     });
 
-    // Timeout dopo 120 secondi
+    // Timeout dopo 2 minuti
     setTimeout(() => {
       server.closeAllConnections();
       server.close();
