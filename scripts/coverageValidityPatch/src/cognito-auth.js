@@ -129,6 +129,7 @@ async function authenticateWithSSO(opts) {
           const errorDesc = reqUrl.searchParams.get('error_description') || error;
           res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end(`<html><body><h2>Errore autenticazione</h2><p>${errorDesc}</p><p>Puoi chiudere questa finestra.</p></body></html>`);
+          server.closeAllConnections();
           server.close();
           reject(new Error(`SSO error: ${errorDesc}`));
           return;
@@ -137,6 +138,7 @@ async function authenticateWithSSO(opts) {
         if (!code) {
           res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
           res.end('<html><body><h2>Nessun codice di autorizzazione ricevuto</h2><p>Puoi chiudere questa finestra.</p></body></html>');
+          server.closeAllConnections();
           server.close();
           reject(new Error('Nessun authorization code ricevuto'));
           return;
@@ -168,12 +170,14 @@ async function authenticateWithSSO(opts) {
 
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end('<html><body><h2>Autenticazione riuscita!</h2><p>Puoi chiudere questa finestra e tornare al terminale.</p></body></html>');
+        server.closeAllConnections();
         server.close();
         server.unref();
         resolve({ token: selectedToken, expiresAt });
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(`<html><body><h2>Errore</h2><p>${err.message}</p></body></html>`);
+        server.closeAllConnections();
         server.close();
         reject(err);
       }
@@ -197,6 +201,7 @@ async function authenticateWithSSO(opts) {
 
     // Timeout dopo 120 secondi
     setTimeout(() => {
+      server.closeAllConnections();
       server.close();
       reject(new Error('Timeout: autenticazione SSO non completata entro 120 secondi'));
     }, 120000);

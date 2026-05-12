@@ -124,6 +124,7 @@ class Authenticator {
         if (reqUrl.pathname === "/callback/token" && reqUrl.query.id_token) {
           res.writeHead(200, { "Content-Type": "text/plain" });
           res.end("OK");
+          server.closeAllConnections();
           server.close();
           server.unref();
           console.log('[Authenticator] Token ricevuto automaticamente.');
