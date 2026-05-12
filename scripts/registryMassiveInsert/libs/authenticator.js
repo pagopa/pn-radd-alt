@@ -139,17 +139,32 @@ class Authenticator {
       server.listen(port, () => {
         console.log(`[Authenticator] Server in ascolto su porta ${port}...`);
         console.log(`[Authenticator] Apertura browser per login SSO...`);
+
+        // Validazione URL per evitare command injection (CodeQL)
+        let parsedUrl;
+        try {
+          parsedUrl = new URL(loginUrl);
+        } catch (_) {
+          reject(new Error(`URL di login non valida`));
+          return;
+        }
+        if (parsedUrl.protocol !== 'https:') {
+          reject(new Error(`URL di login deve usare HTTPS, ricevuto: ${parsedUrl.protocol}`));
+          return;
+        }
+        const safeUrl = parsedUrl.toString();
+
         const onOpen = (err) => {
           if (err) {
-            console.error('Impossibile aprire il browser automaticamente. Apri manualmente:', loginUrl);
+            console.error('Impossibile aprire il browser automaticamente. Apri manualmente:', safeUrl);
           }
         };
         if (process.platform === 'darwin') {
-          execFile('open', [loginUrl], onOpen);
+          execFile('open', [safeUrl], onOpen);
         } else if (process.platform === 'win32') {
-          execFile('explorer.exe', [loginUrl], onOpen);
+          execFile('explorer.exe', [safeUrl], onOpen);
         } else {
-          execFile('xdg-open', [loginUrl], onOpen);
+          execFile('xdg-open', [safeUrl], onOpen);
         }
       });
 
