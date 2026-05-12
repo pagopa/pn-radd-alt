@@ -134,8 +134,9 @@ async function authenticateWithSSO(opts) {
 
         if (error) {
           const errorDesc = reqUrl.searchParams.get('error_description') || error;
+          const safeErrorDesc = escapeHtml(errorDesc);
           res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
-          res.end(`<html><body><h2>Errore autenticazione</h2><p>${errorDesc}</p><p>Puoi chiudere questa finestra.</p></body></html>`);
+          res.end(`<html><body><h2>Errore autenticazione</h2><p>${safeErrorDesc}</p><p>Puoi chiudere questa finestra.</p></body></html>`);
           server.closeAllConnections();
           server.close();
           reject(new Error(`SSO error: ${errorDesc}`));
