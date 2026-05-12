@@ -1,7 +1,7 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const axios = require('axios');
-const { CognitoAuth } = require('./cognito-auth');
+const { CognitoAuth } = require('../../shared/cognito-auth');
 require('dotenv').config();
 
 class GeolocPatchProcessor {
