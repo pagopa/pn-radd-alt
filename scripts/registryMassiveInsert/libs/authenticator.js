@@ -147,7 +147,7 @@ class Authenticator {
         if (process.platform === 'darwin') {
           execFile('open', [loginUrl], onOpen);
         } else if (process.platform === 'win32') {
-          execFile('cmd', ['/c', 'start', '', loginUrl], onOpen);
+          execFile('explorer.exe', [loginUrl], onOpen);
         } else {
           execFile('xdg-open', [loginUrl], onOpen);
         }
