@@ -1,21 +1,20 @@
 /**
  * Modulo di autenticazione Cognito condiviso.
+ *
  * Supporta due modalità:
- *  1) USER_PASSWORD_AUTH - Login locale con username/password
- *  2) Google SSO - Authorization Code Flow con PKCE via Cognito Hosted UI
+ *  1) Token statico - Token ottenuto manualmente dal portale web e passato via
+ *     opzione `--token` (o variabile ambiente API_TOKEN). È l'unica modalità
+ *     supportata per gli utenti SSO/Google, dato che il flusso SAML richiede
+ *     un browser interattivo che non può essere automatizzato dalla CLI.
+ *  2) USER_PASSWORD_AUTH - Login locale con username/password (solo per utenti
+ *     locali Cognito, NON federati).
  *
- * La modalità viene scelta in base alla variabile AUTH_MODE:
- *  - AUTH_MODE=sso   → Google SSO (browser)
- *  - AUTH_MODE=local → USER_PASSWORD_AUTH (default se COGNITO_USERNAME e COGNITO_PASSWORD presenti)
+ * Workflow consigliato:
+ *  - Utenti SSO: effettuare login sul portale helpdesk, copiare l'idToken dal
+ *    LocalStorage del browser e passarlo allo script con `--token <idToken>`.
+ *  - Utenti locali: configurare COGNITO_USERNAME / COGNITO_PASSWORD nel .env.
  *
- * Variabili ambiente per SSO:
- *  - COGNITO_DOMAIN          (es. your-domain.auth.eu-central-1.amazoncognito.com)
- *  - COGNITO_CLIENT_ID       (lo stesso usato per local)
- *  - COGNITO_REDIRECT_PORT   (default 8087)
- *  - COGNITO_SCOPES          (default "openid email profile")
- *  - COGNITO_IDP_NAME        (default "Google" - nome identity provider configurato in Cognito)
- *
- * Variabili ambiente per local:
+ * Variabili ambiente per login locale:
  *  - COGNITO_REGION
  *  - COGNITO_CLIENT_ID
  *  - COGNITO_USERNAME
@@ -24,198 +23,7 @@
 
 'use strict';
 
-const http = require('http');
-const crypto = require('crypto');
-const { URL, URLSearchParams } = require('url');
 const { CognitoIdentityProviderClient, InitiateAuthCommand } = require('@aws-sdk/client-cognito-identity-provider');
-
-// --------------- PKCE helpers ---------------
-
-function base64url(buffer) {
-  return buffer.toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function generateCodeVerifier() {
-  return base64url(crypto.randomBytes(32));
-}
-
-function generateCodeChallenge(verifier) {
-  const hash = crypto.createHash('sha256').update(verifier).digest();
-  return base64url(hash);
-}
-
-// --------------- Browser open (cross-platform) ---------------
-
-function openBrowser(url) {
-  const { execFile } = require('child_process');
-  const onOpen = (err) => {
-    if (err) {
-      console.error('Impossibile aprire il browser automaticamente. Apri manualmente:', url);
-    }
-  };
-  if (process.platform === 'darwin') {
-    execFile('open', [url], onOpen);
-  } else if (process.platform === 'win32') {
-    execFile('cmd', ['/c', 'start', '', url], onOpen);
-  } else {
-    execFile('xdg-open', [url], onOpen);
-  }
-}
-
-// --------------- SSO Flow (Authorization Code + PKCE) ---------------
-
-/**
- * Esegue il flusso SSO Google tramite Cognito Hosted UI.
- * Apre il browser, attende il callback con l'authorization code,
- * lo scambia per i token.
- *
- * @param {object} opts
- * @param {string} opts.cognitoDomain - Dominio Cognito Hosted UI
- * @param {string} opts.clientId - App Client ID
- * @param {number} [opts.port=3000] - Porta locale per il callback
- * @param {string} [opts.scopes='openid email profile'] - OAuth scopes
- * @param {string} [opts.idpName='Google'] - Nome IdP in Cognito
- * @param {boolean} [opts.useIdToken=true] - Ritorna IdToken anziché AccessToken
- * @returns {Promise<{token: string, expiresAt: number}>}
- */
-async function authenticateWithSSO(opts) {
-  const {
-    cognitoDomain,
-    clientId,
-    port = 3000,
-    scopes = 'openid email profile',
-    idpName = 'Google',
-    useIdToken = true,
-  } = opts;
-
-  if (!cognitoDomain) throw new Error('COGNITO_DOMAIN è obbligatorio per il flusso SSO');
-  if (!clientId) throw new Error('COGNITO_CLIENT_ID è obbligatorio');
-
-  const redirectUri = `http://localhost:${port}/callback`;
-  const codeVerifier = generateCodeVerifier();
-  const codeChallenge = generateCodeChallenge(codeVerifier);
-
-  // Costruisci URL di autorizzazione
-  const authUrl = new URL(`https://${cognitoDomain}/oauth2/authorize`);
-  authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('client_id', clientId);
-  authUrl.searchParams.set('redirect_uri', redirectUri);
-  authUrl.searchParams.set('scope', scopes);
-  authUrl.searchParams.set('code_challenge', codeChallenge);
-  authUrl.searchParams.set('code_challenge_method', 'S256');
-  if (idpName) {
-    authUrl.searchParams.set('identity_provider', idpName);
-  }
-
-  return new Promise((resolve, reject) => {
-    const server = http.createServer(async (req, res) => {
-      try {
-        const reqUrl = new URL(req.url, `http://localhost:${port}`);
-        if (reqUrl.pathname !== '/callback') {
-          res.writeHead(404);
-          res.end('Not found');
-          return;
-        }
-
-        const code = reqUrl.searchParams.get('code');
-        const error = reqUrl.searchParams.get('error');
-
-        if (error) {
-          const errorDesc = reqUrl.searchParams.get('error_description') || error;
-          const safeErrorDesc = escapeHtml(errorDesc);
-          res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
-          res.end(`<html><body><h2>Errore autenticazione</h2><p>${safeErrorDesc}</p><p>Puoi chiudere questa finestra.</p></body></html>`);
-          server.closeAllConnections();
-          server.close();
-          reject(new Error(`SSO error: ${errorDesc}`));
-          return;
-        }
-
-        if (!code) {
-          res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
-          res.end('<html><body><h2>Nessun codice di autorizzazione ricevuto</h2><p>Puoi chiudere questa finestra.</p></body></html>');
-          server.closeAllConnections();
-          server.close();
-          reject(new Error('Nessun authorization code ricevuto'));
-          return;
-        }
-
-        // Scambia il code per i token
-        const tokenUrl = `https://${cognitoDomain}/oauth2/token`;
-        const body = new URLSearchParams({
-          grant_type: 'authorization_code',
-          client_id: clientId,
-          code,
-          redirect_uri: redirectUri,
-          code_verifier: codeVerifier,
-        });
-
-        const axios = require('axios');
-        const tokenResp = await axios.post(tokenUrl, body.toString(), {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        });
-
-        const { id_token, access_token, expires_in } = tokenResp.data;
-        const selectedToken = useIdToken ? id_token : access_token;
-
-        if (!selectedToken) {
-          throw new Error('Token non presente nella risposta di Cognito');
-        }
-
-        const expiresAt = Math.floor(Date.now() / 1000) + (expires_in || 3600);
-
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end('<html><body><h2>Autenticazione riuscita!</h2><p>Puoi chiudere questa finestra e tornare al terminale.</p></body></html>');
-        server.closeAllConnections();
-        server.close();
-        server.unref();
-        resolve({ token: selectedToken, expiresAt });
-      } catch (err) {
-        const safeMessage = escapeHtml(err && err.message ? err.message : String(err));
-        res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(`<html><body><h2>Errore</h2><p>${safeMessage}</p></body></html>`);
-        server.closeAllConnections();
-        server.close();
-        reject(err);
-      }
-    });
-
-    server.listen(port, () => {
-      console.log(`\nAvvio flusso SSO Google...`);
-      console.log(`Server callback in ascolto su http://localhost:${port}/callback`);
-      console.log(`Apertura browser per l'autenticazione...\n`);
-      console.log(`Se il browser non si apre, copia e incolla questo URL:\n  ${authUrl.toString()}\n`);
-      openBrowser(authUrl.toString());
-    });
-
-    server.on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        reject(new Error(`Porta ${port} già in uso. Configura COGNITO_REDIRECT_PORT con una porta libera.`));
-      } else {
-        reject(err);
-      }
-    });
-
-    // Timeout dopo 2 minuti
-    setTimeout(() => {
-      server.closeAllConnections();
-      server.close();
-      reject(new Error('Timeout: autenticazione SSO non completata entro 120 secondi'));
-    }, 120000);
-  });
-}
 
 // --------------- Local Flow (USER_PASSWORD_AUTH) ---------------
 
@@ -254,7 +62,6 @@ async function authenticateWithPassword(opts) {
 
   if (!token) throw new Error('Token non restituito da Cognito');
 
-  // Decodifica per ottenere exp
   const payload = decodeJwt(token);
   const expiresAt = (payload && payload.exp) || (Math.floor(Date.now() / 1000) + 3600);
 
@@ -278,14 +85,14 @@ function decodeJwt(token) {
 
 /**
  * Classe wrapper che gestisce automaticamente la modalità di autenticazione
- * e il refresh del token.
+ * e il refresh del token (solo per la modalità local).
  */
 class CognitoAuth {
   /**
    * @param {object} [options]
-   * @param {string} [options.authMode] - 'local' | 'sso' (default: auto-detect)
-   * @param {boolean} [options.useIdToken] - Se usare IdToken (default: true per SSO, da env per local)
-   * @param {string} [options.staticToken] - Token statico (bypassa Cognito)
+   * @param {boolean} [options.useIdToken] - Se usare IdToken (default: true)
+   * @param {string} [options.staticToken] - Token statico (bypassa Cognito).
+   *   Tipicamente passato via flag CLI `--token` o variabile ambiente API_TOKEN.
    */
   constructor(options = {}) {
     this.staticToken = options.staticToken || process.env.API_TOKEN || null;
@@ -293,14 +100,7 @@ class CognitoAuth {
       ? options.useIdToken
       : (process.env.COGNITO_USE_ID_TOKEN || 'true').toLowerCase() === 'true';
 
-    // Determina la modalità di autenticazione
-    if (this.staticToken) {
-      this.authMode = 'static';
-    } else if (options.authMode) {
-      this.authMode = options.authMode;
-    } else {
-      this.authMode = this._detectAuthMode();
-    }
+    this.authMode = this.staticToken ? 'static' : 'local';
 
     this._token = null;
     this._tokenExpiresAt = 0;
@@ -310,63 +110,33 @@ class CognitoAuth {
     this._validate();
   }
 
-  _detectAuthMode() {
-    const explicitMode = (process.env.AUTH_MODE || '').toLowerCase();
-    if (explicitMode === 'sso') return 'sso';
-    if (explicitMode === 'local' || explicitMode === 'password') return 'local';
-
-    // Auto-detect: se username e password presenti → local, altrimenti → sso
-    if (process.env.COGNITO_USERNAME && process.env.COGNITO_PASSWORD) {
-      return 'local';
-    }
-    if (process.env.COGNITO_DOMAIN || (process.env.ENV || process.env.ENVIRONMENT)) {
-      return 'sso';
-    }
-    // Fallback: local (fallirà nella validate se mancano credenziali)
-    return 'local';
-  }
-
   _validate() {
     if (this.authMode === 'static') {
-      console.log('Uso token statico da API_TOKEN.');
+      console.log('Uso token statico (passato via --token o API_TOKEN).');
       return;
     }
 
-    if (this.authMode === 'sso') {
-      const required = ['COGNITO_DOMAIN', 'COGNITO_CLIENT_ID'];
-      const missing = required.filter(k => !process.env[k] || process.env[k].trim() === '');
-      if (missing.length) {
-        throw new Error(
-          `Variabili mancanti per SSO: ${missing.join(', ')}.\n` +
-          `Configura nel .env:\n` +
-          `  COGNITO_DOMAIN=your-domain.auth.eu-central-1.amazoncognito.com\n` +
-          `  COGNITO_CLIENT_ID=xxxxxxxx\n` +
-          `  AUTH_MODE=sso`
-        );
-      }
-      console.log('Modalità autenticazione: SSO Google');
-      return;
-    }
-
-    // local
     const required = ['COGNITO_REGION', 'COGNITO_CLIENT_ID', 'COGNITO_USERNAME', 'COGNITO_PASSWORD'];
     const missing = required.filter(k => !process.env[k] || process.env[k].trim() === '');
     if (missing.length) {
       throw new Error(
-        `Variabili Cognito mancanti: ${missing.join(', ')}.\n` +
-        `Per login locale:\n` +
-        `  COGNITO_REGION=eu-central-1\n` +
+        `Variabili Cognito mancanti: ${missing.join(', ')}.\n\n` +
+        `Per utenti SSO/Google: effettua il login sul portale helpdesk, copia\n` +
+        `l'idToken dal LocalStorage del browser e passalo allo script con\n` +
+        `l'opzione --token <idToken> (oppure imposta API_TOKEN nel .env).\n\n` +
+        `Per utenti locali Cognito (NON federati) imposta nel .env:\n` +
+        `  COGNITO_REGION=eu-south-1\n` +
         `  COGNITO_CLIENT_ID=xxxxxxxx\n` +
         `  COGNITO_USERNAME=utente@example.com\n` +
-        `  COGNITO_PASSWORD=Password123!\n\n` +
-        `Per SSO Google, imposta AUTH_MODE=sso e COGNITO_DOMAIN.`
+        `  COGNITO_PASSWORD=Password123!`
       );
     }
     console.log('Modalità autenticazione: Cognito locale (username/password)');
   }
 
   /**
-   * Ritorna un token valido. Se scaduto o non presente, lo rinnova.
+   * Ritorna un token valido. Se scaduto o non presente, lo rinnova
+   * (solo in modalità local; in modalità static il token è immutabile).
    * @returns {Promise<string>}
    */
   async getToken() {
@@ -379,7 +149,6 @@ class CognitoAuth {
       return this._token;
     }
 
-    // Evita richieste concorrenti
     if (this._tokenPromise) return this._tokenPromise;
 
     this._tokenPromise = this._authenticate();
@@ -391,41 +160,13 @@ class CognitoAuth {
   }
 
   async _authenticate() {
-    let result;
-
-    if (this.authMode === 'sso') {
-      let cognitoDomain = process.env.COGNITO_DOMAIN;
-      let idpName = process.env.COGNITO_IDP_NAME || 'Google';
-      const env = process.env.ENV || process.env.ENVIRONMENT;
-
-      // Se manca il dominio ma abbiamo l'ambiente, lo costruiamo
-      if (!cognitoDomain && env) {
-        cognitoDomain = `pn-helpdesk-${env}.auth.eu-south-1.amazoncognito.com`;
-        console.log(`[CognitoAuth] Ambiente rilevato: ${env}. Utilizzo dominio: ${cognitoDomain}`);
-        // Se l'IDP name è quello di default, lo adattiamo alla convenzione GoogleSAML-<env>
-        if (idpName === 'Google') {
-          idpName = `GoogleSAML-${env}`;
-          console.log(`[CognitoAuth] Provider IDP impostato a: ${idpName}`);
-        }
-      }
-
-      result = await authenticateWithSSO({
-        cognitoDomain,
-        clientId: process.env.COGNITO_CLIENT_ID,
-        port: parseInt(process.env.COGNITO_REDIRECT_PORT || '3000', 10),
-        scopes: process.env.COGNITO_SCOPES || 'openid email profile',
-        idpName,
-        useIdToken: this.useIdToken,
-      });
-    } else {
-      result = await authenticateWithPassword({
-        region: process.env.COGNITO_REGION,
-        clientId: process.env.COGNITO_CLIENT_ID,
-        username: process.env.COGNITO_USERNAME,
-        password: process.env.COGNITO_PASSWORD,
-        useIdToken: this.useIdToken,
-      });
-    }
+    const result = await authenticateWithPassword({
+      region: process.env.COGNITO_REGION,
+      clientId: process.env.COGNITO_CLIENT_ID,
+      username: process.env.COGNITO_USERNAME,
+      password: process.env.COGNITO_PASSWORD,
+      useIdToken: this.useIdToken,
+    });
 
     this._token = result.token;
     this._tokenExpiresAt = result.expiresAt;
@@ -439,7 +180,6 @@ class CognitoAuth {
 
 module.exports = {
   CognitoAuth,
-  authenticateWithSSO,
   authenticateWithPassword,
   decodeJwt,
 };

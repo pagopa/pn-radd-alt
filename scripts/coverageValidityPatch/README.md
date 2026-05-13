@@ -21,10 +21,9 @@ npm install
 
 ## Variabili Ambiente (`.env`)
 
-### Login locale (username/password)
+### Login locale (utenti Cognito non federati)
 ```env
 API_BASE_URL=https://api.radd.notifichedigitali.it
-AUTH_MODE=local
 COGNITO_REGION=eu-south-1
 COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
 COGNITO_USERNAME=user@example.com
@@ -33,19 +32,22 @@ COGNITO_USE_ID_TOKEN=true          # opzionale
 COGNITO_TOKEN_MARGIN=45            # opzionale (default 30)
 ```
 
-### SSO Google
+### Token statico (utenti SSO/Google)
 ```env
 API_BASE_URL=https://api.radd.notifichedigitali.it
-AUTH_MODE=sso
-COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
-COGNITO_REDIRECT_PORT=3000         # Default 3000. Deve essere configurato nei Redirect URL del client Cognito
-COGNITO_IDP_NAME=GoogleSAML-dev    # Nome del provider SAML (es. GoogleSAML-dev, GoogleSAML-uat)
-COGNITO_USE_ID_TOKEN=true          # opzionale
-COGNITO_TOKEN_MARGIN=45            # opzionale (default 30)
-ENV=dev                            # Ambiente (dev, uat, prod). Il dominio Cognito viene costruito automaticamente
+API_TOKEN=eyJraWQiOiJ...           # idToken copiato dal portale helpdesk
 ```
 
-> **Nota sull'SSO**: Per utilizzare la modalità SSO con Google, è necessario che l'URL `http://localhost:3000/callback` sia censito tra i "Callback URLs" del Client Cognito su AWS. Il dominio viene costruito automaticamente come `pn-helpdesk-<ENV>.auth.eu-south-1.amazoncognito.com`.
+> **Utenti SSO/Google**: il flusso SAML federato richiede un browser interattivo
+> e non può essere automatizzato dalla CLI. Per ottenere un token:
+> 1. Effettua il login sul portale helpdesk con il tuo account Google.
+> 2. Apri DevTools → Application → Local Storage e copia il valore di `idToken`
+>    (chiave del tipo `CognitoIdentityServiceProvider.<clientId>.<user>.idToken`).
+> 3. Passa il token allo script con `--token <idToken>` oppure imposta
+>    `API_TOKEN` nel `.env`.
+>
+> Il token Cognito ha durata limitata (60 minuti per default): se scade durante
+> l'esecuzione è necessario rigenerarlo dal portale.
 
 ## 🏃 Esempi di utilizzo
 
@@ -54,16 +56,31 @@ ENV=dev                            # Ambiente (dev, uat, prod). Il dominio Cogni
 node index.js data.csv
 ```
 
-### Forzare modalità SSO da riga di comando
-Se il `.env` non è configurato per l'SSO, puoi passare le variabili inline:
+### Esecuzione con token (utenti SSO)
 ```bash
-AUTH_MODE=sso COGNITO_CLIENT_ID=xxxxxxxxxx ENV=dev node index.js data.csv
+
+### Modalità SSO automatica (consigliata)
+Lo script può aprire automaticamente il portale Helpdesk, attendere il login SSO e recuperare l'idToken dal browser:
+```bash
+node index.js data.csv --sso dev
 ```
+Opzionale:
+```bash
+node index.js data.csv --sso dev --browser edge --helpdesk-url https://helpdesk.dev.notifichedigitali.it
+```
+
+Se la procedura automatica non funziona (browser non disponibile, errori Playwright, ecc.), puoi sempre inserire il token manualmente:
+```bash
+node index.js data.csv --token eyJraWQiOiJ...
+```
+oppure impostare `API_TOKEN` nel `.env` e lanciare lo script senza `--token`.
+
+> **Best practice:** Prova prima `--sso` per comodità, ma tieni sempre a portata di mano la modalità manuale `--token` come fallback.
 
 ### Dry-run (Simulazione)
 Consigliato per verificare i mapping prima di inviare le patch:
 ```bash
-DRY_RUN=true node index.js data.csv
+node index.js data.csv --dry-run
 ```
 
 ## Formato CSV

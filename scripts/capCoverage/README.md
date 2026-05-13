@@ -23,14 +23,11 @@ cd scripts/capCoverage
 npm install
 ```
 
-### Esempio `.env` — Login locale (username/password)
+### Esempio `.env` — Login locale (utenti Cognito non federati)
 ```env
 API_BASE_URL=https://your-api-server.com
 
-# Modalità autenticazione: "local" o "sso" (auto-detect se omesso)
-AUTH_MODE=local
-
-# Cognito locale
+# Cognito locale (USER_PASSWORD_AUTH)
 COGNITO_REGION=eu-south-1
 COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
 COGNITO_USERNAME=your.username@example.com
@@ -39,39 +36,51 @@ COGNITO_USE_ID_TOKEN=true
 COGNITO_TOKEN_MARGIN=30
 ```
 
-### Esempio `.env` — SSO Google
+### Esempio `.env` — Token statico (utenti SSO/Google)
 ```env
 API_BASE_URL=https://your-api-server.com
 
-# Modalità autenticazione
-AUTH_MODE=sso
-
-# Cognito SSO (Hosted UI con Google)
-COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
-COGNITO_IDP_NAME=GoogleSAML-dev    # Nome del provider SAML (es. GoogleSAML-dev, GoogleSAML-uat)
-COGNITO_REDIRECT_PORT=3000         # Default 3000. Deve essere configurato nei Redirect URL del client Cognito
-COGNITO_USE_ID_TOKEN=true
-COGNITO_TOKEN_MARGIN=30
-ENV=dev                            # Ambiente (dev, uat, prod). Il dominio Cognito viene costruito automaticamente
+# idToken copiato dal portale helpdesk dopo il login SSO
+API_TOKEN=eyJraWQiOiJ...
 ```
 
-> **Nota sull'SSO**: Per utilizzare la modalità SSO con Google, è necessario che l'URL `http://localhost:3000/callback` sia censito tra i "Callback URLs" del Client Cognito su AWS. Il dominio Cognito viene costruito automaticamente come `pn-helpdesk-<ENV>.auth.eu-south-1.amazoncognito.com`.
+> **Utenti SSO/Google**: il flusso SAML federato richiede un browser interattivo e
+> non può essere automatizzato dalla CLI. Per ottenere un token:
+> 1. Effettua il login sul portale helpdesk con il tuo account Google.
+> 2. Apri DevTools → Application → Local Storage e copia il valore di `idToken`
+>    (chiave del tipo `CognitoIdentityServiceProvider.<clientId>.<user>.idToken`).
+> 3. Passa il token allo script con `--token <idToken>` oppure imposta `API_TOKEN`
+>    nel `.env`.
+>
+> Il token Cognito ha durata limitata (60 minuti per default): se scade durante
+> l'esecuzione è necessario rigenerarlo dal portale.
 
 ## 🏃 Esempi di utilizzo
 
-### Modalità Locale (Username/Password)
-Assicurarsi di avere `AUTH_MODE=local` o di aver configurato `COGNITO_USERNAME` e `COGNITO_PASSWORD` nel `.env`.
+### Modalità locale (username/password)
+Configura `COGNITO_USERNAME` e `COGNITO_PASSWORD` nel `.env`.
 ```bash
 node index.js data.csv
 ```
 
-### Modalità SSO (Google)
-Assicurarsi di avere `AUTH_MODE=sso` e `COGNITO_DOMAIN` nel `.env`.
+
+### Modalità SSO automatica (consigliata)
+Lo script può aprire automaticamente il portale Helpdesk, attendere il login SSO e recuperare l'idToken dal browser:
 ```bash
-node index.js data.csv
+node index.js data.csv --sso dev
+```
+Opzionale:
+```bash
+node index.js data.csv --sso dev --browser edge --helpdesk-url https://helpdesk.dev.notifichedigitali.it
 ```
 
-In modalità SSO, lo script aprirà automaticamente il browser predefinito per il login Google. Una volta completato il login, il browser mostrerà un messaggio di successo e potrai chiudere la tab; lo script riprenderà l'esecuzione nel terminale.
+Se la procedura automatica non funziona (browser non disponibile, errori Playwright, ecc.), puoi sempre inserire il token manualmente:
+```bash
+node index.js data.csv --token eyJraWQiOiJ...
+```
+oppure impostare `API_TOKEN` nel `.env` e lanciare lo script senza `--token`.
+
+> **Best practice:** Prova prima `--sso` per comodità, ma tieni sempre a portata di mano la modalità manuale `--token` come fallback.
 
 ### Dry-run (Simulazione)
 ```bash
@@ -93,6 +102,10 @@ node index.js "data/Copertura RADD Abilitazione CAP-Località.csv" --api-url htt
 | `--api-url` | URL base dell'API | `https://api.example.com` |
 | `--batch-size` | Richieste concorrenti per batch | `5` |
 | `--delay` | Ritardo ms tra i batch | `1000` |
+| `--token` | idToken Cognito da usare direttamente (utenti SSO) | - |
+| `--sso` | Ambiente SSO (dev/test/uat/hotfix/prod) per recupero token automatico | - |
+| `--helpdesk-url` | URL Helpdesk custom da usare con `--sso` | - |
+| `--browser` | Browser per `--sso`: `chrome`, `edge`, `chromium` | - |
 | `--help` | Mostra help | - |
 
 ## 🧱 Formati CSV supportati
@@ -135,17 +148,17 @@ Lo script supporta **due modalità** di autenticazione verso il pool Cognito:
 ### Modalità 1: Login locale (username/password)
 - Flusso `USER_PASSWORD_AUTH` con le variabili `COGNITO_USERNAME` e `COGNITO_PASSWORD`.
 - Il token viene riutilizzato finché non è in prossimità della scadenza (`COGNITO_TOKEN_MARGIN`).
+- Disponibile solo per utenti Cognito **non federati**.
 
-### Modalità 2: SSO Google (Authorization Code + PKCE)
-- Lo script avvia un server locale sulla porta `COGNITO_REDIRECT_PORT` (default 3000).
-- Si apre il browser sulla Hosted UI di Cognito che redirige a Google.
-- Dopo il login Google, il callback locale riceve il codice e lo scambia per i token.
-- Il token viene riutilizzato come nella modalità locale.
+### Modalità 2: Token statico (utenti SSO/Google)
+- L'utente effettua il login sul portale helpdesk con Google e copia l'idToken
+  dal LocalStorage del browser.
+- Il token viene passato allo script via `--token <idToken>` o `API_TOKEN`.
+- Il token NON viene rinnovato automaticamente: se scade occorre rigenerarlo.
 
 ### Comune a entrambe
 - Header: `Authorization: Bearer <token>`.
 - Se ti serve il claim custom `custom:backoffice_tags` usa l'ID token (`COGNITO_USE_ID_TOKEN=true`).
-- Supporto alternativo: puoi fornire `API_TOKEN` con un JWT statico per bypassare completamente Cognito.
 
 ## 🗓️ Validità
 Per gestire start/end validity utilizza invece lo script di patch (`scripts/coverageValidityPatch/`), che invia questi campi via PATCH.

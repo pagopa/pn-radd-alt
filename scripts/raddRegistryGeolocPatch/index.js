@@ -25,6 +25,7 @@ try {
 }
 
 const Processor = require('./src/geoloc-patch-processor');
+const { fetchHelpdeskIdToken } = require('../shared/helpdesk-token');
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 
@@ -67,6 +68,26 @@ const argv = yargs(hideBin(process.argv))
     type: 'boolean',
     default: (process.env.COGNITO_USE_ID_TOKEN || 'false').toLowerCase() === 'true'
   })
+  .option('token', {
+    describe: 'idToken Cognito da usare direttamente (per utenti SSO; in alternativa imposta API_TOKEN)',
+    type: 'string',
+    default: null
+  })
+  .option('sso', {
+    describe: 'Ambiente SSO (dev/test/uat/hotfix/prod). Apre Helpdesk e recupera l\'idToken automaticamente',
+    type: 'string',
+    default: null
+  })
+  .option('helpdesk-url', {
+    describe: 'URL Helpdesk custom (opzionale con --sso)',
+    type: 'string',
+    default: null
+  })
+  .option('browser', {
+    describe: 'Browser per --sso: chrome|edge|chromium',
+    type: 'string',
+    default: null
+  })
   .option('env-file', {
     describe: 'Percorso file .env da caricare',
     type: 'string',
@@ -87,6 +108,17 @@ async function main() {
   if (!argv.cxId && !process.env.CX_ID_AUTH_FLEET) {
     console.log('Nessun --cx-id fornito: lo script userà il valore della prima colonna del CSV come partnerId (x-pagopa-pn-cx-id)');
   }
+
+  if (argv.sso) {
+    const playwright = require('playwright');
+    process.env.API_TOKEN = await fetchHelpdeskIdToken({
+      helpdeskUrl: argv.helpdeskUrl || `https://helpdesk.${argv.sso}.notifichedigitali.it`,
+      browser: argv.browser,
+      playwright,
+    });
+  }
+
+  if (argv.token) process.env.API_TOKEN = argv.token;
 
   const processor = new Processor(argv.apiUrl, argv.cxId || process.env.CX_ID_AUTH_FLEET || null, { useIdToken: argv.useIdToken, dryRun: argv.dryRun });
   try {

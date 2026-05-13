@@ -21,37 +21,52 @@ API.
 
 ## Utilizzo
 
-Lo script supporta **tre modalità** di autenticazione:
+Lo script supporta **due modalità** di autenticazione:
 
-### Login SSO Google (Raccomandato)
+### Login con token (utenti SSO/Google)
 
-In questa modalità lo script apre il browser per il login aziendale. Non occorre passare password né configurare il dominio manualmente: lo script lo costruisce automaticamente in base all'ambiente.
+Il flusso SAML federato richiede un browser interattivo e non può essere
+automatizzato dalla CLI. Per gli utenti Google occorre quindi ottenere
+manualmente l'idToken dal portale helpdesk:
 
-```bash
-# Esempio comando per ambiente dev:
-node index.js --sso dev <clientId> ./input/data.csv
-```
-
-Lo script utilizzerà automaticamente il dominio:
-`pn-helpdesk-dev.auth.eu-south-1.amazoncognito.com`
-e il provider:
-`GoogleSAML-dev`
-
-> **Nota sull'SSO**: Per il corretto funzionamento, l'URL `http://localhost:3000/callback` deve essere autorizzato nel Client Cognito.
-
----
-
-### Login con token diretto
-
-Se hai già un token (es. dal portale helpdesk), puoi passarlo direttamente:
+1. Effettua il login sul portale helpdesk con il tuo account Google.
+2. Apri DevTools → Application → Local Storage e copia il valore di `idToken`
+   (chiave del tipo `CognitoIdentityServiceProvider.<clientId>.<user>.idToken`).
+3. Passa il token allo script:
 
 ```bash
 node index.js --token <IL_TUO_ID_TOKEN> dev <clientId> ./input/data.csv
 ```
 
+In alternativa puoi usare l'automatismo browser:
+
+```bash
+node index.js --sso dev <clientId> ./input/data.csv
+```
+
+Con `--sso` lo script apre automaticamente `https://helpdesk.<env>.notifichedigitali.it`,
+attende il login interattivo e legge l'idToken dal LocalStorage del browser.
+Per compliance, prova prima browser di sistema (Chrome/Edge) e usa Chromium Playwright solo come fallback.
+Se vuoi forzare una URL specifica:
+
+```bash
+node index.js --sso dev <clientId> ./input/data.csv --helpdesk-url https://helpdesk.dev.notifichedigitali.it
+```
+
+Se vuoi forzare il browser:
+
+```bash
+node index.js --sso dev <clientId> ./input/data.csv --browser edge
+```
+
+Valori supportati per `--browser`: `chrome`, `edge`, `chromium`.
+
+> Il token Cognito ha durata limitata (60 minuti per default): se scade durante
+> l'esecuzione è necessario rigenerarlo dal portale.
+
 ---
 
-### Login locale (username/password)
+### Login locale (utenti Cognito non federati)
 
 ```bash
 node index.js dev <username> <password> <clientId> ./input/data.csv
@@ -61,13 +76,15 @@ node index.js dev <username> <password> <clientId> ./input/data.csv
 
 | Parametro        | Descrizione                                                                   |
 |------------------|-------------------------------------------------------------------------------|
-| `--sso`          | Flag per attivare il login tramite browser (Google SSO)                       |
-| `--token <jwt>`  | Passa un JWT direttamente, senza autenticazione                              |
+| `--token <jwt>`  | idToken Cognito da usare direttamente (utenti SSO)                            |
+| `--sso`          | Apre Helpdesk, attende login SSO e recupera automaticamente l'idToken         |
+| `--helpdesk-url <url>` | URL Helpdesk custom da usare con `--sso`                               |
+| `--browser <name>` | Browser da usare con `--sso`: `chrome`, `edge`, `chromium`                  |
 | `<env>`          | Ambiente: `dev`, `test`, `uat`, `hotfix`, `prod`                              |
 | `<clientId>`     | Client ID di Cognito (ApiClient)                                              |
 | `<csvFilePath>`  | Percorso del file CSV. Il nome deve essere `<partnerId>-<descrizione>.csv`    |
-| `<username>`     | Username per autenticazione Cognito (solo modo locale)                        |
-| `<password>`     | Password per autenticazione Cognito (solo modo locale)                        |
+| `<username>`     | Username per autenticazione Cognito (solo modalità locale)                    |
+| `<password>`     | Password per autenticazione Cognito (solo modalità locale)                    |
 
 ## Cosa fa lo script
 

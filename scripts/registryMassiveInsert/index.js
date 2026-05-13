@@ -3,6 +3,7 @@ const { readCsv, writeReport } = require('./utils/csvUtils');
 const { findLocationId, isFieldEmpty } = require('./utils/registryUtils');
 const { getRegistriesByPartnerId, deleteRegistry, createRegistry } = require('./services/registryService');
 const { Authenticator } = require('./libs/authenticator');
+const { fetchHelpdeskIdToken } = require('../shared/helpdesk-token');
 const { HEADERS } = require('./config');
 const RegistryService = require('./services/registryService');
 
@@ -10,35 +11,55 @@ const RegistryService = require('./services/registryService');
   const allowedEnvs = ['dev', 'test', 'uat', 'hotfix', 'prod'];
   const args = process.argv.slice(2);
 
-  // Supporto modalità token:  node index.js --token <token> <env> <clientId> <csvFilePath>
-  // Supporto modalità SSO:    node index.js --sso <env> <clientId> <csvFilePath>
-  // Supporto modalità locale: node index.js <env> <username> <password> <clientId> <csvFilePath>
   const ssoMode = args.includes('--sso');
+  if (args.includes('--auto-token')) {
+    console.error('Il flag --auto-token non e piu supportato. Usa --sso.');
+    process.exit(1);
+  }
+  if (args.includes('--profile')) {
+    console.warn('[Compat] --profile e ignorato in modalita auto-token/token.');
+  }
+  if (args.includes('--user-pool-id')) {
+    console.warn('[Compat] --user-pool-id e ignorato in modalita auto-token/token.');
+  }
+
+  // Supporto modalità token (utenti SSO/Google):
+  //   node index.js --token <idToken> <env> <clientId> <csvFilePath>
+  // Supporto modalità SSO automatica (utenti SSO/Google):
+  //   node index.js --sso <env> <clientId> <csvFilePath>
+  // Supporto modalità locale (utenti Cognito non federati):
+  //   node index.js <env> <username> <password> <clientId> <csvFilePath>
   const tokenIndex = args.indexOf('--token');
-  const profileIndex = args.indexOf('--profile');
-  const poolIndex = args.indexOf('--user-pool-id');
-  
   const directToken = tokenIndex !== -1 ? args[tokenIndex + 1] : null;
-  const awsProfile = profileIndex !== -1 ? args[profileIndex + 1] : (process.env.AWS_PROFILE || null);
-  const userPoolId = poolIndex !== -1 ? args[poolIndex + 1] : (process.env.COGNITO_USER_POOL_ID || null);
+  const helpdeskUrlIndex = args.indexOf('--helpdesk-url');
+  const helpdeskUrl = helpdeskUrlIndex !== -1 ? args[helpdeskUrlIndex + 1] : null;
+  const browserIndex = args.indexOf('--browser');
+  const browser = browserIndex !== -1 ? args[browserIndex + 1] : null;
+  const profileIndex = args.indexOf('--profile');
+  const userPoolIdIndex = args.indexOf('--user-pool-id');
+  const autoToken = ssoMode;
 
-  let env, username, password, clientId, csvFilePath;
+  let env, username, password, clientId, csvFilePath, csvPathParts;
 
-  if (ssoMode || directToken) {
-    const filtered = args.filter(a => 
-      a !== '--sso' && 
-      a !== '--token' && a !== directToken &&
-      a !== '--profile' && a !== awsProfile && 
-      a !== '--user-pool-id' && a !== userPoolId
-    );
+  if (directToken || autoToken) {
+    const filtered = args.filter((a, i) => {
+      if (i === tokenIndex || i === tokenIndex + 1) return false;
+      if (i === helpdeskUrlIndex || i === helpdeskUrlIndex + 1) return false;
+      if (i === browserIndex || i === browserIndex + 1) return false;
+      if (i === profileIndex || i === profileIndex + 1) return false;
+      if (i === userPoolIdIndex || i === userPoolIdIndex + 1) return false;
+      if (a === '--sso') return false;
+      return true;
+    });
     [env, clientId, ...csvPathParts] = filtered;
     csvFilePath = csvPathParts.join(' ');
     username = null;
     password = null;
 
     if (!env || !clientId || !csvFilePath) {
-      console.error('Uso token:  node index.js --token <token> <env> <clientId> <csvFilePath>');
-      console.error('Uso SSO:    node index.js --sso <env> <clientId> <csvFilePath>');
+      console.error('Uso token:  node index.js --token <idToken> <env> <clientId> <csvFilePath>');
+      console.error('Uso SSO:    node index.js --sso <env> <clientId> <csvFilePath> [--helpdesk-url <url>] [--browser chrome|edge|chromium]');
+      console.error('Uso locale: node index.js <env> <username> <password> <clientId> <csvFilePath>');
       process.exit(1);
     }
   } else {
@@ -47,7 +68,8 @@ const RegistryService = require('./services/registryService');
     csvFilePath = csvPathParts.join(' ');
     if (!env || !username || !password || !clientId || !csvFilePath) {
       console.error('Uso locale: node index.js <env> <username> <password> <clientId> <csvFilePath>');
-      console.error('Uso SSO:    node index.js --sso <env> <clientId> <csvFilePath>');
+      console.error('Uso token:  node index.js --token <idToken> <env> <clientId> <csvFilePath>');
+      console.error('Uso SSO:    node index.js --sso <env> <clientId> <csvFilePath> [--helpdesk-url <url>] [--browser chrome|edge|chromium]');
       process.exit(1);
     }
   }
@@ -70,12 +92,16 @@ const RegistryService = require('./services/registryService');
   if (directToken) {
     console.log('[Info] Uso token passato direttamente.');
     jwt = directToken;
-  } else {
-    const authenticator = new Authenticator(username, password, clientId, { 
-      env, 
-      awsProfile,
-      userPoolId 
+  } else if (autoToken) {
+    const defaultHelpdeskUrl = `https://helpdesk.${env}.notifichedigitali.it`;
+    const playwright = require('playwright');
+    jwt = await fetchHelpdeskIdToken({
+      helpdeskUrl: helpdeskUrl || defaultHelpdeskUrl,
+      browser,
+      playwright,
     });
+  } else {
+    const authenticator = new Authenticator(username, password, clientId);
     jwt = await authenticator.generateJwtToken();
   }
   const headers = { ...HEADERS, Authorization: `Bearer ${jwt}` };

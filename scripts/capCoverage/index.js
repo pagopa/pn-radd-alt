@@ -28,6 +28,7 @@ try {
 }
 
 const CSVCoverageProcessor = require('./src/csv-processor');
+const { fetchHelpdeskIdToken } = require('../shared/helpdesk-token');
 
 async function main() {
     // Parse command line arguments
@@ -35,7 +36,7 @@ async function main() {
 
     // Help
     if (args.includes('--help') || args.length === 0) {
-        console.log(`\nCSV Coverage Processor\nUsage: node index.js <csv-file-path> [options]\n\nOptions:\n  --api-url <url>       API base URL (default: from .env or https://api.example.com)\n  --batch-size <num>    Numero di richieste concorrenti (default: 5)\n  --delay <ms>          Ritardo tra batch in ms (default: 1000)\n  --env-file <path>     Percorso file .env da caricare (default: ./scripts/capCoverage/.env)\n  --help                Mostra questo messaggio\n\nExample:\n  node index.js data/comuni.csv --api-url https://your-api.com --batch-size 3 --delay 2000\n  node index.js "data/Copertura RADD Abilitazione CAP-Località.csv" --env-file ./scripts/capCoverage/.env\n        `);
+        console.log(`\nCSV Coverage Processor\nUsage: node index.js <csv-file-path> [options]\n\nOptions:\n  --api-url <url>       API base URL (default: from .env or https://api.example.com)\n  --batch-size <num>    Numero di richieste concorrenti (default: 5)\n  --delay <ms>          Ritardo tra batch in ms (default: 1000)\n  --token <jwt>         idToken Cognito da usare direttamente (per utenti SSO)\n  --sso <env>           Apre Helpdesk e recupera automaticamente l'idToken\n  --helpdesk-url <url>  URL Helpdesk custom (opzionale con --sso)\n  --browser <name>      Browser per --sso: chrome|edge|chromium\n  --env-file <path>     Percorso file .env da caricare (default: ./scripts/capCoverage/.env)\n  --help                Mostra questo messaggio\n\nExample:\n  node index.js data/comuni.csv --api-url https://your-api.com --batch-size 3 --delay 2000\n  node index.js "data/Copertura RADD Abilitazione CAP-Località.csv" --sso dev\n        `);
         process.exit(0);
     }
 
@@ -43,6 +44,9 @@ async function main() {
     let apiUrl = process.env.API_BASE_URL || 'https://api.example.com';
     let batchSize = 5;
     let delay = 1000;
+    let ssoEnv = null;
+    let helpdeskUrl = null;
+    let browser = null;
 
     // Nuovo parsing argomenti (skip primo che è il file)
     for (let i = 1; i < args.length; i++) {
@@ -58,6 +62,22 @@ async function main() {
                 break;
             case '--delay':
                 delay = parseInt(args[i + 1]);
+                i++;
+                break;
+            case '--token':
+                process.env.API_TOKEN = args[i + 1];
+                i++;
+                break;
+            case '--sso':
+                ssoEnv = args[i + 1];
+                i++;
+                break;
+            case '--helpdesk-url':
+                helpdeskUrl = args[i + 1];
+                i++;
+                break;
+            case '--browser':
+                browser = args[i + 1];
                 i++;
                 break;
             case '--env-file':
@@ -76,6 +96,15 @@ async function main() {
     if (!fs.existsSync(csvFilePath)) {
         console.error(`CSV file not found: ${csvFilePath}`);
         process.exit(1);
+    }
+
+    if (ssoEnv) {
+        const playwright = require('playwright');
+        process.env.API_TOKEN = await fetchHelpdeskIdToken({
+            helpdeskUrl: helpdeskUrl || `https://helpdesk.${ssoEnv}.notifichedigitali.it`,
+            browser,
+            playwright,
+        });
     }
 
     console.log(`Starting CSV processing...`);
