@@ -118,13 +118,11 @@ servers:
     description: Endpoint privato di produzione raggiungibile tramite VPC endpoint
     variables:
       vpceDnsName:
-        default: api-radd-vpce.notifichedigitali.it
         description: DNS name associato al VPC endpoint di produzione
   - url: https://{vpceDnsName}
     description: Endpoint privato di collaudo UAT raggiungibile tramite VPC endpoint
     variables:
       vpceDnsName:
-        default: api-radd-vpce.uat.notifichedigitali.it
         description: DNS name associato al VPC endpoint di collaudo UAT
 
 security: []
@@ -138,7 +136,7 @@ tags:
     description: API download documenti tramite VPC endpoint.
 
 paths:
-  /api-radd-vpce/api/v1/download/{operationType}/{operationId}:
+  /radd-net/api/v1/download/{operationType}/{operationId}:
     ## SLA - Tempo risposta medio: < 10s; Timeout :20s
     parameters:
       - $ref: '#/components/parameters/operationType'
@@ -167,7 +165,7 @@ paths:
         500:
           $ref: '#/components/responses/InternalError'
 
-  /api-radd-vpce/api/v1/act/inquiry:
+  /radd-net/api/v1/act/inquiry:
     ## SLA - Tempo risposta medio: < 1s; Timeout :3s
     parameters:
       - $ref: '#/components/parameters/uid'
@@ -199,7 +197,7 @@ paths:
         500:
           $ref: '#/components/responses/InternalError'
 
-  /api-radd-vpce/api/v1/aor/inquiry:
+  /radd-net/api/v1/aor/inquiry:
     ## SLA - Tempo risposta medio: < 1s; Timeout :3s
     parameters:
       - $ref: '#/components/parameters/uid'
@@ -229,7 +227,7 @@ paths:
         500:
           $ref: '#/components/responses/InternalError'
 
-  /api-radd-vpce/api/v1/act/transaction/start:
+  /radd-net/api/v1/act/transaction/start:
     ## SLA - Tempo risposta medio: < 10s; Timeout: 20s. Tempo massimo polling (response.status.code = 0): 10s
     parameters:
       - $ref: '#/components/parameters/uid'
@@ -263,7 +261,7 @@ paths:
         500:
           $ref: '#/components/responses/InternalError'
 
-  /api-radd-vpce/api/v1/act/transaction/complete:
+  /radd-net/api/v1/act/transaction/complete:
     ## SLA - Tempo risposta medio: < 1s, Timeout :3s
     parameters:
       - $ref: '#/components/parameters/uid'
@@ -295,7 +293,7 @@ paths:
         500:
           $ref: '#/components/responses/InternalError'
 
-  /api-radd-vpce/api/v1/act/transaction/abort:
+  /radd-net/api/v1/act/transaction/abort:
     ## SLA - Tempo risposta medio: < 1s; Timeout :3s
     parameters:
       - $ref: '#/components/parameters/uid'
@@ -327,7 +325,7 @@ paths:
         500:
           $ref: '#/components/responses/InternalError'
 
-  /api-radd-vpce/api/v1/aor/transaction/start:
+  /radd-net/api/v1/aor/transaction/start:
     ## SLA - Tempo risposta medio: < 1s; Timeout: 3s. Tempo massimo polling(response.status.code = 0): 10s
     parameters:
       - $ref: '#/components/parameters/uid'
@@ -361,7 +359,7 @@ paths:
         500:
           $ref: '#/components/responses/InternalError'
 
-  /api-radd-vpce/api/v1/aor/transaction/complete:
+  /radd-net/api/v1/aor/transaction/complete:
     ## SLA - Tempo risposta medio: < 1s; Timeout :3s
     parameters:
       - $ref: '#/components/parameters/uid'
@@ -393,7 +391,7 @@ paths:
         500:
           $ref: '#/components/responses/InternalError'
 
-  /api-radd-vpce/api/v1/aor/transaction/abort:
+  /radd-net/api/v1/aor/transaction/abort:
     ## SLA - Tempo risposta medio: < 1s; Timeout :3s
     parameters:
       - $ref: '#/components/parameters/uid'
