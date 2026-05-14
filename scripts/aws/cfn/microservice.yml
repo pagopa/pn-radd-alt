@@ -464,6 +464,11 @@ Parameters:
     Default: '/radd-net/api/v1/act/'
     Description: Allowed path prefix for the RADD private proxy
 
+  RaddPrivateProxyListenerPathPrefix:
+    Type: String
+    Default: ''
+    Description: Dedicated ALB listener rule path prefix for the RADD private proxy; leave empty to match any path
+
   RaddPrivateProxyTrustedHeaders:
     Type: String
     Default: '{"x-pagopa-pn-src-ch":"RADD","x-pagopa-pn-src-ch-details":"NONINTEROP","x-pagopa-pn-cx-type":"RADD","x-pagopa-pn-cx-role":"RADD_UPLOADER","x-pagopa-pn-cx-id":"97103880585","uid":"RADD_cf_97103880585","x-pagopa-pn-uid":"RADD_cf_97103880585","x-pagopa-pn-cx-groups":""}'
@@ -532,6 +537,7 @@ Parameters:
 Conditions:
   IsImportLocationsBlocked: !Equals [!Ref BlockImportLocations, 'true']
   IsRaddPrivateProxyEnabled: !Equals [!Ref RaddPrivateProxyEnabled, 'true']
+  HasRaddPrivateProxyListenerPathPrefix: !Not [!Equals [!Ref RaddPrivateProxyListenerPathPrefix, '']]
 
 Resources:
 
@@ -776,7 +782,10 @@ Resources:
         - Field: path-pattern
           PathPatternConfig:
             Values:
-              - !Sub '${RaddPrivateProxyAllowedPathPrefix}*'
+              - !If
+                - HasRaddPrivateProxyListenerPathPrefix
+                - !Sub '${RaddPrivateProxyListenerPathPrefix}*'
+                - '*'
 
   RaddPrivateProxyLambdaAlarms:
     Type: AWS::CloudFormation::Stack
