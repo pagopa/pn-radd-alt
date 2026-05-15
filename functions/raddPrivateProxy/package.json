@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "test-build": "npm run test && npm run build",
-    "test": "node --test ./src/test/eventHandler.test.js",
+    "test": "node --test ./src/test/*.test.js",
     "build": "rm -f ./function.zip && zip -r ./function.zip . -x './src/test/*' -x '*.md' -x '*.env' -x './coverage/*' -x './.nyc_output/*'"
   },
   "author": "",

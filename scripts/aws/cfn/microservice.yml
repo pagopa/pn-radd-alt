@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: 'Example microservice deploy'
 
+Transform:
+  - UpdateDeploymentTransform
+
 Parameters:
   ProjectName:
     Type: String
@@ -486,22 +489,17 @@ Parameters:
   RaddPrivateProxyLambdaMemorySize:
     Type: Number
     Default: 512
-    MinValue: 512
-    MaxValue: 10240
     Description: Memory size of the RADD private proxy Lambda
 
   RaddPrivateProxyLambdaTimeout:
     Type: Number
     Default: 10
-    MinValue: 1
-    MaxValue: 30
     Description: Timeout in seconds of the RADD private proxy Lambda
 
-  RaddPrivateProxyReservedConcurrency:
+  RaddPrivateProxyLambdaProvisionedConcurrency:
     Type: Number
-    Default: 10
-    MinValue: 0
-    Description: Reserved concurrency of the RADD private proxy Lambda
+    Default: 1
+    Description: Provisioned concurrency of the RADD private proxy Lambda
 
   RaddPrivateProxyExternalPort:
     Type: String
@@ -736,7 +734,6 @@ Resources:
         SubnetIds: !Split [",", !Ref VpcEgressSubnetsIds]
       MemorySize: !Ref RaddPrivateProxyLambdaMemorySize
       Timeout: !Ref RaddPrivateProxyLambdaTimeout
-      ReservedConcurrentExecutions: !Ref RaddPrivateProxyReservedConcurrency
       Environment:
         Variables:
           RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX: !Ref RaddPrivateProxyAllowedPathPrefix
@@ -750,20 +747,37 @@ Resources:
           RADD_PRIVATE_PROXY_VERBOSE_LOGGING: !Ref RaddPrivateProxyVerboseLogging
           RADD_PRIVATE_PROXY_TRUSTED_HEADERS: !Ref RaddPrivateProxyTrustedHeaders
 
+  # A new version at each deploy, with provisioned concurrency set.
+  RaddPrivateProxyLambdaVersionPnPlaceholderEpochSeconds:
+    Type: AWS::Lambda::Version
+    Condition: IsRaddPrivateProxyEnabled
+    Properties:
+      FunctionName: !Ref RaddPrivateProxyLambda
+
+  RaddPrivateProxyLambdaVersionAlias:
+    Type: AWS::Lambda::Alias
+    Condition: IsRaddPrivateProxyEnabled
+    Properties:
+      FunctionName: !Ref RaddPrivateProxyLambda
+      FunctionVersion: !GetAtt RaddPrivateProxyLambdaVersionPnPlaceholderEpochSeconds.Version
+      Name: live
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref RaddPrivateProxyLambdaProvisionedConcurrency
+
   RaddPrivateProxyLambdaTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Condition: IsRaddPrivateProxyEnabled
     Properties:
       TargetType: lambda
       Targets:
-        - Id: !GetAtt RaddPrivateProxyLambda.Arn
+        - Id: !Ref RaddPrivateProxyLambdaVersionAlias
       HealthCheckEnabled: false
 
   RaddPrivateProxyLambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Condition: IsRaddPrivateProxyEnabled
     Properties:
-      FunctionName: !GetAtt RaddPrivateProxyLambda.Arn
+      FunctionName: !Ref RaddPrivateProxyLambdaVersionAlias
       Action: lambda:InvokeFunction
       Principal: elasticloadbalancing.amazonaws.com
 
