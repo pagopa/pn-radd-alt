@@ -871,48 +871,6 @@ Resources:
         OncallComparisonOperator: GreaterThanOrEqualToThreshold
         OncallStatistic: Sum
 
-  RaddPrivateProxyBaseUrlFailureAlarm:
-    Type: AWS::CloudFormation::Stack
-    Condition: IsRaddPrivateProxyEnabled
-    Properties:
-      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/custom-metric.yaml"
-      Parameters:
-        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
-        MetricName: !Sub "${ProjectName}-radd-alt-private-proxy-base-url-failure"
-        MetricNamespace: !Ref MetricNamespace
-        LogGroupName: !Sub "/aws/lambda/${RaddPrivateProxyLambdaName}"
-        FilterPattern: '"RADD private proxy failed Host validation" "RADD private proxy initialization failed"'
-        Threshold: 1
-        EvaluationPeriods: !Ref RaddPrivateProxyLogAlarmEvaluationPeriods
-        DatapointsToAlarm: 1
-        ComparisonOperator: GreaterThanOrEqualToThreshold
-        Statistic: Sum
-        HasAlarm: true
-        HasOncall: false
-        OncallComparisonOperator: GreaterThanOrEqualToThreshold
-        OncallStatistic: Sum
-
-  RaddPrivateProxyBackendForwardFailureAlarm:
-    Type: AWS::CloudFormation::Stack
-    Condition: IsRaddPrivateProxyEnabled
-    Properties:
-      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/custom-metric.yaml"
-      Parameters:
-        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
-        MetricName: !Sub "${ProjectName}-radd-alt-private-proxy-backend-forward-failure"
-        MetricNamespace: !Ref MetricNamespace
-        LogGroupName: !Sub "/aws/lambda/${RaddPrivateProxyLambdaName}"
-        FilterPattern: '"RADD private proxy backend forward failed"'
-        Threshold: 1
-        EvaluationPeriods: !Ref RaddPrivateProxyLogAlarmEvaluationPeriods
-        DatapointsToAlarm: 1
-        ComparisonOperator: GreaterThanOrEqualToThreshold
-        Statistic: Sum
-        HasAlarm: true
-        HasOncall: false
-        OncallComparisonOperator: GreaterThanOrEqualToThreshold
-        OncallStatistic: Sum
-
   # Expose PN-Radd-Alt microservice public API with API-GW for RADD usage
   RaddAltMicroservicePublicAPI:
     Type: AWS::CloudFormation::Stack

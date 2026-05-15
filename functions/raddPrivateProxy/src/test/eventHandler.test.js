@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
-const { createHandler } = require("../app/eventHandler");
+const { createHandler, handleEvent } = require("../app/eventHandler");
 
 const trustedHeaders = {
   "x-pagopa-pn-src-ch": "RADD",
@@ -84,6 +84,49 @@ test("fails initialization when external base URL protocol is not configured", (
     () => createHandler({ env: envWithoutExternalProtocol, fetchImpl: async () => new Response("unexpected") }),
     /Missing base URL protocol configuration/
   );
+});
+
+test("default handler lets initialization errors fail the Lambda invocation", async () => {
+  const originalBackendBaseUrl = process.env.RADD_PRIVATE_PROXY_BACKEND_BASE_URL;
+  const originalExternalPort = process.env.RADD_PRIVATE_PROXY_EXTERNAL_PORT;
+  const originalExternalProtocol = process.env.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL;
+  const originalTrustedHeaders = process.env.RADD_PRIVATE_PROXY_TRUSTED_HEADERS;
+
+  delete process.env.RADD_PRIVATE_PROXY_BACKEND_BASE_URL;
+  process.env.RADD_PRIVATE_PROXY_EXTERNAL_PORT = baseEnv.RADD_PRIVATE_PROXY_EXTERNAL_PORT;
+  process.env.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL = baseEnv.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL;
+  process.env.RADD_PRIVATE_PROXY_TRUSTED_HEADERS = baseEnv.RADD_PRIVATE_PROXY_TRUSTED_HEADERS;
+
+  try {
+    await assert.rejects(
+      () => handleEvent(buildEvent()),
+      /Missing backend base URL configuration/
+    );
+  } finally {
+    if (originalBackendBaseUrl === undefined) {
+      delete process.env.RADD_PRIVATE_PROXY_BACKEND_BASE_URL;
+    } else {
+      process.env.RADD_PRIVATE_PROXY_BACKEND_BASE_URL = originalBackendBaseUrl;
+    }
+
+    if (originalExternalPort === undefined) {
+      delete process.env.RADD_PRIVATE_PROXY_EXTERNAL_PORT;
+    } else {
+      process.env.RADD_PRIVATE_PROXY_EXTERNAL_PORT = originalExternalPort;
+    }
+
+    if (originalExternalProtocol === undefined) {
+      delete process.env.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL;
+    } else {
+      process.env.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL = originalExternalProtocol;
+    }
+
+    if (originalTrustedHeaders === undefined) {
+      delete process.env.RADD_PRIVATE_PROXY_TRUSTED_HEADERS;
+    } else {
+      process.env.RADD_PRIVATE_PROXY_TRUSTED_HEADERS = originalTrustedHeaders;
+    }
+  }
 });
 
 test("omits the port from base URL when external base URL port is 443", async () => {
