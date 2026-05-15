@@ -15,6 +15,7 @@ public class PnRaddAltLogContext {
     private String uid = "";
     private String cxId = "";
     private String cxType = "";
+    private String cxRole = "";
     private String recipientInternalId = "";
     private String delegateInternalId = "";
     private String transactionId = "";
@@ -41,6 +42,13 @@ public class PnRaddAltLogContext {
 
     public PnRaddAltLogContext addCxType(String cxType) {
         this.cxType = "cxType=%s ".formatted(cxType);
+        return this;
+    }
+
+    public PnRaddAltLogContext addCxRole(String cxRole) {
+        if (StringUtils.hasText(cxRole)) {
+            this.cxRole = "cxRole=%s ".formatted(cxRole);
+        }
         return this;
     }
 
@@ -118,7 +126,7 @@ public class PnRaddAltLogContext {
     }
 
     public String logContext() {
-        String context = uid + cxId + cxType + taxCode + operationId + transactionId + recipientInternalId + delegateInternalId + requestFileKey
+        String context = uid + cxId + cxType + cxRole + taxCode + operationId + transactionId + recipientInternalId + delegateInternalId + requestFileKey
                 + iun + downloadedFilekeys + aarFilekeys + iuns + result + status + sourceChannel;
         return context.trim();
     }

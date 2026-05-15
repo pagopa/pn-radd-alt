@@ -29,6 +29,16 @@
     "ThrottlingPeriodSeconds": "60",
     "BlockImportLocations": "false",
     "AwsGeoRegionCode": "eu-central-1",
-    "DocumentPageCountEnabled": "false"
+    "DocumentPageCountEnabled": "false",
+    "RaddPrivateProxyEnabled": "true",
+    "RaddPrivateProxyRulePriority": "45000",
+    "RaddPrivateProxyAllowedPathPrefix": "/radd-net/api/v1/act/",
+    "RaddPrivateProxyListenerPathPrefix": "/radd-net/",
+    "RaddPrivateProxyTrustedHeaders": "{\"x-pagopa-pn-src-ch\":\"RADD\",\"x-pagopa-pn-src-ch-details\":\"NONINTEROP\",\"x-pagopa-pn-cx-type\":\"RADD_FSU\",\"x-pagopa-pn-cx-role\":\"RADD_UPLOADER\",\"x-pagopa-pn-cx-id\":\"97103880585\",\"uid\":\"RADD_cf_97103880585\",\"x-pagopa-pn-uid\":\"RADD_cf_97103880585\",\"x-pagopa-pn-cx-groups\":\"\"}",
+    "RaddPrivateProxyLambdaMemorySize": "512",
+    "RaddPrivateProxyLambdaTimeout": "10",
+    "RaddPrivateProxyReservedConcurrency": "10",
+    "RaddPrivateProxyExternalProtocol": "https",
+    "RaddPrivateProxyExternalPort": "8443"
   }
 }

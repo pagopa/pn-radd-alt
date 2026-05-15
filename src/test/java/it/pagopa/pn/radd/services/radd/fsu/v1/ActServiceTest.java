@@ -292,8 +292,8 @@ class ActServiceTest  {
         assertThat(response.getStatus()).isNotNull();
         assertThat(response.getStatus().getCode()).isEqualTo(StartTransactionResponseStatus.CodeEnum.NUMBER_3);
         assertThat(response.getStatus().getMessage()).isEqualTo("Limite di 1 stampa superato");
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=id cxId=cxId cxType=PF operationId=id iun=iun");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Limite di 1 stampa superato - uid=id cxId=cxId cxType=PF operationId=id recipientInternalId=123 iun=iun status=class StartTransactionResponseStatus {\n" +"    code: 3\n" + "    message: Limite di 1 stampa superato\n" + "    retryAfter: null\n" + "}");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=id cxId=cxId cxType=PF cxRole=RADD_UPLOADER operationId=id iun=iun");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Limite di 1 stampa superato - uid=id cxId=cxId cxType=PF cxRole=RADD_UPLOADER operationId=id recipientInternalId=123 iun=iun status=class StartTransactionResponseStatus {\n" +"    code: 3\n" + "    message: Limite di 1 stampa superato\n" + "    retryAfter: null\n" + "}");
     }
 
 

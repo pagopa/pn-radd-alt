@@ -140,7 +140,7 @@ public class ActService extends BaseService {
                 .doOnError(err -> log.error(err.getMessage()));
     }
 
-    public Mono<StartTransactionResponse> startTransaction(String uid, String xPagopaPnCxId, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxRole, String xPagopaPnSrcCh, String resolvedBasepath, ActStartTransactionRequest request) {
+    public Mono<StartTransactionResponse> startTransaction(String uid, String xPagopaPnCxId, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxRole, String xPagopaPnSrcCh, String xPagopaPnBaseUrl, ActStartTransactionRequest request) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_ACTTRAN)
                 .msg(START_ACT_START_TRANSACTION)
@@ -149,6 +149,7 @@ public class ActService extends BaseService {
                         .addIun(request.getIun())
                         .addCxType(xPagopaPnCxType.toString())
                         .addCxId(xPagopaPnCxId)
+                        .addCxRole(xPagopaPnCxRole)
                         .addOperationId(request.getOperationId())
                         .addSourceChannel(xPagopaPnSrcCh))
                 .build()
@@ -165,7 +166,7 @@ public class ActService extends BaseService {
                 })
                 .flatMap(transactionData -> checkQrCodeOrIun(request.getRecipientType().getValue(), request.getQrCode(), request.getIun(), transactionData.getEnsureRecipientId())
                         .map(s -> setIun(transactionData, s)))
-                .flatMap( transactionData -> handleTransactionFlow( pnRaddAltAuditLog, transactionData, uid, request, resolvedBasepath))
+                .flatMap( transactionData -> handleTransactionFlow( pnRaddAltAuditLog, transactionData, uid, request, xPagopaPnBaseUrl))
                 .map(response -> {
                     log.trace("START ACT TRANSACTION TOCK {}", new Date().getTime());
                     pnRaddAltAuditLog.getContext().addDownloadFilekeys(response.getDownloadUrlList()).addResponseStatus(response.getStatus().toString());
@@ -196,7 +197,7 @@ public class ActService extends BaseService {
                         }));
     }
 
-    private Mono<StartTransactionResponse> handleTransactionFlow(PnRaddAltAuditLog pnRaddAltAuditLog, TransactionData transactionData, String uid, ActStartTransactionRequest request, String resolvedBasepath) {
+    private Mono<StartTransactionResponse> handleTransactionFlow(PnRaddAltAuditLog pnRaddAltAuditLog, TransactionData transactionData, String uid, ActStartTransactionRequest request, String xPagopaPnBaseUrl) {
 
         return hasNotificationsCancelled(transactionData.getIun()).thenReturn(transactionData)
                 .zipWhen(data -> hasDocumentsAvailable(data.getIun()))
@@ -210,13 +211,13 @@ public class ActService extends BaseService {
                 .flatMap(tuple -> verifyCheckSum(tuple.getT1())
                         .map(verifiedTransactionData -> Tuples.of(verifiedTransactionData, tuple.getT2())))
                 .zipWhen(transactionAndSentNotification ->
-                                retrieveDocumentsAndAttachments(request, transactionAndSentNotification, resolvedBasepath),
+                                retrieveDocumentsAndAttachments(request, transactionAndSentNotification, xPagopaPnBaseUrl),
                         (tupla, response) -> Tuples.of(tupla.getT1(), response))
                 .zipWhen(transactionAndResponse ->
                         this.updateFileMetadata(transactionAndResponse.getT1()), (in, out) -> in.getT2())
                 .onErrorResume(RaddGenericException.class, ex -> {
                     if (DOCUMENT_UNAVAILABLE.equals(ex.getExceptionType())) {
-                        return buildLegalFactsOnlyResponse(transactionData, request, resolvedBasepath);
+                        return buildLegalFactsOnlyResponse(transactionData, request, xPagopaPnBaseUrl);
                     }
                     return Mono.error(ex);
                 });
@@ -225,16 +226,16 @@ public class ActService extends BaseService {
     private Mono<StartTransactionResponse> buildLegalFactsOnlyResponse(
             TransactionData transactionData,
             ActStartTransactionRequest request,
-            String resolvedBasepath) {
-        return legalFact(transactionData, resolvedBasepath)
+            String xPagopaPnBaseUrl) {
+        return legalFact(transactionData, xPagopaPnBaseUrl)
                 .collectList()
                 .map(list -> list.stream()
                         .map(DocumentInfoDto::getDownloadUrl)
                         .collect(Collectors.toCollection(ArrayList::new)))
-                .map(downloadUrls -> StartTransactionResponseMapper.fromResultOnlyLegalFacts(downloadUrls, OperationTypeEnum.ACT.name(), request.getOperationId(), resolvedBasepath))
+                .map(downloadUrls -> StartTransactionResponseMapper.fromResultOnlyLegalFacts(downloadUrls, OperationTypeEnum.ACT.name(), request.getOperationId(), xPagopaPnBaseUrl))
                 .onErrorResume(ex -> {
                     log.info("Legal facts retrieval failed, returning DOCUMENT_UNAVAILABLE response: {}", ex.getMessage());
-                    return Mono.just(StartTransactionResponseMapper.fromResultOnlyLegalFacts(new ArrayList<>(), OperationTypeEnum.ACT.name(), request.getOperationId(), resolvedBasepath));
+                    return Mono.just(StartTransactionResponseMapper.fromResultOnlyLegalFacts(new ArrayList<>(), OperationTypeEnum.ACT.name(), request.getOperationId(), xPagopaPnBaseUrl));
                 });    }
 
 
@@ -249,11 +250,11 @@ public class ActService extends BaseService {
 
 
     @NotNull
-    private Mono<StartTransactionResponse> retrieveDocumentsAndAttachments(ActStartTransactionRequest request, Tuple2<TransactionData, SentNotificationV25Dto> transactionAndSentNotification, String resolvedBasepath) {
+    private Mono<StartTransactionResponse> retrieveDocumentsAndAttachments(ActStartTransactionRequest request, Tuple2<TransactionData, SentNotificationV25Dto> transactionAndSentNotification, String xPagopaPnBaseUrl) {
         log.debug("Retrieving document and attachments");
         Flux<DocumentInfoDto> infoDocuments = getUrlDoc(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
         Flux<DocumentInfoDto> infoAttachments = getUrlsAttachments(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
-        Flux<DocumentInfoDto> infoLegalFacts = legalFact(transactionAndSentNotification.getT1(), resolvedBasepath);
+        Flux<DocumentInfoDto> infoLegalFacts = legalFact(transactionAndSentNotification.getT1(), xPagopaPnBaseUrl);
 
         return ParallelFlux.from(infoDocuments, infoAttachments, infoLegalFacts)
                            .sequential()
@@ -265,7 +266,7 @@ public class ActService extends BaseService {
                            .collectList()
                            .flatMap(resultList -> updateDocAttachments(transactionAndSentNotification.getT1(), resultList))
                            .map(documentInfoDtos -> documentInfoDtos.stream().map(DocumentInfoDto::getDownloadUrl).collect(Collectors.toCollection(ArrayList::new)))
-                           .map(resultList -> StartTransactionResponseMapper.fromResult(resultList, OperationTypeEnum.ACT.name(), request.getOperationId(), resolvedBasepath, pnRaddFsuConfig.getDocumentTypeEnumFilter()));
+                           .map(resultList -> StartTransactionResponseMapper.fromResult(resultList, OperationTypeEnum.ACT.name(), request.getOperationId(), xPagopaPnBaseUrl, pnRaddFsuConfig.getDocumentTypeEnumFilter()));
     }
 
     @NotNull
@@ -362,7 +363,7 @@ public class ActService extends BaseService {
                 );
     }
 
-    private Flux<DocumentInfoDto> legalFact(TransactionData transaction, String resolvedBasepath) {
+    private Flux<DocumentInfoDto> legalFact(TransactionData transaction, String xPagopaPnBaseUrl) {
         return pnDeliveryPushClient.getNotificationLegalFacts(transaction.getEnsureRecipientId(), transaction.getIun())
                 .filter(filterLegalFacts(transaction))
                 .flatMap(item ->
@@ -376,7 +377,7 @@ public class ActService extends BaseService {
                 .flatMap(legalFactInfoList -> updateZipAttachments(transaction, legalFactInfoList))
                 .flatMapMany(Flux::fromIterable)
                 .map(legalFactInfo -> {
-                    DownloadUrl downloadUrl = getDownloadUrl(transaction, legalFactInfo, resolvedBasepath);
+                    DownloadUrl downloadUrl = getDownloadUrl(transaction, legalFactInfo, xPagopaPnBaseUrl);
                     return DocumentInfoDto.builder()
                             .fileKey(removeSafeStoragePrefix(legalFactInfo.getKey()))
                             .numberOfPages(legalFactInfo.getNumberOfPages())
@@ -388,11 +389,11 @@ public class ActService extends BaseService {
     }
 
     @NotNull
-    private DownloadUrl getDownloadUrl(TransactionData transaction, LegalFactInfo legalFactInfo, String resolvedBasepath) {
+    private DownloadUrl getDownloadUrl(TransactionData transaction, LegalFactInfo legalFactInfo, String xPagopaPnBaseUrl) {
         if (CONTENT_TYPE_PDF.equals(legalFactInfo.getContentType())) {
             return getDownloadUrl(legalFactInfo.getUrl(), getDocumentType(legalFactInfo));
         } else {
-            return getDocumentDownloadUrl(resolvedBasepath,
+            return getDocumentDownloadUrl(xPagopaPnBaseUrl,
                     transaction.getOperationType().name(),
                     transaction.getOperationId(),
                     legalFactInfo.getKey(),
