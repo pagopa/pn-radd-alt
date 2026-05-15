@@ -114,12 +114,12 @@ info:
     url: 'https://notifichedigitali.pagopa.it/radd/index.html'
 
 servers:
-  - url: https://{vpceDnsName}
+  - url: https://{vpceDnsName}:8443
     description: Endpoint privato di produzione raggiungibile tramite VPC endpoint
     variables:
       vpceDnsName:
         description: DNS name associato al VPC endpoint di produzione
-  - url: https://{vpceDnsName}
+  - url: https://{vpceDnsName}:8443
     description: Endpoint privato di collaudo UAT raggiungibile tramite VPC endpoint
     variables:
       vpceDnsName:
