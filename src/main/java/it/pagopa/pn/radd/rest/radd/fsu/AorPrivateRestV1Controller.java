@@ -5,12 +5,14 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.AorOperationsApi;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.services.radd.fsu.v1.AorService;
 import it.pagopa.pn.radd.utils.Utils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @RestController
 public class AorPrivateRestV1Controller implements AorOperationsApi {
     private final AorService aorService;
@@ -41,6 +43,7 @@ public class AorPrivateRestV1Controller implements AorOperationsApi {
 
     @Override
     public Mono<ResponseEntity<StartTransactionResponse>> startAorTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh, Mono<AorStartTransactionRequest> aorStartTransactionRequest, String xPagopaPnCxRole, String xPagopaPnBaseUrl, ServerWebExchange exchange) {
+        log.info("[TEST] startAorTransaction - headers ricevuti: {}", exchange.getRequest().getHeaders());
         return Utils.requireBaseUrl(xPagopaPnBaseUrl)
                 .flatMap(baseUrl -> aorStartTransactionRequest
                 .zipWhen(req -> aorService.startTransaction(uid, baseUrl, req, xPagopaPnCxType, xPagopaPnCxId, xPagopaPnCxRole, xPagopaPnSrcCh), (req, resp) -> resp))

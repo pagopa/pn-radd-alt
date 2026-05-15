@@ -4,6 +4,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.api.ActOperationsApi;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
 import it.pagopa.pn.radd.services.radd.fsu.v1.ActService;
 import it.pagopa.pn.radd.utils.Utils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,6 +12,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 
+@Slf4j
 @RestController
 public class ActPrivateRestV1Controller implements ActOperationsApi {
 
@@ -28,6 +30,7 @@ public class ActPrivateRestV1Controller implements ActOperationsApi {
 
     @Override
     public Mono<ResponseEntity<StartTransactionResponse>> startActTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh, Mono<ActStartTransactionRequest> actStartTransactionRequest, String xPagopaPnCxRole, String xPagopaPnBaseUrl, ServerWebExchange exchange) {
+        log.info("[TEST] startActTransaction - headers ricevuti: {}", exchange.getRequest().getHeaders());
         return Utils.requireBaseUrl(xPagopaPnBaseUrl)
                 .flatMap(baseUrl -> actStartTransactionRequest
                 .zipWhen(request -> actService.startTransaction(uid, xPagopaPnCxId, xPagopaPnCxType, xPagopaPnCxRole, xPagopaPnSrcCh, baseUrl, request), (req, resp) -> resp))
