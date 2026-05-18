@@ -452,11 +452,6 @@ Parameters:
     Default: ''
     Description: Dedicated ALB listener ARN for the RADD private proxy
 
-  RaddPrivateProxyEndpointServiceId:
-    Type: String
-    Default: ''
-    Description: RADD endpoint service id used to validate technical VPCE Host headers
-
   RaddPrivateProxyRulePriority:
     Type: Number
     Default: 45000
@@ -464,7 +459,7 @@ Parameters:
 
   RaddPrivateProxyAllowedPathPrefix:
     Type: String
-    Default: '/radd-net/api/v1/act/'
+    Default: '/radd-net/'
     Description: Allowed path prefix for the RADD private proxy
 
   RaddPrivateProxyListenerPathPrefix:
@@ -738,7 +733,6 @@ Resources:
         Variables:
           RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX: !Ref RaddPrivateProxyAllowedPathPrefix
           RADD_PRIVATE_PROXY_BACKEND_BASE_URL: !Sub 'http://${ApplicationLoadBalancerDomain}:8080'
-          RADD_PRIVATE_PROXY_ENDPOINT_SERVICE_ID: !Ref RaddPrivateProxyEndpointServiceId
           # External protocol is explicit; ALB hop is HTTP.
           RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL: !Ref RaddPrivateProxyExternalProtocol
           # External port is explicit; ALB hop can be 8080/8081.
