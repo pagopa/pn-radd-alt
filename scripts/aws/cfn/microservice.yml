@@ -758,14 +758,14 @@ Resources:
       ProvisionedConcurrencyConfig:
         ProvisionedConcurrentExecutions: !Ref RaddPrivateProxyLambdaProvisionedConcurrency
 
-  # RaddPrivateProxyLambdaTargetGroup:
-  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
-  #   Condition: IsRaddPrivateProxyEnabled
-  #   Properties:
-  #     TargetType: lambda
-  #     Targets:
-  #       - Id: !Ref RaddPrivateProxyLambdaVersionAlias
-  #     HealthCheckEnabled: false
+  RaddPrivateProxyLambdaTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Condition: IsRaddPrivateProxyEnabled
+    Properties:
+      TargetType: lambda
+      Targets:
+        - Id: !Ref RaddPrivateProxyLambdaVersionAlias
+      HealthCheckEnabled: false
 
   RaddPrivateProxyLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -775,25 +775,25 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: elasticloadbalancing.amazonaws.com
 
-  # RaddPrivateProxyListenerRule:
-  #   Type: AWS::ElasticLoadBalancingV2::ListenerRule
-  #   Condition: IsRaddPrivateProxyEnabled
-  #   DependsOn:
-  #     - RaddPrivateProxyLambdaInvokePermission
-  #   Properties:
-  #     ListenerArn: !Ref RaddPrivateProxyAlbListenerArn
-  #     Priority: !Ref RaddPrivateProxyRulePriority
-  #     Actions:
-  #       - Type: forward
-  #         TargetGroupArn: !Ref RaddPrivateProxyLambdaTargetGroup
-  #     Conditions:
-  #       - Field: path-pattern
-  #         PathPatternConfig:
-  #           Values:
-  #             - !If
-  #               - HasRaddPrivateProxyListenerPathPrefix
-  #               - !Sub '${RaddPrivateProxyListenerPathPrefix}*'
-  #               - '*'
+  RaddPrivateProxyListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: IsRaddPrivateProxyEnabled
+    DependsOn:
+      - RaddPrivateProxyLambdaInvokePermission
+    Properties:
+      ListenerArn: !Ref RaddPrivateProxyAlbListenerArn
+      Priority: !Ref RaddPrivateProxyRulePriority
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref RaddPrivateProxyLambdaTargetGroup
+      Conditions:
+        - Field: path-pattern
+          PathPatternConfig:
+            Values:
+              - !If
+                - HasRaddPrivateProxyListenerPathPrefix
+                - !Sub '${RaddPrivateProxyListenerPathPrefix}*'
+                - '*'
 
   RaddPrivateProxyLambdaAlarms:
     Type: AWS::CloudFormation::Stack
