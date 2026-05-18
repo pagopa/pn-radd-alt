@@ -119,11 +119,13 @@ servers:
     variables:
       vpceDnsName:
         description: DNS name associato al VPC endpoint di produzione
+        default: vpce-svc-{serviceId}.eu-south-1.vpce.amazonaws.com
   - url: https://{vpceDnsName}:8443
     description: Endpoint privato di collaudo UAT raggiungibile tramite VPC endpoint
     variables:
       vpceDnsName:
         description: DNS name associato al VPC endpoint di collaudo UAT
+        default: vpce-svc-{serviceId}.eu-south-1.vpce.amazonaws.com
 
 security: []
 
@@ -149,20 +151,20 @@ paths:
       operationId: documentDownload
       description: API utilizzata per il download del frontespizio tramite connessione VPC endpoint.
       responses:
-        200:
+        '200':
           description: Ritorna il PDF del frontespizio
           content:
             application/pdf:
               schema:
                 type: string
                 format: binary
-        400:
+        '400':
           $ref: '#/components/responses/Invalid'
-        403:
+        '403':
           $ref: '#/components/responses/Forbidden'
-        405:
+        '405':
           $ref: '#/components/responses/NotAllowed'
-        500:
+        '500':
           $ref: '#/components/responses/InternalError'
 
   /radd-net/api/v1/act/inquiry:
@@ -182,19 +184,19 @@ paths:
       x-pagopa-pn-custom-throttling-value: 'method.request.querystring.recipientTaxId'
       description: API utilizzata per la verifica della presenza a sistema di atti e attestazioni tramite iun o qrCode.
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ActInquiryResponse'
-        400:
+        '400':
           $ref: '#/components/responses/Invalid'
-        403:
+        '403':
           $ref: '#/components/responses/Forbidden'
-        405:
+        '405':
           $ref: '#/components/responses/NotAllowed'
-        500:
+        '500':
           $ref: '#/components/responses/InternalError'
 
   /radd-net/api/v1/aor/inquiry:
@@ -212,19 +214,19 @@ paths:
       x-pagopa-pn-custom-throttling-value: 'method.request.querystring.recipientTaxId'
       description: API utilizzata per la verifica della presenza a sistema di avvisi di avvenuta ricezione per il cliente.
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AORInquiryResponse'
-        400:
+        '400':
           $ref: '#/components/responses/Invalid'
-        403:
+        '403':
           $ref: '#/components/responses/Forbidden'
-        405:
+        '405':
           $ref: '#/components/responses/NotAllowed'
-        500:
+        '500':
           $ref: '#/components/responses/InternalError'
 
   /radd-net/api/v1/act/transaction/start:
@@ -246,19 +248,19 @@ paths:
               $ref: '#/components/schemas/ActStartTransactionRequest'
         required: true
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/StartTransactionResponse'
-        400:
+        '400':
           $ref: '#/components/responses/Invalid'
-        403:
+        '403':
           $ref: '#/components/responses/Forbidden'
-        405:
+        '405':
           $ref: '#/components/responses/NotAllowed'
-        500:
+        '500':
           $ref: '#/components/responses/InternalError'
 
   /radd-net/api/v1/act/transaction/complete:
@@ -278,19 +280,19 @@ paths:
               $ref: '#/components/schemas/CompleteTransactionRequest'
         required: true
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CompleteTransactionResponse'
-        400:
+        '400':
           $ref: '#/components/responses/Invalid'
-        403:
+        '403':
           $ref: '#/components/responses/Forbidden'
-        405:
+        '405':
           $ref: '#/components/responses/NotAllowed'
-        500:
+        '500':
           $ref: '#/components/responses/InternalError'
 
   /radd-net/api/v1/act/transaction/abort:
@@ -310,19 +312,19 @@ paths:
               $ref: '#/components/schemas/AbortTransactionRequest'
         required: true
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AbortTransactionResponse'
-        400:
+        '400':
           $ref: '#/components/responses/Invalid'
-        403:
+        '403':
           $ref: '#/components/responses/Forbidden'
-        405:
+        '405':
           $ref: '#/components/responses/NotAllowed'
-        500:
+        '500':
           $ref: '#/components/responses/InternalError'
 
   /radd-net/api/v1/aor/transaction/start:
@@ -344,19 +346,19 @@ paths:
               $ref: '#/components/schemas/AorStartTransactionRequest'
         required: true
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/StartTransactionResponse'
-        400:
+        '400':
           $ref: '#/components/responses/Invalid'
-        403:
+        '403':
           $ref: '#/components/responses/Forbidden'
-        405:
+        '405':
           $ref: '#/components/responses/NotAllowed'
-        500:
+        '500':
           $ref: '#/components/responses/InternalError'
 
   /radd-net/api/v1/aor/transaction/complete:
@@ -376,19 +378,19 @@ paths:
               $ref: '#/components/schemas/CompleteTransactionRequest'
         required: true
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CompleteTransactionResponse'
-        400:
+        '400':
           $ref: '#/components/responses/Invalid'
-        403:
+        '403':
           $ref: '#/components/responses/Forbidden'
-        405:
+        '405':
           $ref: '#/components/responses/NotAllowed'
-        500:
+        '500':
           $ref: '#/components/responses/InternalError'
 
   /radd-net/api/v1/aor/transaction/abort:
@@ -408,19 +410,19 @@ paths:
               $ref: '#/components/schemas/AbortTransactionRequest'
         required: true
       responses:
-        200:
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AbortTransactionResponse'
-        400:
+        '400':
           $ref: '#/components/responses/Invalid'
-        403:
+        '403':
           $ref: '#/components/responses/Forbidden'
-        405:
+        '405':
           $ref: '#/components/responses/NotAllowed'
-        500:
+        '500':
           $ref: '#/components/responses/InternalError'
 
 components:
