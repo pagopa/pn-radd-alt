@@ -15,7 +15,7 @@ const trustedHeaders = {
 
 const baseEnv = {
   AWS_REGION: "eu-south-1",
-  RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX: "/radd-net/api/v1/act/",
+  RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX: "/radd-net/",
   RADD_PRIVATE_PROXY_BACKEND_BASE_URL: "http://internal-alb:8080",
   RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL: "https",
   RADD_PRIVATE_PROXY_EXTERNAL_PORT: "8443",
@@ -216,7 +216,7 @@ test("rejects paths outside the configured allowlist without forwarding", async 
     }
   });
 
-  const response = await handler(buildEvent({ path: "/radd-net/api/v1/download/ACT/123" }));
+  const response = await handler(buildEvent({ path: "/outside-allowlist" }));
 
   assert.equal(response.statusCode, 403);
   assert.equal(called, false);

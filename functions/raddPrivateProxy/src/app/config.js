@@ -1,4 +1,4 @@
-const DEFAULT_ALLOWED_PATH_PREFIX = "/radd-net/api/v1/act/";
+const DEFAULT_ALLOWED_PATH_PREFIX = "/radd-net/";
 
 function parseTrustedHeaders(rawTrustedHeaders) {
   if (!rawTrustedHeaders) {

@@ -469,7 +469,6 @@ Parameters:
 
   RaddPrivateProxyTrustedHeaders:
     Type: String
-    Default: '{"x-pagopa-pn-src-ch":"RADD","x-pagopa-pn-src-ch-details":"NONINTEROP","x-pagopa-pn-cx-type":"RADD","x-pagopa-pn-cx-role":"RADD_UPLOADER","x-pagopa-pn-cx-id":"97103880585","uid":"RADD_cf_97103880585","x-pagopa-pn-uid":"RADD_cf_97103880585","x-pagopa-pn-cx-groups":""}'
     Description: Escaped JSON object containing stable trusted headers for the RADD private proxy
 
   RaddPrivateProxyLambdaName:
