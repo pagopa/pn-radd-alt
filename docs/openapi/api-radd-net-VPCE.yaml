@@ -28,15 +28,14 @@ info:
       # Autenticazione e autorizzazione
 
       Le richieste sono abilitate dalla connessione privata tramite VPC endpoint e
-      dalle relative policy di rete. Non e' richiesto l'invio del token JWT
-      nell'header Authorization e la specifica non espone uno schema bearer.
+      dalle relative policy di rete.
 
       ## Identificativo utente
 
       Nelle API che richiedono il parametro *uid* questo deve essere valorizzato
       con un identificativo pseudo-anonimizzato dell'operatore dello sportello
-      rete RADD. Il valore deve contenere l'id utente e l'id sede, corrispondente
-      al campo externalCode dell'anagrafica delle sedi, separati dal carattere @.
+      rete RADD. Il valore deve essere composto da frazionario, pdl e timestamp, 
+      secondo il formato *frazionario-pdl-timestamp*.
       Questo campo serve in caso di indagine per individuare l'operatore dello
       sportello che ha eseguito l'operazione. E' cura del software dello
       sportello valorizzarlo con un identificativo che non riporti dati personali
@@ -65,7 +64,7 @@ info:
       3. **Download documenti**
 
          Per ogni URL restituita dalla start transaction, eseguire una richiesta
-      GET tramite la connessione VPC endpoint. Non deve essere inviato un JWT.
+      GET tramite la connessione VPC endpoint.
 
       4. **Chiusura dell'operazione**
 
@@ -98,7 +97,7 @@ info:
       3. **Download documenti**
 
          Per ogni URL restituita dalla start transaction, eseguire una richiesta
-      GET tramite la connessione VPC endpoint. Non deve essere inviato un JWT.
+      GET tramite la connessione VPC endpoint.
 
       4. **Chiusura dell'operazione**
 
@@ -665,12 +664,12 @@ components:
   parameters:
     uid:
       name: uid
-      description: Identificativo pseudo-anonimizzato dell'operatore RADD deve contenere l'id utente e l'id sede che corrisponde al campo externalCode dell'anagrafica delle sedi separati dal carattere @.
+      description: Identificativo pseudo-anonimizzato dell'operatore RADD nel formato frazionario-pdl-timestamp.
       in: header
       required: true
       schema:
         type: string
-      example: USR1029@UFFRO129
+      example: "12345-PDL001-20240521103000"
     recipientTaxId:
       name: recipientTaxId
       description: Codice Fiscale Destinatario
