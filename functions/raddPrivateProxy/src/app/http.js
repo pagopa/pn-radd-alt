@@ -13,6 +13,30 @@ const NON_FORWARDABLE_REQUEST_HEADERS = new Set([
 
 const BASE_URL_HEADER = "x-pagopa-pn-base-url";
 
+function serializeHeaderValues(name, values) {
+  const normalizedValues = values
+    .filter((value) => value !== undefined && value !== null)
+    .map(String);
+
+  if (name.toLowerCase() === "cookie") {
+    return normalizedValues.join("; ");
+  }
+
+  return normalizedValues.join(",");
+}
+
+function appendHeaderValue(headers, name, value) {
+  if (value === undefined || value === null) {
+    return;
+  }
+
+  const lowerName = name.toLowerCase();
+  if (!headers[lowerName]) {
+    headers[lowerName] = [];
+  }
+  headers[lowerName].push(String(value));
+}
+
 function collectHeaders(event) {
   const headers = {};
 
@@ -24,7 +48,7 @@ function collectHeaders(event) {
 
   for (const [name, values] of Object.entries(event.multiValueHeaders || {})) {
     if (Array.isArray(values) && values.length > 0) {
-      headers[name.toLowerCase()] = values.map(String).join(",");
+      headers[name.toLowerCase()] = serializeHeaderValues(name, values);
     }
   }
 
@@ -52,25 +76,25 @@ function buildForwardHeaders(incomingHeaders, config, baseUrl) {
 }
 
 function buildQueryString(event) {
-  const params = new URLSearchParams();
+  const params = [];
 
   if (event.multiValueQueryStringParameters) {
     for (const [name, values] of Object.entries(event.multiValueQueryStringParameters)) {
       for (const value of values || []) {
         if (value !== undefined && value !== null) {
-          params.append(name, String(value));
+          params.push(`${String(name)}=${String(value)}`);
         }
       }
     }
   } else if (event.queryStringParameters) {
     for (const [name, value] of Object.entries(event.queryStringParameters)) {
       if (value !== undefined && value !== null) {
-        params.append(name, String(value));
+        params.push(`${String(name)}=${String(value)}`);
       }
     }
   }
 
-  const serialized = params.toString();
+  const serialized = params.join("&");
   return serialized ? `?${serialized}` : "";
 }
 
@@ -87,7 +111,7 @@ function buildRequestBody(event, method) {
 }
 
 function isTextualResponse(contentType) {
-  const normalized = (contentType || "").toLowerCase();
+  const normalized = (Array.isArray(contentType) ? contentType[0] || "" : contentType || "").toLowerCase();
   return normalized.startsWith("text/") ||
     normalized.includes("json") ||
     normalized.includes("xml") ||
@@ -95,23 +119,46 @@ function isTextualResponse(contentType) {
 }
 
 function buildAlbResponse(statusCode, body, headers = {}, isBase64Encoded = false, statusText = "") {
+  const multiValueHeaders = {};
+
+  for (const [name, value] of Object.entries(headers)) {
+    if (Array.isArray(value) && value.length > 0) {
+      multiValueHeaders[name.toLowerCase()] = value.map(String);
+    } else if (value !== undefined && value !== null) {
+      multiValueHeaders[name.toLowerCase()] = [String(value)];
+    }
+  }
+
   return {
     statusCode,
     statusDescription: `${statusCode}${statusText ? ` ${statusText}` : ""}`,
     isBase64Encoded,
-    headers,
+    multiValueHeaders,
     body
   };
 }
 
 function filterResponseHeaders(responseHeaders) {
   const headers = {};
+  const setCookieValues = typeof responseHeaders.getSetCookie === "function"
+    ? responseHeaders.getSetCookie()
+    : [];
+
   responseHeaders.forEach((value, name) => {
     const lowerName = name.toLowerCase();
+    if (lowerName === "set-cookie" && setCookieValues.length > 0) {
+      return;
+    }
+
     if (!NON_FORWARDABLE_REQUEST_HEADERS.has(lowerName)) {
-      headers[lowerName] = value;
+      appendHeaderValue(headers, lowerName, value);
     }
   });
+
+  for (const value of setCookieValues) {
+    appendHeaderValue(headers, "set-cookie", value);
+  }
+
   return headers;
 }
 

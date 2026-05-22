@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const {
-  DEFAULT_ALLOWED_PATH_PREFIX,
+  parseAllowedPathPrefixes,
   parseBaseUrlPort,
   parseBaseUrlProtocol,
   parseBooleanFlag,
@@ -13,6 +13,7 @@ test("parseRuntimeConfig parses and normalizes runtime configuration", () => {
   const config = parseRuntimeConfig({
     AWS_REGION: "eu-south-1",
     RADD_PRIVATE_PROXY_BACKEND_BASE_URL: "http://internal-alb:8080/",
+    RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX: "/radd-net/",
     RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL: "HTTPS",
     RADD_PRIVATE_PROXY_EXTERNAL_PORT: "8443",
     RADD_PRIVATE_PROXY_TRUSTED_HEADERS: JSON.stringify({
@@ -24,17 +25,22 @@ test("parseRuntimeConfig parses and normalizes runtime configuration", () => {
   });
 
   assert.deepEqual(config, {
-    allowedPathPrefix: DEFAULT_ALLOWED_PATH_PREFIX,
+    allowedPathPrefixes: ["/radd-net/"],
     backendBaseUrl: "http://internal-alb:8080",
     baseUrlPort: "8443",
     baseUrlProtocol: "https",
-    region: "eu-south-1",
     trustedHeaders: {
       "x-pagopa-pn-src-ch": "RADD",
       uid: "RADD_cf_97103880585"
     },
     verboseLogging: true
   });
+});
+
+test("parseAllowedPathPrefixes supports a comma-separated list", () => {
+  assert.deepEqual(parseAllowedPathPrefixes("/radd-net/, /radd-extra"), ["/radd-net/", "/radd-extra"]);
+  assert.deepEqual(parseAllowedPathPrefixes(""), []);
+  assert.deepEqual(parseAllowedPathPrefixes(undefined), []);
 });
 
 test("parseTrustedHeaders requires a JSON object", () => {

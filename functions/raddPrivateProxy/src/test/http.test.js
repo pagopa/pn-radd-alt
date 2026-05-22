@@ -29,6 +29,18 @@ test("collectHeaders merges headers and gives precedence to multiValueHeaders", 
   });
 });
 
+test("collectHeaders joins multi-value cookies with cookie separator", () => {
+  const headers = collectHeaders({
+    multiValueHeaders: {
+      Cookie: ["a=1", "b=2"]
+    }
+  });
+
+  assert.deepEqual(headers, {
+    cookie: "a=1; b=2"
+  });
+});
+
 test("buildForwardHeaders removes hop-by-hop and spoofed trusted headers", () => {
   const forwardHeaders = buildForwardHeaders(
     {
@@ -66,6 +78,17 @@ test("buildQueryString serializes multi-value query string parameters", () => {
   assert.equal(queryString, "?a=1&a=2&b=3");
 });
 
+test("buildQueryString preserves already encoded query parameter values", () => {
+  const queryString = buildQueryString({
+    multiValueQueryStringParameters: {
+      fileKey: ["a%2Fb"],
+      q: ["hello%20world"]
+    }
+  });
+
+  assert.equal(queryString, "?fileKey=a%2Fb&q=hello%20world");
+});
+
 test("buildRequestBody returns undefined for GET and decodes base64 bodies", () => {
   assert.equal(
     buildRequestBody({ body: "ignored", isBase64Encoded: false }, "GET"),
@@ -85,8 +108,20 @@ test("filterResponseHeaders removes non-forwardable headers", () => {
   });
 
   assert.deepEqual(filterResponseHeaders(responseHeaders), {
-    "content-type": "application/json",
-    "x-custom": "ok"
+    "content-type": ["application/json"],
+    "x-custom": ["ok"]
+  });
+});
+
+test("filterResponseHeaders preserves multiple set-cookie headers", () => {
+  const responseHeaders = new Headers({
+    "content-type": "application/json"
+  });
+  responseHeaders.getSetCookie = () => ["a=1; Secure", "b=2; Secure"];
+
+  assert.deepEqual(filterResponseHeaders(responseHeaders), {
+    "content-type": ["application/json"],
+    "set-cookie": ["a=1; Secure", "b=2; Secure"]
   });
 });
 
@@ -100,7 +135,7 @@ test("buildAlbResponse and isTextualResponse follow ALB response expectations", 
       statusCode: 200,
       statusDescription: "200 OK",
       isBase64Encoded: false,
-      headers: { "content-type": "application/json" },
+      multiValueHeaders: { "content-type": ["application/json"] },
       body: "body"
     }
   );

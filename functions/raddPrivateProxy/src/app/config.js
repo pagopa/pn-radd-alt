@@ -1,4 +1,19 @@
-const DEFAULT_ALLOWED_PATH_PREFIX = "/radd-net/";
+function parseAllowedPathPrefixes(rawAllowedPathPrefixes) {
+  if (rawAllowedPathPrefixes === undefined || rawAllowedPathPrefixes === null) {
+    return [];
+  }
+
+  const allowedPathPrefixes = String(rawAllowedPathPrefixes)
+    .split(",")
+    .map((prefix) => prefix.trim())
+    .filter(Boolean);
+
+  if (allowedPathPrefixes.length === 0) {
+    return [];
+  }
+
+  return allowedPathPrefixes;
+}
 
 function parseTrustedHeaders(rawTrustedHeaders) {
   if (!rawTrustedHeaders) {
@@ -84,18 +99,17 @@ function parseRuntimeConfig(env) {
   }
 
   return {
-    allowedPathPrefix: env.RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX || DEFAULT_ALLOWED_PATH_PREFIX,
+    allowedPathPrefixes: parseAllowedPathPrefixes(env.RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX),
     backendBaseUrl: backendBaseUrl.replace(/\/$/, ""),
     baseUrlPort: parseBaseUrlPort(env.RADD_PRIVATE_PROXY_EXTERNAL_PORT),
     baseUrlProtocol: parseBaseUrlProtocol(env.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL),
-    region: env.AWS_REGION || env.AWS_DEFAULT_REGION || "eu-south-1",
     trustedHeaders,
     verboseLogging: parseBooleanFlag(env.RADD_PRIVATE_PROXY_VERBOSE_LOGGING, false)
   };
 }
 
 module.exports = {
-  DEFAULT_ALLOWED_PATH_PREFIX,
+  parseAllowedPathPrefixes,
   parseBaseUrlPort,
   parseBaseUrlProtocol,
   parseBooleanFlag,

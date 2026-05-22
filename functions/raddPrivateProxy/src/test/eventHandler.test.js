@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
-const { createHandler, handleEvent } = require("../app/eventHandler");
+const { createHandler, handleEvent, validatePathForForward } = require("../app/eventHandler");
 
 const trustedHeaders = {
   "x-pagopa-pn-src-ch": "RADD",
@@ -66,10 +66,40 @@ test("overwrites trusted headers and derives base URL from the technical VPCE ho
     "https://vpce-0159b66963cb51025-1t51z9qh.vpce-svc-0a08e48564915d1c3.eu-south-1.vpce.amazonaws.com:8443"
   );
   assert.equal(capturedRequest.options.headers.host, undefined);
+  assert.deepEqual(response.multiValueHeaders, {
+    "content-type": ["application/json"]
+  });
+});
+
+test("returns multi-value response headers from backend", async () => {
+  class BackendResponse extends Response {
+    constructor(body, init) {
+      super(body, init);
+      this.headers.getSetCookie = () => ["a=1; Secure", "b=2; Secure"];
+    }
+  }
+
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => new BackendResponse(JSON.stringify({ ok: true }), {
+      status: 200,
+      statusText: "OK",
+      headers: { "content-type": "application/json" }
+    })
+  });
+
+  const response = await handler(buildEvent());
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.multiValueHeaders, {
+    "content-type": ["application/json"],
+    "set-cookie": ["a=1; Secure", "b=2; Secure"]
+  });
 });
 
 test("fails initialization when external base URL port is not configured", () => {
-  const { RADD_PRIVATE_PROXY_EXTERNAL_PORT, ...envWithoutExternalPort } = baseEnv;
+  const envWithoutExternalPort = { ...baseEnv };
+  delete envWithoutExternalPort.RADD_PRIVATE_PROXY_EXTERNAL_PORT;
 
   assert.throws(
     () => createHandler({ env: envWithoutExternalPort, fetchImpl: async () => new Response("unexpected") }),
@@ -78,7 +108,8 @@ test("fails initialization when external base URL port is not configured", () =>
 });
 
 test("fails initialization when external base URL protocol is not configured", () => {
-  const { RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL, ...envWithoutExternalProtocol } = baseEnv;
+  const envWithoutExternalProtocol = { ...baseEnv };
+  delete envWithoutExternalProtocol.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL;
 
   assert.throws(
     () => createHandler({ env: envWithoutExternalProtocol, fetchImpl: async () => new Response("unexpected") }),
@@ -222,6 +253,114 @@ test("rejects paths outside the configured allowlist without forwarding", async 
   assert.equal(called, false);
 });
 
+test("rejects dot segments before forwarding", async () => {
+  let called = false;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      called = true;
+      return new Response("unexpected");
+    }
+  });
+
+  const response = await handler(buildEvent({ path: "/radd-net/api/v1/act/../registry" }));
+
+  assert.equal(response.statusCode, 403);
+  assert.equal(called, false);
+});
+
+test("rejects encoded path separators before forwarding", async () => {
+  let called = false;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      called = true;
+      return new Response("unexpected");
+    }
+  });
+
+  const response = await handler(buildEvent({ path: "/radd-net/api/v1/act/%2Fregistry" }));
+
+  assert.equal(response.statusCode, 403);
+  assert.equal(called, false);
+});
+
+test("allows requests matching one of the configured path prefixes", async () => {
+  let capturedRequest;
+  const handler = createHandler({
+    env: { ...baseEnv, RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX: "/not-used/, /radd-net/" },
+    fetchImpl: async (url, options) => {
+      capturedRequest = { url, options };
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent());
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(capturedRequest.url, "http://internal-alb:8080/radd-net/api/v1/act/inquiry?iun=ABC");
+});
+
+test("allows any path when no path prefixes are configured", async () => {
+  let capturedRequest;
+  const envWithoutPathPrefixes = { ...baseEnv };
+  delete envWithoutPathPrefixes.RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX;
+  const handler = createHandler({
+    env: envWithoutPathPrefixes,
+    fetchImpl: async (url, options) => {
+      capturedRequest = { url, options };
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent({ path: "/outside-allowlist" }));
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(capturedRequest.url, "http://internal-alb:8080/outside-allowlist?iun=ABC");
+});
+
+test("rejects requests with missing host header before forwarding", async () => {
+  let called = false;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      called = true;
+      return new Response("unexpected");
+    }
+  });
+
+  const response = await handler(buildEvent({ headers: { "content-type": "application/json" } }));
+
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(JSON.parse(response.body), { message: "Invalid Host header" });
+  assert.equal(called, false);
+});
+
+test("rejects requests with malformed host header before forwarding", async () => {
+  let called = false;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      called = true;
+      return new Response("unexpected");
+    }
+  });
+
+  const response = await handler(buildEvent({ headers: { host: "bad host value", "content-type": "application/json" } }));
+
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(JSON.parse(response.body), { message: "Invalid Host header" });
+  assert.equal(called, false);
+});
+
 test("passes through backend application status codes", async () => {
   const handler = createHandler({
     env: baseEnv,
@@ -236,4 +375,13 @@ test("passes through backend application status codes", async () => {
 
   assert.equal(response.statusCode, 400);
   assert.deepEqual(JSON.parse(response.body), { error: "bad request" });
+  assert.deepEqual(response.multiValueHeaders, {
+    "content-type": ["application/json"]
+  });
+});
+
+test("validatePathForForward accepts a normal path and rejects canonicalization abuse", () => {
+  assert.doesNotThrow(() => validatePathForForward("/radd-net/api/v1/act/inquiry"));
+  assert.throws(() => validatePathForForward("/radd-net/api/v1/act/%2e%2e/registry"), /Dot segments are not allowed/);
+  assert.throws(() => validatePathForForward("radd-net/api/v1/act/inquiry"), /Invalid path/);
 });

@@ -39,13 +39,46 @@ function selectInboundHeadersForLog(incomingHeaders) {
   }, {});
 }
 
-function isAllowedPath(path, allowedPathPrefix) {
-  const normalizedPrefix = allowedPathPrefix.endsWith("/")
-    ? allowedPathPrefix
-    : `${allowedPathPrefix}/`;
+function matchesAllowedPathPrefix(path, allowedPathPrefix) {
+  const normalizedPrefix = allowedPathPrefix.endsWith("/") ? allowedPathPrefix : `${allowedPathPrefix}/`;
   const prefixWithoutTrailingSlash = normalizedPrefix.replace(/\/$/, "");
 
   return path === prefixWithoutTrailingSlash || path.startsWith(normalizedPrefix);
+}
+
+function isAllowedPath(path, allowedPathPrefixes) {
+  if (allowedPathPrefixes.length === 0) {
+    return true;
+  }
+
+  return allowedPathPrefixes.some((allowedPathPrefix) => matchesAllowedPathPrefix(path, allowedPathPrefix));
+}
+
+function validatePathForForward(path) {
+  if (!path.startsWith("/")) {
+    throw new Error("Invalid path");
+  }
+
+  for (const rawSegment of path.split("/")) {
+    if (!rawSegment) {
+      continue;
+    }
+
+    let decodedSegment;
+    try {
+      decodedSegment = decodeURIComponent(rawSegment);
+    } catch (err) {
+      throw new Error("Invalid encoded path segment");
+    }
+
+    if (decodedSegment === "." || decodedSegment === "..") {
+      throw new Error("Dot segments are not allowed");
+    }
+
+    if (decodedSegment.includes("/") || decodedSegment.includes("\\")) {
+      throw new Error("Encoded path separators are not allowed");
+    }
+  }
 }
 
 function deriveBaseUrlFromHost(hostHeader, config) {
@@ -103,8 +136,17 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
       });
     }
 
-    if (!isAllowedPath(path, config.allowedPathPrefix)) {
-      console.warn("RADD private proxy rejected path", { method, path });
+    try {
+      validatePathForForward(path);
+    } catch (err) {
+      console.warn("RADD private proxy rejected path", { method, path, reason: err.message });
+      return buildAlbResponse(403, JSON.stringify({ message: "Forbidden" }), {
+        "content-type": "application/json"
+      }, false, "Forbidden");
+    }
+
+    if (!isAllowedPath(path, config.allowedPathPrefixes)) {
+      console.warn("RADD private proxy rejected path", { method, path, reason: "Path not allowed" });
       return buildAlbResponse(403, JSON.stringify({ message: "Forbidden" }), {
         "content-type": "application/json"
       }, false, "Forbidden");
@@ -115,9 +157,9 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
       baseUrl = deriveBaseUrlFromHost(incomingHeaders.host, config);
     } catch (err) {
       logError("RADD private proxy failed Host validation", err, { path });
-      return buildAlbResponse(500, JSON.stringify({ message: "Unable to derive trusted base URL" }), {
+      return buildAlbResponse(400, JSON.stringify({ message: "Invalid Host header" }), {
         "content-type": "application/json"
-      }, false, "Internal Server Error");
+      }, false, "Bad Request");
     }
 
     const queryString = buildQueryString(event);
@@ -133,7 +175,7 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
 
       const responseHeaders = filterResponseHeaders(backendResponse.headers);
       const responseBuffer = Buffer.from(await backendResponse.arrayBuffer());
-      const contentType = responseHeaders["content-type"] || "";
+      const contentType = responseHeaders["content-type"]?.[0] || "";
       const textualResponse = isTextualResponse(contentType);
 
       console.log("RADD private proxy forwarded request", {
@@ -170,5 +212,6 @@ module.exports = {
   deriveBaseUrlFromHost,
   handleEvent,
   isAllowedPath,
-  selectInboundHeadersForLog
+  selectInboundHeadersForLog,
+  validatePathForForward
 };

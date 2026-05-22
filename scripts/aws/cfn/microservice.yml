@@ -460,7 +460,7 @@ Parameters:
   RaddPrivateProxyAllowedPathPrefix:
     Type: String
     Default: '/radd-net/'
-    Description: Allowed path prefix for the RADD private proxy
+    Description: Comma-separated allowed path prefixes for the RADD private proxy
 
   RaddPrivateProxyListenerPathPrefix:
     Type: String
@@ -765,6 +765,9 @@ Resources:
       Targets:
         - Id: !Ref RaddPrivateProxyLambdaVersionAlias
       HealthCheckEnabled: false
+      TargetGroupAttributes:
+        - Key: lambda.multi_value_headers.enabled
+          Value: 'true'
 
   RaddPrivateProxyLambdaInvokePermission:
     Type: AWS::Lambda::Permission
@@ -773,6 +776,8 @@ Resources:
       FunctionName: !Ref RaddPrivateProxyLambdaVersionAlias
       Action: lambda:InvokeFunction
       Principal: elasticloadbalancing.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !Ref RaddPrivateProxyLambdaTargetGroup
 
   RaddPrivateProxyListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
