@@ -89,9 +89,7 @@ info:
 
          Se sono presenti documenti da stampare, il software invoca
       [startAorTransaction](#/aorOperations/startAorTransaction) per ottenere
-      l'elenco delle URL degli AAR da stampare, compreso il frontespizio. Per
-      questa integrazione non sono richiesti *fileKey*, *checksum* o
-      *versionToken*.
+      l'elenco delle URL degli AAR da stampare, compreso il frontespizio.
 
       3. **Download documenti**
 
