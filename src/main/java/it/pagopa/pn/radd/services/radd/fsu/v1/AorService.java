@@ -56,7 +56,7 @@ public class AorService extends BaseService {
         this.pnRaddFsuConfig = pnRaddFsuConfig;
     }
 
-    public Mono<AORInquiryResponse> aorInquiry(String uid, String recipientTaxId, String recipientType, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId) {
+    public Mono<AORInquiryResponse> aorInquiry(String uid, String recipientTaxId, String recipientType, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_AORINQUIRY)
                 .msg(START_AOR_INQUIRY)
@@ -65,6 +65,7 @@ public class AorService extends BaseService {
                         .addCxId(xPagopaPnCxId)
                         .addCxType(xPagopaPnCxType.toString())
                         .addTaxCode(recipientTaxId)
+                        .addSourceChannel(xPagopaPnSrcCh)
                 )
                 .build()
                 .log();
@@ -97,7 +98,7 @@ public class AorService extends BaseService {
     }
 
 
-    public Mono<CompleteTransactionResponse> completeTransaction(String uid, CompleteTransactionRequest completeTransactionRequest, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId) {
+    public Mono<CompleteTransactionResponse> completeTransaction(String uid, CompleteTransactionRequest completeTransactionRequest, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_AORTRAN)
                 .msg(START_AOR_COMPLETE_TRANSACTION)
@@ -106,6 +107,7 @@ public class AorService extends BaseService {
                         .addCxId(xPagopaPnCxId)
                         .addCxType(xPagopaPnCxType.toString())
                         .addOperationId(completeTransactionRequest.getOperationId())
+                        .addSourceChannel(xPagopaPnSrcCh)
                 )
                 .build().log();
 
@@ -134,7 +136,7 @@ public class AorService extends BaseService {
                 );
     }
 
-    public Mono<StartTransactionResponse> startTransaction(String uid, AorStartTransactionRequest request, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnCxRole) {
+    public Mono<StartTransactionResponse> startTransaction(String uid, String xPagopaPnBaseUrl, AorStartTransactionRequest request, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnCxRole, String xPagopaPnSrcCh) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_AORTRAN)
                 .msg(START_AOR_START_TRANSACTION)
@@ -142,8 +144,10 @@ public class AorService extends BaseService {
                         .addUid(uid)
                         .addCxType(xPagopaPnCxType.toString())
                         .addCxId(xPagopaPnCxId)
+                        .addCxRole(xPagopaPnCxRole)
                         .addOperationId(request.getOperationId())
                         .addRequestFileKey(request.getFileKey())
+                        .addSourceChannel(xPagopaPnSrcCh)
                 )
                 .build()
                 .log();
@@ -182,7 +186,7 @@ public class AorService extends BaseService {
                 .map(data -> {
                     List<DownloadUrl> downloadUrls = getDownloadUrls(data.getUrls());
                     pnRaddAltAuditLog.getContext().addTransactionId(data.getTransactionId()).addDownloadFilekeys(downloadUrls);
-                    return StartTransactionResponseMapper.fromResult(downloadUrls, AOR.name(), data.getOperationId(), pnRaddFsuConfig.getApplicationBasepath(), pnRaddFsuConfig.getDocumentTypeEnumFilter());
+                    return StartTransactionResponseMapper.fromResult(downloadUrls, AOR.name(), data.getOperationId(), xPagopaPnBaseUrl, pnRaddFsuConfig.getDocumentTypeEnumFilter());
                 })
                 .doOnNext(startTransactionResponse -> {
                     pnRaddAltAuditLog.getContext().addResponseStatus(startTransactionResponse.getStatus().toString());
@@ -264,7 +268,7 @@ public class AorService extends BaseService {
     }
 
 
-    public Mono<AbortTransactionResponse> abortTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, AbortTransactionRequest abortTransactionRequest) {
+    public Mono<AbortTransactionResponse> abortTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, AbortTransactionRequest abortTransactionRequest, String xPagopaPnSrcCh) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_AORTRAN)
                 .msg(START_AOR_ABORT_TRANSACTION)
@@ -273,6 +277,7 @@ public class AorService extends BaseService {
                         .addCxType(xPagopaPnCxType.toString())
                         .addCxId(xPagopaPnCxId)
                         .addOperationId(abortTransactionRequest.getOperationId())
+                        .addSourceChannel(xPagopaPnSrcCh)
                 )
                 .build()
                 .log();

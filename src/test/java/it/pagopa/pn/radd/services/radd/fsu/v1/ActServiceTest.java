@@ -122,7 +122,7 @@ class ActServiceTest  {
     @Test
     void testWhenActInquiryHasEmptyRecipientTaxId(){
 
-        Mono<ActInquiryResponse> response = actService.actInquiry("test","", CxTypeAuthFleet.PG,"test","test", "test", "test");
+        Mono<ActInquiryResponse> response = actService.actInquiry("test","", CxTypeAuthFleet.PG,"test","test", "test", "test", null);
         response.onErrorResume( PnInvalidInputException.class, exception ->{
             assertEquals("Recipient Type non valorizzato correttamente", exception.getMessage());
             return Mono.empty();
@@ -133,7 +133,7 @@ class ActServiceTest  {
 
     @Test
     void testWhenAddInquiryHasNoQrCode(){
-        StepVerifier.create(actService.actInquiry("test","", CxTypeAuthFleet.PG,"test","test", "test", "test"))
+        StepVerifier.create(actService.actInquiry("test","", CxTypeAuthFleet.PG,"test","test", "test", "test", null))
                     .expectError(PnInvalidInputException.class).verify();
     }
 
@@ -152,7 +152,7 @@ class ActServiceTest  {
         TransactionData transactionData = new TransactionData();
         transactionData.setQrCode("qrcode");
         transactionData.setIun("iun");
-        StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", startTransactionRequest) )
+        StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", startTransactionRequest) )
                     .expectError(PnInvalidInputException.class).verify();
     }
 
@@ -169,7 +169,7 @@ class ActServiceTest  {
         TransactionData transactionData = new TransactionData();
         transactionData.setQrCode("qrcode");
         transactionData.setIun("iun");
-        StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", startTransactionRequest) )
+        StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", startTransactionRequest) )
                     .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
                                                      "Campo fileKey obbligatorio mancante".equals(throwable.getMessage()))
                     .verify();
@@ -189,7 +189,7 @@ class ActServiceTest  {
         TransactionData transactionData = new TransactionData();
         transactionData.setQrCode("qrcode");
         transactionData.setIun("iun");
-        StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", startTransactionRequest) )
+        StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", startTransactionRequest) )
                     .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
                                                      "Campo versionToken obbligatorio mancante".equals(throwable.getMessage()))
                     .verify();
@@ -208,7 +208,7 @@ class ActServiceTest  {
         TransactionData transactionData = new TransactionData();
         transactionData.setQrCode("qrcode");
         transactionData.setIun("iun");
-        StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD", startTransactionRequest) )
+        StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD", null, "http://localhost", startTransactionRequest) )
                     .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
                                                      "Campo fileKey inaspettato".equals(throwable.getMessage()))
                     .verify();
@@ -227,7 +227,7 @@ class ActServiceTest  {
         TransactionData transactionData = new TransactionData();
         transactionData.setQrCode("qrcode");
         transactionData.setIun("iun");
-        StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD", startTransactionRequest) )
+        StepVerifier.create(actService.startTransaction("id",  "cxId",CxTypeAuthFleet.PG, "RADD", null, "http://localhost", startTransactionRequest) )
                     .expectErrorMatches(throwable -> throwable instanceof PnRaddBadRequestException &&
                                                      "Campo versionToken inaspettato".equals(throwable.getMessage()))
                     .verify();
@@ -240,7 +240,7 @@ class ActServiceTest  {
         startTransactionRequest.setFileKey("fileKey");
         startTransactionRequest.setChecksum("checksum");
         startTransactionRequest.setVersionToken("versionToken");
-        Mono<StartTransactionResponse> response = actService.startTransaction("test", "123", CxTypeAuthFleet.PG, "RADD_UPLOADER", startTransactionRequest);
+        Mono<StartTransactionResponse> response = actService.startTransaction("test", "123", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", startTransactionRequest);
         response.onErrorResume(PnInvalidInputException.class, exception -> {
             log.info("Exception {}", exception.getReason());
             assertEquals("Operation id non valorizzato", exception.getReason());
@@ -250,7 +250,7 @@ class ActServiceTest  {
         startTransactionRequest.setOperationId("TestOperationId");
 
 
-        Mono<StartTransactionResponse> response2 = actService.startTransaction("test", "cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", startTransactionRequest);
+        Mono<StartTransactionResponse> response2 = actService.startTransaction("test", "cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", startTransactionRequest);
         response2.onErrorResume(PnInvalidInputException.class, exception -> {
             assertEquals("Codice fiscale non valorizzato", exception.getReason());
             return Mono.empty();
@@ -258,7 +258,7 @@ class ActServiceTest  {
 
         startTransactionRequest.setRecipientTaxId("abc342psoeo22");
 
-        Mono<StartTransactionResponse> response3 = actService.startTransaction("test","cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", startTransactionRequest);
+        Mono<StartTransactionResponse> response3 = actService.startTransaction("test","cxId",CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", startTransactionRequest);
         response3.onErrorResume(PnInvalidInputException.class, exception -> {
             assertEquals("Né IUN nè QrCode valorizzati", exception.getReason());
             return Mono.empty();
@@ -287,13 +287,13 @@ class ActServiceTest  {
         when(pnRaddFsuConfig.getMaxPrintRequests()).thenReturn(1);
         when(raddTransactionDAOImpl.countFromIunAndStatus(any(),any())).thenReturn(Mono.just(1));
 
-        StartTransactionResponse response = actService.startTransaction("id","cxId",CxTypeAuthFleet.PF, "RADD_UPLOADER", startTransactionRequest).block();
+        StartTransactionResponse response = actService.startTransaction("id","cxId",CxTypeAuthFleet.PF, "RADD_UPLOADER", null, "http://localhost", startTransactionRequest).block();
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isNotNull();
         assertThat(response.getStatus().getCode()).isEqualTo(StartTransactionResponseStatus.CodeEnum.NUMBER_3);
         assertThat(response.getStatus().getMessage()).isEqualTo("Limite di 1 stampa superato");
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=id cxId=cxId cxType=PF operationId=id iun=iun");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Limite di 1 stampa superato - uid=id cxId=cxId cxType=PF operationId=id recipientInternalId=123 iun=iun status=class StartTransactionResponseStatus {\n" +"    code: 3\n" + "    message: Limite di 1 stampa superato\n" + "    retryAfter: null\n" + "}");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=id cxId=cxId cxType=PF cxRole=RADD_UPLOADER operationId=id iun=iun");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Limite di 1 stampa superato - uid=id cxId=cxId cxType=PF cxRole=RADD_UPLOADER operationId=id recipientInternalId=123 iun=iun status=class StartTransactionResponseStatus {\n" +"    code: 3\n" + "    message: Limite di 1 stampa superato\n" + "    retryAfter: null\n" + "}");
     }
 
 
@@ -305,7 +305,7 @@ class ActServiceTest  {
         Mono<RaddTransactionEntity> monoEntity = Mono.just(baseEntity);
         when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(monoEntity);
 
-        CompleteTransactionResponse completeTransactionResponse = actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId").block();
+        CompleteTransactionResponse completeTransactionResponse = actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId", null).block();
         assertNotNull(completeTransactionResponse);
         assertNotNull(completeTransactionResponse.getStatus());
         assertEquals(TransactionResponseStatus.CodeEnum.NUMBER_2, completeTransactionResponse.getStatus().getCode());
@@ -316,13 +316,26 @@ class ActServiceTest  {
     }
 
     @Test
+    void testCompleteTransactionLogsSourceChannel() {
+        baseEntity.setStatus(Const.COMPLETED);
+        when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(baseEntity));
+        CompleteTransactionResponse completeTransactionResponse = actService.completeTransaction("test", completeRequest, CxTypeAuthFleet.valueOf("PF"), "cxId", "B2B").block();
+        assertNotNull(completeTransactionResponse);
+        assertNotNull(completeTransactionResponse.getStatus());
+        assertEquals(TransactionResponseStatus.CodeEnum.NUMBER_2, completeTransactionResponse.getStatus().getCode());
+        assertEquals(ExceptionTypeEnum.TRANSACTION_ALREADY_COMPLETED.getMessage(), completeTransactionResponse.getStatus().getMessage());
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT completeTransaction - uid=test cxId=cxId cxType=PF operationId=operationIdTest sourceChannel=B2B");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT completeTransaction with error La transazione risulta già completa - uid=test cxId=cxId cxType=PF operationId=operationIdTest status=class TransactionResponseStatus {\n"+"    code: 2\n"+"    message: La transazione risulta già completa\n"+"} sourceChannel=B2B");
+    }
+
+    @Test
     void testCompleteWhenTransactionIsAbortedThenReturnNumber2() {
         baseEntity.setStatus(Const.ABORTED);
 
         Mono<RaddTransactionEntity> monoEntity = Mono.just(baseEntity);
         when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(monoEntity);
 
-        CompleteTransactionResponse completeTransactionResponse = actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId").block();
+        CompleteTransactionResponse completeTransactionResponse = actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId", null).block();
         assertNotNull(completeTransactionResponse);
         assertNotNull(completeTransactionResponse.getStatus());
         assertEquals(TransactionResponseStatus.CodeEnum.NUMBER_2, completeTransactionResponse.getStatus().getCode());
@@ -339,7 +352,7 @@ class ActServiceTest  {
         Mono<RaddTransactionEntity> monoEntity = Mono.just(baseEntity);
         when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(monoEntity);
 
-        CompleteTransactionResponse completeTransactionResponse = actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId").block();
+        CompleteTransactionResponse completeTransactionResponse = actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId", null).block();
         assertNotNull(completeTransactionResponse);
         assertNotNull(completeTransactionResponse.getStatus());
         assertEquals(TransactionResponseStatus.CodeEnum.NUMBER_99, completeTransactionResponse.getStatus().getCode());
@@ -361,7 +374,7 @@ class ActServiceTest  {
         when(raddTransactionDAOImpl.updateStatus(any(), any()))
                 .thenReturn(Mono.just(baseEntity));
 
-        actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId")
+        actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId", null)
                   .onErrorResume(PnRaddException.class, exception ->{
                       assertNotNull(exception);
                       return Mono.empty();
@@ -383,7 +396,7 @@ class ActServiceTest  {
         when(raddTransactionDAOImpl.updateStatus(any(), any()))
                 .thenThrow(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_UPDATE_STATUS));
 
-        actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId")
+        actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId", null)
                   .onErrorResume(PnRaddException.class, exception ->{
                       assertNotNull(exception);
                       return Mono.empty();
@@ -401,7 +414,7 @@ class ActServiceTest  {
         completeRequest.setOperationId("OperationIdTestNotExist");
         Mockito.when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any()))
                .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)));
-        CompleteTransactionResponse responseError1 = actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId").block();
+        CompleteTransactionResponse responseError1 = actService.completeTransaction("test", completeRequest,CxTypeAuthFleet.valueOf("PF"), "cxId", null).block();
         assertNotNull(responseError1);
         assertNotNull(responseError1.getStatus());
         assertEquals(TransactionResponseStatus.CodeEnum.NUMBER_1, responseError1.getStatus().getCode());
@@ -414,13 +427,13 @@ class ActServiceTest  {
 
     @Test
     void testAbortTransactionReturnError(){
-        StepVerifier.create(actService.actInquiry("test","", CxTypeAuthFleet.PG,"test","test", "test", "test"))
+        StepVerifier.create(actService.actInquiry("test","", CxTypeAuthFleet.PG,"test","test", "test", "test", null))
                     .expectError(PnInvalidInputException.class).verify();
     }
 
     @Test
     void testWhenAbortTransactionReqNull(){
-        Mono<AbortTransactionResponse> abortTransactionResponse = actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",null);
+        Mono<AbortTransactionResponse> abortTransactionResponse = actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",null, null);
         abortTransactionResponse.onErrorResume( PnInvalidInputException.class, exception ->{
                                                     assertEquals("Alcuni parametri come operazione id o data di operazione non sono valorizzate", exception.getMessage() );
                                                     return Mono.empty();}
@@ -431,7 +444,7 @@ class ActServiceTest  {
     void testActInquiryWhenControlCheckArrResponseError() {
         when(pnDataVaultClient.getEnsureFiscalCode(any(), any())).thenReturn(Mono.just("ABCDEF12G34H567I"));
         when(pnDeliveryClient.getCheckAar(any(), any(), any())).thenReturn(Mono.just(new ResponseCheckAarDtoDto()));
-        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "").block();
+        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "", null).block();
         assertNotNull(monoResponse);
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
@@ -441,9 +454,22 @@ class ActServiceTest  {
     }
 
     @Test
+    void testActInquiryLogsSourceChannel() {
+        when(pnDataVaultClient.getEnsureFiscalCode(any(), any())).thenReturn(Mono.just("ABCDEF12G34H567I"));
+        when(pnDeliveryClient.getCheckAar(any(), any(), any())).thenReturn(Mono.just(new ResponseCheckAarDtoDto()));
+        ActInquiryResponse monoResponse = actService.actInquiry("test", "123", CxTypeAuthFleet.PF, "test", "PF", "test", "", "B2B").block();
+        assertNotNull(monoResponse);
+        assertNotNull(monoResponse.getResult());
+        assertEquals(false, monoResponse.getResult());
+        assertEquals(ExceptionTypeEnum.IUN_NOT_FOUND.getMessage(), monoResponse.getStatus().getMessage());
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTINQUIRY] BEFORE - Start ACT Inquiry - uid=test cxId=123 cxType=PF taxCode=test iun= sourceChannel=B2B");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTINQUIRY] FAILURE - End ACT Inquiry with error Iun not found with params - uid=test cxId=123 cxType=PF taxCode=test recipientInternalId=ABCDEF12G34H567I iun= status=class ActInquiryResponseStatus {\n"+"    code: 99\n"+"    message: Iun not found with params\n"+"} sourceChannel=B2B");
+    }
+
+    @Test
     void testActInquiryWhenDataVaultCallFails() {
         when(pnDataVaultClient.getEnsureFiscalCode(any(), any())).thenReturn(Mono.error(new PnRaddException(WebClientResponseException.create(500, "Internal server Error", null, null, null, null))));
-        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "").block();
+        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "", null).block();
         assertNotNull(monoResponse);
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
@@ -462,7 +488,7 @@ class ActServiceTest  {
         when(pnRaddFsuConfig.getMaxPrintRequests()).thenReturn(0);
 
         when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.just(new CancellationRequestResponseDto()));
-        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "").block();
+        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "", null).block();
         assertNotNull(monoResponse);
         assertNotNull(monoResponse.getResult());
         assertEquals(false, monoResponse.getResult());
@@ -486,7 +512,7 @@ class ActServiceTest  {
         sentNotificationV23Dto.setDocumentsAvailable(false);
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV23Dto));
 
-        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "").block();
+        ActInquiryResponse monoResponse = actService.actInquiry("test","123", CxTypeAuthFleet.PF,"test","PF", "test", "", null).block();
 
         assertNotNull(monoResponse);
         assertNotNull(monoResponse.getResult());
@@ -498,7 +524,7 @@ class ActServiceTest  {
 
     @Test
     void testActInquiryWhenRequestIsEmpty() {
-        actService.completeTransaction("test", new CompleteTransactionRequest(),CxTypeAuthFleet.valueOf("PF"), "cxId")
+        actService.completeTransaction("test", new CompleteTransactionRequest(),CxTypeAuthFleet.valueOf("PF"), "cxId", null)
                   .onErrorResume(PnInvalidInputException.class, exception ->{
                                      assertEquals("Operation id non valorizzato", exception.getMessage() );
                                      return Mono.empty();}
@@ -508,7 +534,7 @@ class ActServiceTest  {
 
     @Test
     void testAbortTransactionReqNull (){
-        actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",null)
+        actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",null, null)
                   .onErrorResume(PnInvalidInputException.class, exception ->{
                       assertNotNull(exception);
                       return Mono.empty();
@@ -516,7 +542,7 @@ class ActServiceTest  {
 
         AbortTransactionRequest request = new AbortTransactionRequest();
         request.setOperationId(null);
-        actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",request)
+        actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",request, null)
                   .onErrorResume(PnInvalidInputException.class, exception ->{
                       assertNotNull(exception);
                       return Mono.empty();
@@ -524,7 +550,7 @@ class ActServiceTest  {
 
         request.setOperationId("Id");
         request.setReason(null);
-        actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",request)
+        actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"),"cxId",request, null)
                   .onErrorResume(PnInvalidInputException.class, exception ->{
                       assertNotNull(exception);
                       return Mono.empty();
@@ -546,12 +572,30 @@ class ActServiceTest  {
         when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(entity));
         when( raddTransactionDAOImpl.updateStatus(any(), any())).thenReturn(Mono.just(entity));
 
-        AbortTransactionResponse response = actService.abortTransaction("test",CxTypeAuthFleet.valueOf("PF"),"cxId" ,request).block();
+        AbortTransactionResponse response = actService.abortTransaction("test",CxTypeAuthFleet.valueOf("PF"),"cxId" ,request, null).block();
         assertNotNull(response);
         assertNotNull(response.getStatus());
         assertEquals(TransactionResponseStatus.CodeEnum.NUMBER_0, response.getStatus().getCode());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT abortTransaction - uid=test cxId=cxId cxType=PF operationId=Id");
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] SUCCESS - End ACT abortTransaction - uid=test cxId=cxId cxType=PF operationId=Id status=class TransactionResponseStatus {\n"+"    code: 0\n"+"    message: OK\n"+"}");
+    }
+
+    @Test
+    void testAbortTransactionLogsSourceChannel() {
+        AbortTransactionRequest request = new AbortTransactionRequest();
+        request.setOperationId("Id");
+        request.setReason("reason");
+        request.setOperationDate(new Date());
+        RaddTransactionEntity entity = new RaddTransactionEntity();
+        entity.setStatus(Const.STARTED);
+        when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(entity));
+        when(raddTransactionDAOImpl.updateStatus(any(), any())).thenReturn(Mono.just(entity));
+        AbortTransactionResponse response = actService.abortTransaction("test", CxTypeAuthFleet.valueOf("PF"), "cxId", request, "B2B").block();
+        assertNotNull(response);
+        assertNotNull(response.getStatus());
+        assertEquals(TransactionResponseStatus.CodeEnum.NUMBER_0, response.getStatus().getCode());
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT abortTransaction - uid=test cxId=cxId cxType=PF operationId=Id sourceChannel=B2B");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] SUCCESS - End ACT abortTransaction - uid=test cxId=cxId cxType=PF operationId=Id status=class TransactionResponseStatus {\n"+"    code: 0\n"+"    message: OK\n"+"} sourceChannel=B2B");
     }
 
     @Test
@@ -564,7 +608,7 @@ class ActServiceTest  {
         entity.setStatus(Const.STARTED);
         when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(entity));
         when( raddTransactionDAOImpl.updateStatus(any(), any())).thenThrow(new RaddGenericException(ExceptionTypeEnum.GENERIC_ERROR));
-        actService.abortTransaction("test",CxTypeAuthFleet.valueOf("PF"),"cxId" ,request)
+        actService.abortTransaction("test",CxTypeAuthFleet.valueOf("PF"),"cxId" ,request, null)
                   .onErrorResume(RaddGenericException.class, exception ->{
                       assertNotNull(exception);
                       return Mono.empty();

@@ -7,12 +7,15 @@ import it.pagopa.pn.radd.utils.Utils;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.util.StringUtils;
+
 import static it.pagopa.pn.commons.utils.LogUtils.maskTaxId;
 
 public class PnRaddAltLogContext {
     private String uid = "";
     private String cxId = "";
     private String cxType = "";
+    private String cxRole = "";
     private String recipientInternalId = "";
     private String delegateInternalId = "";
     private String transactionId = "";
@@ -25,6 +28,7 @@ public class PnRaddAltLogContext {
     private String iuns = "";
     private String aarFilekeys = "";
     private String taxCode = "";
+    private String sourceChannel = "";
 
     public PnRaddAltLogContext addUid(String uid) {
         this.uid = "uid=%s ".formatted(uid);
@@ -38,6 +42,13 @@ public class PnRaddAltLogContext {
 
     public PnRaddAltLogContext addCxType(String cxType) {
         this.cxType = "cxType=%s ".formatted(cxType);
+        return this;
+    }
+
+    public PnRaddAltLogContext addCxRole(String cxRole) {
+        if (StringUtils.hasText(cxRole)) {
+            this.cxRole = "cxRole=%s ".formatted(cxRole);
+        }
         return this;
     }
 
@@ -107,9 +118,16 @@ public class PnRaddAltLogContext {
         return this;
     }
 
+    public PnRaddAltLogContext addSourceChannel(String sourceChannel) {
+        if (StringUtils.hasText(sourceChannel)) {
+            this.sourceChannel = "sourceChannel=%s ".formatted(sourceChannel);
+        }
+        return this;
+    }
+
     public String logContext() {
-        String context = uid + cxId + cxType + taxCode + operationId + transactionId + recipientInternalId + delegateInternalId + requestFileKey
-                + iun + downloadedFilekeys + aarFilekeys + iuns + result + status;
+        String context = uid + cxId + cxType + cxRole + taxCode + operationId + transactionId + recipientInternalId + delegateInternalId + requestFileKey
+                + iun + downloadedFilekeys + aarFilekeys + iuns + result + status + sourceChannel;
         return context.trim();
     }
 
