@@ -760,7 +760,10 @@ Resources:
   RaddPrivateProxyLambdaTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Condition: IsRaddPrivateProxyEnabled
+    DependsOn:
+      - RaddPrivateProxyLambdaInvokePermission
     Properties:
+      Name: !Sub '${ProjectName}-rpp-lambda-tg'
       TargetType: lambda
       Targets:
         - Id: !Ref RaddPrivateProxyLambdaVersionAlias
@@ -777,7 +780,7 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: elasticloadbalancing.amazonaws.com
       SourceAccount: !Ref AWS::AccountId
-      SourceArn: !Ref RaddPrivateProxyLambdaTargetGroup
+      SourceArn: !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/${ProjectName}-rpp-lambda-tg/*'
 
   RaddPrivateProxyListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
