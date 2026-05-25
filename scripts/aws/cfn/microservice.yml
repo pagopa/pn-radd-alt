@@ -513,10 +513,35 @@ Parameters:
     Default: 8000
     Description: Duration alarm threshold in milliseconds for the RADD private proxy Lambda
 
+  RaddPrivateProxyDurationAlarmPeriod:
+    Type: Number
+    Default: 60
+    Description: Period in seconds for the RADD private proxy Lambda duration alarm
+
+  RaddPrivateProxyDurationAlarmEvaluationPeriods:
+    Type: Number
+    Default: 1
+    Description: Evaluation periods for the RADD private proxy Lambda duration alarm
+
+  RaddPrivateProxyDurationAlarmDatapointsToAlarm:
+    Type: Number
+    Default: 1
+    Description: Datapoints to alarm for the RADD private proxy Lambda duration alarm
+
   RaddPrivateProxyLogAlarmEvaluationPeriods:
     Type: Number
     Default: 1
     Description: Evaluation periods for RADD private proxy log metric alarms
+
+  RaddPrivateProxyRejectedPathAlarmThreshold:
+    Type: Number
+    Default: 1
+    Description: Threshold for the RADD private proxy rejected path alarm
+
+  RaddPrivateProxyRejectedPathAlarmDatapointsToAlarm:
+    Type: Number
+    Default: 1
+    Description: Datapoints to alarm for the RADD private proxy rejected path alarm
 
 Conditions:
   IsImportLocationsBlocked: !Equals [!Ref BlockImportLocations, 'true']
@@ -822,9 +847,9 @@ Resources:
         - Name: FunctionName
           Value: !Ref RaddPrivateProxyLambda
       Statistic: Maximum
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
+      Period: !Ref RaddPrivateProxyDurationAlarmPeriod
+      EvaluationPeriods: !Ref RaddPrivateProxyDurationAlarmEvaluationPeriods
+      DatapointsToAlarm: !Ref RaddPrivateProxyDurationAlarmDatapointsToAlarm
       Threshold: !Ref RaddPrivateProxyDurationAlarmThreshold
       ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
@@ -841,9 +866,9 @@ Resources:
         MetricNamespace: !Ref MetricNamespace
         LogGroupName: !Sub "/aws/lambda/${RaddPrivateProxyLambdaName}"
         FilterPattern: '"RADD private proxy rejected path"'
-        Threshold: 1
+        Threshold: !Ref RaddPrivateProxyRejectedPathAlarmThreshold
         EvaluationPeriods: !Ref RaddPrivateProxyLogAlarmEvaluationPeriods
-        DatapointsToAlarm: 1
+        DatapointsToAlarm: !Ref RaddPrivateProxyRejectedPathAlarmDatapointsToAlarm
         ComparisonOperator: GreaterThanOrEqualToThreshold
         Statistic: Sum
         HasAlarm: true

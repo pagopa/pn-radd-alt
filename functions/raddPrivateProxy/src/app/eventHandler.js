@@ -177,19 +177,23 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
       const responseBuffer = Buffer.from(await backendResponse.arrayBuffer());
       const contentType = responseHeaders["content-type"]?.[0] || "";
       const textualResponse = isTextualResponse(contentType);
+      const responseStatusCode = backendResponse.status;
+      const responseStatusText = backendResponse.statusText;
+      const responseIsBase64Encoded = !textualResponse;
+      const responseBody = textualResponse ? responseBuffer.toString("utf8") : responseBuffer.toString("base64");
 
       console.log("RADD private proxy forwarded request", {
         method,
         path,
-        statusCode: backendResponse.status
+        statusCode: responseStatusCode
       });
 
       return buildAlbResponse(
-        backendResponse.status,
-        textualResponse ? responseBuffer.toString("utf8") : responseBuffer.toString("base64"),
+        responseStatusCode,
+        responseBody,
         responseHeaders,
-        !textualResponse,
-        backendResponse.statusText
+        responseIsBase64Encoded,
+        responseStatusText
       );
     } catch (err) {
       logError("RADD private proxy backend forward failed", err, { path });

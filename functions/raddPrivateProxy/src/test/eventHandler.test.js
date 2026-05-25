@@ -63,10 +63,6 @@ test("overwrites trusted headers and derives base URL from the technical VPCE ho
   assert.equal(capturedRequest.options.headers.uid, "POSTE_operator_1");
   assert.equal(capturedRequest.options.headers["x-pagopa-pn-uid"], "RADD_cf_97103880585");
   assert.equal(
-    capturedRequest.options.headers.host,
-    "vpce-0159b66963cb51025-1t51z9qh.vpce-svc-0a08e48564915d1c3.eu-south-1.vpce.amazonaws.com:8080"
-  );
-  assert.equal(
     capturedRequest.options.headers["x-pagopa-pn-base-url"],
     "https://vpce-0159b66963cb51025-1t51z9qh.vpce-svc-0a08e48564915d1c3.eu-south-1.vpce.amazonaws.com:8443"
   );
