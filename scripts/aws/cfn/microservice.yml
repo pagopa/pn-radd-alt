@@ -439,14 +439,6 @@ Parameters:
     Description: 'AWS region code for Geoplaces client'
 
   # RADD private proxy Lambda parameters
-  RaddPrivateProxyEnabled:
-    Type: String
-    Default: 'false'
-    AllowedValues:
-      - 'true'
-      - 'false'
-    Description: Enable RADD PrivateLink Lambda proxy resources
-
   RaddPrivateProxyAlbListenerArn:
     Type: String
     Default: ''
@@ -528,7 +520,6 @@ Parameters:
 
 Conditions:
   IsImportLocationsBlocked: !Equals [!Ref BlockImportLocations, 'true']
-  IsRaddPrivateProxyEnabled: !Equals [!Ref RaddPrivateProxyEnabled, 'true']
   HasRaddPrivateProxyListenerPathPrefix: !Not [!Equals [!Ref RaddPrivateProxyListenerPathPrefix, '']]
 
 Resources:
@@ -681,7 +672,6 @@ Resources:
 
   RaddPrivateProxyLambdaSecGroup:
     Type: AWS::EC2::SecurityGroup
-    Condition: IsRaddPrivateProxyEnabled
     Properties:
       GroupDescription: !Sub '${ProjectName}-radd-alt-private-proxy-sec-group'
       VpcId: !Ref VpcId
@@ -696,7 +686,6 @@ Resources:
 
   RaddPrivateProxyLambdaExecutionRole:
     Type: AWS::IAM::Role
-    Condition: IsRaddPrivateProxyEnabled
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -713,7 +702,6 @@ Resources:
 
   RaddPrivateProxyLambda:
     Type: AWS::Lambda::Function
-    Condition: IsRaddPrivateProxyEnabled
     Properties:
       FunctionName: !Ref RaddPrivateProxyLambdaName
       Runtime: !Ref RaddPrivateProxyLambdaRuntime
@@ -743,13 +731,11 @@ Resources:
   # A new version at each deploy, with provisioned concurrency set.
   RaddPrivateProxyLambdaVersionPnPlaceholderEpochSeconds:
     Type: AWS::Lambda::Version
-    Condition: IsRaddPrivateProxyEnabled
     Properties:
       FunctionName: !Ref RaddPrivateProxyLambda
 
   RaddPrivateProxyLambdaVersionAlias:
     Type: AWS::Lambda::Alias
-    Condition: IsRaddPrivateProxyEnabled
     Properties:
       FunctionName: !Ref RaddPrivateProxyLambda
       FunctionVersion: !GetAtt RaddPrivateProxyLambdaVersionPnPlaceholderEpochSeconds.Version
@@ -759,7 +745,6 @@ Resources:
 
   RaddPrivateProxyLambdaTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Condition: IsRaddPrivateProxyEnabled
     DependsOn:
       - RaddPrivateProxyLambdaInvokePermission
     Properties:
@@ -774,7 +759,6 @@ Resources:
 
   RaddPrivateProxyLambdaInvokePermission:
     Type: AWS::Lambda::Permission
-    Condition: IsRaddPrivateProxyEnabled
     Properties:
       FunctionName: !Ref RaddPrivateProxyLambdaVersionAlias
       Action: lambda:InvokeFunction
@@ -784,7 +768,6 @@ Resources:
 
   RaddPrivateProxyListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Condition: IsRaddPrivateProxyEnabled
     DependsOn:
       - RaddPrivateProxyLambdaInvokePermission
     Properties:
@@ -804,7 +787,6 @@ Resources:
 
   RaddPrivateProxyLambdaAlarms:
     Type: AWS::CloudFormation::Stack
-    Condition: IsRaddPrivateProxyEnabled
     Properties:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/lambda-alarms.yaml"
       Parameters:
@@ -813,7 +795,6 @@ Resources:
 
   RaddPrivateProxyLambdaThrottlesAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: IsRaddPrivateProxyEnabled
     Properties:
       AlarmDescription: !Sub '${ProjectName}-radd-alt-private-proxy Lambda throttles'
       Namespace: AWS/Lambda
@@ -833,7 +814,6 @@ Resources:
 
   RaddPrivateProxyLambdaDurationAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: IsRaddPrivateProxyEnabled
     Properties:
       AlarmDescription: !Sub '${ProjectName}-radd-alt-private-proxy Lambda duration'
       Namespace: AWS/Lambda
@@ -853,7 +833,6 @@ Resources:
 
   RaddPrivateProxyRejectedPathAlarm:
     Type: AWS::CloudFormation::Stack
-    Condition: IsRaddPrivateProxyEnabled
     Properties:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/custom-metric.yaml"
       Parameters:

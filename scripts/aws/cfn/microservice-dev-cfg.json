@@ -30,7 +30,6 @@
     "BlockImportLocations": "false",
     "AwsGeoRegionCode": "eu-central-1",
     "DocumentPageCountEnabled": "false",
-    "RaddPrivateProxyEnabled": "true",
     "RaddPrivateProxyRulePriority": "45000",
     "RaddPrivateProxyAllowedPathPrefix": "/radd-net/api/v1/act/, /radd-net/api/v1/aor/, /radd-net/api/v1/download/",
     "RaddPrivateProxyListenerPathPrefix": "/radd-net/",
