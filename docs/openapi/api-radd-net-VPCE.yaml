@@ -218,7 +218,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AORInquiryResponse'
+                $ref: '#/components/schemas/AorInquiryResponse'
         '400':
           $ref: '#/components/responses/Invalid'
         '403':
@@ -435,7 +435,7 @@ components:
         status:
           $ref: '#/components/schemas/ActInquiryResponseStatus'
 
-    AORInquiryResponse:
+    AorInquiryResponse:
       description: Response di verifica presenza AAR.
       type: object
       properties:
@@ -568,7 +568,8 @@ components:
             Return code.
             * 0 -> OK
             * 99 -> KO
-          type: number
+          type: integer
+          format: int32
           enum: [0, 99]
         message:
           type: string
@@ -591,11 +592,13 @@ components:
                 * 10 -> Input non valido
                 * 80 -> Notifica annullata dalla PA
                 * 99 -> KO
-              type: number
+              type: integer
+              format: int32
               enum: [0, 2, 3, 4, 5, 10, 80, 99]
             retryAfter:
               description: Tempo, espresso in ms comunicato al chiamante, trascorso il quale e' possibile effettuare un nuovo tentativo di avvio della transazione.
-              type: number
+              type: integer
+              format: int64
               example: 670
 
     TransactionResponseStatus:
@@ -611,7 +614,8 @@ components:
                 * 1 -> Transazione inesistente
                 * 2 -> Transazione gia' completata
                 * 99 -> KO
-              type: number
+              type: integer
+              format: int32
               enum: [0, 1, 2, 99]
 
     ActInquiryResponseStatus:
@@ -630,7 +634,8 @@ components:
                 * 10 -> Input non valido
                 * 80 -> Notifica annullata dalla PA
                 * 99 -> KO generico
-              type: number
+              type: integer
+              format: int32
               enum: [0, 2, 3, 4, 10, 80, 99]
 
     ErrorResponse:
@@ -641,7 +646,8 @@ components:
           type: string
           description: descrizione tipologia errore
         status:
-          type: number
+          type: integer
+          format: int32
           description: codice http dell'errore
         title:
           type: string
@@ -663,7 +669,7 @@ components:
 
   parameters:
     uid:
-      name: uid
+      name: UID
       description: Identificativo pseudo-anonimizzato dell'operatore RADD nel formato frazionario-pdl-timestamp.
       in: header
       required: true
