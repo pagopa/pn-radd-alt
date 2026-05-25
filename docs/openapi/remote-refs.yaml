@@ -18,3 +18,7 @@ components:
       $ref: 'https://raw.githubusercontent.com/pagopa/pn-auth-fleet/b74db2aba34f1586512f370380c7e13215644b21/docs/openapi/authenticationParameters-v1.yaml#/components/parameters/cxGroupsAuthFleet'
     uidAuthFleet:
       $ref: 'https://raw.githubusercontent.com/pagopa/pn-auth-fleet/b74db2aba34f1586512f370380c7e13215644b21/docs/openapi/authenticationParameters-v1.yaml#/components/parameters/uidAuthFleet'
+    headerSourceChannel:
+      $ref: 'https://raw.githubusercontent.com/pagopa/pn-auth-fleet/5ac01898e48958909bd92f1976fc30f22cb658d5/docs/openapi/authenticationParameters-v1.yaml#/components/parameters/headerSourceChannel'
+    headerBaseUrl:
+      $ref: 'https://raw.githubusercontent.com/pagopa/pn-auth-fleet/4ea9b1427232c4eef2d34b59999999093f8b0a33/docs/openapi/authenticationParameters-v1.yaml#/components/parameters/headerBaseUrl'

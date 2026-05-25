@@ -102,7 +102,7 @@ class DocumentOperationsServiceTest {
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV21Dto));
         when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
 
-        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null, "WEB"))
                 .expectNext(responseHex)
                 .verifyComplete();
 
@@ -134,7 +134,7 @@ class DocumentOperationsServiceTest {
             fail("Invalid failOn value");
         }
 
-        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null, "WEB"))
                 .expectErrorMatches(throwable -> throwable instanceof RaddGenericException e &&
                         e.getExceptionType() == TRANSACTION_NOT_EXIST)
                 .verify();
@@ -160,7 +160,7 @@ class DocumentOperationsServiceTest {
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
         when(documentDownloadClient.downloadContent(any())).thenReturn(Mono.just(zipFile));
 
-        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", "123"))
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", "123", "WEB"))
                 .expectNextMatches(res -> Arrays.equals(res, responseHex))
                 .verifyComplete();
     }
@@ -191,7 +191,7 @@ class DocumentOperationsServiceTest {
         when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
         when(operationsIunsDAO.getAllIunsFromTransactionId(any())).thenReturn(Flux.just(operationsIunsEntity));
 
-        StepVerifier.create(documentOperationsService.documentDownload("AOR", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+        StepVerifier.create(documentOperationsService.documentDownload("AOR", "ACT", CxTypeAuthFleet.PF, "cxId", null, "WEB"))
                 .expectNext(responseHex)
                 .verifyComplete();
 
@@ -220,7 +220,7 @@ class DocumentOperationsServiceTest {
         }
         when(operationsIunsDAO.getAllIunsFromTransactionId(any())).thenReturn(Flux.fromIterable(operationsIunsEntities));
 
-        StepVerifier.create(documentOperationsService.documentDownload("AOR", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+        StepVerifier.create(documentOperationsService.documentDownload("AOR", "ACT", CxTypeAuthFleet.PF, "cxId", null, "WEB"))
                 .expectNext(responseHex)
                 .verifyComplete();
 
@@ -358,7 +358,7 @@ class DocumentOperationsServiceTest {
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV25Dto));
         when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
 
-        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null, "WEB"))
                 .expectNext(responseHex)
                 .verifyComplete();
 
@@ -396,7 +396,7 @@ class DocumentOperationsServiceTest {
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV25Dto));
         when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
 
-        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null, "WEB"))
                     .expectNext(responseHex)
                     .verifyComplete();
 
@@ -426,7 +426,7 @@ class DocumentOperationsServiceTest {
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV25Dto));
         when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
 
-        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null, "WEB"))
                 .expectNext(responseHex)
                 .verifyComplete();
 
@@ -460,7 +460,7 @@ class DocumentOperationsServiceTest {
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV25Dto));
         when(pdfGenerator.generateCoverFile(any(), any())).thenReturn(response);
 
-        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", null, "WEB"))
                 .expectNext(responseHex)
                 .verifyComplete();
 
@@ -489,7 +489,7 @@ class DocumentOperationsServiceTest {
         when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationV21Dto));
         when(operationsIunsDAO.getAllIunsFromTransactionId(any())).thenReturn(Flux.just(operationsIunsEntity));
 
-        StepVerifier.create(documentOperationsService.documentDownload("AOR", "ACT", CxTypeAuthFleet.PF, "cxId", null))
+        StepVerifier.create(documentOperationsService.documentDownload("AOR", "ACT", CxTypeAuthFleet.PF, "cxId", null, "WEB"))
                 .expectError(RaddGenericException.class)
                 .verify();
 
@@ -517,7 +517,7 @@ class DocumentOperationsServiceTest {
         notificationRecipientV21Dto.setDenomination("denomination");
         sentNotificationV21Dto.setRecipients(List.of(notificationRecipientV21Dto));
 
-        StepVerifier.create(documentOperationsService.documentDownload("", "ACT", CxTypeAuthFleet.PF, "cxId", "123"))
+        StepVerifier.create(documentOperationsService.documentDownload("", "ACT", CxTypeAuthFleet.PF, "cxId", "123", "WEB"))
                 .expectError(PnInvalidInputException.class)
                 .verify();
 
@@ -535,7 +535,7 @@ class DocumentOperationsServiceTest {
         notificationRecipientV21Dto.setDenomination("denomination");
         sentNotificationV21Dto.setRecipients(List.of(notificationRecipientV21Dto));
 
-        StepVerifier.create(documentOperationsService.documentDownload("ACT", "", CxTypeAuthFleet.PF, "cxId", "123"))
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "", CxTypeAuthFleet.PF, "cxId", "123", "WEB"))
                 .expectError(PnInvalidInputException.class)
                 .verify();
 
@@ -554,7 +554,7 @@ class DocumentOperationsServiceTest {
         sentNotificationV21Dto.setRecipients(List.of(notificationRecipientV21Dto));
 
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
-        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", "123"))
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", "123", "WEB"))
                 .expectError(TransactionAlreadyExistsException.class)
                 .verify();
 
@@ -573,7 +573,7 @@ class DocumentOperationsServiceTest {
         sentNotificationV21Dto.setRecipients(List.of(notificationRecipientV21Dto));
 
         when(raddTransactionDAOImpl.getTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
-        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", "123"))
+        StepVerifier.create(documentOperationsService.documentDownload("ACT", "ACT", CxTypeAuthFleet.PF, "cxId", "123", "WEB"))
                 .expectError(RaddGenericException.class)
                 .verify();
 
@@ -586,7 +586,7 @@ class DocumentOperationsServiceTest {
         Mockito.when(pnSafeStorageClient.createFile( any(), any())
         ).thenReturn(Mono.error( new RaddGenericException(DOCUMENT_UPLOAD_ERROR)));
         when(pnRaddFsuConfig.getSafeStorageDocType()).thenReturn("test");
-        Mono<DocumentUploadResponse> response = documentOperationsService.createFile(Mono.just(bundleId),String.valueOf(RaddRole.RADD_UPLOADER));
+        Mono<DocumentUploadResponse> response = documentOperationsService.createFile(Mono.just(bundleId),String.valueOf(RaddRole.RADD_UPLOADER), "WEB");
         response.onErrorResume(ex ->{
             if (ex instanceof RaddGenericException){
                 log.info(((RaddGenericException) ex).getExceptionType().getMessage());
@@ -609,7 +609,7 @@ class DocumentOperationsServiceTest {
         when(pnRaddFsuConfig.getSafeStorageDocType()).thenReturn("test");
         Mockito.when(pnSafeStorageClient.createFile(Mockito.any(), Mockito.any())
         ).thenReturn( Mono.just(fileCreationResponseDto) );
-        DocumentUploadResponse response = documentOperationsService.createFile(Mono.just(bundleId),String.valueOf(RaddRole.RADD_UPLOADER)).block();
+        DocumentUploadResponse response = documentOperationsService.createFile(Mono.just(bundleId),String.valueOf(RaddRole.RADD_UPLOADER), "WEB").block();
         assertNotNull(response);
         assertEquals(ResponseStatus.CodeEnum.NUMBER_0, response.getStatus().getCode());
     }
@@ -617,7 +617,7 @@ class DocumentOperationsServiceTest {
     @Test
     void testWhenRequestIsNull(){
 
-        Mono <DocumentUploadResponse> response = documentOperationsService.createFile(null, String.valueOf(RaddRole.RADD_UPLOADER));
+        Mono <DocumentUploadResponse> response = documentOperationsService.createFile(null, String.valueOf(RaddRole.RADD_UPLOADER), "WEB");
         response.onErrorResume( PnInvalidInputException.class, exception ->{
             assertEquals("Body non valido", exception.getMessage());
             return Mono.empty();
@@ -628,12 +628,12 @@ class DocumentOperationsServiceTest {
     @Test
     void testWhenRoleIsInvalidThenThrowsException(){
         DocumentUploadRequest bundleId = new DocumentUploadRequest() ;
-        assertThrows(PnRaddForbiddenException.class, () -> documentOperationsService.createFile(Mono.just(bundleId), String.valueOf(RaddRole.RADD_STANDARD)));
+        assertThrows(PnRaddForbiddenException.class, () -> documentOperationsService.createFile(Mono.just(bundleId), String.valueOf(RaddRole.RADD_STANDARD), "WEB"));
     }
     @Test
     void testWhenRoleIsNullThenThrowsException(){
         DocumentUploadRequest bundleId = new DocumentUploadRequest() ;
-        assertThrows(PnRaddForbiddenException.class, () -> documentOperationsService.createFile(Mono.just(bundleId), null));
+        assertThrows(PnRaddForbiddenException.class, () -> documentOperationsService.createFile(Mono.just(bundleId), null, "WEB"));
     }
 
 }

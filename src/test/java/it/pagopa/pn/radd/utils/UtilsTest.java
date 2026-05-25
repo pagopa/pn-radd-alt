@@ -3,9 +3,14 @@ package it.pagopa.pn.radd.utils;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.DownloadUrl;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
+import it.pagopa.pn.radd.exception.RaddGenericException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.http.HttpStatus;
+import reactor.test.StepVerifier;
 
 import java.util.UUID;
 
@@ -99,6 +104,23 @@ class UtilsTest {
     @Test
     void matchRegex_shouldNotThrow_whenMatchIsValid() {
         assertDoesNotThrow(() -> Utils.matchRegex("[0-9]{3}", "123", ExceptionTypeEnum.GENERIC_ERROR));
+    }
+
+    @Test
+    void requireBaseUrl_validValue_shouldEmitValue() {
+        StepVerifier.create(Utils.requireBaseUrl("https://example.com"))
+                .expectNext("https://example.com")
+                .verifyComplete();
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"", "   "})
+    void requireBaseUrl_invalidValue_shouldEmitInternalServerError(String value) {
+        StepVerifier.create(Utils.requireBaseUrl(value))
+                .expectErrorMatches(ex -> ex instanceof RaddGenericException
+                        && ((RaddGenericException) ex).getStatus() == HttpStatus.INTERNAL_SERVER_ERROR)
+                .verify();
     }
 
 }
