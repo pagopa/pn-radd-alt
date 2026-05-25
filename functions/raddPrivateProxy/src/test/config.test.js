@@ -18,7 +18,7 @@ test("parseRuntimeConfig parses and normalizes runtime configuration", () => {
     RADD_PRIVATE_PROXY_EXTERNAL_PORT: "8443",
     RADD_PRIVATE_PROXY_TRUSTED_HEADERS: JSON.stringify({
       "X-PAGOPA-PN-SRC-CH": "RADD",
-      uid: "RADD_cf_97103880585",
+      "x-pagopa-pn-uid": "RADD_cf_97103880585",
       empty: ""
     }),
     RADD_PRIVATE_PROXY_VERBOSE_LOGGING: "true"
@@ -31,7 +31,7 @@ test("parseRuntimeConfig parses and normalizes runtime configuration", () => {
     baseUrlProtocol: "https",
     trustedHeaders: {
       "x-pagopa-pn-src-ch": "RADD",
-      uid: "RADD_cf_97103880585"
+      "x-pagopa-pn-uid": "RADD_cf_97103880585"
     },
     verboseLogging: true
   });

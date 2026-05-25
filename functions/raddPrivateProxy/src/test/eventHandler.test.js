@@ -8,7 +8,6 @@ const trustedHeaders = {
   "x-pagopa-pn-cx-type": "RADD",
   "x-pagopa-pn-cx-role": "RADD_UPLOADER",
   "x-pagopa-pn-cx-id": "97103880585",
-  "uid": "RADD_cf_97103880585",
   "x-pagopa-pn-uid": "RADD_cf_97103880585",
   "x-pagopa-pn-cx-groups": ""
 };
@@ -29,6 +28,7 @@ function buildEvent(overrides = {}) {
     headers: {
       host: "vpce-0159b66963cb51025-1t51z9qh.vpce-svc-0a08e48564915d1c3.eu-south-1.vpce.amazonaws.com:8080",
       "content-type": "application/json",
+      uid: "POSTE_operator_1",
       "x-pagopa-pn-src-ch": "SPOOFED"
     },
     queryStringParameters: {
@@ -60,7 +60,8 @@ test("overwrites trusted headers and derives base URL from the technical VPCE ho
   assert.equal(capturedRequest.url, "http://internal-alb:8080/radd-net/api/v1/act/inquiry?iun=ABC");
   assert.equal(capturedRequest.options.headers["x-pagopa-pn-src-ch"], "RADD");
   assert.equal(capturedRequest.options.headers["x-pagopa-pn-cx-id"], "97103880585");
-  assert.equal(capturedRequest.options.headers.uid, "RADD_cf_97103880585");
+  assert.equal(capturedRequest.options.headers.uid, "POSTE_operator_1");
+  assert.equal(capturedRequest.options.headers["x-pagopa-pn-uid"], "RADD_cf_97103880585");
   assert.equal(
     capturedRequest.options.headers["x-pagopa-pn-base-url"],
     "https://vpce-0159b66963cb51025-1t51z9qh.vpce-svc-0a08e48564915d1c3.eu-south-1.vpce.amazonaws.com:8443"

@@ -53,7 +53,7 @@ test("buildForwardHeaders removes hop-by-hop and spoofed trusted headers", () =>
     {
       trustedHeaders: {
         "x-pagopa-pn-src-ch": "RADD",
-        uid: "RADD_cf_97103880585"
+        "x-pagopa-pn-uid": "RADD_cf_97103880585"
       }
     },
     "https://vpce.example:8443"
@@ -62,7 +62,7 @@ test("buildForwardHeaders removes hop-by-hop and spoofed trusted headers", () =>
   assert.deepEqual(forwardHeaders, {
     "x-extra-header": "extra",
     "x-pagopa-pn-src-ch": "RADD",
-    uid: "RADD_cf_97103880585",
+    "x-pagopa-pn-uid": "RADD_cf_97103880585",
     "x-pagopa-pn-base-url": "https://vpce.example:8443"
   });
 });
