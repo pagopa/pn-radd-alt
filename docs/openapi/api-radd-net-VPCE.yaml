@@ -669,7 +669,7 @@ components:
 
   parameters:
     uid:
-      name: UID
+      name: uid
       description: Identificativo pseudo-anonimizzato dell'operatore RADD nel formato frazionario-pdl-timestamp.
       in: header
       required: true
