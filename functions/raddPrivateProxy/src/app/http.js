@@ -3,11 +3,8 @@ const NON_FORWARDABLE_REQUEST_HEADERS = new Set([
   "transfer-encoding",
   "keep-alive",
   "upgrade",
-  "proxy-authenticate",
-  "proxy-authorization",
   "te",
   "trailer",
-  "host",
   "content-length"
 ]);
 

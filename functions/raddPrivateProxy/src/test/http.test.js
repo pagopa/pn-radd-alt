@@ -60,6 +60,7 @@ test("buildForwardHeaders removes hop-by-hop and spoofed trusted headers", () =>
   );
 
   assert.deepEqual(forwardHeaders, {
+    host: "vpce.example:8080",
     "x-extra-header": "extra",
     "x-pagopa-pn-src-ch": "RADD",
     "x-pagopa-pn-uid": "RADD_cf_97103880585",
