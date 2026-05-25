@@ -13,10 +13,6 @@ info:
       di documenti o AAR da stampare, avviare la transazione, scaricare il
       frontespizio e chiudere o annullare l'operazione.
 
-      La superficie API e' dedicata alle integrazioni raggiungibili dalla rete
-      privata autorizzata. Il client non deve invocare la procedura di upload dei
-      documenti: eventuali documenti e metadati sono gestiti fuori da questa API.
-
       Esistono due casi d'uso RADD:
 
       - **ACT**: Richiesta degli atti di una determinata notifica tramite i dati
