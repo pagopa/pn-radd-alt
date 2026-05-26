@@ -551,6 +551,11 @@ Parameters:
     Default: 1
     Description: Threshold for the RADD private proxy backend 5xx alarm
 
+  RaddPrivateProxyBackend5xxAlarmEvaluationPeriods:
+    Type: Number
+    Default: 5
+    Description: Evaluation periods for the RADD private proxy backend 5xx alarm
+
   RaddPrivateProxyBackend5xxAlarmDatapointsToAlarm:
     Type: Number
     Default: 1
@@ -559,12 +564,17 @@ Parameters:
   RaddPrivateProxyBackend4xxAlarmThreshold:
     Type: Number
     Default: 1
-    Description: Threshold for the RADD private proxy backend 4xx metric filter
+    Description: Threshold for the RADD private proxy backend 4xx alarm
+
+  RaddPrivateProxyBackend4xxAlarmEvaluationPeriods:
+    Type: Number
+    Default: 5
+    Description: Evaluation periods for the RADD private proxy backend 4xx alarm
 
   RaddPrivateProxyBackend4xxAlarmDatapointsToAlarm:
     Type: Number
     Default: 1
-    Description: Datapoints to alarm for the RADD private proxy backend 4xx metric filter
+    Description: Datapoints to alarm for the RADD private proxy backend 4xx alarm
 
   RaddPrivateProxyThrottlesAlarmPeriod:
     Type: Number
@@ -595,7 +605,7 @@ Parameters:
 
   RaddPrivateProxyBackend4xxMetricHasAlarm:
     Type: String
-    Default: 'false'
+    Default: 'true'
     AllowedValues: ['true', 'false']
     Description: Whether to create a CloudWatch alarm for the RADD private proxy backend 4xx metric
 
@@ -947,7 +957,7 @@ Resources:
         LogGroupName: !Sub "/aws/lambda/${RaddPrivateProxyLambdaName}"
         FilterPattern: '"RADD private proxy backend 4xx response"'
         Threshold: !Ref RaddPrivateProxyBackend4xxAlarmThreshold
-        EvaluationPeriods: !Ref RaddPrivateProxyLogAlarmEvaluationPeriods
+        EvaluationPeriods: !Ref RaddPrivateProxyBackend4xxAlarmEvaluationPeriods
         DatapointsToAlarm: !Ref RaddPrivateProxyBackend4xxAlarmDatapointsToAlarm
         ComparisonOperator: GreaterThanOrEqualToThreshold
         Statistic: Sum
@@ -967,7 +977,7 @@ Resources:
         LogGroupName: !Sub "/aws/lambda/${RaddPrivateProxyLambdaName}"
         FilterPattern: '"RADD private proxy backend 5xx response"'
         Threshold: !Ref RaddPrivateProxyBackend5xxAlarmThreshold
-        EvaluationPeriods: !Ref RaddPrivateProxyLogAlarmEvaluationPeriods
+        EvaluationPeriods: !Ref RaddPrivateProxyBackend5xxAlarmEvaluationPeriods
         DatapointsToAlarm: !Ref RaddPrivateProxyBackend5xxAlarmDatapointsToAlarm
         ComparisonOperator: GreaterThanOrEqualToThreshold
         Statistic: Sum
