@@ -556,6 +556,67 @@ Parameters:
     Default: 1
     Description: Datapoints to alarm for the RADD private proxy backend 5xx alarm
 
+  RaddPrivateProxyBackend4xxAlarmThreshold:
+    Type: Number
+    Default: 1
+    Description: Threshold for the RADD private proxy backend 4xx metric filter
+
+  RaddPrivateProxyBackend4xxAlarmDatapointsToAlarm:
+    Type: Number
+    Default: 1
+    Description: Datapoints to alarm for the RADD private proxy backend 4xx metric filter
+
+  RaddPrivateProxyThrottlesAlarmPeriod:
+    Type: Number
+    Default: 60
+    Description: Period in seconds for the RADD private proxy Lambda throttles alarm
+
+  RaddPrivateProxyThrottlesAlarmEvaluationPeriods:
+    Type: Number
+    Default: 1
+    Description: Evaluation periods for the RADD private proxy Lambda throttles alarm
+
+  RaddPrivateProxyThrottlesAlarmDatapointsToAlarm:
+    Type: Number
+    Default: 1
+    Description: Datapoints to alarm for the RADD private proxy Lambda throttles alarm
+
+  RaddPrivateProxyRejectedPathAlarmHasAlarm:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Whether to create a CloudWatch alarm for the RADD private proxy rejected path metric
+
+  RaddPrivateProxyRejectedPathAlarmHasOncall:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Whether the RADD private proxy rejected path alarm should trigger oncall
+
+  RaddPrivateProxyBackend4xxMetricHasAlarm:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Whether to create a CloudWatch alarm for the RADD private proxy backend 4xx metric
+
+  RaddPrivateProxyBackend4xxMetricHasOncall:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Whether the RADD private proxy backend 4xx metric alarm should trigger oncall
+
+  RaddPrivateProxyBackend5xxAlarmHasAlarm:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Whether to create a CloudWatch alarm for the RADD private proxy backend 5xx metric
+
+  RaddPrivateProxyBackend5xxAlarmHasOncall:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Whether the RADD private proxy backend 5xx alarm should trigger oncall
+
 Conditions:
   IsImportLocationsBlocked: !Equals [!Ref BlockImportLocations, 'true']
   HasRaddPrivateProxyListenerPathPrefix: !Not [!Equals [!Ref RaddPrivateProxyListenerPathPrefix, '']]
@@ -846,9 +907,9 @@ Resources:
         - Name: FunctionName
           Value: !Ref RaddPrivateProxyLambda
       Statistic: Sum
-      Period: 60
-      EvaluationPeriods: 1
-      DatapointsToAlarm: 1
+      Period: !Ref RaddPrivateProxyThrottlesAlarmPeriod
+      EvaluationPeriods: !Ref RaddPrivateProxyThrottlesAlarmEvaluationPeriods
+      DatapointsToAlarm: !Ref RaddPrivateProxyThrottlesAlarmDatapointsToAlarm
       Threshold: 0
       ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
@@ -870,8 +931,8 @@ Resources:
         DatapointsToAlarm: !Ref RaddPrivateProxyRejectedPathAlarmDatapointsToAlarm
         ComparisonOperator: GreaterThanOrEqualToThreshold
         Statistic: Sum
-        HasAlarm: true
-        HasOncall: false
+        HasAlarm: !Ref RaddPrivateProxyRejectedPathAlarmHasAlarm
+        HasOncall: !Ref RaddPrivateProxyRejectedPathAlarmHasOncall
         OncallComparisonOperator: GreaterThanOrEqualToThreshold
         OncallStatistic: Sum
 
@@ -885,13 +946,13 @@ Resources:
         MetricNamespace: !Ref MetricNamespace
         LogGroupName: !Sub "/aws/lambda/${RaddPrivateProxyLambdaName}"
         FilterPattern: '"RADD private proxy backend 4xx response"'
-        Threshold: 1
+        Threshold: !Ref RaddPrivateProxyBackend4xxAlarmThreshold
         EvaluationPeriods: !Ref RaddPrivateProxyLogAlarmEvaluationPeriods
-        DatapointsToAlarm: 1
+        DatapointsToAlarm: !Ref RaddPrivateProxyBackend4xxAlarmDatapointsToAlarm
         ComparisonOperator: GreaterThanOrEqualToThreshold
         Statistic: Sum
-        HasAlarm: false
-        HasOncall: false
+        HasAlarm: !Ref RaddPrivateProxyBackend4xxMetricHasAlarm
+        HasOncall: !Ref RaddPrivateProxyBackend4xxMetricHasOncall
         OncallComparisonOperator: GreaterThanOrEqualToThreshold
         OncallStatistic: Sum
 
@@ -910,8 +971,8 @@ Resources:
         DatapointsToAlarm: !Ref RaddPrivateProxyBackend5xxAlarmDatapointsToAlarm
         ComparisonOperator: GreaterThanOrEqualToThreshold
         Statistic: Sum
-        HasAlarm: true
-        HasOncall: false
+        HasAlarm: !Ref RaddPrivateProxyBackend5xxAlarmHasAlarm
+        HasOncall: !Ref RaddPrivateProxyBackend5xxAlarmHasOncall
         OncallComparisonOperator: GreaterThanOrEqualToThreshold
         OncallStatistic: Sum
 
