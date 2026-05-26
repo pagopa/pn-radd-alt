@@ -22,12 +22,121 @@ const {
 
 let defaultHandler;
 
+const RETRYABLE_BACKEND_STATUS_CODES = new Set([500, 502, 503, 504]);
+const RETRYABLE_BACKEND_ERROR_CODES = new Set([
+  "ECONNABORTED",
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "ENOTFOUND",
+  "ETIMEDOUT",
+  "EAI_AGAIN",
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_SOCKET"
+]);
+
 function logError(message, err, meta = {}) {
   console.error(message, {
     ...meta,
     message: err.message,
     stack: err.stack
   });
+}
+
+function sleep(delayMillis) {
+  return new Promise((resolve) => setTimeout(resolve, delayMillis));
+}
+
+function shouldRetryBackendMethod() {
+  return true;
+}
+
+function isRetryableBackendResponse(statusCode) {
+  return RETRYABLE_BACKEND_STATUS_CODES.has(statusCode);
+}
+
+function extractRetryableBackendErrorCode(err) {
+  return err?.code || err?.cause?.code || null;
+}
+
+function isRetryableBackendError(err) {
+  return err?.name === "AbortError" || RETRYABLE_BACKEND_ERROR_CODES.has(extractRetryableBackendErrorCode(err));
+}
+
+async function forwardBackendRequest({ fetchImpl, backendUrl, method, headers, body, config, path }) {
+  const maxAttempts = shouldRetryBackendMethod(method, config) ? config.backendRetryMaxAttempts : 1;
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), config.backendRequestTimeoutMillis);
+
+    try {
+      const backendResponse = await fetchImpl(backendUrl, {
+        method,
+        headers,
+        body,
+        signal: abortController.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (attempt < maxAttempts && isRetryableBackendResponse(backendResponse.status)) {
+        try {
+          await backendResponse.body?.cancel?.();
+        } catch (cancelErr) {
+          console.warn("RADD private proxy failed to cancel retryable backend response body", {
+            method,
+            path,
+            attempt,
+            statusCode: backendResponse.status,
+            message: cancelErr.message
+          });
+        }
+
+        console.warn("RADD private proxy backend retry scheduled", {
+          method,
+          path,
+          attempt,
+          maxAttempts,
+          statusCode: backendResponse.status
+        });
+
+        if (config.backendRetryDelayMillis > 0) {
+          await sleep(config.backendRetryDelayMillis);
+        }
+        continue;
+      }
+
+      return {
+        attempts: attempt,
+        backendResponse
+      };
+    } catch (err) {
+      clearTimeout(timeoutId);
+      lastError = err;
+
+      if (attempt < maxAttempts && isRetryableBackendError(err)) {
+        console.warn("RADD private proxy backend retry scheduled", {
+          method,
+          path,
+          attempt,
+          maxAttempts,
+          errorCode: extractRetryableBackendErrorCode(err),
+          errorName: err.name,
+          message: err.message
+        });
+
+        if (config.backendRetryDelayMillis > 0) {
+          await sleep(config.backendRetryDelayMillis);
+        }
+        continue;
+      }
+
+      throw err;
+    }
+  }
+
+  throw lastError || new Error("Backend request failed without explicit error");
 }
 
 function selectInboundHeadersForLog(incomingHeaders) {
@@ -124,8 +233,8 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
       headers: selectInboundHeadersForLog(incomingHeaders)
     });
 
-    // Full ingress dump is opt-in for troubleshooting.
-    if (config.verboseLogging) {
+    // Full ingress request dump is opt-in for troubleshooting.
+    if (config.requestPayloadLoggingEnabled) {
       console.log("RADD private proxy inbound request payload", {
         method,
         path,
@@ -165,18 +274,25 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
     const queryString = buildQueryString(event);
     const backendUrl = `${config.backendBaseUrl}${path}${queryString}`;
     const forwardHeaders = buildForwardHeaders(incomingHeaders, config, baseUrl);
+    const requestBody = buildRequestBody(event, method);
 
     try {
-      const backendResponse = await fetchImpl(backendUrl, {
+      const backendRequestStartedAt = Date.now();
+      const { backendResponse, attempts } = await forwardBackendRequest({
+        fetchImpl,
+        backendUrl,
         method,
         headers: forwardHeaders,
-        body: buildRequestBody(event, method)
+        body: requestBody,
+        config,
+        path
       });
 
       const responseHeaders = filterResponseHeaders(backendResponse.headers);
       const responseBuffer = Buffer.from(await backendResponse.arrayBuffer());
       const contentType = responseHeaders["content-type"]?.[0] || "";
       const textualResponse = isTextualResponse(contentType);
+      const responseDurationMs = Date.now() - backendRequestStartedAt;
       const responseStatusCode = backendResponse.status;
       const responseStatusText = backendResponse.statusText;
       const responseIsBase64Encoded = !textualResponse;
@@ -185,8 +301,38 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
       console.log("RADD private proxy forwarded request", {
         method,
         path,
-        statusCode: responseStatusCode
+        statusCode: responseStatusCode,
+        durationMs: responseDurationMs,
+        attempts
       });
+
+      if (responseStatusCode >= 500) {
+        console.error("RADD private proxy backend 5xx response", {
+          method,
+          path,
+          statusCode: responseStatusCode,
+          durationMs: responseDurationMs,
+          attempts
+        });
+      } else if (responseStatusCode >= 400) {
+        console.warn("RADD private proxy backend 4xx response", {
+          method,
+          path,
+          statusCode: responseStatusCode,
+          durationMs: responseDurationMs,
+          attempts
+        });
+      }
+
+      if (config.responsePayloadLoggingEnabled) {
+        console.log("RADD private proxy outbound response payload", {
+          method,
+          path,
+          statusCode: responseStatusCode,
+          isBase64Encoded: responseIsBase64Encoded,
+          body: textualResponse ? responseBody : null
+        });
+      }
 
       return buildAlbResponse(
         responseStatusCode,
@@ -215,7 +361,10 @@ module.exports = {
   createHandler,
   deriveBaseUrlFromHost,
   handleEvent,
+  isRetryableBackendError,
+  isRetryableBackendResponse,
   isAllowedPath,
   selectInboundHeadersForLog,
+  shouldRetryBackendMethod,
   validatePathForForward
 };

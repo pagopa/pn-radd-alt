@@ -1,6 +1,12 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
-const { createHandler, handleEvent, validatePathForForward } = require("../app/eventHandler");
+const {
+  createHandler,
+  handleEvent,
+  isRetryableBackendError,
+  isRetryableBackendResponse,
+  validatePathForForward
+} = require("../app/eventHandler");
 
 const trustedHeaders = {
   "x-pagopa-pn-src-ch": "RADD",
@@ -16,6 +22,9 @@ const baseEnv = {
   AWS_REGION: "eu-south-1",
   RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX: "/radd-net/",
   RADD_PRIVATE_PROXY_BACKEND_BASE_URL: "http://internal-alb:8080",
+  RADD_PRIVATE_PROXY_BACKEND_REQUEST_TIMEOUT_MILLIS: "2000",
+  RADD_PRIVATE_PROXY_BACKEND_RETRY_DELAY_MILLIS: "0",
+  RADD_PRIVATE_PROXY_BACKEND_RETRY_MAX_ATTEMPTS: "3",
   RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL: "https",
   RADD_PRIVATE_PROXY_EXTERNAL_PORT: "8443",
   RADD_PRIVATE_PROXY_TRUSTED_HEADERS: JSON.stringify(trustedHeaders)
@@ -95,6 +104,61 @@ test("returns multi-value response headers from backend", async () => {
     "content-type": ["application/json"],
     "set-cookie": ["a=1; Secure", "b=2; Secure"]
   });
+});
+
+test("retries backend 500 responses and succeeds on a later attempt even for POST by default", async () => {
+  let attempts = 0;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      attempts += 1;
+      if (attempts === 1) {
+        return new Response(JSON.stringify({ message: "retry me" }), {
+          status: 500,
+          statusText: "Internal Server Error",
+          headers: { "content-type": "application/json" }
+        });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent());
+
+  assert.equal(attempts, 2);
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(JSON.parse(response.body), { ok: true });
+});
+
+test("retries transient backend network errors", async () => {
+  let attempts = 0;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      attempts += 1;
+      if (attempts === 1) {
+        const err = new TypeError("fetch failed");
+        err.cause = { code: "ECONNRESET" };
+        throw err;
+      }
+
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent({ httpMethod: "GET", body: null }));
+
+  assert.equal(attempts, 2);
+  assert.equal(response.statusCode, 200);
 });
 
 test("fails initialization when external base URL port is not configured", () => {
@@ -213,7 +277,7 @@ test("logs full inbound payload only when verbose logging is enabled", async () 
 
   try {
     const handler = createHandler({
-      env: { ...baseEnv, RADD_PRIVATE_PROXY_VERBOSE_LOGGING: "true" },
+      env: { ...baseEnv, RADD_PRIVATE_PROXY_REQUEST_PAYLOAD_LOGGING_ENABLED: "true" },
       fetchImpl: async () => new Response(JSON.stringify({ ok: true }), {
         status: 200,
         statusText: "OK",
@@ -229,6 +293,37 @@ test("logs full inbound payload only when verbose logging is enabled", async () 
         message === "RADD private proxy inbound request payload" &&
         payload.body === JSON.stringify({ test: true }) &&
         payload.headers.host === "vpce-0159b66963cb51025-1t51z9qh.vpce-svc-0a08e48564915d1c3.eu-south-1.vpce.amazonaws.com:8080"
+      ),
+      true
+    );
+  } finally {
+    console.log = originalConsoleLog;
+  }
+});
+
+test("logs full outbound response payload only when response payload logging is enabled", async () => {
+  const logs = [];
+  const originalConsoleLog = console.log;
+  console.log = (...args) => logs.push(args);
+
+  try {
+    const handler = createHandler({
+      env: { ...baseEnv, RADD_PRIVATE_PROXY_RESPONSE_PAYLOAD_LOGGING_ENABLED: "true" },
+      fetchImpl: async () => new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      })
+    });
+
+    const response = await handler(buildEvent());
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(
+      logs.some(([message, payload]) =>
+        message === "RADD private proxy outbound response payload" &&
+        payload.statusCode === 200 &&
+        payload.body === JSON.stringify({ ok: true })
       ),
       true
     );
@@ -384,4 +479,14 @@ test("validatePathForForward accepts a normal path and rejects canonicalization 
   assert.doesNotThrow(() => validatePathForForward("/radd-net/api/v1/act/inquiry"));
   assert.throws(() => validatePathForForward("/radd-net/api/v1/act/%2e%2e/registry"), /Dot segments are not allowed/);
   assert.throws(() => validatePathForForward("radd-net/api/v1/act/inquiry"), /Invalid path/);
+});
+
+test("retry helper predicates only retry configured methods and transient failures", () => {
+  assert.equal(isRetryableBackendResponse(500), true);
+  assert.equal(isRetryableBackendResponse(400), false);
+
+  const retryableError = new TypeError("fetch failed");
+  retryableError.cause = { code: "ECONNRESET" };
+  assert.equal(isRetryableBackendError(retryableError), true);
+  assert.equal(isRetryableBackendError(new Error("no retry")), false);
 });

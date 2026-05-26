@@ -500,33 +500,36 @@ Parameters:
       - 'http'
     Description: Required external PrivateLink protocol to force in x-pagopa-pn-base-url
 
-  RaddPrivateProxyVerboseLogging:
+  RaddPrivateProxyRequestPayloadLoggingEnabled:
     Type: String
     Default: 'false'
     AllowedValues:
       - 'true'
       - 'false'
-    Description: Enable full ingress payload and header logging for the RADD private proxy
+    Description: Enable full inbound request payload and header logging for the RADD private proxy
 
-  RaddPrivateProxyDurationAlarmThreshold:
-    Type: Number
-    Default: 8000
-    Description: Duration alarm threshold in milliseconds for the RADD private proxy Lambda
+  RaddPrivateProxyResponsePayloadLoggingEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable full outbound response payload logging for the RADD private proxy
 
-  RaddPrivateProxyDurationAlarmPeriod:
+  RaddPrivateProxyBackendRequestTimeoutMillis:
     Type: Number
-    Default: 60
-    Description: Period in seconds for the RADD private proxy Lambda duration alarm
+    Default: 2000
+    Description: Timeout in milliseconds for a single backend request attempt of the RADD private proxy
 
-  RaddPrivateProxyDurationAlarmEvaluationPeriods:
+  RaddPrivateProxyBackendRetryDelayMillis:
     Type: Number
-    Default: 1
-    Description: Evaluation periods for the RADD private proxy Lambda duration alarm
+    Default: 500
+    Description: Delay in milliseconds between backend retry attempts of the RADD private proxy
 
-  RaddPrivateProxyDurationAlarmDatapointsToAlarm:
+  RaddPrivateProxyBackendRetryMaxAttempts:
     Type: Number
-    Default: 1
-    Description: Datapoints to alarm for the RADD private proxy Lambda duration alarm
+    Default: 3
+    Description: Maximum number of backend request attempts of the RADD private proxy, including the first call
 
   RaddPrivateProxyLogAlarmEvaluationPeriods:
     Type: Number
@@ -542,6 +545,16 @@ Parameters:
     Type: Number
     Default: 1
     Description: Datapoints to alarm for the RADD private proxy rejected path alarm
+
+  RaddPrivateProxyBackend5xxAlarmThreshold:
+    Type: Number
+    Default: 1
+    Description: Threshold for the RADD private proxy backend 5xx alarm
+
+  RaddPrivateProxyBackend5xxAlarmDatapointsToAlarm:
+    Type: Number
+    Default: 1
+    Description: Datapoints to alarm for the RADD private proxy backend 5xx alarm
 
 Conditions:
   IsImportLocationsBlocked: !Equals [!Ref BlockImportLocations, 'true']
@@ -745,12 +758,17 @@ Resources:
         Variables:
           RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX: !Ref RaddPrivateProxyAllowedPathPrefix
           RADD_PRIVATE_PROXY_BACKEND_BASE_URL: !Sub 'http://${ApplicationLoadBalancerDomain}:8080'
+          RADD_PRIVATE_PROXY_BACKEND_REQUEST_TIMEOUT_MILLIS: !Ref RaddPrivateProxyBackendRequestTimeoutMillis
+          RADD_PRIVATE_PROXY_BACKEND_RETRY_DELAY_MILLIS: !Ref RaddPrivateProxyBackendRetryDelayMillis
+          RADD_PRIVATE_PROXY_BACKEND_RETRY_MAX_ATTEMPTS: !Ref RaddPrivateProxyBackendRetryMaxAttempts
           # External protocol is explicit; ALB hop is HTTP.
           RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL: !Ref RaddPrivateProxyExternalProtocol
           # External port is explicit; ALB hop can be 8080/8081.
           RADD_PRIVATE_PROXY_EXTERNAL_PORT: !Ref RaddPrivateProxyExternalPort
-          # Full ingress dump is opt-in.
-          RADD_PRIVATE_PROXY_VERBOSE_LOGGING: !Ref RaddPrivateProxyVerboseLogging
+          # Full inbound request dump is opt-in.
+          RADD_PRIVATE_PROXY_REQUEST_PAYLOAD_LOGGING_ENABLED: !Ref RaddPrivateProxyRequestPayloadLoggingEnabled
+          # Full outbound response dump is opt-in.
+          RADD_PRIVATE_PROXY_RESPONSE_PAYLOAD_LOGGING_ENABLED: !Ref RaddPrivateProxyResponsePayloadLoggingEnabled
           RADD_PRIVATE_PROXY_TRUSTED_HEADERS: !Ref RaddPrivateProxyTrustedHeaders
 
   # A new version at each deploy, with provisioned concurrency set.
@@ -837,25 +855,6 @@ Resources:
       AlarmActions:
         - !Ref AlarmSNSTopicArn
 
-  RaddPrivateProxyLambdaDurationAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmDescription: !Sub '${ProjectName}-radd-alt-private-proxy Lambda duration'
-      Namespace: AWS/Lambda
-      MetricName: Duration
-      Dimensions:
-        - Name: FunctionName
-          Value: !Ref RaddPrivateProxyLambda
-      Statistic: Maximum
-      Period: !Ref RaddPrivateProxyDurationAlarmPeriod
-      EvaluationPeriods: !Ref RaddPrivateProxyDurationAlarmEvaluationPeriods
-      DatapointsToAlarm: !Ref RaddPrivateProxyDurationAlarmDatapointsToAlarm
-      Threshold: !Ref RaddPrivateProxyDurationAlarmThreshold
-      ComparisonOperator: GreaterThanThreshold
-      TreatMissingData: notBreaching
-      AlarmActions:
-        - !Ref AlarmSNSTopicArn
-
   RaddPrivateProxyRejectedPathAlarm:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -869,6 +868,46 @@ Resources:
         Threshold: !Ref RaddPrivateProxyRejectedPathAlarmThreshold
         EvaluationPeriods: !Ref RaddPrivateProxyLogAlarmEvaluationPeriods
         DatapointsToAlarm: !Ref RaddPrivateProxyRejectedPathAlarmDatapointsToAlarm
+        ComparisonOperator: GreaterThanOrEqualToThreshold
+        Statistic: Sum
+        HasAlarm: true
+        HasOncall: false
+        OncallComparisonOperator: GreaterThanOrEqualToThreshold
+        OncallStatistic: Sum
+
+  RaddPrivateProxyBackend4xxMetric:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/custom-metric.yaml"
+      Parameters:
+        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+        MetricName: !Sub "${ProjectName}-radd-alt-private-proxy-backend-4xx"
+        MetricNamespace: !Ref MetricNamespace
+        LogGroupName: !Sub "/aws/lambda/${RaddPrivateProxyLambdaName}"
+        FilterPattern: '"RADD private proxy backend 4xx response"'
+        Threshold: 1
+        EvaluationPeriods: !Ref RaddPrivateProxyLogAlarmEvaluationPeriods
+        DatapointsToAlarm: 1
+        ComparisonOperator: GreaterThanOrEqualToThreshold
+        Statistic: Sum
+        HasAlarm: false
+        HasOncall: false
+        OncallComparisonOperator: GreaterThanOrEqualToThreshold
+        OncallStatistic: Sum
+
+  RaddPrivateProxyBackend5xxAlarm:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/custom-metric.yaml"
+      Parameters:
+        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+        MetricName: !Sub "${ProjectName}-radd-alt-private-proxy-backend-5xx"
+        MetricNamespace: !Ref MetricNamespace
+        LogGroupName: !Sub "/aws/lambda/${RaddPrivateProxyLambdaName}"
+        FilterPattern: '"RADD private proxy backend 5xx response"'
+        Threshold: !Ref RaddPrivateProxyBackend5xxAlarmThreshold
+        EvaluationPeriods: !Ref RaddPrivateProxyLogAlarmEvaluationPeriods
+        DatapointsToAlarm: !Ref RaddPrivateProxyBackend5xxAlarmDatapointsToAlarm
         ComparisonOperator: GreaterThanOrEqualToThreshold
         Statistic: Sum
         HasAlarm: true
