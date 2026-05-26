@@ -576,21 +576,6 @@ Parameters:
     Default: 1
     Description: Datapoints to alarm for the RADD private proxy backend 4xx alarm
 
-  RaddPrivateProxyThrottlesAlarmPeriod:
-    Type: Number
-    Default: 60
-    Description: Period in seconds for the RADD private proxy Lambda throttles alarm
-
-  RaddPrivateProxyThrottlesAlarmEvaluationPeriods:
-    Type: Number
-    Default: 1
-    Description: Evaluation periods for the RADD private proxy Lambda throttles alarm
-
-  RaddPrivateProxyThrottlesAlarmDatapointsToAlarm:
-    Type: Number
-    Default: 1
-    Description: Datapoints to alarm for the RADD private proxy Lambda throttles alarm
-
   RaddPrivateProxyRejectedPathAlarmHasAlarm:
     Type: String
     Default: 'true'
@@ -832,17 +817,12 @@ Resources:
           RADD_PRIVATE_PROXY_BACKEND_REQUEST_TIMEOUT_MILLIS: !Ref RaddPrivateProxyBackendRequestTimeoutMillis
           RADD_PRIVATE_PROXY_BACKEND_RETRY_DELAY_MILLIS: !Ref RaddPrivateProxyBackendRetryDelayMillis
           RADD_PRIVATE_PROXY_BACKEND_RETRY_MAX_ATTEMPTS: !Ref RaddPrivateProxyBackendRetryMaxAttempts
-          # External protocol is explicit; ALB hop is HTTP.
           RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL: !Ref RaddPrivateProxyExternalProtocol
-          # External port is explicit; ALB hop can be 8080/8081.
           RADD_PRIVATE_PROXY_EXTERNAL_PORT: !Ref RaddPrivateProxyExternalPort
-          # Full inbound request dump is opt-in.
           RADD_PRIVATE_PROXY_REQUEST_PAYLOAD_LOGGING_ENABLED: !Ref RaddPrivateProxyRequestPayloadLoggingEnabled
-          # Full outbound response dump is opt-in.
           RADD_PRIVATE_PROXY_RESPONSE_PAYLOAD_LOGGING_ENABLED: !Ref RaddPrivateProxyResponsePayloadLoggingEnabled
           RADD_PRIVATE_PROXY_TRUSTED_HEADERS: !Ref RaddPrivateProxyTrustedHeaders
 
-  # A new version at each deploy, with provisioned concurrency set.
   RaddPrivateProxyLambdaVersionPnPlaceholderEpochSeconds:
     Type: AWS::Lambda::Version
     Properties:
@@ -906,25 +886,6 @@ Resources:
       Parameters:
         FunctionName: !Ref RaddPrivateProxyLambdaName
         AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
-
-  RaddPrivateProxyLambdaThrottlesAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmDescription: !Sub '${ProjectName}-radd-alt-private-proxy Lambda throttles'
-      Namespace: AWS/Lambda
-      MetricName: Throttles
-      Dimensions:
-        - Name: FunctionName
-          Value: !Ref RaddPrivateProxyLambda
-      Statistic: Sum
-      Period: !Ref RaddPrivateProxyThrottlesAlarmPeriod
-      EvaluationPeriods: !Ref RaddPrivateProxyThrottlesAlarmEvaluationPeriods
-      DatapointsToAlarm: !Ref RaddPrivateProxyThrottlesAlarmDatapointsToAlarm
-      Threshold: 0
-      ComparisonOperator: GreaterThanThreshold
-      TreatMissingData: notBreaching
-      AlarmActions:
-        - !Ref AlarmSNSTopicArn
 
   RaddPrivateProxyRejectedPathAlarm:
     Type: AWS::CloudFormation::Stack
