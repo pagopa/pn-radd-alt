@@ -35,5 +35,18 @@ build/
 .vscode
 target
 
+### OS ###
+.DS_Store
+
+### Coverage ###
+.nyc_output/
+coverage/
+
+### Lambda ###
+function.zip
+code_layer.zip
+lib_layer.zip
+nodejs/
+
 ### Node.js ###
 node_modules/

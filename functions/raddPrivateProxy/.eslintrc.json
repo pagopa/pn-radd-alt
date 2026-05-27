@@ -1,0 +1,16 @@
+{
+  "env": {
+    "es2024": true,
+    "node": true
+  },
+  "extends": [
+    "eslint:recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "script"
+  },
+  "ignorePatterns": [
+    "function.zip"
+  ]
+}
