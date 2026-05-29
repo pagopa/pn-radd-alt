@@ -311,6 +311,7 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
           method,
           path,
           statusCode: responseStatusCode,
+          message: responseStatusText || null,
           durationMs: responseDurationMs,
           attempts
         });
@@ -319,6 +320,7 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
           method,
           path,
           statusCode: responseStatusCode,
+          message: responseStatusText || null,
           durationMs: responseDurationMs,
           attempts
         });

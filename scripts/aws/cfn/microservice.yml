@@ -947,6 +947,31 @@ Resources:
         OncallComparisonOperator: GreaterThanOrEqualToThreshold
         OncallStatistic: Sum
 
+  RaddPrivateProxyLambdaTargetGroupAlarms:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/alb-tg-alarms.yaml"
+      Parameters:
+        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+        MetricPrefix: !Sub "${ProjectName}-radd-alt-private-proxy-lambda-tg"
+        ApplicationLoadBalancerArn: !Ref ApplicationLoadBalancerArn
+        TargetGroupName: !GetAtt RaddPrivateProxyLambdaTargetGroup.TargetGroupFullName
+        TargetType: lambda
+        HasTarget4xxAlarm: 'true'
+        HasTarget4xxOncall: 'false'
+        HasTarget5xxAlarm: 'true'
+        HasTarget5xxOncall: 'false'
+        HasTargetResponseTimeAlarm: 'false'
+        HasTargetResponseTimeOncall: 'false'
+        HasTarget4xxRateAlarm: 'false'
+        HasTarget4xxRateOncall: 'false'
+        HasTarget5xxRateAlarm: 'false'
+        HasTarget5xxRateOncall: 'false'
+        HasLambdaInternalErrorAlarm: 'false'
+        HasLambdaInternalErrorOncall: 'false'
+        HasLambdaUserErrorAlarm: 'false'
+        HasLambdaUserErrorOncall: 'false'
+
   # Expose PN-Radd-Alt microservice public API with API-GW for RADD usage
   RaddAltMicroservicePublicAPI:
     Type: AWS::CloudFormation::Stack
