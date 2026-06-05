@@ -80,6 +80,90 @@ test("overwrites trusted headers and derives base URL from the technical VPCE ho
   });
 });
 
+test("propagates Lambda X-Ray trace header to backend and caller response", async () => {
+  let capturedRequest;
+  const handler = createHandler({
+    env: { ...baseEnv, _X_AMZN_TRACE_ID: "Root=1-trace;Parent=parent;Sampled=1" },
+    fetchImpl: async (url, options) => {
+      capturedRequest = { url, options };
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent({
+    headers: {
+      ...buildEvent().headers,
+      "x-amzn-trace-id": "Root=1-spoofed;Parent=spoofed;Sampled=0"
+    }
+  }));
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(capturedRequest.options.headers["x-amzn-trace-id"], "Root=1-trace;Parent=parent;Sampled=1");
+  assert.deepEqual(response.multiValueHeaders, {
+    "content-type": ["application/json"],
+    "x-amzn-trace-id": ["Root=1-trace;Parent=parent;Sampled=1"]
+  });
+});
+
+test("adds Lambda X-Ray trace header to local proxy errors", async () => {
+  let called = false;
+  const handler = createHandler({
+    env: { ...baseEnv, _X_AMZN_TRACE_ID: "Root=1-local;Parent=parent;Sampled=1" },
+    fetchImpl: async () => {
+      called = true;
+      return new Response("unexpected");
+    }
+  });
+
+  const response = await handler(buildEvent({ path: "/outside-allowlist" }));
+
+  assert.equal(response.statusCode, 403);
+  assert.equal(called, false);
+  assert.deepEqual(response.multiValueHeaders, {
+    "content-type": ["application/json"],
+    "x-amzn-trace-id": ["Root=1-local;Parent=parent;Sampled=1"]
+  });
+});
+
+test("logs diagnostic message and continues when Lambda X-Ray trace header is missing", async () => {
+  const logs = [];
+  const originalConsoleLog = console.log;
+  console.log = (...args) => logs.push(args);
+
+  try {
+    let capturedRequest;
+    const handler = createHandler({
+      env: baseEnv,
+      fetchImpl: async (url, options) => {
+        capturedRequest = { url, options };
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          statusText: "OK",
+          headers: { "content-type": "application/json" }
+        });
+      }
+    });
+
+    const response = await handler(buildEvent());
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(capturedRequest.options.headers["x-amzn-trace-id"], undefined);
+    assert.deepEqual(response.multiValueHeaders, {
+      "content-type": ["application/json"]
+    });
+    assert.equal(
+      logs.some(([message]) => message === "No _X_AMZN_TRACE_ID found in environment variables"),
+      true
+    );
+  } finally {
+    console.log = originalConsoleLog;
+  }
+});
+
 test("returns multi-value response headers from backend", async () => {
   class BackendResponse extends Response {
     constructor(body, init) {
