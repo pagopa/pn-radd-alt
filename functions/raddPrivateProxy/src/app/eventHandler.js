@@ -250,6 +250,16 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
     const path = event.path || "/";
     const incomingHeaders = collectHeaders(event);
     const lambdaTraceId = getLambdaTraceId(env);
+    const withTrace = (headers) => withLambdaTraceHeader(headers, lambdaTraceId);
+    const buildLocalAlbJsonResponse = (statusCode, message, statusText) => buildAlbResponse(
+      statusCode,
+      JSON.stringify({ message }),
+      withTrace({
+        "content-type": "application/json"
+      }),
+      false,
+      statusText
+    );
 
     console.log("RADD private proxy inbound headers", {
       method,
@@ -273,16 +283,12 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
       validatePathForForward(path);
     } catch (err) {
       console.warn("RADD private proxy rejected path", { method, path, reason: err.message });
-      return buildAlbResponse(403, JSON.stringify({ message: "Forbidden" }), withLambdaTraceHeader({
-        "content-type": "application/json"
-      }, lambdaTraceId), false, "Forbidden");
+      return buildLocalAlbJsonResponse(403, "Forbidden", "Forbidden");
     }
 
     if (!isAllowedPath(path, config.allowedPathPrefixes)) {
       console.warn("RADD private proxy rejected path", { method, path, reason: "Path not allowed" });
-      return buildAlbResponse(403, JSON.stringify({ message: "Forbidden" }), withLambdaTraceHeader({
-        "content-type": "application/json"
-      }, lambdaTraceId), false, "Forbidden");
+      return buildLocalAlbJsonResponse(403, "Forbidden", "Forbidden");
     }
 
     let baseUrl;
@@ -290,14 +296,12 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
       baseUrl = deriveBaseUrlFromHost(incomingHeaders.host, config);
     } catch (err) {
       logError("RADD private proxy failed Host validation", err, { path });
-      return buildAlbResponse(400, JSON.stringify({ message: "Invalid Host header" }), withLambdaTraceHeader({
-        "content-type": "application/json"
-      }, lambdaTraceId), false, "Bad Request");
+      return buildLocalAlbJsonResponse(400, "Invalid Host header", "Bad Request");
     }
 
     const queryString = buildQueryString(event);
     const backendUrl = `${config.backendBaseUrl}${path}${queryString}`;
-    const forwardHeaders = withLambdaTraceHeader(buildForwardHeaders(incomingHeaders, config, baseUrl), lambdaTraceId);
+    const forwardHeaders = withTrace(buildForwardHeaders(incomingHeaders, config, baseUrl));
     const requestBody = buildRequestBody(event, method);
 
     try {
@@ -312,7 +316,7 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
         path
       });
 
-      const responseHeaders = withLambdaTraceHeader(filterResponseHeaders(backendResponse.headers), lambdaTraceId);
+      const responseHeaders = withTrace(filterResponseHeaders(backendResponse.headers));
       const responseBuffer = Buffer.from(await backendResponse.arrayBuffer());
       const contentType = responseHeaders["content-type"]?.[0] || "";
       const textualResponse = isTextualResponse(contentType);
@@ -369,9 +373,7 @@ function createHandler({ fetchImpl = globalThis.fetch, env = process.env } = {})
       );
     } catch (err) {
       logError("RADD private proxy backend forward failed", err, { path });
-      return buildAlbResponse(502, JSON.stringify({ message: "Backend forward failed" }), withLambdaTraceHeader({
-        "content-type": "application/json"
-      }, lambdaTraceId), false, "Bad Gateway");
+      return buildLocalAlbJsonResponse(502, "Backend forward failed", "Bad Gateway");
     }
   };
 }
