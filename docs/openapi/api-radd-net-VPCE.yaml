@@ -59,7 +59,7 @@ info:
       3. **Download documenti**
 
          Per ogni URL restituita dalla start transaction, eseguire una richiesta
-      GET tramite la connessione VPC endpoint.
+      GET.
 
       4. **Chiusura dell'operazione**
 
@@ -90,7 +90,7 @@ info:
       3. **Download documenti**
 
          Per ogni URL restituita dalla start transaction, eseguire una richiesta
-      GET tramite la connessione VPC endpoint.
+      GET.
 
       4. **Chiusura dell'operazione**
 
@@ -141,10 +141,10 @@ paths:
         - documentOperations
       summary: Download frontespizio
       operationId: documentDownload
-      description: API utilizzata per il download del frontespizio tramite connessione VPC endpoint.
+      description: API utilizzata per il download del frontespizio e altre tipologie di documenti tramite connessione VPC endpoint.
       responses:
         '200':
-          description: Ritorna il PDF del frontespizio
+          description: Ritorna il PDF del frontespizio o altri PDF non nativamente disponibili al download
           content:
             application/pdf:
               schema:
