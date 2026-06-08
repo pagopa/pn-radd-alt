@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: 'Example microservice deploy'
 
+Transform:
+  - UpdateDeploymentTransform
+
 Parameters:
   ProjectName:
     Type: String
@@ -10,6 +13,11 @@ Parameters:
   AlarmSNSTopicArn:
     Type: String
     Description: ARN of alarm topic
+
+  MetricNamespace:
+    Type: String
+    Description: CloudWatch custom metric namespace
+    Default: Advanced
 
   RaddApiDnsName:
     Type: String
@@ -189,6 +197,14 @@ Parameters:
     AllowedValues:
       - true
       - false
+
+  DocumentPageCountEnabled:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: 'Enable or disable Document page count calculation for cover file generation'
 
   PnCronAnalyzer:
     Type: String
@@ -407,6 +423,10 @@ Parameters:
     AllowedValues: [60, 120, 300, 600]
     Description: 'Throttling period in seconds'
 
+  LogRetention:
+    Type: Number
+    Default: 14
+
   BlockImportLocations:
     Type: String
     AllowedValues:
@@ -418,8 +438,183 @@ Parameters:
     Type: String
     Description: 'AWS region code for Geoplaces client'
 
+  # RADD private proxy Lambda parameters
+  RaddPrivateProxyAlbListenerArn:
+    Type: String
+    Default: ''
+    Description: Dedicated ALB listener ARN for the RADD private proxy
+
+  RaddPrivateProxyRulePriority:
+    Type: Number
+    Default: 45000
+    Description: Listener rule priority for the RADD private proxy Lambda target group
+
+  RaddPrivateProxyAllowedPathPrefix:
+    Type: String
+    Default: '/radd-net/'
+    Description: Comma-separated allowed path prefixes for the RADD private proxy
+
+  RaddPrivateProxyListenerPathPrefix:
+    Type: String
+    Default: ''
+    Description: Dedicated ALB listener rule path prefix for the RADD private proxy; leave empty to match any path
+
+  RaddPrivateProxyTrustedHeaders:
+    Type: String
+    Description: Escaped JSON object containing stable trusted headers for the RADD private proxy
+
+  RaddPrivateProxyLambdaName:
+    Type: String
+    Description: Name of the RADD private proxy Lambda function, valorized by storage.yml related output
+
+  RaddPrivateProxyLambdaRuntime:
+    Type: String
+    Default: nodejs24.x
+    Description: Runtime of the RADD private proxy Lambda
+
+  RaddPrivateProxyLambdaMemorySize:
+    Type: Number
+    Default: 512
+    Description: Memory size of the RADD private proxy Lambda
+
+  RaddPrivateProxyLambdaTimeout:
+    Type: Number
+    Default: 10
+    Description: Timeout in seconds of the RADD private proxy Lambda
+
+  RaddPrivateProxyLambdaProvisionedConcurrency:
+    Type: Number
+    Default: 1
+    Description: Provisioned concurrency of the RADD private proxy Lambda
+
+  RaddPrivateProxyExternalPort:
+    Type: String
+    Default: '8443'
+    Description: Required external PrivateLink port to force in x-pagopa-pn-base-url; use 443 to omit the port from the final URL
+
+  RaddPrivateProxyExternalProtocol:
+    Type: String
+    Default: 'https'
+    AllowedValues:
+      - 'https'
+      - 'http'
+    Description: Required external PrivateLink protocol to force in x-pagopa-pn-base-url
+
+  RaddPrivateProxyRequestPayloadLoggingEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable full inbound request payload and header logging for the RADD private proxy
+
+  RaddPrivateProxyResponsePayloadLoggingEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable full outbound response payload logging for the RADD private proxy
+
+  RaddPrivateProxyBackendRequestTimeoutMillis:
+    Type: Number
+    Default: 2000
+    Description: Timeout in milliseconds for a single backend request attempt of the RADD private proxy
+
+  RaddPrivateProxyBackendRetryDelayMillis:
+    Type: Number
+    Default: 500
+    Description: Delay in milliseconds between backend retry attempts of the RADD private proxy
+
+  RaddPrivateProxyBackendRetryMaxAttempts:
+    Type: Number
+    Default: 3
+    Description: Maximum number of backend request attempts of the RADD private proxy, including the first call
+
+  RaddPrivateProxyLogAlarmEvaluationPeriods:
+    Type: Number
+    Default: 1
+    Description: Evaluation periods for RADD private proxy log metric alarms
+
+  RaddPrivateProxyRejectedPathAlarmThreshold:
+    Type: Number
+    Default: 1
+    Description: Threshold for the RADD private proxy rejected path alarm
+
+  RaddPrivateProxyRejectedPathAlarmDatapointsToAlarm:
+    Type: Number
+    Default: 1
+    Description: Datapoints to alarm for the RADD private proxy rejected path alarm
+
+  RaddPrivateProxyBackend5xxAlarmThreshold:
+    Type: Number
+    Default: 1
+    Description: Threshold for the RADD private proxy backend 5xx alarm
+
+  RaddPrivateProxyBackend5xxAlarmEvaluationPeriods:
+    Type: Number
+    Default: 5
+    Description: Evaluation periods for the RADD private proxy backend 5xx alarm
+
+  RaddPrivateProxyBackend5xxAlarmDatapointsToAlarm:
+    Type: Number
+    Default: 1
+    Description: Datapoints to alarm for the RADD private proxy backend 5xx alarm
+
+  RaddPrivateProxyBackend4xxAlarmThreshold:
+    Type: Number
+    Default: 1
+    Description: Threshold for the RADD private proxy backend 4xx alarm
+
+  RaddPrivateProxyBackend4xxAlarmEvaluationPeriods:
+    Type: Number
+    Default: 5
+    Description: Evaluation periods for the RADD private proxy backend 4xx alarm
+
+  RaddPrivateProxyBackend4xxAlarmDatapointsToAlarm:
+    Type: Number
+    Default: 1
+    Description: Datapoints to alarm for the RADD private proxy backend 4xx alarm
+
+  RaddPrivateProxyRejectedPathAlarmHasAlarm:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Whether to create a CloudWatch alarm for the RADD private proxy rejected path metric
+
+  RaddPrivateProxyRejectedPathAlarmHasOncall:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Whether the RADD private proxy rejected path alarm should trigger oncall
+
+  RaddPrivateProxyBackend4xxMetricHasAlarm:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Whether to create a CloudWatch alarm for the RADD private proxy backend 4xx metric
+
+  RaddPrivateProxyBackend4xxMetricHasOncall:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Whether the RADD private proxy backend 4xx metric alarm should trigger oncall
+
+  RaddPrivateProxyBackend5xxAlarmHasAlarm:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Whether to create a CloudWatch alarm for the RADD private proxy backend 5xx metric
+
+  RaddPrivateProxyBackend5xxAlarmHasOncall:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Whether the RADD private proxy backend 5xx alarm should trigger oncall
+
 Conditions:
   IsImportLocationsBlocked: !Equals [!Ref BlockImportLocations, 'true']
+  HasRaddPrivateProxyListenerPathPrefix: !Not [!Equals [!Ref RaddPrivateProxyListenerPathPrefix, '']]
 
 Resources:
 
@@ -460,39 +655,39 @@ Resources:
         ContainerEnvEntry10: !Sub 'PN_RADD_ATTEMPTBATCHWRITER=${AttemptBatchWriter}'
         ContainerEnvEntry11: !Sub 'PN_RADD_SAFESTORAGEDOCTYPE=${SafeStorageDocType}'
         ContainerEnvEntry12: !Sub 'PN_RADD_DAO_IUNSOPERATIONSTABLE=${OperationsDynamoTableName}'
-        ContainerEnvEntry13: !Sub 'PN_RADD_APPLICATION_BASEPATH=https://${RaddApiDnsName}'
-        ContainerEnvEntry14: !Sub 'PN_RADD_SANITIZE_MODE=${SanitizeMode}'
-        ContainerEnvEntry15: !Sub 'SPRING_FREEMARKER_TEMPLATE_LOADER_PATH=${FreeMarkerTemplateLoaderPath}'
-        ContainerEnvEntry16: !Sub 'SPRING_FREEMARKER_SUFFIX=${FreeMarkerSuffix}'
-        ContainerEnvEntry17: !Sub 'PN_RADD_DOCUMENT_TYPE_ENUM_FILTER=${DocumentTypeEnumFilter}'
-        ContainerEnvEntry18: !Sub 'PN_RADD_DAO_RADDREGISTRYREQUESTTABLE=${RaddRegistryRequestDynamoTableName}'
-        ContainerEnvEntry19: !Sub 'PN_RADD_DAO_RADDREGISTRYIMPORTTABLE=${RaddRegistryImportDynamoTableName}'
-        ContainerEnvEntry20: !Sub 'PN_RADD_DAO_RADDREGISTRYTABLE=${RaddRegistryDynamoTableName}'
-        ContainerEnvEntry21: !Sub 'PN_RADD_DAO_RADDREGISTRYTABLEV2=${RaddRegistryDynamoTableV2Name}'
-        ContainerEnvEntry22: !Sub 'PN_RADD_SQS_INPUTQUEUENAME=${PnRaddAltInputQueueName}'
-        ContainerEnvEntry23: !Sub 'PN_RADD_REGISTRYSAFESTORAGEDOCTYPE=${RegistrySafeStorageDocType}'
-        ContainerEnvEntry24: !Sub 'PN_RADD_REGISTRYDEFAULTENDVALIDITY=${RegistryDefaultEndValidity}'
-        ContainerEnvEntry25: !Sub 'PN_RADD_REGISTRYDEFAULTDELETERULE=${RegistryDefaultDeleteRule}'
-        ContainerEnvEntry26: !Sub 'PN_RADD_REGISTRYIMPORTUPLOADFILETTL=${RegistryImportUploadFileTtl}'
-        ContainerEnvEntry27: !Sub 'PN_RADD_SQS_SAFESTORAGEQUEUENAME=${SafeStorageToRaddAltQueueName}'
-        ContainerEnvEntry28: !Sub 'PN_RADD_MAX_PRINT_REQUESTS=${MaxPrintRequests}'
-        ContainerEnvEntry29: !Sub 'AWS_GEO_REGIONCODE=${AwsGeoRegionCode}'
-        ContainerEnvEntry30: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
-        ContainerEnvEntry31: !Sub 'SPRING_CLOUD_FUNCTIONROUTER_QUEUES_LIST=${PnRaddAltInputQueueName},${SafeStorageToRaddAltQueueName}'
-        ContainerEnvEntry32: !Sub 'PN_RADD_DAO_SHEDLOCKTABLENAME=${ShedLockTableName}'
-        ContainerEnvEntry33: !Sub 'PN_RADD_MAX_PAGE_NUMBER=${PnRaddMaxPageNumber}'
-        ContainerEnvEntry34: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_LOCKATMOST=${VerifyRaddRegistryImportLockAtMost}'
-        ContainerEnvEntry35: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_LOCKATLEAST=${VerifyRaddRegistryImportLockAtLeast}'
-        ContainerEnvEntry36: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_DELAY=${VerifyRaddRegistryImportDelay}'
-        ContainerEnvEntry37: !Sub 'PN_RADD_MAXQUERYSIZE=${MaxQuerySize}'
-        ContainerEnvEntry38: !Sub 'PN_RADD_REGISTRYIMPORTREPLACEDTTL=${RegistryImportReplacedTtl}'
-        ContainerEnvEntry39: !Sub 'PN_RADD_SQS_SAFESTORAGEQUEUENAME=${SafeStorageToRaddAltQueueName}'
-        ContainerEnvEntry40: !Sub 'PN_CRON_ANALYZER=${PnCronAnalyzer}'
-        ContainerEnvEntry41: !Sub 'PN_RADD_MAX_DYNAMO_DB_QUERY_SIZE=${PnRaddMaxDynamoDBQuerySize}'
-        ContainerEnvEntry42: !Sub 'PN_RADD_EVALUATED_ZIP_CODE_CONFIG_TYPE=${EvaluatedZipCodeConfigType}'
-        ContainerEnvEntry43: !Sub 'PN_RADD_EVALUATED_ZIP_CODE_CONFIG_NUMBER=${EvaluatedZipCodeConfigNumber}'
-        ContainerEnvEntry44: !Sub 'PN_RADD_EVENTBUS_NAME=arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-CoreEventBus'
-        ContainerEnvEntry45: !Sub 'PN_RADD_DAO_RADDCOVERAGETABLE=${RaddCoverageDynamoTableName}'
+        ContainerEnvEntry13: !Sub 'PN_RADD_SANITIZE_MODE=${SanitizeMode}'
+        ContainerEnvEntry14: !Sub 'SPRING_FREEMARKER_TEMPLATE_LOADER_PATH=${FreeMarkerTemplateLoaderPath}'
+        ContainerEnvEntry15: !Sub 'SPRING_FREEMARKER_SUFFIX=${FreeMarkerSuffix}'
+        ContainerEnvEntry16: !Sub 'PN_RADD_DOCUMENT_TYPE_ENUM_FILTER=${DocumentTypeEnumFilter}'
+        ContainerEnvEntry17: !Sub 'PN_RADD_DAO_RADDREGISTRYREQUESTTABLE=${RaddRegistryRequestDynamoTableName}'
+        ContainerEnvEntry18: !Sub 'PN_RADD_DAO_RADDREGISTRYIMPORTTABLE=${RaddRegistryImportDynamoTableName}'
+        ContainerEnvEntry19: !Sub 'PN_RADD_DAO_RADDREGISTRYTABLE=${RaddRegistryDynamoTableName}'
+        ContainerEnvEntry20: !Sub 'PN_RADD_DAO_RADDREGISTRYTABLEV2=${RaddRegistryDynamoTableV2Name}'
+        ContainerEnvEntry21: !Sub 'PN_RADD_SQS_INPUTQUEUENAME=${PnRaddAltInputQueueName}'
+        ContainerEnvEntry22: !Sub 'PN_RADD_REGISTRYSAFESTORAGEDOCTYPE=${RegistrySafeStorageDocType}'
+        ContainerEnvEntry23: !Sub 'PN_RADD_REGISTRYDEFAULTENDVALIDITY=${RegistryDefaultEndValidity}'
+        ContainerEnvEntry24: !Sub 'PN_RADD_REGISTRYDEFAULTDELETERULE=${RegistryDefaultDeleteRule}'
+        ContainerEnvEntry25: !Sub 'PN_RADD_REGISTRYIMPORTUPLOADFILETTL=${RegistryImportUploadFileTtl}'
+        ContainerEnvEntry26: !Sub 'PN_RADD_SQS_SAFESTORAGEQUEUENAME=${SafeStorageToRaddAltQueueName}'
+        ContainerEnvEntry27: !Sub 'PN_RADD_MAX_PRINT_REQUESTS=${MaxPrintRequests}'
+        ContainerEnvEntry28: !Sub 'AWS_GEO_REGIONCODE=${AwsGeoRegionCode}'
+        ContainerEnvEntry29: !Sub 'WIRE_TAP_LOG=${WireTapLogActivation}'
+        ContainerEnvEntry30: !Sub 'SPRING_CLOUD_FUNCTIONROUTER_QUEUES_LIST=${PnRaddAltInputQueueName},${SafeStorageToRaddAltQueueName}'
+        ContainerEnvEntry31: !Sub 'PN_RADD_DAO_SHEDLOCKTABLENAME=${ShedLockTableName}'
+        ContainerEnvEntry32: !Sub 'PN_RADD_MAX_PAGE_NUMBER=${PnRaddMaxPageNumber}'
+        ContainerEnvEntry33: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_LOCKATMOST=${VerifyRaddRegistryImportLockAtMost}'
+        ContainerEnvEntry34: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_LOCKATLEAST=${VerifyRaddRegistryImportLockAtLeast}'
+        ContainerEnvEntry35: !Sub 'PN_RADD_VERIFYRADDREGISTRYIMPORT_DELAY=${VerifyRaddRegistryImportDelay}'
+        ContainerEnvEntry36: !Sub 'PN_RADD_MAXQUERYSIZE=${MaxQuerySize}'
+        ContainerEnvEntry37: !Sub 'PN_RADD_REGISTRYIMPORTREPLACEDTTL=${RegistryImportReplacedTtl}'
+        ContainerEnvEntry38: !Sub 'PN_CRON_ANALYZER=${PnCronAnalyzer}'
+        ContainerEnvEntry39: !Sub 'PN_RADD_MAX_DYNAMO_DB_QUERY_SIZE=${PnRaddMaxDynamoDBQuerySize}'
+        ContainerEnvEntry40: !Sub 'PN_RADD_EVALUATED_ZIP_CODE_CONFIG_TYPE=${EvaluatedZipCodeConfigType}'
+        ContainerEnvEntry41: !Sub 'PN_RADD_EVALUATED_ZIP_CODE_CONFIG_NUMBER=${EvaluatedZipCodeConfigNumber}'
+        ContainerEnvEntry42: !Sub 'PN_RADD_EVENTBUS_NAME=arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-CoreEventBus'
+        ContainerEnvEntry43: !Sub 'PN_RADD_DAO_RADDCOVERAGETABLE=${RaddCoverageDynamoTableName}'
+        ContainerEnvEntry44: !Sub 'PN_RADD_DOCUMENTPAGECOUNTENABLED=${DocumentPageCountEnabled}'
+        ContainerEnvEntry45: !Sub 'PN_RADD_CLIENT_TIMELINE_SERVICE_BASEPATH=http://${ApplicationLoadBalancerDomain}:8080'
         MappedPaths: '/radd-net/*,/radd-net-private/*,/radd-alt/*,/radd-bo/*'
         ECSClusterName: !Ref ECSClusterName
         Subnets: !Ref VpcEgressSubnetsIds
@@ -569,6 +764,189 @@ Resources:
             Resource:
               - !Sub arn:aws:geo-places:${AwsGeoRegionCode}::provider/default
 
+  RaddPrivateProxyLambdaSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${ProjectName}-radd-alt-private-proxy-sec-group'
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          DestinationSecurityGroupId: !Ref AlbSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-radd-alt-private-proxy-sg'
+
+  RaddPrivateProxyLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+
+  RaddPrivateProxyLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref RaddPrivateProxyLambdaName
+      Runtime: !Ref RaddPrivateProxyLambdaRuntime
+      Handler: index.handler
+      Role: !GetAtt RaddPrivateProxyLambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref MicroserviceBucketName
+        S3Key: !Sub '${MicroserviceBucketBaseKey}/functions_zip/raddPrivateProxy.zip'
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt RaddPrivateProxyLambdaSecGroup.GroupId
+        SubnetIds: !Split [",", !Ref VpcEgressSubnetsIds]
+      MemorySize: !Ref RaddPrivateProxyLambdaMemorySize
+      Timeout: !Ref RaddPrivateProxyLambdaTimeout
+      Environment:
+        Variables:
+          RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX: !Ref RaddPrivateProxyAllowedPathPrefix
+          RADD_PRIVATE_PROXY_BACKEND_BASE_URL: !Sub 'http://${ApplicationLoadBalancerDomain}:8080'
+          RADD_PRIVATE_PROXY_BACKEND_REQUEST_TIMEOUT_MILLIS: !Ref RaddPrivateProxyBackendRequestTimeoutMillis
+          RADD_PRIVATE_PROXY_BACKEND_RETRY_DELAY_MILLIS: !Ref RaddPrivateProxyBackendRetryDelayMillis
+          RADD_PRIVATE_PROXY_BACKEND_RETRY_MAX_ATTEMPTS: !Ref RaddPrivateProxyBackendRetryMaxAttempts
+          RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL: !Ref RaddPrivateProxyExternalProtocol
+          RADD_PRIVATE_PROXY_EXTERNAL_PORT: !Ref RaddPrivateProxyExternalPort
+          RADD_PRIVATE_PROXY_REQUEST_PAYLOAD_LOGGING_ENABLED: !Ref RaddPrivateProxyRequestPayloadLoggingEnabled
+          RADD_PRIVATE_PROXY_RESPONSE_PAYLOAD_LOGGING_ENABLED: !Ref RaddPrivateProxyResponsePayloadLoggingEnabled
+          RADD_PRIVATE_PROXY_TRUSTED_HEADERS: !Ref RaddPrivateProxyTrustedHeaders
+
+  RaddPrivateProxyLambdaVersionPnPlaceholderEpochSeconds:
+    Type: AWS::Lambda::Version
+    Properties:
+      FunctionName: !Ref RaddPrivateProxyLambda
+
+  RaddPrivateProxyLambdaVersionAlias:
+    Type: AWS::Lambda::Alias
+    Properties:
+      FunctionName: !Ref RaddPrivateProxyLambda
+      FunctionVersion: !GetAtt RaddPrivateProxyLambdaVersionPnPlaceholderEpochSeconds.Version
+      Name: live
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref RaddPrivateProxyLambdaProvisionedConcurrency
+
+  RaddPrivateProxyLambdaTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn:
+      - RaddPrivateProxyLambdaInvokePermission
+    Properties:
+      Name: !Sub '${ProjectName}-rpp-lambda-tg'
+      TargetType: lambda
+      Targets:
+        - Id: !Ref RaddPrivateProxyLambdaVersionAlias
+      HealthCheckEnabled: false
+      TargetGroupAttributes:
+        - Key: lambda.multi_value_headers.enabled
+          Value: 'true'
+
+  RaddPrivateProxyLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref RaddPrivateProxyLambdaVersionAlias
+      Action: lambda:InvokeFunction
+      Principal: elasticloadbalancing.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/${ProjectName}-rpp-lambda-tg/*'
+
+  RaddPrivateProxyListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    DependsOn:
+      - RaddPrivateProxyLambdaInvokePermission
+    Properties:
+      ListenerArn: !Ref RaddPrivateProxyAlbListenerArn
+      Priority: !Ref RaddPrivateProxyRulePriority
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref RaddPrivateProxyLambdaTargetGroup
+      Conditions:
+        - Field: path-pattern
+          PathPatternConfig:
+            Values:
+              - !If
+                - HasRaddPrivateProxyListenerPathPrefix
+                - !Sub '${RaddPrivateProxyListenerPathPrefix}*'
+                - '*'
+
+  RaddPrivateProxyLambdaAlarms:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/lambda-alarms.yaml"
+      Parameters:
+        FunctionName: !Ref RaddPrivateProxyLambdaName
+        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+
+  RaddPrivateProxyRejectedPathAlarm:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/custom-metric.yaml"
+      Parameters:
+        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+        MetricName: !Sub "${ProjectName}-radd-alt-private-proxy-rejected-path"
+        MetricNamespace: !Ref MetricNamespace
+        LogGroupName: !Sub "/aws/lambda/${RaddPrivateProxyLambdaName}"
+        FilterPattern: '"RADD private proxy rejected path"'
+        Threshold: !Ref RaddPrivateProxyRejectedPathAlarmThreshold
+        EvaluationPeriods: !Ref RaddPrivateProxyLogAlarmEvaluationPeriods
+        DatapointsToAlarm: !Ref RaddPrivateProxyRejectedPathAlarmDatapointsToAlarm
+        ComparisonOperator: GreaterThanOrEqualToThreshold
+        Statistic: Sum
+        HasAlarm: !Ref RaddPrivateProxyRejectedPathAlarmHasAlarm
+        HasOncall: !Ref RaddPrivateProxyRejectedPathAlarmHasOncall
+        OncallComparisonOperator: GreaterThanOrEqualToThreshold
+        OncallStatistic: Sum
+
+  RaddPrivateProxyBackend4xxMetric:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/custom-metric.yaml"
+      Parameters:
+        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+        MetricName: !Sub "${ProjectName}-radd-alt-private-proxy-backend-4xx"
+        MetricNamespace: !Ref MetricNamespace
+        LogGroupName: !Sub "/aws/lambda/${RaddPrivateProxyLambdaName}"
+        FilterPattern: '"RADD private proxy backend 4xx response"'
+        Threshold: !Ref RaddPrivateProxyBackend4xxAlarmThreshold
+        EvaluationPeriods: !Ref RaddPrivateProxyBackend4xxAlarmEvaluationPeriods
+        DatapointsToAlarm: !Ref RaddPrivateProxyBackend4xxAlarmDatapointsToAlarm
+        ComparisonOperator: GreaterThanOrEqualToThreshold
+        Statistic: Sum
+        HasAlarm: !Ref RaddPrivateProxyBackend4xxMetricHasAlarm
+        HasOncall: !Ref RaddPrivateProxyBackend4xxMetricHasOncall
+        OncallComparisonOperator: GreaterThanOrEqualToThreshold
+        OncallStatistic: Sum
+
+  RaddPrivateProxyBackend5xxAlarm:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/custom-metric.yaml"
+      Parameters:
+        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+        MetricName: !Sub "${ProjectName}-radd-alt-private-proxy-backend-5xx"
+        MetricNamespace: !Ref MetricNamespace
+        LogGroupName: !Sub "/aws/lambda/${RaddPrivateProxyLambdaName}"
+        FilterPattern: '"RADD private proxy backend 5xx response"'
+        Threshold: !Ref RaddPrivateProxyBackend5xxAlarmThreshold
+        EvaluationPeriods: !Ref RaddPrivateProxyBackend5xxAlarmEvaluationPeriods
+        DatapointsToAlarm: !Ref RaddPrivateProxyBackend5xxAlarmDatapointsToAlarm
+        ComparisonOperator: GreaterThanOrEqualToThreshold
+        Statistic: Sum
+        HasAlarm: !Ref RaddPrivateProxyBackend5xxAlarmHasAlarm
+        HasOncall: !Ref RaddPrivateProxyBackend5xxAlarmHasOncall
+        OncallComparisonOperator: GreaterThanOrEqualToThreshold
+        OncallStatistic: Sum
+
   # Expose PN-Radd-Alt microservice public API with API-GW for RADD usage
   RaddAltMicroservicePublicAPI:
     Type: AWS::CloudFormation::Stack
@@ -631,6 +1009,8 @@ Resources:
     Properties:
       TemplateURL: !Sub "${TemplateBucketBaseUrl}/fragments/applicative-throttling.yaml"
       Parameters:
+        AlarmSNSTopicArn: !Ref AlarmSNSTopicArn
+        LogRetentionDays: !Ref LogRetention
         ApplicationLoadBalancerArn: !Ref ApplicationLoadBalancerArn
         ThrottledPathsRegexp: '/radd-net/.*'
         ThrottlingGroupString: 'radd-by-cf'

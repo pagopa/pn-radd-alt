@@ -12,10 +12,11 @@ import it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity;
 import it.pagopa.pn.radd.middleware.msclient.PnDataVaultClient;
 import it.pagopa.pn.radd.middleware.msclient.PnDeliveryPushClient;
 import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
+import it.pagopa.pn.radd.pojo.DocumentInfoDto;
+import it.pagopa.pn.radd.pojo.DocumentTypeEnum;
 import it.pagopa.pn.radd.pojo.RaddTransactionStatusEnum;
 import it.pagopa.pn.radd.pojo.TransactionData;
 import it.pagopa.pn.radd.utils.DateUtils;
-import it.pagopa.pn.radd.utils.OperationTypeEnum;
 import it.pagopa.pn.radd.utils.log.PnRaddAltAuditLog;
 import it.pagopa.pn.radd.utils.log.PnRaddAltLogContext;
 import it.pagopa.pn.radd.utils.Utils;
@@ -23,14 +24,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.ParallelFlux;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static it.pagopa.pn.radd.exception.ExceptionTypeEnum.RETRY_AFTER;
+import static it.pagopa.pn.radd.mapper.StartTransactionResponseMapper.getDownloadUrl;
 import static it.pagopa.pn.radd.mapper.StartTransactionResponseMapper.getDownloadUrls;
 import static it.pagopa.pn.radd.utils.Const.*;
 import static it.pagopa.pn.radd.utils.OperationTypeEnum.AOR;
@@ -51,7 +56,7 @@ public class AorService extends BaseService {
         this.pnRaddFsuConfig = pnRaddFsuConfig;
     }
 
-    public Mono<AORInquiryResponse> aorInquiry(String uid, String recipientTaxId, String recipientType, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId) {
+    public Mono<AORInquiryResponse> aorInquiry(String uid, String recipientTaxId, String recipientType, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_AORINQUIRY)
                 .msg(START_AOR_INQUIRY)
@@ -59,6 +64,8 @@ public class AorService extends BaseService {
                         .addUid(uid)
                         .addCxId(xPagopaPnCxId)
                         .addCxType(xPagopaPnCxType.toString())
+                        .addTaxCode(recipientTaxId)
+                        .addSourceChannel(xPagopaPnSrcCh)
                 )
                 .build()
                 .log();
@@ -91,7 +98,7 @@ public class AorService extends BaseService {
     }
 
 
-    public Mono<CompleteTransactionResponse> completeTransaction(String uid, CompleteTransactionRequest completeTransactionRequest, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId) {
+    public Mono<CompleteTransactionResponse> completeTransaction(String uid, CompleteTransactionRequest completeTransactionRequest, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnSrcCh) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_AORTRAN)
                 .msg(START_AOR_COMPLETE_TRANSACTION)
@@ -100,6 +107,7 @@ public class AorService extends BaseService {
                         .addCxId(xPagopaPnCxId)
                         .addCxType(xPagopaPnCxType.toString())
                         .addOperationId(completeTransactionRequest.getOperationId())
+                        .addSourceChannel(xPagopaPnSrcCh)
                 )
                 .build().log();
 
@@ -128,7 +136,7 @@ public class AorService extends BaseService {
                 );
     }
 
-    public Mono<StartTransactionResponse> startTransaction(String uid, AorStartTransactionRequest request, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnCxRole) {
+    public Mono<StartTransactionResponse> startTransaction(String uid, String xPagopaPnBaseUrl, AorStartTransactionRequest request, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String xPagopaPnCxRole, String xPagopaPnSrcCh) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_AORTRAN)
                 .msg(START_AOR_START_TRANSACTION)
@@ -136,8 +144,10 @@ public class AorService extends BaseService {
                         .addUid(uid)
                         .addCxType(xPagopaPnCxType.toString())
                         .addCxId(xPagopaPnCxId)
+                        .addCxRole(xPagopaPnCxRole)
                         .addOperationId(request.getOperationId())
                         .addRequestFileKey(request.getFileKey())
+                        .addSourceChannel(xPagopaPnSrcCh)
                 )
                 .build()
                 .log();
@@ -147,21 +157,36 @@ public class AorService extends BaseService {
                 .doOnNext(transactionData -> pnRaddAltAuditLog.getContext().addRecipientInternalId(transactionData.getEnsureRecipientId())
                         .addDelegateInternalId(transactionData.getEnsureDelegateId()))
                 .flatMap(transactionData -> setIunsOfNotificationFailed(transactionData, pnRaddAltAuditLog))
-                .flatMap(transaction -> this.createAorTransaction(uid, transaction))
                 .flatMap(this::verifyCheckSum)
                 .flatMap(transactionData ->
-                        this.getPresignedUrls(transactionData.getUrls()).sequential().collectList()
-                                .map(urls -> {
-                                    transactionData.setUrls(urls);
-                                    return transactionData;
-                                })
-                )
+                                 this.getDocInfo(transactionData.getUrls())
+                                     .filter(documentInfoDto -> !pnRaddFsuConfig.getDocumentTypeEnumFilter().contains(DocumentTypeEnum.valueOf(documentInfoDto.getDownloadUrl().getDocumentType())))
+                                     .map(documentInfoDto -> {
+                                          documentInfoDto.getDownloadUrl().setDocumentType(DocumentTypeEnum.valueOf(documentInfoDto.getDownloadUrl().getDocumentType()).getValue());
+                                          return documentInfoDto;
+                                     })
+                                     .sequential()
+                                     .collectList()
+                                     .map(infos -> {
+                                         List<String> urls = infos.stream()
+                                                                  .map(DocumentInfoDto::getDownloadUrl)
+                                                                  .map(DownloadUrl::getUrl)
+                                                                  .toList();
+                                         Map<String, Integer> docAttachments = infos.stream()
+                                                                  .filter(documentInfoDto -> CONTENT_TYPE_PDF.equals(documentInfoDto.getContentType()))
+                                                                  .collect(Collectors.toMap(DocumentInfoDto::getFileKey, dto -> dto.getNumberOfPages() != null ? dto.getNumberOfPages() : 0));
+                                         transactionData.setUrls(urls);
+                                         transactionData.setDocAttachments(docAttachments);
+                                         return transactionData;
+                                     })
+                        )
+                .flatMap(transaction -> this.createAorTransaction(uid, transaction))
                 .flatMap(this::updateFileMetadata)
                 .doOnNext(transactionData -> log.debug("End AOR startTransaction"))
                 .map(data -> {
                     List<DownloadUrl> downloadUrls = getDownloadUrls(data.getUrls());
                     pnRaddAltAuditLog.getContext().addTransactionId(data.getTransactionId()).addDownloadFilekeys(downloadUrls);
-                    return StartTransactionResponseMapper.fromResult(downloadUrls, AOR.name(), data.getOperationId(), pnRaddFsuConfig.getApplicationBasepath(), pnRaddFsuConfig.getDocumentTypeEnumFilter());
+                    return StartTransactionResponseMapper.fromResult(downloadUrls, AOR.name(), data.getOperationId(), xPagopaPnBaseUrl, pnRaddFsuConfig.getDocumentTypeEnumFilter());
                 })
                 .doOnNext(startTransactionResponse -> {
                     pnRaddAltAuditLog.getContext().addResponseStatus(startTransactionResponse.getStatus().toString());
@@ -178,7 +203,8 @@ public class AorService extends BaseService {
                     pnRaddAltAuditLog.generateFailure(END_AOR_START_TRANSACTION_WITH_ERROR, ex.getMessage(), ex);
                     return Mono.error(ex);
                 })
-                .onErrorResume(RaddGenericException.class, ex -> this.settingErrorReason(ex, request.getOperationId(), OperationTypeEnum.AOR, xPagopaPnCxType, xPagopaPnCxId)
+                .onErrorResume(RaddGenericException.class, ex -> this.settingErrorReason(ex, request.getOperationId(), AOR, xPagopaPnCxType, xPagopaPnCxId)
+                                .switchIfEmpty(Mono.just(new RaddTransactionEntity()))
                                 .map(entity -> StartTransactionResponseMapper.fromException(ex))
                                 .doOnNext(startTransactionResponse -> {
                                     pnRaddAltAuditLog.getContext().addResponseStatus(startTransactionResponse.getStatus().toString());
@@ -187,22 +213,44 @@ public class AorService extends BaseService {
                 );
     }
 
-    public ParallelFlux<String> getPresignedUrls(List<String> listFileKey) {
-        return Flux.fromStream(listFileKey.stream())
-                .flatMap(this.safeStorageClient::getFile)
-                .parallel()
-                .map(file -> {
-                    if (file.getDownload() != null && file.getDownload().getRetryAfter() != null && file.getDownload().getRetryAfter().intValue() != 0) {
-                        log.info("Found document with retry after {}", file.getDownload().getRetryAfter());
-                        throw new RaddGenericException(RETRY_AFTER, file.getDownload().getRetryAfter());
-                    }
-                    if (file.getDownload() != null) {
-                        log.info("File : {}", file.getVersionId());
-                        log.info("URL : {}", file.getDownload().getUrl());
-                        return file.getDownload().getUrl();
-                    }
-                    return "";
-                });
+    public ParallelFlux<DocumentInfoDto> getDocInfo(List<String> listFileKey) {
+    return Flux.fromStream(listFileKey.stream())
+               .flatMap(this.safeStorageClient::getFile)
+               .parallel()
+               .map(file -> {
+                   DocumentInfoDto dto = new DocumentInfoDto();
+                   if (file.getDownload() != null && file.getDownload().getRetryAfter() != null && file.getDownload().getRetryAfter().intValue() != 0) {
+                       log.debug("Found document with retry after {}", file.getDownload().getRetryAfter());
+                       throw new RaddGenericException(RETRY_AFTER, file.getDownload().getRetryAfter());
+                   }
+                   if (file.getDownload() != null) {
+                       log.debug("File : {}", file.getVersionId());
+                       log.debug("URL : {}", file.getDownload().getUrl());
+                       log.debug("Pages : {}", retrieveNumberOfPages(file.getTags()));
+                       dto.setFileKey(file.getKey());
+                       dto.setNumberOfPages(retrieveNumberOfPages(file.getTags()));
+                       dto.setDownloadUrl(getDownloadUrl(file.getDownload().getUrl()));
+                       dto.setContentType(file.getContentType());
+                   }
+                   return dto;
+               });
+}
+
+    private Integer retrieveNumberOfPages(Map<String, List<String>> documentTags) {
+        if (CollectionUtils.isEmpty(documentTags)) {
+            return null;
+        }
+        List<String> tagValues = documentTags.get(pnRaddFsuConfig.getDocumentNumberOfPagesTagKey());
+        if (CollectionUtils.isEmpty(tagValues)) {
+            return null;
+        }
+        String tagValue = tagValues.get(0);
+        try {
+            return Integer.valueOf(tagValue);
+        } catch (NumberFormatException ex) {
+            log.warn("Unable to parse document number of pages tag value '{}' for key '{}'", tagValue, pnRaddFsuConfig.getDocumentNumberOfPagesTagKey(), ex);
+            return null;
+        }
     }
 
     private Mono<TransactionData> createAorTransaction(String uid, TransactionData transaction) {
@@ -220,7 +268,7 @@ public class AorService extends BaseService {
     }
 
 
-    public Mono<AbortTransactionResponse> abortTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, AbortTransactionRequest abortTransactionRequest) {
+    public Mono<AbortTransactionResponse> abortTransaction(String uid, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, AbortTransactionRequest abortTransactionRequest, String xPagopaPnSrcCh) {
         PnRaddAltAuditLog pnRaddAltAuditLog = PnRaddAltAuditLog.builder()
                 .eventType(PnAuditLogEventType.AUD_RADD_AORTRAN)
                 .msg(START_AOR_ABORT_TRANSACTION)
@@ -229,6 +277,7 @@ public class AorService extends BaseService {
                         .addCxType(xPagopaPnCxType.toString())
                         .addCxId(xPagopaPnCxId)
                         .addOperationId(abortTransactionRequest.getOperationId())
+                        .addSourceChannel(xPagopaPnSrcCh)
                 )
                 .build()
                 .log();

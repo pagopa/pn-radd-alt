@@ -30,6 +30,7 @@ class NormalizedAddressMapperTest {
         dto.setCountry("Italia");
         dto.setLatitude("41");
         dto.setLongitude("12");
+        dto.setManualCoordinates(true);
 
         NormalizedAddressAllOfBiasPoint biasPoint = new NormalizedAddressAllOfBiasPoint();
         biasPoint.setAddressNumber(BigDecimal.valueOf(1));
@@ -51,6 +52,7 @@ class NormalizedAddressMapperTest {
         assertEquals("Italia", entity.getCountry());
         assertEquals("41", entity.getLatitude());
         assertEquals("12", entity.getLongitude());
+        assertTrue(entity.isManualCoordinates());
 
         BiasPointEntity biasEntity = entity.getBiasPoint();
         assertNotNull(biasEntity);
@@ -72,6 +74,7 @@ class NormalizedAddressMapperTest {
         entity.setCountry("Italia");
         entity.setLatitude("45");
         entity.setLongitude("9");
+        entity.setManualCoordinates(true);
 
         BiasPointEntity biasPoint = new BiasPointEntity();
         biasPoint.setAddressNumber(BigDecimal.valueOf(1));
@@ -93,6 +96,7 @@ class NormalizedAddressMapperTest {
         assertEquals("Italia", dto.getCountry());
         assertEquals("45", dto.getLatitude());
         assertEquals("9", dto.getLongitude());
+        assertEquals(true, dto.getManualCoordinates());
 
         NormalizedAddressAllOfBiasPoint dtoBias = dto.getBiasPoint();
         assertNotNull(dtoBias);
@@ -112,6 +116,29 @@ class NormalizedAddressMapperTest {
     @Test
     void testToDto_nullInput() {
         assertNull(mapper.toDto(null));
+    }
+
+    @Test
+    void testToEntity_nullManualCoordinates_defaultsToFalse() {
+        NormalizedAddress dto = new NormalizedAddress();
+        dto.setAddressRow("Via Test");
+        dto.setManualCoordinates(null);
+
+        NormalizedAddressEntityV2 entity = mapper.toEntity(dto);
+
+        assertNotNull(entity);
+        assertFalse(entity.isManualCoordinates());
+    }
+
+    @Test
+    void testToDto_unsetManualCoordinates_defaultsToFalse() {
+        NormalizedAddressEntityV2 entity = new NormalizedAddressEntityV2();
+        entity.setAddressRow("Via Test");
+
+        NormalizedAddress dto = mapper.toDto(entity);
+
+        assertNotNull(dto);
+        assertFalse(dto.getManualCoordinates());
     }
 
     @Test

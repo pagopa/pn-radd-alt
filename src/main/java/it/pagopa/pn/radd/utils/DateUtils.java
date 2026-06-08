@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -120,6 +120,20 @@ public class DateUtils {
         }
         return startValidity.equals(endValidity) || startValidity.isBefore(endValidity);
     }
+
+    /**
+     * Controlla se la data di fine è nel futuro rispetto alla data odierna.
+     * Se la data di fine è null, viene considerata valida (ritorna true).
+     * @param endValidity
+     * @return true se la data di fine è null o è nel futuro, false se è nel passato.
+     */
+    public static boolean isEndValidityInTheFuture(LocalDate endValidity){
+
+        if(endValidity == null) return true;
+
+        return endValidity.isAfter(LocalDate.now());
+    }
+
 
     /**
      * Verifica se una data di riferimento è inclusa in un intervallo di date.

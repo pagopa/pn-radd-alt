@@ -29,25 +29,28 @@ public class StartTransactionResponseMapper {
         status.setCode(StartTransactionResponseStatus.CodeEnum.NUMBER_0);
         response.setStatus(status);
         status.setMessage(Const.OK);
-
-        result = filterByAndMapDocumentType(result, documentTypeEnumFilter);
         response.setDownloadUrlList(result);
-
         return response;
     }
 
-    @NotNull
-    private static List<DownloadUrl> filterByAndMapDocumentType(List<DownloadUrl> result, List<DocumentTypeEnum> documentTypeEnumFilter) {
-        result = result.stream()
-                .filter(downloadUrl -> !documentTypeEnumFilter.contains(DocumentTypeEnum.valueOf(downloadUrl.getDocumentType())))
-                .map(downloadUrl -> {
-                            downloadUrl.setDocumentType(DocumentTypeEnum.valueOf(downloadUrl.getDocumentType()).getValue());
-                            return downloadUrl;
-                        }
-                )
-                .toList();
-        return result;
+    public static StartTransactionResponse fromResultOnlyLegalFacts(List<DownloadUrl> legalFactsResult, String operationType, String operationId, String pnRaddAltBasepath) {
+
+        StartTransactionResponse response = new StartTransactionResponse();
+
+        if (!legalFactsResult.isEmpty()) {
+            DownloadUrl firstDownloadUrl = getDocumentDownloadUrl(pnRaddAltBasepath, operationType, operationId, null, DocumentTypeEnum.COVER_FILE.name());
+            legalFactsResult.add(0, firstDownloadUrl);
+        }
+
+        StartTransactionResponseStatus status = new StartTransactionResponseStatus();
+        status.setCode(StartTransactionResponseStatus.CodeEnum.NUMBER_4);
+        status.setMessage(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE.getMessage());
+
+        response.setStatus(status);
+        response.setDownloadUrlList(legalFactsResult);
+        return response;
     }
+
 
     @NotNull
     public static List<DownloadUrl> getDownloadUrls(List<String> result) {
@@ -63,6 +66,14 @@ public class StartTransactionResponseMapper {
         return downloadUrlList;
     }
 
+    @NotNull
+    public static DownloadUrl getDownloadUrl(String url) {
+            DownloadUrl downloadUrlItem = new DownloadUrl();
+            downloadUrlItem.setUrl(url);
+            downloadUrlItem.setNeedAuthentication(false);
+            downloadUrlItem.setDocumentType(DocumentTypeEnum.AAR.name());
+        return downloadUrlItem;
+    }
 
     public static StartTransactionResponse fromException(RaddGenericException ex) {
         StartTransactionResponse response = new StartTransactionResponse();

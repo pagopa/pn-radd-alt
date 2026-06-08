@@ -55,6 +55,28 @@ public abstract class BaseDao<T> {
         return Mono.fromFuture(this.tableAsync.updateItem(entity));
     }
 
+    protected Mono<Void> updateItemWithExpression(Map<String, AttributeValue> key,
+                                                  String updateExpression,
+                                                  String conditionExpression,
+                                                  Map<String, String> expressionAttributeNames,
+                                                  Map<String, AttributeValue> expressionAttributeValues) {
+        UpdateItemRequest.Builder updateRequest = UpdateItemRequest.builder()
+                .key(key)
+                .tableName(tableName)
+                .expressionAttributeNames(expressionAttributeNames)
+                .expressionAttributeValues(expressionAttributeValues)
+                .returnValues(ReturnValue.UPDATED_NEW);
+
+        if (!StringUtils.isBlank(updateExpression))
+            updateRequest.updateExpression(updateExpression);
+
+        if (!StringUtils.isBlank(conditionExpression))
+            updateRequest.conditionExpression(conditionExpression);
+
+        return Mono.fromFuture(dynamoDbAsyncClient.updateItem(updateRequest.build()))
+                .then();
+    }
+
     protected Mono<T> findFromKey(Key key) {
         GetItemEnhancedRequest request = GetItemEnhancedRequest.builder().key(key).build();
         return Mono.fromFuture(tableAsync.getItem(request));

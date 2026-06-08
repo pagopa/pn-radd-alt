@@ -5,8 +5,11 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.DownloadUrl;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.pojo.DocumentTypeEnum;
+import it.pagopa.pn.radd.services.radd.fsu.v1.dto.DocumentInfoDto;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -75,6 +78,15 @@ public class Utils {
         return downloadUrl;
     }
 
+    public static DocumentInfoDto getCoverFileDocumentInfo(String pnRaddAltBasepath, String operationType, String operationId) {
+        DownloadUrl downloadUrl = getDocumentDownloadUrl(pnRaddAltBasepath, operationType, operationId, null, DocumentTypeEnum.COVER_FILE.name());
+        return DocumentInfoDto.builder()
+                              .fileKey(null)
+                              .numberOfPages(null)
+                              .downloadUrl(downloadUrl)
+                              .build();
+    }
+
     public static String getFileKeyFromPresignedUrl(String presignedUrl) {
         Pattern FILEKEY_IN_PRESIGNED_URL = Pattern.compile("(.*safestorage.*/)(.*)(\\?.*)");
 
@@ -102,5 +114,12 @@ public class Utils {
         if (!StringUtils.isEmpty(value) && !Pattern.compile(regex).matcher(value).matches()) {
             throw new RaddGenericException(exceptionTypeEnum, HttpStatus.BAD_REQUEST);
         }
+    }
+
+    public static Mono<String> requireBaseUrl(String value) {
+        if (StringUtils.isBlank(value)) {
+            return Mono.error(new RaddGenericException(ExceptionTypeEnum.MISSING_BASE_URL_HEADER, HttpStatus.INTERNAL_SERVER_ERROR));
+        }
+        return Mono.just(value);
     }
 }

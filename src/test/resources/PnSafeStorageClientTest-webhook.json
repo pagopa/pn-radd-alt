@@ -3,7 +3,15 @@
     "httpRequest": {
       "path": "/safe-storage/v1/files",
       "method": "POST",
-      "body": "{\"contentType\":\"application/pdf\",\"documentType\":\"PN_RADD_ALT_ATTACHMENT\",\"status\":\"PRELOADED\"}"
+      "body": {
+        "type": "JSON",
+        "json": {
+          "contentType": "application/pdf",
+          "documentType": "PN_RADD_ALT_ATTACHMENT",
+          "status": "PRELOADED",
+          "tags": null
+        }
+      }
     },
     "httpResponse": {
       "statusCode": 200,

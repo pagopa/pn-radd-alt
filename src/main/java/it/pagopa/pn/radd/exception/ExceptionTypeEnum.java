@@ -8,6 +8,7 @@ public enum ExceptionTypeEnum {
     DATE_NOTICE_ERROR("DATE_NOTICE_ERROR","La data di fine validità non rispetta il preavviso minimo richiesto", 99),
     DATE_INTERVAL_ERROR("DATE_INTERVAL_ERROR","La data di fine validità non può essere precedente alla data di inizio validità", 99),
     DATE_INVALID_ERROR("DATE_INVALID_ERROR","formato della data non valido", 99),
+    END_VALIDITY_NOT_IN_FUTURE("END_VALIDITY_NOT_IN_FUTURE","La data 'endValidity' deve essere nel futuro", 99),
     START_VALIDITY_IN_THE_PAST("START_VALIDITY_IN_THE_PAST","La data 'startValidity' è nel passato", 99),
     IUN_NOT_FOUND("IUN_NOT_FOUND", "Iun not found with params", 99),
     TRANSACTION_NOT_SAVED("TRANSACTION_NOT_SAVED", "La transazione non è stata salvata", 99),
@@ -53,7 +54,9 @@ public enum ExceptionTypeEnum {
     ERROR_CODE_PN_RADD_ALT_UNSUPPORTED_LAST_EVALUATED_KEY("PN_RADD_ALT_UNSUPPORTED_LAST_EVALUATED_KEY", "Impossibile deserializzare la lastEvaluatedKey", 99),
     COORDINATES_NOT_FOUND("COORDINATES_NOT_FOUND", "Coordinate non trovate per l'indirizzo fornito", 99),
     INVALID_URL("INVALID_URL", "L'URL non è valido.", 99),
-    INVALID_PARTNER_ID("INVALID_PARTNER_ID", "Il partnerId fornito non è valido. Deve essere un CF.", 99);
+    INVALID_PARTNER_ID("INVALID_PARTNER_ID", "Il partnerId fornito non è valido. Deve essere un CF.", 99),
+    ADDRESS_MISMATCH("ADDRESS_MISMATCH", "L'indirizzo fornito è diverso da quello salvato.", 99),
+    MISSING_BASE_URL_HEADER("MISSING_BASE_URL_HEADER", "Header x-pagopa-pn-base-url obbligatorio non presente.", 99);
 
     private final String title;
     private final String message;

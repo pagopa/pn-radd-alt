@@ -45,6 +45,8 @@ public class TransactionDataMapper {
         entity.setErrorReason("");
         entity.setOperationStartDate(DateUtils.formatDate(transaction.getOperationDate()));
         entity.setVersionToken(transaction.getVersionId());
+        entity.setSenderPaIds(transaction.getSenderPaIds());
+        entity.setDocAttachments(transaction.getDocAttachments());
         return entity;
     }
 

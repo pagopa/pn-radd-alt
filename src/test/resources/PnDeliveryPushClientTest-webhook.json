@@ -202,5 +202,55 @@
         ]
       }
     }
+  },
+  {
+    "httpRequest": {
+      "path": "/delivery-push-private/LJLH-GNTJ-DVXR-202209-J-1/download/legal-facts/gone_fact",
+      "queryStringParameters" : {
+        "recipientInternalId" : [ "gone_recipient" ]
+      },
+      "method": "GET"
+    },
+    "httpResponse": {
+      "statusCode": 410,
+      "headers": {
+        "content-type": ["application/json"]
+      },
+      "body": {
+        "type": "GENERIC_ERROR",
+        "status": 410,
+        "title": "Gone",
+        "detail": "Allegato non disponibile: superati i termini di conservazione.",
+        "errors": [
+          {"code": "PN_DELIVERYPUSH_FILE_GONE", "element": null, "detail": "none"}
+        ]
+      }
+    }
+  },
+  {
+    "httpRequest": {
+      "path": "/delivery-push-private/YDPM-EKJA-DQGQ-202604-E-1/history",
+      "method": "GET"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "content-type": ["application/json"]
+      },
+      "body": {
+        "notificationStatus": "ACCEPTED",
+        "notificationStatusHistory": [],
+        "timeline": [
+          {
+            "elementId": "VALIDATE_NORMALIZE_ADDRESSES_REQUEST.IUN_YDPM-EKJA-DQGQ-202604-E-1",
+            "timestamp": "2026-04-15T10:09:11Z",
+            "category": "VALIDATE_NORMALIZE_ADDRESSES_REQUEST",
+            "details": {
+              "categoryType": "VALIDATE_NORMALIZE_ADDRESSES_REQUEST"
+            }
+          }
+        ]
+      }
+    }
   }
 ]

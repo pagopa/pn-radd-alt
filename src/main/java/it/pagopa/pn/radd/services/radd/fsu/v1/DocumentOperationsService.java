@@ -24,11 +24,14 @@ import org.apache.commons.codec.binary.Hex;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.HexFormat;
+import java.util.Map;
 import java.util.Optional;
 
 import static it.pagopa.pn.radd.utils.Const.*;
@@ -50,27 +53,34 @@ public class DocumentOperationsService {
     private final PnRaddFsuConfig pnRaddFsuConfig;
 
 
-    public Mono<byte[]> documentDownload(String operationType, String operationId, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String attachmentId) {
+    public Mono<byte[]> documentDownload(String operationType, String operationId, CxTypeAuthFleet xPagopaPnCxType, String xPagopaPnCxId, String attachmentId, String xPagopaPnSrcCh) {
+        log.info("Received document download request for operationType: {}, operationId: {}, xPagopaPnSrcCh: {}", operationType, operationId, xPagopaPnSrcCh);
         return validateOperationTypeAndOperationId(operationType, operationId)
                 .flatMap(isValid -> checkTransactionIsAlreadyExistsInCompletedErrorOrAborted(transactionIdBuilder(xPagopaPnCxType, xPagopaPnCxId, operationId), operationType))
-                .flatMap(raddTansactionEntity -> {
+                .flatMap(raddTransactionEntity -> {
                     if (StringUtils.hasText(attachmentId)) {
-                        return getPdfInZipAttachment(attachmentId, raddTansactionEntity);
+                        return getPdfInZipAttachment(attachmentId, raddTransactionEntity);
                     } else {
-                        return checkOperationType(operationType, raddTansactionEntity)
-                                .flatMap(iun -> createCoverFile(raddTansactionEntity, iun));
+                        log.debug("AttachmentId not set, proceeding with cover page retrieval");
+                        return checkOperationType(operationType, raddTransactionEntity)
+                                .concatMap(iun -> enrichSenderPaIds(iun, raddTransactionEntity))
+                                .takeLast(1)
+                                .singleOrEmpty()
+                                .map(sentNotificationV25Dto -> checkRecipientIdAndCreatePdf(sentNotificationV25Dto, raddTransactionEntity));
                     }
                 })
-                .map(DocumentOperationsService::getHexBytes);
+                .map(DocumentOperationsService::getHexBytes)
+                .doOnNext(result -> log.debug("Document download completed successfully for operationId: {}, operationType: {}", operationId, operationType));
     }
 
-    private Mono<String> checkOperationType(String operationType, RaddTransactionEntity raddTansactionEntity) {
+    private Flux<String> checkOperationType(String operationType, RaddTransactionEntity raddTansactionEntity) {
         if (AOR.name().equals(operationType)) {
+            log.debug("OperationType AOR, recovering all IUNs associated with transactionId: {}", raddTansactionEntity.getTransactionId());
             return operationsIunsDAO.getAllIunsFromTransactionId(raddTansactionEntity.getTransactionId())
-                    .next()
                     .map(OperationsIunsEntity::getIun);
         }
-        return Mono.just(raddTansactionEntity.getIun());
+        log.debug("OperationType ACT, recovering IUN associated with transactionId: {}", raddTansactionEntity.getTransactionId());
+        return Flux.just(raddTansactionEntity.getIun());
     }
 
 
@@ -78,35 +88,67 @@ public class DocumentOperationsService {
     private Mono<byte[]> getPdfInZipAttachment(String attachmentId, RaddTransactionEntity raddTansactionEntity) {
         if (raddTansactionEntity.getZipAttachments() != null &&
                 StringUtils.hasText(raddTansactionEntity.getZipAttachments().get(attachmentId))) {
+            log.debug( "recovering pdf from zip attachment for attachmentId: {} and transactionId: {}", attachmentId, raddTansactionEntity.getTransactionId());
             String zipUrl = raddTansactionEntity.getZipAttachments().get(attachmentId);
             return documentDownloadClient.downloadContent(zipUrl)
                     .map(ZipUtils::extractPdfFromZip);
         }
+        log.debug( "AttachmentId {} not found in zip attachments for transactionId: {}", attachmentId, raddTansactionEntity.getTransactionId());
         throw new ZipAttachmentNotFoundException();
     }
 
-    @NotNull
-    private Mono<byte[]> createCoverFile(RaddTransactionEntity raddTansactionEntity, String iun) {
+    private Mono<SentNotificationV25Dto> enrichSenderPaIds(String iun, RaddTransactionEntity raddTransactionEntity) {
+        log.debug("Enriching senderPaId for iun: {} and transactionId: {}", iun, raddTransactionEntity.getTransactionId());
         return pnDeliveryClient.getNotifications(iun)
-                .map(sentNotificationV25Dto -> checkRecipientIdAndCreatePdf(sentNotificationV25Dto, raddTansactionEntity.getRecipientId()));
+                .flatMap(sentNotificationV25Dto -> {
+                    String senderPaId = sentNotificationV25Dto.getSenderPaId();
+                    log.debug("Resolved senderPaId: {} for iun: {}", senderPaId, iun);
+                    return raddTransactionDAO.addSenderPaId(raddTransactionEntity.getTransactionId(), raddTransactionEntity.getOperationType(), senderPaId)
+                            .thenReturn(sentNotificationV25Dto);
+                });
     }
 
-    private byte @NotNull [] checkRecipientIdAndCreatePdf(SentNotificationV25Dto sentNotificationV25Dto, String internalId) {
+    private byte @NotNull [] checkRecipientIdAndCreatePdf(SentNotificationV25Dto sentNotificationV25Dto, RaddTransactionEntity entity) {
         Optional<NotificationRecipientV24Dto> recipient = sentNotificationV25Dto.getRecipients().stream()
-                .filter(notificationRecipient -> internalId.equals(notificationRecipient.getInternalId()))
+                .filter(notificationRecipient -> entity.getRecipientId().equals(notificationRecipient.getInternalId()))
                 .findFirst();
         if (recipient.isPresent()) {
-            return generatePdf(recipient.get());
+            log.debug( "Recipient with internalId: {} found among notification recipients for iun: {}, generating pdf", entity.getRecipientId(), sentNotificationV25Dto.getIun());
+            return generatePdf(recipient.get(), entity);
         }
+        log.debug( "Recipient with internalId: {} not found among notification recipients for iun: {}", entity.getRecipientId(), sentNotificationV25Dto.getIun());
         throw new RaddGenericException(ERROR_NO_RECIPIENT);
     }
 
-    private byte @NotNull [] generatePdf(NotificationRecipientV24Dto recipient) {
+    private byte @NotNull [] generatePdf(NotificationRecipientV24Dto recipient, RaddTransactionEntity entity) {
         try {
-            return pdfGenerator.generateCoverFile(recipient.getDenomination());
+            log.debug( "Generating PDF for recipient with internalId: {} and transactionId: {}", recipient.getInternalId(), entity.getTransactionId());
+            Integer numberOfPages = pnRaddFsuConfig.isDocumentPageCountEnabled()
+                    ? calculateTotalPages(entity)
+                    : null;
+            return pdfGenerator.generateCoverFile(recipient.getDenomination(), numberOfPages);
         } catch (IOException e) {
+            log.debug( "Error during PDF generation for recipient with internalId: {} and transactionId: {}, error: {}", recipient.getInternalId(), entity.getTransactionId(), e.getMessage());
             throw new RaddGenericException(e.getMessage());
         }
+    }
+
+    Integer calculateTotalPages(RaddTransactionEntity entity) {
+        Map<String, Integer> docAttachments = entity.getDocAttachments();
+        if (CollectionUtils.isEmpty(docAttachments)) {
+            log.debug( "No document attachments found for transactionId: {}, returning null for page count", entity.getTransactionId());
+            return null;
+        }
+        int attachmentPages = 1; // +1 for the frontespizio itself
+        for (Map.Entry<String, Integer> entry : docAttachments.entrySet()) {
+            if (entry.getValue() == null || entry.getValue() <= 0) {
+                log.warn("Missing or invalid page count for fileKey: {}", entry.getKey());
+                return null;
+            }
+            attachmentPages += entry.getValue();
+        }
+        if (!CollectionUtils.isEmpty(entity.getZipAttachments())) attachmentPages += entity.getZipAttachments().size(); //+1 for every zip file
+        return attachmentPages;
     }
 
     private static byte[] getHexBytes(byte[] byteArray) {
@@ -131,14 +173,17 @@ public class DocumentOperationsService {
                     if (raddTransactionEntity.getStatus().equals(Const.ABORTED) ||
                             raddTransactionEntity.getStatus().equals(Const.COMPLETED) ||
                             raddTransactionEntity.getStatus().equals(Const.ERROR)) {
+                        log.debug("Transaction with transactionId: {} and operationType: {} already exists with status: {}, throwing TransactionAlreadyExistsException", transactionId, operationType, raddTransactionEntity.getStatus());
                         throw new TransactionAlreadyExistsException();
                     }
+                    log.debug("Transaction found for transactionId: {} with status: {}, proceeding", transactionId, raddTransactionEntity.getStatus());
                     return raddTransactionEntity;
                 });
     }
 
 
-    public Mono<DocumentUploadResponse> createFile(Mono<DocumentUploadRequest> documentUploadRequest, String xPagopaPnCxRole) {
+    public Mono<DocumentUploadResponse> createFile(Mono<DocumentUploadRequest> documentUploadRequest, String xPagopaPnCxRole, String xPagopaPnSrcCh) {
+        log.info("Received document upload request with xPagopaPnSrcCh: {} and role: {}", xPagopaPnSrcCh, xPagopaPnCxRole);
         if (documentUploadRequest == null) {
             log.error(MISSING_INPUT_PARAMETERS);
             return Mono.error(new PnInvalidInputException("Body non valido"));
@@ -149,7 +194,7 @@ public class DocumentOperationsService {
         return documentUploadRequest
                 .flatMap(value -> pnSafeStorageClient.createFile(request, value.getChecksum()))
                 .map(item -> {
-                    log.info("Response presigned url : {}", item.getUploadUrl());
+                    log.debug("Response presigned url : {}", item.getUploadUrl());
                     return DocumentUploadResponseMapper.fromResult(item);
                 }).onErrorResume(RaddGenericException.class, ex -> Mono.just(DocumentUploadResponseMapper.fromException(ex)));
     }

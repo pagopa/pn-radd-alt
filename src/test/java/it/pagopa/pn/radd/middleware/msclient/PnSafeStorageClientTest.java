@@ -30,6 +30,7 @@ class PnSafeStorageClientTest extends BaseTest.WithMockServer {
         fileCreationRequestDto.setContentType(contentType);
         fileCreationRequestDto.setDocumentType("PN_RADD_ALT_ATTACHMENT");
         fileCreationRequestDto.setStatus("PRELOADED");
+        fileCreationRequestDto.setTags(null);
         Mono<FileCreationResponseDto> monoResponse =  pnSafeStorageClient.createFile(fileCreationRequestDto, checksumValue);
         monoResponse.map(response -> {
             assertEquals("http://localhost:1080/safe-storage/storage/unFile", response.getUploadUrl());

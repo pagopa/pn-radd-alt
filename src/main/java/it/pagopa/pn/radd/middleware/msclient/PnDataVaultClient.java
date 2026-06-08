@@ -1,12 +1,13 @@
 package it.pagopa.pn.radd.middleware.msclient;
 
+import it.pagopa.pn.commons.log.PnLogger;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndatavault.v1.api.RecipientsApi;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndatavault.v1.dto.RecipientTypeDto;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.PnRaddException;
 import it.pagopa.pn.radd.middleware.msclient.common.BaseClient;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -18,7 +19,7 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.TimeoutException;
 
-@Slf4j
+@CustomLog
 @AllArgsConstructor
 @Component
 public class PnDataVaultClient extends BaseClient {
@@ -29,6 +30,7 @@ public class PnDataVaultClient extends BaseClient {
 
 
     public Mono<String> getEnsureFiscalCode(String fiscalCode, String type) {
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DATA_VAULT, "ensureRecipientByExternalId");
         log.trace("ENSURE FISCAL CODE TICK {}", new Date().getTime());
         return this.recipientsApi.ensureRecipientByExternalId(
                 (StringUtils.equalsIgnoreCase(type, RecipientTypeDto.PF.getValue()) ? RecipientTypeDto.PF: RecipientTypeDto.PG), fiscalCode)

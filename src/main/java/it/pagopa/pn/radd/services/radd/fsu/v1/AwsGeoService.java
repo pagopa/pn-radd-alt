@@ -1,5 +1,6 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
+import it.pagopa.pn.radd.alt.generated.openapi.server.v2.dto.AddressV2;
 import it.pagopa.pn.radd.exception.CoordinatesNotFoundException;
 import lombok.Data;
 import lombok.ToString;
@@ -33,6 +34,10 @@ public class AwsGeoService {
         return Mono.fromFuture(geoPlacesAsyncClient.geocode(request))
                    .flatMap(response -> getCoordinateResult(response, address))
                    .doOnError(e -> log.error("Error during AWS geolocation", e));
+    }
+
+    public Mono<CoordinatesResult> getCoordinatesForAddress(AddressV2 inputAddress) {
+        return getCoordinatesForAddress(inputAddress.getAddressRow(), inputAddress.getProvince(), inputAddress.getCap(), inputAddress.getCity(), inputAddress.getCountry());
     }
 
     private GeocodeQueryComponents buildGeocodeQueryComponents(

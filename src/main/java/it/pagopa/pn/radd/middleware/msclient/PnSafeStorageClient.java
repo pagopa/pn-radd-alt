@@ -45,7 +45,7 @@ public class PnSafeStorageClient extends BaseClient {
         log.debug(String.format("URL %s ", this.pnRaddFsuConfig.getClientSafeStorageBasepath()));
         log.debug(String.format("storage id %s ", this.pnRaddFsuConfig.getSafeStorageCxId()));
         log.trace("CREATE FILE TICK {}", new Date().getTime());
-        return this.fileUploadApi.createFile(this.pnRaddFsuConfig.getSafeStorageCxId(), Const.X_CHECKSUM, checksum, fileCreationRequestDto)
+        return this.fileUploadApi.createFile(this.pnRaddFsuConfig.getSafeStorageCxId(), checksum, Const.X_CHECKSUM, fileCreationRequestDto)
                 .map(item -> {
                     log.trace("CREATE FILE TOCK {}", new Date().getTime());
                     return item;
@@ -64,9 +64,10 @@ public class PnSafeStorageClient extends BaseClient {
         if (fileKey.startsWith(SAFESTORAGE_PREFIX)) {
             fileKey = fileKey.replace(SAFESTORAGE_PREFIX, "");
         }
-        log.debug("Req params : {}", fileKey);
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_SAFE_STORAGE, "getFile");
+        log.debug("getFile - fileKey: {}", fileKey);
         log.trace("GET FILE TICK {}", new Date().getTime());
-        return fileDownloadApi.getFile(fileKey, this.pnRaddFsuConfig.getSafeStorageCxId(), false)
+        return fileDownloadApi.getFile(fileKey, this.pnRaddFsuConfig.getSafeStorageCxId(), false, true)
                 .retryWhen(
                         Retry.backoff(2, Duration.ofMillis(500))
                                 .filter(throwable -> throwable instanceof TimeoutException || throwable instanceof ConnectException)
@@ -84,6 +85,7 @@ public class PnSafeStorageClient extends BaseClient {
     }
 
     public Mono<OperationResultCodeResponseDto> updateFileMetadata(String fileKey) {
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_SAFE_STORAGE, "updateFileMetadata");
         log.debug("Req params : {}", fileKey);
         log.trace("UPDATE FILE METADATA TICK {}", new Date().getTime());
 

@@ -11,7 +11,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.springframework.http.HttpStatus;
-import org.springframework.util.Base64Utils;
+
+import java.util.Base64;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import java.nio.charset.StandardCharsets;
@@ -50,7 +51,7 @@ public class PnLastEvaluatedKey {
     }
 
     public static PnLastEvaluatedKey deserializeInternalLastEvaluatedKey( String encodedString ) throws JsonProcessingException {
-        String jsonString = new String( Base64Utils.decodeFromUrlSafeString( encodedString ), StandardCharsets.UTF_8 );
+        String jsonString = new String( Base64.getUrlDecoder().decode(encodedString), StandardCharsets.UTF_8 );
         KeyPair keyPair = objectReader.readValue( jsonString );
         PnLastEvaluatedKey pnLastEvaluatedKey = new PnLastEvaluatedKey();
         pnLastEvaluatedKey.setExternalLastEvaluatedKey( keyPair.getEk() );
@@ -68,7 +69,7 @@ public class PnLastEvaluatedKey {
         String result;
         try {
             result = objectWriter.writeValueAsString( toSerialize );
-            result = Base64Utils.encodeToUrlSafeString( result.getBytes(StandardCharsets.UTF_8) );
+            result = Base64.getUrlEncoder().encodeToString(result.getBytes(StandardCharsets.UTF_8));
         } catch ( JsonProcessingException e ) {
             throw new RaddGenericException(
                     ERROR_CODE_PN_RADD_ALT_UNSUPPORTED_LAST_EVALUATED_KEY,

@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -30,11 +30,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @CustomLog
 class RaddRegistryV2DAOImplTest extends BaseTest.WithLocalStack {
     @Autowired
-    @SpyBean
+    @MockitoSpyBean
     private RaddRegistryV2DAO raddRegistryDAO;
 
     @Autowired
-    @SpyBean
+    @MockitoSpyBean
     private RestExceptionHandler exceptionHandler;
 
     @Mock

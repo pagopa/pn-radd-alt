@@ -1,13 +1,16 @@
 package it.pagopa.pn.radd.middleware.msclient;
 
+import it.pagopa.pn.commons.log.PnLogger;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.api.EventComunicationApi;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.api.LegalFactsPrivateApi;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.api.PaperNotificationFailedApi;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.api.TimelineAndStatusApi;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.*;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
+import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.PnRaddException;
 import it.pagopa.pn.radd.exception.PaperNotificationFailedEmptyException;
+import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity;
 import it.pagopa.pn.radd.middleware.msclient.common.BaseClient;
 import it.pagopa.pn.radd.utils.DateUtils;
@@ -31,7 +34,6 @@ import java.util.concurrent.TimeoutException;
 public class PnDeliveryPushClient extends BaseClient {
     private static final String RADD_TYPE = "ALT";
     private final EventComunicationApi eventComunicationApi;
-    private final TimelineAndStatusApi timelineAndStatusApi;
     private final PaperNotificationFailedApi paperNotificationFailedApi;
     private final LegalFactsPrivateApi legalFactsApi;
 
@@ -39,6 +41,8 @@ public class PnDeliveryPushClient extends BaseClient {
 
 
     public Flux<LegalFactListElementV20Dto> getNotificationLegalFacts(String recipientInternalId, String iun) {
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY_PUSH, "getNotificationLegalFacts");
+        log.debug("getNotificationLegalFacts - iun: {}, recipientInternalId: {}", iun, recipientInternalId);
         CxTypeAuthFleetDto cxType = null;
         return this.legalFactsApi.getNotificationLegalFactsPrivate( recipientInternalId, iun, null, cxType, null)
                 .retryWhen(
@@ -54,6 +58,8 @@ public class PnDeliveryPushClient extends BaseClient {
     }
 
     public Mono<LegalFactDownloadMetadataWithContentTypeResponseDto> getLegalFact(String recipientInternalId, String iun, String legalFactId) {
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY_PUSH, "getLegalFact");
+        log.debug("getLegalFact - iun: {}, legalFactId: {}, recipientInternalId: {}", iun, legalFactId, recipientInternalId);
         log.trace("GET LEGAL FACT TICK {}", new Date().getTime());
         CxTypeAuthFleetDto cxType = null;
         return this.legalFactsApi.getLegalFactByIdPrivate(recipientInternalId, iun, legalFactId, null, cxType, null)
@@ -63,30 +69,18 @@ public class PnDeliveryPushClient extends BaseClient {
                 ).map(item ->{
                     log.trace("GET LEGAL FACT TOCK {}", new Date().getTime());
                     return item;
-                }).onErrorResume(WebClientResponseException.class, ex -> Mono.error(new PnRaddException(ex)));
-    }
-
-
-    public Mono<NotificationHistoryResponseDto> getNotificationHistory(String iun){
-        log.debug("IUN : {}", iun);
-        log.trace("NOTIFICATION HISTORY TICK {}", new Date().getTime());
-        return this.timelineAndStatusApi.getNotificationHistory(iun, 1, DateUtils.getOffsetDateTimeFromDate(new Date()))
-                .retryWhen(
-                        Retry.backoff(2, Duration.ofMillis(500))
-                                .filter(throwable -> throwable instanceof TimeoutException || throwable instanceof ConnectException)
-                ).map(item -> {
-                    log.trace("NOTIFICATION HISTORY TOCK {}", new Date().getTime());
-                    return item;
-                })
-                .onErrorResume(WebClientResponseException.class, ex -> {
-                    log.trace("NOTIFICATION HISTORY TOCK {}", new Date().getTime());
-                    ex.getStackTrace();
-                    log.error(ex.getResponseBodyAsString());
+                }).onErrorResume(WebClientResponseException.class, ex -> {
+                    if (ex.getStatusCode().value() == HttpResponseStatus.GONE.code())
+                    {
+                        return Mono.error(new RaddGenericException(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE));
+                    }
                     return Mono.error(new PnRaddException(ex));
                 });
     }
 
     public Mono<ResponseNotificationViewedDtoDto> notifyNotificationRaddRetrieved(RaddTransactionEntity entity, Date operationDate){
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY_PUSH, "notifyNotificationRaddRetrieved");
+        log.debug("notifyNotificationRaddRetrieved - iun: {}, operationId: {}", entity.getIun(), entity.getOperationId());
         RequestNotificationViewedDtoDto request = new RequestNotificationViewedDtoDto();
         request.setRecipientType(RecipientTypeDto.fromValue(entity.getRecipientType()));
         request.setRecipientInternalId(entity.getRecipientId());
@@ -113,6 +107,8 @@ public class PnDeliveryPushClient extends BaseClient {
 
 
     public Flux<ResponsePaperNotificationFailedDtoDto> getPaperNotificationFailed(String recipientInternalId){
+        log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY_PUSH, "paperNotificationFailed");
+        log.debug("getPaperNotificationFailed - recipientInternalId: {}", recipientInternalId);
         return this.paperNotificationFailedApi.paperNotificationFailed(recipientInternalId, true)
                 .retryWhen(
                         Retry.backoff(2, Duration.ofMillis(500))

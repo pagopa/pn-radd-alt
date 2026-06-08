@@ -77,13 +77,14 @@ class LegalFactInfoTest {
         actualLegalFactInfo.setContentType("text/plain");
         actualLegalFactInfo.setKey("Key");
         actualLegalFactInfo.setUrl("https://example.org/example");
+        actualLegalFactInfo.setNumberOfPages(42);
         String actualToStringResult = actualLegalFactInfo.toString();
         assertEquals(LegalFactCategoryV20Dto.SENDER_ACK, actualLegalFactInfo.getCategory());
         assertEquals("text/plain", actualLegalFactInfo.getContentType());
         assertEquals("Key", actualLegalFactInfo.getKey());
         assertEquals("https://example.org/example", actualLegalFactInfo.getUrl());
         assertEquals(
-                "LegalFactInfo(key=Key, url=https://example.org/example, contentType=text/plain, category=SENDER_ACK)",
+                "LegalFactInfo(key=Key, url=https://example.org/example, contentType=text/plain, category=SENDER_ACK, numberOfPages=42)",
                 actualToStringResult);
     }
 

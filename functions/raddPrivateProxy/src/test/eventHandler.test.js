@@ -1,0 +1,576 @@
+const assert = require("node:assert/strict");
+const { test } = require("node:test");
+const {
+  createHandler,
+  handleEvent,
+  isRetryableBackendError,
+  isRetryableBackendResponse,
+  validatePathForForward
+} = require("../app/eventHandler");
+
+const trustedHeaders = {
+  "x-pagopa-pn-src-ch": "RADD",
+  "x-pagopa-pn-src-ch-details": "NONINTEROP",
+  "x-pagopa-pn-cx-type": "RADD",
+  "x-pagopa-pn-cx-role": "RADD_UPLOADER",
+  "x-pagopa-pn-cx-id": "97103880585",
+  "x-pagopa-pn-uid": "RADD_cf_97103880585",
+  "x-pagopa-pn-cx-groups": ""
+};
+
+const baseEnv = {
+  AWS_REGION: "eu-south-1",
+  RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX: "/radd-net/",
+  RADD_PRIVATE_PROXY_BACKEND_BASE_URL: "http://internal-alb:8080",
+  RADD_PRIVATE_PROXY_BACKEND_REQUEST_TIMEOUT_MILLIS: "2000",
+  RADD_PRIVATE_PROXY_BACKEND_RETRY_DELAY_MILLIS: "0",
+  RADD_PRIVATE_PROXY_BACKEND_RETRY_MAX_ATTEMPTS: "3",
+  RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL: "https",
+  RADD_PRIVATE_PROXY_EXTERNAL_PORT: "8443",
+  RADD_PRIVATE_PROXY_TRUSTED_HEADERS: JSON.stringify(trustedHeaders)
+};
+
+function buildEvent(overrides = {}) {
+  return {
+    httpMethod: "POST",
+    path: "/radd-net/api/v1/act/inquiry",
+    headers: {
+      host: "vpce-0159b66963cb51025-1t51z9qh.vpce-svc-0a08e48564915d1c3.eu-south-1.vpce.amazonaws.com:8080",
+      "content-type": "application/json",
+      uid: "POSTE_operator_1",
+      "x-pagopa-pn-src-ch": "SPOOFED"
+    },
+    queryStringParameters: {
+      iun: "ABC"
+    },
+    body: JSON.stringify({ test: true }),
+    isBase64Encoded: false,
+    ...overrides
+  };
+}
+
+test("overwrites trusted headers and derives base URL from the technical VPCE host", async () => {
+  let capturedRequest;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async (url, options) => {
+      capturedRequest = { url, options };
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent());
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(capturedRequest.url, "http://internal-alb:8080/radd-net/api/v1/act/inquiry?iun=ABC");
+  assert.equal(capturedRequest.options.headers["x-pagopa-pn-src-ch"], "RADD");
+  assert.equal(capturedRequest.options.headers["x-pagopa-pn-cx-id"], "97103880585");
+  assert.equal(capturedRequest.options.headers.uid, "POSTE_operator_1");
+  assert.equal(capturedRequest.options.headers["x-pagopa-pn-uid"], "RADD_cf_97103880585");
+  assert.equal(
+    capturedRequest.options.headers["x-pagopa-pn-base-url"],
+    "https://vpce-0159b66963cb51025-1t51z9qh.vpce-svc-0a08e48564915d1c3.eu-south-1.vpce.amazonaws.com:8443"
+  );
+  assert.deepEqual(response.multiValueHeaders, {
+    "content-type": ["application/json"]
+  });
+});
+
+test("propagates Lambda X-Ray trace header to backend and caller response", async () => {
+  let capturedRequest;
+  const handler = createHandler({
+    env: { ...baseEnv, _X_AMZN_TRACE_ID: "Root=1-trace;Parent=parent;Sampled=1" },
+    fetchImpl: async (url, options) => {
+      capturedRequest = { url, options };
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent({
+    headers: {
+      ...buildEvent().headers,
+      "x-amzn-trace-id": "Root=1-spoofed;Parent=spoofed;Sampled=0"
+    }
+  }));
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(capturedRequest.options.headers["x-amzn-trace-id"], "Root=1-trace;Parent=parent;Sampled=1");
+  assert.deepEqual(response.multiValueHeaders, {
+    "content-type": ["application/json"],
+    "x-amzn-trace-id": ["Root=1-trace;Parent=parent;Sampled=1"]
+  });
+});
+
+test("adds Lambda X-Ray trace header to local proxy errors", async () => {
+  let called = false;
+  const handler = createHandler({
+    env: { ...baseEnv, _X_AMZN_TRACE_ID: "Root=1-local;Parent=parent;Sampled=1" },
+    fetchImpl: async () => {
+      called = true;
+      return new Response("unexpected");
+    }
+  });
+
+  const response = await handler(buildEvent({ path: "/outside-allowlist" }));
+
+  assert.equal(response.statusCode, 403);
+  assert.equal(called, false);
+  assert.deepEqual(response.multiValueHeaders, {
+    "content-type": ["application/json"],
+    "x-amzn-trace-id": ["Root=1-local;Parent=parent;Sampled=1"]
+  });
+});
+
+test("logs diagnostic message and continues when Lambda X-Ray trace header is missing", async () => {
+  const logs = [];
+  const originalConsoleLog = console.log;
+  console.log = (...args) => logs.push(args);
+
+  try {
+    let capturedRequest;
+    const handler = createHandler({
+      env: baseEnv,
+      fetchImpl: async (url, options) => {
+        capturedRequest = { url, options };
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          statusText: "OK",
+          headers: { "content-type": "application/json" }
+        });
+      }
+    });
+
+    const response = await handler(buildEvent());
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(capturedRequest.options.headers["x-amzn-trace-id"], undefined);
+    assert.deepEqual(response.multiValueHeaders, {
+      "content-type": ["application/json"]
+    });
+    assert.equal(
+      logs.some(([message]) => message === "No _X_AMZN_TRACE_ID found in environment variables"),
+      true
+    );
+  } finally {
+    console.log = originalConsoleLog;
+  }
+});
+
+test("returns multi-value response headers from backend", async () => {
+  class BackendResponse extends Response {
+    constructor(body, init) {
+      super(body, init);
+      this.headers.getSetCookie = () => ["a=1; Secure", "b=2; Secure"];
+    }
+  }
+
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => new BackendResponse(JSON.stringify({ ok: true }), {
+      status: 200,
+      statusText: "OK",
+      headers: { "content-type": "application/json" }
+    })
+  });
+
+  const response = await handler(buildEvent());
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.multiValueHeaders, {
+    "content-type": ["application/json"],
+    "set-cookie": ["a=1; Secure", "b=2; Secure"]
+  });
+});
+
+test("retries backend 500 responses and succeeds on a later attempt even for POST by default", async () => {
+  let attempts = 0;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      attempts += 1;
+      if (attempts === 1) {
+        return new Response(JSON.stringify({ message: "retry me" }), {
+          status: 500,
+          statusText: "Internal Server Error",
+          headers: { "content-type": "application/json" }
+        });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent());
+
+  assert.equal(attempts, 2);
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(JSON.parse(response.body), { ok: true });
+});
+
+test("retries transient backend network errors", async () => {
+  let attempts = 0;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      attempts += 1;
+      if (attempts === 1) {
+        const err = new TypeError("fetch failed");
+        err.cause = { code: "ECONNRESET" };
+        throw err;
+      }
+
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent({ httpMethod: "GET", body: null }));
+
+  assert.equal(attempts, 2);
+  assert.equal(response.statusCode, 200);
+});
+
+test("fails initialization when external base URL port is not configured", () => {
+  const envWithoutExternalPort = { ...baseEnv };
+  delete envWithoutExternalPort.RADD_PRIVATE_PROXY_EXTERNAL_PORT;
+
+  assert.throws(
+    () => createHandler({ env: envWithoutExternalPort, fetchImpl: async () => new Response("unexpected") }),
+    /Missing base URL port configuration/
+  );
+});
+
+test("fails initialization when external base URL protocol is not configured", () => {
+  const envWithoutExternalProtocol = { ...baseEnv };
+  delete envWithoutExternalProtocol.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL;
+
+  assert.throws(
+    () => createHandler({ env: envWithoutExternalProtocol, fetchImpl: async () => new Response("unexpected") }),
+    /Missing base URL protocol configuration/
+  );
+});
+
+test("default handler lets initialization errors fail the Lambda invocation", async () => {
+  const originalBackendBaseUrl = process.env.RADD_PRIVATE_PROXY_BACKEND_BASE_URL;
+  const originalExternalPort = process.env.RADD_PRIVATE_PROXY_EXTERNAL_PORT;
+  const originalExternalProtocol = process.env.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL;
+  const originalTrustedHeaders = process.env.RADD_PRIVATE_PROXY_TRUSTED_HEADERS;
+
+  delete process.env.RADD_PRIVATE_PROXY_BACKEND_BASE_URL;
+  process.env.RADD_PRIVATE_PROXY_EXTERNAL_PORT = baseEnv.RADD_PRIVATE_PROXY_EXTERNAL_PORT;
+  process.env.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL = baseEnv.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL;
+  process.env.RADD_PRIVATE_PROXY_TRUSTED_HEADERS = baseEnv.RADD_PRIVATE_PROXY_TRUSTED_HEADERS;
+
+  try {
+    await assert.rejects(
+      () => handleEvent(buildEvent()),
+      /Missing backend base URL configuration/
+    );
+  } finally {
+    if (originalBackendBaseUrl === undefined) {
+      delete process.env.RADD_PRIVATE_PROXY_BACKEND_BASE_URL;
+    } else {
+      process.env.RADD_PRIVATE_PROXY_BACKEND_BASE_URL = originalBackendBaseUrl;
+    }
+
+    if (originalExternalPort === undefined) {
+      delete process.env.RADD_PRIVATE_PROXY_EXTERNAL_PORT;
+    } else {
+      process.env.RADD_PRIVATE_PROXY_EXTERNAL_PORT = originalExternalPort;
+    }
+
+    if (originalExternalProtocol === undefined) {
+      delete process.env.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL;
+    } else {
+      process.env.RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL = originalExternalProtocol;
+    }
+
+    if (originalTrustedHeaders === undefined) {
+      delete process.env.RADD_PRIVATE_PROXY_TRUSTED_HEADERS;
+    } else {
+      process.env.RADD_PRIVATE_PROXY_TRUSTED_HEADERS = originalTrustedHeaders;
+    }
+  }
+});
+
+test("omits the port from base URL when external base URL port is 443", async () => {
+  let capturedRequest;
+  const handler = createHandler({
+    env: { ...baseEnv, RADD_PRIVATE_PROXY_EXTERNAL_PORT: "443" },
+    fetchImpl: async (url, options) => {
+      capturedRequest = { url, options };
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent());
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(
+    capturedRequest.options.headers["x-pagopa-pn-base-url"],
+    "https://vpce-0159b66963cb51025-1t51z9qh.vpce-svc-0a08e48564915d1c3.eu-south-1.vpce.amazonaws.com"
+  );
+});
+
+test("uses configured external base URL protocol", async () => {
+  let capturedRequest;
+  const handler = createHandler({
+    env: { ...baseEnv, RADD_PRIVATE_PROXY_EXTERNAL_PROTOCOL: "http", RADD_PRIVATE_PROXY_EXTERNAL_PORT: "80" },
+    fetchImpl: async (url, options) => {
+      capturedRequest = { url, options };
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent());
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(
+    capturedRequest.options.headers["x-pagopa-pn-base-url"],
+    "http://vpce-0159b66963cb51025-1t51z9qh.vpce-svc-0a08e48564915d1c3.eu-south-1.vpce.amazonaws.com"
+  );
+});
+
+test("logs full inbound payload only when verbose logging is enabled", async () => {
+  const logs = [];
+  const originalConsoleLog = console.log;
+  console.log = (...args) => logs.push(args);
+
+  try {
+    const handler = createHandler({
+      env: { ...baseEnv, RADD_PRIVATE_PROXY_REQUEST_PAYLOAD_LOGGING_ENABLED: "true" },
+      fetchImpl: async () => new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      })
+    });
+
+    const response = await handler(buildEvent());
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(
+      logs.some(([message, payload]) =>
+        message === "RADD private proxy inbound request payload" &&
+        payload.body === JSON.stringify({ test: true }) &&
+        payload.headers.host === "vpce-0159b66963cb51025-1t51z9qh.vpce-svc-0a08e48564915d1c3.eu-south-1.vpce.amazonaws.com:8080"
+      ),
+      true
+    );
+  } finally {
+    console.log = originalConsoleLog;
+  }
+});
+
+test("logs full outbound response payload only when response payload logging is enabled", async () => {
+  const logs = [];
+  const originalConsoleLog = console.log;
+  console.log = (...args) => logs.push(args);
+
+  try {
+    const handler = createHandler({
+      env: { ...baseEnv, RADD_PRIVATE_PROXY_RESPONSE_PAYLOAD_LOGGING_ENABLED: "true" },
+      fetchImpl: async () => new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      })
+    });
+
+    const response = await handler(buildEvent());
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(
+      logs.some(([message, payload]) =>
+        message === "RADD private proxy outbound response payload" &&
+        payload.statusCode === 200 &&
+        payload.body === JSON.stringify({ ok: true })
+      ),
+      true
+    );
+  } finally {
+    console.log = originalConsoleLog;
+  }
+});
+
+test("rejects paths outside the configured allowlist without forwarding", async () => {
+  let called = false;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      called = true;
+      return new Response("unexpected");
+    }
+  });
+
+  const response = await handler(buildEvent({ path: "/outside-allowlist" }));
+
+  assert.equal(response.statusCode, 403);
+  assert.equal(called, false);
+});
+
+test("rejects dot segments before forwarding", async () => {
+  let called = false;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      called = true;
+      return new Response("unexpected");
+    }
+  });
+
+  const response = await handler(buildEvent({ path: "/radd-net/api/v1/act/../registry" }));
+
+  assert.equal(response.statusCode, 403);
+  assert.equal(called, false);
+});
+
+test("rejects encoded path separators before forwarding", async () => {
+  let called = false;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      called = true;
+      return new Response("unexpected");
+    }
+  });
+
+  const response = await handler(buildEvent({ path: "/radd-net/api/v1/act/%2Fregistry" }));
+
+  assert.equal(response.statusCode, 403);
+  assert.equal(called, false);
+});
+
+test("allows requests matching one of the configured path prefixes", async () => {
+  let capturedRequest;
+  const handler = createHandler({
+    env: { ...baseEnv, RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX: "/not-used/, /radd-net/" },
+    fetchImpl: async (url, options) => {
+      capturedRequest = { url, options };
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent());
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(capturedRequest.url, "http://internal-alb:8080/radd-net/api/v1/act/inquiry?iun=ABC");
+});
+
+test("allows any path when no path prefixes are configured", async () => {
+  let capturedRequest;
+  const envWithoutPathPrefixes = { ...baseEnv };
+  delete envWithoutPathPrefixes.RADD_PRIVATE_PROXY_ALLOWED_PATH_PREFIX;
+  const handler = createHandler({
+    env: envWithoutPathPrefixes,
+    fetchImpl: async (url, options) => {
+      capturedRequest = { url, options };
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const response = await handler(buildEvent({ path: "/outside-allowlist" }));
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(capturedRequest.url, "http://internal-alb:8080/outside-allowlist?iun=ABC");
+});
+
+test("rejects requests with missing host header before forwarding", async () => {
+  let called = false;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      called = true;
+      return new Response("unexpected");
+    }
+  });
+
+  const response = await handler(buildEvent({ headers: { "content-type": "application/json" } }));
+
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(JSON.parse(response.body), { message: "Invalid Host header" });
+  assert.equal(called, false);
+});
+
+test("rejects requests with malformed host header before forwarding", async () => {
+  let called = false;
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => {
+      called = true;
+      return new Response("unexpected");
+    }
+  });
+
+  const response = await handler(buildEvent({ headers: { host: "bad host value", "content-type": "application/json" } }));
+
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(JSON.parse(response.body), { message: "Invalid Host header" });
+  assert.equal(called, false);
+});
+
+test("passes through backend application status codes", async () => {
+  const handler = createHandler({
+    env: baseEnv,
+    fetchImpl: async () => new Response(JSON.stringify({ error: "bad request" }), {
+      status: 400,
+      statusText: "Bad Request",
+      headers: { "content-type": "application/json" }
+    })
+  });
+
+  const response = await handler(buildEvent());
+
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(JSON.parse(response.body), { error: "bad request" });
+  assert.deepEqual(response.multiValueHeaders, {
+    "content-type": ["application/json"]
+  });
+});
+
+test("validatePathForForward accepts a normal path and rejects canonicalization abuse", () => {
+  assert.doesNotThrow(() => validatePathForForward("/radd-net/api/v1/act/inquiry"));
+  assert.throws(() => validatePathForForward("/radd-net/api/v1/act/%2e%2e/registry"), /Dot segments are not allowed/);
+  assert.throws(() => validatePathForForward("radd-net/api/v1/act/inquiry"), /Invalid path/);
+});
+
+test("retry helper predicates only retry configured methods and transient failures", () => {
+  assert.equal(isRetryableBackendResponse(500), true);
+  assert.equal(isRetryableBackendResponse(400), false);
+
+  const retryableError = new TypeError("fetch failed");
+  retryableError.cause = { code: "ECONNRESET" };
+  assert.equal(isRetryableBackendError(retryableError), true);
+  assert.equal(isRetryableBackendError(new Error("no retry")), false);
+});

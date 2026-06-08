@@ -22,12 +22,12 @@ public class PnRaddFsuConfig {
     private String clientDeliveryBasepath;
     private String clientDeliveryPushBasepath;
     private String clientDeliveryPushInternalBasepath;
+    private String clientTimelineServiceBasepath;
     private String clientDatavaultBasepath;
     private String clientSafeStorageBasepath;
     private String safeStorageCxId;
     private String safeStorageDocType;
     public String registrySafeStorageDocType;
-    private String applicationBasepath;
     private Sqs sqs;
     private Dao dao;
     private int registryDefaultEndValidity;
@@ -41,6 +41,8 @@ public class PnRaddFsuConfig {
     private Integer maxPageNumber;
     private Integer maxPrintRequests;
 
+    private String documentNumberOfPagesTagKey;
+    private boolean documentPageCountEnabled;
 
     private String evaluatedZipCodeConfigType;
     private Integer evaluatedZipCodeConfigNumber;

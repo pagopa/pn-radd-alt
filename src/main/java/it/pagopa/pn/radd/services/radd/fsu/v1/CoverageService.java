@@ -15,8 +15,7 @@ import java.time.LocalDate;
 
 import static it.pagopa.pn.radd.utils.CoverageUtils.buildCoverageEntity;
 import static it.pagopa.pn.radd.utils.CoverageUtils.mapFieldToUpdate;
-import static it.pagopa.pn.radd.utils.DateUtils.isDateInRange;
-import static it.pagopa.pn.radd.utils.DateUtils.isValidInterval;
+import static it.pagopa.pn.radd.utils.DateUtils.*;
 
 @Service
 @RequiredArgsConstructor
@@ -35,18 +34,23 @@ public class CoverageService {
 
     public Mono<Coverage> updateCoverage(String xPagopaPnUid, String cap, String locality, UpdateCoverageRequest request) {
         log.info("Start updateCoverage for cap [{}] and locality [{}]", cap, locality);
-        validateInputInterval(request.getStartValidity(), request.getEndValidity());
-        return coverageDAO.find(cap, locality)
+        return  validateInputInterval(request.getStartValidity(), request.getEndValidity())
+                .then(Mono.defer(() -> coverageDAO.find(cap, locality)))
                 .switchIfEmpty(Mono.error(new RaddGenericException(ExceptionTypeEnum.COVERAGE_NOT_FOUND, HttpStatus.NOT_FOUND)))
                 .flatMap(coverageEntity -> coverageDAO.updateCoverageEntity(mapFieldToUpdate(xPagopaPnUid, coverageEntity, request)))
                 .map(coverageMapper::toDto)
                 .doOnError(throwable -> log.error("Error during update coverage request", throwable));
     }
 
-    private void validateInputInterval(LocalDate startValidity, LocalDate endValidity) {
+    private Mono<Void> validateInputInterval(LocalDate startValidity, LocalDate endValidity) {
         if (!isValidInterval(startValidity, endValidity)) {
-            throw new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST);
+            return Mono.error(new RaddGenericException(ExceptionTypeEnum.DATE_INTERVAL_ERROR, HttpStatus.BAD_REQUEST));
         }
+
+        if(!isEndValidityInTheFuture(endValidity)){
+            return Mono.error( new RaddGenericException(ExceptionTypeEnum.END_VALIDITY_NOT_IN_FUTURE, HttpStatus.BAD_REQUEST));
+        }
+        return Mono.empty();
     }
 
     public Mono<CheckCoverageResponse> checkCoverage(CheckCoverageRequest request, SearchMode searchMode, LocalDate searchDate) {

@@ -3,12 +3,15 @@ package it.pagopa.pn.radd.middleware.msclient;
 
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.*;
 import it.pagopa.pn.radd.config.BaseTest;
+import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.PnRaddException;
+import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -95,6 +98,17 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
     }
 
     @Test
+    void testGetLegalFactsFileGone() {
+        String recipientInternalId = "gone_recipient", iun = "LJLH-GNTJ-DVXR-202209-J-1", legalFactId = "gone_fact";
+        Mono<LegalFactDownloadMetadataWithContentTypeResponseDto> monoResponse = pnDeliveryPushClient.getLegalFact(recipientInternalId, iun, legalFactId);
+        StepVerifier.create(monoResponse)
+                .expectErrorMatches(exception ->
+                        exception instanceof RaddGenericException
+                                && ExceptionTypeEnum.DOCUMENT_UNAVAILABLE.equals(((RaddGenericException) exception).getExceptionType()))
+                .verify();
+    }
+
+    @Test
     void testNotifyNotificationViewed() {
         RaddTransactionEntity entity = new RaddTransactionEntity();
         entity.setIun("LJLH-GNTJ-DVXR-202209-J-1");
@@ -155,4 +169,5 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
             return Mono.empty();
         }).blockFirst();
     }
+
 }

@@ -7,6 +7,7 @@ import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.GeoLocation;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.UpdateRegistryRequest;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.RaddGenericException;
+import it.pagopa.pn.radd.mapper.AddressMapper;
 import it.pagopa.pn.radd.mapper.RaddRegistryRequestEntityMapper;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.mapper.RegistryMappingUtils;
@@ -61,12 +62,14 @@ class RegistrySelfServiceTest {
     private RegistrySelfService registrySelfService;
     @Mock
     private PnRaddFsuConfig pnRaddFsuConfig;
+    @Mock
+    private AddressMapper addressMapper;
 
     @BeforeEach
     void setUp() {
         ObjectMapperUtil objectMapperUtil = new ObjectMapperUtil(new ObjectMapper());
         registrySelfService = new RegistrySelfService(raddRegistryV2DAO, registryRequestDAO, raddRegistryRequestEntityMapper, correlationIdEventsProducer,
-                new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, secretService, new RegistryMappingUtils(objectMapperUtil)), pnRaddFsuConfig);
+                new RaddRegistryUtils(objectMapperUtil, pnRaddFsuConfig, new RegistryMappingUtils(objectMapperUtil)), pnRaddFsuConfig);
     }
 
     @Test
