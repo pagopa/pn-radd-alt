@@ -1,0 +1,35 @@
+[
+  {
+    "header": "descrizione",
+    "field": "description"
+  },
+  {
+    "header": "città",
+    "field": "city"
+  },
+  {
+    "header": "cap",
+    "field": "zipCode"
+  },
+  {
+    "header": "via",
+    "field": "address"
+  },
+  {
+    "header": "provincia",
+    "field": "province"
+  },
+  {
+    "header": "test1"
+  },
+  {
+    "header": "test2"
+  },
+  {
+    "header": "test3"
+  },
+  {
+    "header": "telefono",
+    "field": "contacts"
+  }
+]
