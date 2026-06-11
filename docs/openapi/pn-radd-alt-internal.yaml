@@ -767,6 +767,7 @@ components:
           example: "5d2d53ad-6306-40fe-8126-51ccdd917cef"
         recipientTaxId:
           x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+          format: password # NO EXTERNAL
           type: string
           example: "TNTGTR76E21H751S"
         recipientType:
@@ -775,6 +776,7 @@ components:
           example: "PF"
         delegateTaxId:
           x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+          format: password # NO EXTERNAL
           type: string
           example: "RFRGRZ66E21H751B"
         fileKey:
