@@ -19,15 +19,16 @@ try {
     const dotenv = require('dotenv');
     const result = dotenv.config({ path: envPathToLoad });
     if (result.error) {
-        console.warn(`⚠️  .env non caricato da '${envPathToLoad}' (${result.error.message}). Procedo comunque (usa variabili shell).`);
+        console.warn(`.env non caricato da '${envPathToLoad}' (${result.error.message}). Procedo comunque (usa variabili shell).`);
     } else {
-        console.log(`🔧 Variabili ambiente caricate da '${envPathToLoad}'.`);
+        console.log(`Variabili ambiente caricate da '${envPathToLoad}'.`);
     }
 } catch (e) {
-    console.warn(`⚠️  Impossibile usare dotenv: ${e.message}`);
+    console.warn(`Impossibile usare dotenv: ${e.message}`);
 }
 
 const CSVCoverageProcessor = require('./src/csv-processor');
+const { fetchHelpdeskIdToken } = require('../shared/helpdesk-token');
 
 async function main() {
     // Parse command line arguments
@@ -35,7 +36,7 @@ async function main() {
 
     // Help
     if (args.includes('--help') || args.length === 0) {
-        console.log(`\n📂 CSV Coverage Processor\nUsage: node index.js <csv-file-path> [options]\n\nOptions:\n  --api-url <url>       API base URL (default: from .env or https://api.example.com)\n  --batch-size <num>    Numero di richieste concorrenti (default: 5)\n  --delay <ms>          Ritardo tra batch in ms (default: 1000)\n  --env-file <path>     Percorso file .env da caricare (default: ./scripts/capCoverage/.env)\n  --help                Mostra questo messaggio\n\nExample:\n  node index.js data/comuni.csv --api-url https://your-api.com --batch-size 3 --delay 2000\n  node index.js "data/Copertura RADD Abilitazione CAP-Località.csv" --env-file ./scripts/capCoverage/.env\n        `);
+        console.log(`\nCSV Coverage Processor\nUsage: node index.js <csv-file-path> [options]\n\nOptions:\n  --api-url <url>       API base URL (default: from .env or https://api.example.com)\n  --batch-size <num>    Numero di richieste concorrenti (default: 5)\n  --delay <ms>          Ritardo tra batch in ms (default: 1000)\n  --token <jwt>         idToken Cognito da usare direttamente (per utenti SSO)\n  --sso <env>           Apre Helpdesk e recupera automaticamente l'idToken\n  --helpdesk-url <url>  URL Helpdesk custom (opzionale con --sso)\n  --browser <name>      Browser per --sso: chrome|edge|chromium\n  --env-file <path>     Percorso file .env da caricare (default: ./scripts/capCoverage/.env)\n  --help                Mostra questo messaggio\n\nExample:\n  node index.js data/comuni.csv --api-url https://your-api.com --batch-size 3 --delay 2000\n  node index.js "data/Copertura RADD Abilitazione CAP-Località.csv" --sso dev\n        `);
         process.exit(0);
     }
 
@@ -43,6 +44,9 @@ async function main() {
     let apiUrl = process.env.API_BASE_URL || 'https://api.example.com';
     let batchSize = 5;
     let delay = 1000;
+    let ssoEnv = null;
+    let helpdeskUrl = null;
+    let browser = null;
 
     // Nuovo parsing argomenti (skip primo che è il file)
     for (let i = 1; i < args.length; i++) {
@@ -60,6 +64,22 @@ async function main() {
                 delay = parseInt(args[i + 1]);
                 i++;
                 break;
+            case '--token':
+                process.env.API_TOKEN = args[i + 1];
+                i++;
+                break;
+            case '--sso':
+                ssoEnv = args[i + 1];
+                i++;
+                break;
+            case '--helpdesk-url':
+                helpdeskUrl = args[i + 1];
+                i++;
+                break;
+            case '--browser':
+                browser = args[i + 1];
+                i++;
+                break;
             case '--env-file':
                 // Già gestito prima; consuma valore
                 i++;
@@ -74,35 +94,44 @@ async function main() {
     }
 
     if (!fs.existsSync(csvFilePath)) {
-        console.error(`❌ CSV file not found: ${csvFilePath}`);
+        console.error(`CSV file not found: ${csvFilePath}`);
         process.exit(1);
     }
 
-    console.log(`🚀 Starting CSV processing...`);
-    console.log(`   📁 File: ${csvFilePath}`);
-    console.log(`   🌐 API URL: ${apiUrl}`);
-    console.log(`   📦 Batch size: ${batchSize}`);
-    console.log(`   ⏱️  Delay: ${delay}ms\n`);
+    if (ssoEnv) {
+        const playwright = require('playwright');
+        process.env.API_TOKEN = await fetchHelpdeskIdToken({
+            helpdeskUrl: helpdeskUrl || `https://helpdesk.${ssoEnv}.notifichedigitali.it`,
+            browser,
+            playwright,
+        });
+    }
+
+    console.log(`Starting CSV processing...`);
+    console.log(`File: ${csvFilePath}`);
+    console.log(`API URL: ${apiUrl}`);
+    console.log(`Batch size: ${batchSize}`);
+    console.log(`Delay: ${delay}ms\n`);
 
     try {
         const processor = new CSVCoverageProcessor(apiUrl);
         const result = await processor.processCsvFile(csvFilePath, batchSize, delay);
         
-        console.log(`\n🎉 Processing completed successfully!`);
+        console.log(`\nProcessing completed successfully!`);
         process.exit(0);
     } catch (error) {
-        console.error(`\n💥 Processing failed:`, error.message);
+        console.error(`\nProcessing failed:`, error.message);
         process.exit(1);
     }
 }
 
 process.on('uncaughtException', (error) => {
-    console.error('💥 Uncaught Exception:', error);
+    console.error('Uncaught Exception:', error);
     process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
     process.exit(1);
 });
 

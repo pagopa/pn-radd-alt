@@ -21,32 +21,70 @@ API.
 
 ## Utilizzo
 
-```bash
-# Unix/Linux/MacOS
-export AWS_PROFILE=<profile_name>
-node index.js <env> <username> <password> <clientId> <csvFilePath>
+Lo script supporta **due modalità** di autenticazione:
 
-# Windows
-set AWS_PROFILE=<profile_name>
-node index.js <env> <username> <password> <clientId> <csvFilePath>
+### Login con token (utenti SSO/Google)
+
+Il flusso SAML federato richiede un browser interattivo e non può essere
+automatizzato dalla CLI. Per gli utenti Google occorre quindi ottenere
+manualmente l'idToken dal portale helpdesk:
+
+1. Effettua il login sul portale helpdesk con il tuo account Google.
+2. Apri DevTools → Application → Local Storage e copia il valore di `idToken`
+   (chiave del tipo `CognitoIdentityServiceProvider.<clientId>.<user>.idToken`).
+3. Passa il token allo script:
+
+```bash
+node index.js --token <IL_TUO_ID_TOKEN> dev <clientId> ./input/data.csv
+```
+
+In alternativa puoi usare l'automatismo browser:
+
+```bash
+node index.js --sso dev <clientId> ./input/data.csv
+```
+
+Con `--sso` lo script apre automaticamente `https://helpdesk.<env>.notifichedigitali.it`,
+attende il login interattivo e legge l'idToken dal LocalStorage del browser.
+Per compliance, prova prima browser di sistema (Chrome/Edge) e usa Chromium Playwright solo come fallback.
+Se vuoi forzare una URL specifica:
+
+```bash
+node index.js --sso dev <clientId> ./input/data.csv --helpdesk-url https://helpdesk.dev.notifichedigitali.it
+```
+
+Se vuoi forzare il browser:
+
+```bash
+node index.js --sso dev <clientId> ./input/data.csv --browser edge
+```
+
+Valori supportati per `--browser`: `chrome`, `edge`, `chromium`.
+
+> Il token Cognito ha durata limitata (60 minuti per default): se scade durante
+> l'esecuzione è necessario rigenerarlo dal portale.
+
+---
+
+### Login locale (utenti Cognito non federati)
+
+```bash
+node index.js dev <username> <password> <clientId> ./input/data.csv
 ```
 
 ### Parametri
 
 | Parametro        | Descrizione                                                                   |
 |------------------|-------------------------------------------------------------------------------|
-| `<profile_name>` | Nome del profilo AWS                                                          |
-| `<env>`          | Ambiente di esecuzione: `dev`, `test`, `uat`, `hotfix`, `prod`                |
-| `<username>`     | Username per autenticazione Cognito                                           |
-| `<password>`     | Password per autenticazione Cognito                                           |
-| `<clientId>`     | Client ID per autenticazione Cognito                                          |
-| `<csvFilePath>`  | Percorso completo al file CSV. Il nome del file deve essere `<partnerId>.csv` |
-
-### Esempio
-
-```bash
-node index.js test myuser mypass abc123 ./csv/12345678901.csv
-```
+| `--token <jwt>`  | idToken Cognito da usare direttamente (utenti SSO)                            |
+| `--sso`          | Apre Helpdesk, attende login SSO e recupera automaticamente l'idToken         |
+| `--helpdesk-url <url>` | URL Helpdesk custom da usare con `--sso`                               |
+| `--browser <name>` | Browser da usare con `--sso`: `chrome`, `edge`, `chromium`                  |
+| `<env>`          | Ambiente: `dev`, `test`, `uat`, `hotfix`, `prod`                              |
+| `<clientId>`     | Client ID di Cognito (ApiClient)                                              |
+| `<csvFilePath>`  | Percorso del file CSV. Il nome deve essere `<partnerId>-<descrizione>.csv`    |
+| `<username>`     | Username per autenticazione Cognito (solo modalità locale)                    |
+| `<password>`     | Password per autenticazione Cognito (solo modalità locale)                    |
 
 ## Cosa fa lo script
 
