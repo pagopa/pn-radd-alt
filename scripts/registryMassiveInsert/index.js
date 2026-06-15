@@ -10,6 +10,13 @@ const RegistryService = require('./services/registryService');
 (async () => {
   const allowedEnvs = ['dev', 'test', 'uat', 'hotfix', 'prod'];
   const args = process.argv.slice(2);
+  const expectedHelpdeskHostByEnv = {
+    dev: 'helpdesk.dev.notifichedigitali.it',
+    test: 'helpdesk.test.notifichedigitali.it',
+    uat: 'helpdesk.uat.notifichedigitali.it',
+    hotfix: 'helpdesk.hotfix.notifichedigitali.it',
+    prod: 'helpdesk.notifichedigitali.it',
+  };
 
   const ssoMode = args.includes('--sso');
   if (args.includes('--auto-token')) {
@@ -36,6 +43,7 @@ const RegistryService = require('./services/registryService');
   }
   const directToken = tokenIndex !== -1 ? args[tokenIndex + 1] : null;
   const helpdeskUrlIndex = args.indexOf('--helpdesk-url');
+  const helpdeskUrl = helpdeskUrlIndex !== -1 ? args[helpdeskUrlIndex + 1] : null;
   const browserIndex = args.indexOf('--browser');
   const browser = browserIndex !== -1 ? args[browserIndex + 1] : null;
   const profileIndex = args.indexOf('--profile');
@@ -82,6 +90,24 @@ const RegistryService = require('./services/registryService');
     process.exit(1);
   }
 
+  const expectedHelpdeskHost = expectedHelpdeskHostByEnv[env];
+  if (autoToken && helpdeskUrl) {
+    let parsed;
+    try {
+      parsed = new URL(helpdeskUrl);
+    } catch (_) {
+      console.error(`Valore non valido per --helpdesk-url: ${helpdeskUrl}`);
+      process.exit(1);
+    }
+
+    if (parsed.host !== expectedHelpdeskHost) {
+      console.error(
+        `Mismatch env/helpdesk-url: env=${env}, host atteso=${expectedHelpdeskHost}, host ricevuto=${parsed.host}`
+      );
+      process.exit(1);
+    }
+  }
+
   const apiBaseUrl = env === 'prod' ? 'https://api.radd.notifichedigitali.it' : `https://api.radd.${env}.notifichedigitali.it`;
   const registryService = new RegistryService(apiBaseUrl);
   const partnerId = path.basename(csvFilePath).replace('.csv', '').split("-")[0];
@@ -96,7 +122,7 @@ const RegistryService = require('./services/registryService');
     console.log('[Info] Uso token passato direttamente.');
     jwt = directToken;
   } else if (autoToken) {
-    const defaultHelpdeskUrl = `https://helpdesk.${env}.notifichedigitali.it`;
+    const defaultHelpdeskUrl = `https://${expectedHelpdeskHost}`;
     const playwright = require('playwright');
     jwt = await fetchHelpdeskIdToken({
       helpdeskUrl: helpdeskUrl || defaultHelpdeskUrl,

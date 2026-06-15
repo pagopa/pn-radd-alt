@@ -53,6 +53,14 @@ Se vuoi forzare una URL specifica:
 node index.js --sso dev <clientId> ./input/data.csv --helpdesk-url https://helpdesk.dev.notifichedigitali.it
 ```
 
+La URL passata con `--helpdesk-url` deve essere coerente con `<env>`, altrimenti lo script termina con errore.
+
+- `dev` -> `helpdesk.dev.notifichedigitali.it`
+- `test` -> `helpdesk.test.notifichedigitali.it`
+- `uat` -> `helpdesk.uat.notifichedigitali.it`
+- `hotfix` -> `helpdesk.hotfix.notifichedigitali.it`
+- `prod` -> `helpdesk.notifichedigitali.it`
+
 Se vuoi forzare il browser:
 
 ```bash
