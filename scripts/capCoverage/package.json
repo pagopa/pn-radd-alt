@@ -15,6 +15,7 @@
     "axios": "^1.12.2",
     "csv-parser": "^3.2.0",
     "dotenv": "^17.2.3",
-      "@aws-sdk/client-cognito-identity-provider": "3.995.0"
+      "@aws-sdk/client-cognito-identity-provider": "3.995.0",
+      "playwright": "^1.54.2"
   }
 }

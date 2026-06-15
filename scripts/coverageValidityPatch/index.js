@@ -16,15 +16,16 @@ try {
   const dotenv = require('dotenv');
   const result = dotenv.config({ path: envPathToLoad });
   if (result.error) {
-    console.warn(`⚠️ .env non caricato da '${envPathToLoad}' (${result.error.message}). Userò variabili shell.`);
+    console.warn(`.env non caricato da '${envPathToLoad}' (${result.error.message}). Userò variabili shell.`);
   } else {
-    console.log(`🔧 Variabili ambiente caricate da '${envPathToLoad}'.`);
+    console.log(`Variabili ambiente caricate da '${envPathToLoad}'.`);
   }
 } catch (e) {
-  console.warn(`⚠️ Impossibile caricare .env: ${e.message}`);
+  console.warn(`Impossibile caricare .env: ${e.message}`);
 }
 
 const Processor = require('./src/patch-processor');
+const { fetchHelpdeskIdToken } = require('../shared/helpdesk-token');
 const yargs = require('yargs');
 const { hideBin } = require('yargs/helpers');
 
@@ -61,6 +62,26 @@ const argv = yargs(hideBin(process.argv))
     type: 'boolean',
     default: (process.env.COGNITO_USE_ID_TOKEN || 'false').toLowerCase() === 'true'
   })
+  .option('token', {
+    describe: 'idToken Cognito da usare direttamente (per utenti SSO; in alternativa imposta API_TOKEN)',
+    type: 'string',
+    default: null
+  })
+  .option('sso', {
+    describe: 'Ambiente SSO (dev/test/uat/hotfix/prod). Apre Helpdesk e recupera l\'idToken automaticamente',
+    type: 'string',
+    default: null
+  })
+  .option('helpdesk-url', {
+    describe: 'URL Helpdesk custom (opzionale con --sso)',
+    type: 'string',
+    default: null
+  })
+  .option('browser', {
+    describe: 'Browser per --sso: chrome|edge|chromium',
+    type: 'string',
+    default: null
+  })
   .option('env-file', {
     describe: 'Percorso file .env da caricare',
     type: 'string',
@@ -73,15 +94,26 @@ const argv = yargs(hideBin(process.argv))
 async function main() {
   const csvFilePath = argv.file;
   if (!fs.existsSync(csvFilePath)) {
-    console.error('❌ File CSV non trovato:', csvFilePath);
+    console.error('File CSV non trovato:', csvFilePath);
     process.exit(1);
   }
+
+  if (argv.sso) {
+    const playwright = require('playwright');
+    process.env.API_TOKEN = await fetchHelpdeskIdToken({
+      helpdeskUrl: argv.helpdeskUrl || `https://helpdesk.${argv.sso}.notifichedigitali.it`,
+      browser: argv.browser,
+      playwright,
+    });
+  }
+
+  if (argv.token) process.env.API_TOKEN = argv.token;
   const processor = new Processor(argv.apiUrl, { useIdToken: argv.useIdToken, dryRun: argv.dryRun });
   try {
     const stats = await processor.processCsvFile(csvFilePath, argv.batchSize, argv.delay);
-    console.log('\n✅ Risultato finale:', stats);
+    console.log('\nRisultato finale:', stats);
   } catch (e) {
-    console.error('💥 Errore esecuzione:', e.message);
+    console.error('Errore esecuzione:', e.message);
     process.exit(1);
   }
 }
