@@ -98,9 +98,7 @@ class CognitoAuth {
     this.staticToken = options.staticToken || process.env.API_TOKEN || null;
     this.useIdToken = options.useIdToken !== undefined
       ? options.useIdToken
-      : (process.env.COGNITO_USE_ID_TOKEN || 'true').toLowerCase() === 'true';
-
-    this.authMode = this.staticToken ? 'static' : 'local';
+      : (process.env.COGNITO_USE_ID_TOKEN || 'false').toLowerCase() === 'true';
 
     this._token = null;
     this._tokenExpiresAt = 0;
