@@ -43,11 +43,11 @@ const RegistryService = require('./services/registryService');
 
   if (directToken || autoToken) {
     const filtered = args.filter((a, i) => {
-      if (i === tokenIndex || i === tokenIndex + 1) return false;
-      if (i === helpdeskUrlIndex || i === helpdeskUrlIndex + 1) return false;
-      if (i === browserIndex || i === browserIndex + 1) return false;
-      if (i === profileIndex || i === profileIndex + 1) return false;
-      if (i === userPoolIdIndex || i === userPoolIdIndex + 1) return false;
+      if (tokenIndex !== -1 && (i === tokenIndex || i === tokenIndex + 1)) return false;
+      if (helpdeskUrlIndex !== -1 && (i === helpdeskUrlIndex || i === helpdeskUrlIndex + 1)) return false;
+      if (browserIndex !== -1 && (i === browserIndex || i === browserIndex + 1)) return false;
+      if (profileIndex !== -1 && (i === profileIndex || i === profileIndex + 1)) return false;
+      if (userPoolIdIndex !== -1 && (i === userPoolIdIndex || i === userPoolIdIndex + 1)) return false;
       if (a === '--sso') return false;
       return true;
     });
