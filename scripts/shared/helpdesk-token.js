@@ -59,12 +59,12 @@ async function fetchHelpdeskIdToken(options = {}) {
   const context = await browserInstance.newContext();
   const page = await context.newPage();
 
-  console.log(`[AutoToken] Apro il browser su ${helpdeskUrl}`);
-  await page.goto(helpdeskUrl, { waitUntil: 'domcontentloaded' });
-  console.log('[AutoToken] Completa il login SSO nella finestra del browser aperta...');
-
   const startedAt = Date.now();
   try {
+    console.log(`[AutoToken] Apro il browser su ${helpdeskUrl}`);
+    await page.goto(helpdeskUrl, { waitUntil: 'domcontentloaded' });
+    console.log('[AutoToken] Completa il login SSO nella finestra del browser aperta...');
+
     while ((Date.now() - startedAt) < timeoutMs) {
       if (page.isClosed()) {
         throw new Error('La finestra browser e stata chiusa prima di recuperare il token');
