@@ -114,8 +114,9 @@ async function fetchHelpdeskIdToken(options = {}) {
       try {
         await page.waitForLoadState('domcontentloaded', { timeout: pollMs });
       } catch (_) {
-        await page.waitForTimeout(pollMs);
+        // ignore
       }
+      await page.waitForTimeout(pollMs);
     }
 
     throw new Error('Timeout: token non trovato entro il tempo massimo');
