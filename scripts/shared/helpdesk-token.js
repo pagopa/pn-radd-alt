@@ -67,7 +67,7 @@ async function fetchHelpdeskIdToken(options = {}) {
 
     while ((Date.now() - startedAt) < timeoutMs) {
       if (page.isClosed()) {
-        throw new Error('La finestra browser e stata chiusa prima di recuperare il token');
+        throw new Error('La finestra browser è stata chiusa prima di recuperare il token');
       }
 
       let token = null;
