@@ -99,7 +99,7 @@ class RegistryService {
 
       } while (lastKey);
 
-      console.log(`📋 Trovate ${allItems.length} sedi.`);
+      console.log(`Trovate ${allItems.length} sedi.`);
       return allItems;
     } catch (err) {
       throw new Error(`Errore lettura sedi da API: ${this.#getErrorMessage(err)}`);
@@ -116,9 +116,9 @@ class RegistryService {
         })
       );
 
-      console.log(`✅ Eliminata sede ${locationId}`);
+      console.log(`Eliminata sede ${locationId}`);
     } catch (err) {
-      console.error(`❌ Errore eliminazione sede ${locationId}: ${this.#getErrorMessage(err)}`);
+      console.error(`Errore eliminazione sede ${locationId}: ${this.#getErrorMessage(err)}`);
     }
   }
 
@@ -133,7 +133,7 @@ class RegistryService {
         })
       );
 
-      console.log(`➕ Aggiunta sede ${res.data.locationId}`);
+      console.log(`Aggiunta sede ${res.data.locationId}`);
       const locationId = res.data.locationId;
 
       return {
@@ -144,7 +144,7 @@ class RegistryService {
       };
     } catch (err) {
       const reason = this.#getErrorMessage(err);
-      console.error(`⚠️ Inserimento KO: ${reason}`);
+      console.error(`Inserimento KO: ${reason}`);
       return { ...csvRegistry, status: 'KO', error: reason };
     }
   }
@@ -160,7 +160,7 @@ class RegistryService {
         })
       );
 
-      console.log(`📝 Aggiornata sede ${res.data.locationId}`);
+      console.log(`Aggiornata sede ${res.data.locationId}`);
       return {
         ...csvRegistry,
         status: 'OK',
@@ -168,7 +168,7 @@ class RegistryService {
       };
     } catch (err) {
       const reason = this.#getErrorMessage(err);
-      console.error(`⚠️ Aggiornamento KO: ${locationId} - ${reason}`);
+      console.error(`Aggiornamento KO: ${locationId} - ${reason}`);
       return { ...csvRegistry, status: 'KO', error: reason };
     }
   }

@@ -19,15 +19,67 @@ npm install
 ```
 
 ## Variabili Ambiente (`.env`)
+
+### Login locale (utenti Cognito non federati)
 ```env
 API_BASE_URL=https://api.radd.dev.notifichedigitali.it
-COGNITO_REGION=eu-central-1
+COGNITO_REGION=eu-south-1
 COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
 COGNITO_USERNAME=user@example.com
 COGNITO_PASSWORD=SuperPassword123!
 COGNITO_USE_ID_TOKEN=false         # opzionale
 COGNITO_TOKEN_MARGIN=30            # opzionale (default 30)
 CX_ID_AUTH_FLEET=operatore-001     # ID dell'operatore (header x-pagopa-pn-cx-id)
+```
+
+### Token statico (utenti SSO/Google)
+```env
+API_BASE_URL=https://api.radd.dev.notifichedigitali.it
+API_TOKEN=eyJraWQiOiJ...           # idToken copiato dal portale helpdesk
+CX_ID_AUTH_FLEET=operatore-001
+```
+
+> **Utenti SSO/Google**: il flusso SAML federato richiede un browser interattivo
+> e non può essere automatizzato dalla CLI. Per ottenere un token:
+> 1. Effettua il login sul portale helpdesk con il tuo account Google.
+> 2. Apri DevTools → Application → Local Storage e copia il valore di `idToken`
+>    (chiave del tipo `CognitoIdentityServiceProvider.<clientId>.<user>.idToken`).
+> 3. Passa il token allo script con `--token <idToken>` oppure imposta
+>    `API_TOKEN` nel `.env`.
+>
+> Il token Cognito ha durata limitata (60 minuti per default): se scade durante
+> l'esecuzione è necessario rigenerarlo dal portale.
+
+## 🏃 Esempi di utilizzo
+
+### Esecuzione standard (con .env configurato)
+```bash
+node index.js data.csv
+```
+
+### Esecuzione con token (utenti SSO)
+
+### Modalità SSO automatica (consigliata)
+Lo script può aprire automaticamente il portale Helpdesk, attendere il login SSO e recuperare l'idToken dal browser:
+```bash
+node index.js data.csv --sso dev
+```
+Opzionale:
+```bash
+node index.js data.csv --sso dev --browser edge --helpdesk-url https://helpdesk.dev.notifichedigitali.it
+```
+
+Se la procedura automatica non funziona (browser non disponibile, errori Playwright, ecc.), puoi sempre inserire il token manualmente:
+```bash
+node index.js data.csv --token eyJraWQiOiJ...
+```
+oppure impostare `API_TOKEN` nel `.env` e lanciare lo script senza `--token`.
+
+> **Best practice:** Prova prima `--sso` per comodità, ma tieni sempre a portata di mano la modalità manuale `--token` come fallback.
+
+### Dry-run (Simulazione)
+```bash
+node index.js data.csv --dry-run
 ```
 
 ## Formato CSV
