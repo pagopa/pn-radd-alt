@@ -30,9 +30,12 @@ const RegistryService = require('./services/registryService');
   // Supporto modalità locale (utenti Cognito non federati):
   //   node index.js <env> <username> <password> <clientId> <csvFilePath>
   const tokenIndex = args.indexOf('--token');
+  if (tokenIndex !== -1 && !args[tokenIndex + 1]) {
+    console.error('Uso token:  node index.js --token <idToken> <env> <clientId> <csvFilePath>');
+    process.exit(1);
+  }
   const directToken = tokenIndex !== -1 ? args[tokenIndex + 1] : null;
   const helpdeskUrlIndex = args.indexOf('--helpdesk-url');
-  const helpdeskUrl = helpdeskUrlIndex !== -1 ? args[helpdeskUrlIndex + 1] : null;
   const browserIndex = args.indexOf('--browser');
   const browser = browserIndex !== -1 ? args[browserIndex + 1] : null;
   const profileIndex = args.indexOf('--profile');
