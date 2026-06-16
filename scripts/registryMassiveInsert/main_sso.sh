@@ -100,11 +100,10 @@ fi
 echo "✅ Accesso SSO completato (token mantenuto solo in memoria)"
 
 RESULTS_NAME=${ENV}_$(date +%Y%m%d_%H%M%S)_radd
-OUTPUT_FOLDER=${RESULTS_NAME}_results
-OUTPUT_SCRIPT=./${OUTPUT_FOLDER}/${RESULTS_NAME}_output.txt
+OUTPUT_FOLDER="${RESULTS_NAME}_results"
+OUTPUT_SCRIPT="./${OUTPUT_FOLDER}/${RESULTS_NAME}_output.txt"
 echo -e "\nGenerating ${OUTPUT_FOLDER} folder..."
-mkdir ${OUTPUT_FOLDER}
-
+mkdir -p -- "${OUTPUT_FOLDER}" || exit 1
 for CSV_FILE in $CSV_LIST
 do
     # Estrazione TAX_ID portabile (macOS/Linux), allineata a index.js: parte prima del '-'
