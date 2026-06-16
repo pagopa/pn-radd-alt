@@ -108,9 +108,9 @@ do
     # Estrazione TAX_ID portabile (macOS/Linux), allineata a index.js: parte prima del '-'
     TAX_ID=$(basename "$CSV_FILE" .csv | cut -d'-' -f1)
     echo -e "\n - Uploading ${TAX_ID}.csv file..."
-    # Il token viene passato a index.js via variabile d'ambiente AUTO_TOKEN (non
-    # come argomento --token) per evitarne l'esposizione nella process list (ps).
-    if ! AUTO_TOKEN="$TOKEN" node "${SCRIPT_DIR}/index.js" "$ENV" "$CLIENTID" "${CSV_PATH}/${CSV_FILE}" >> "${OUTPUT_SCRIPT}"; then
+    # Il token viene passato a index.js via variabile d'ambiente namespaced
+    # PN_RADD_ID_TOKEN (non come argomento --token) per evitarne l'esposizione nella process list (ps).
+    if ! PN_RADD_ID_TOKEN="$TOKEN" node "${SCRIPT_DIR}/index.js" "$ENV" "$CLIENTID" "${CSV_PATH}/${CSV_FILE}" >> "${OUTPUT_SCRIPT}"; then
         echo "   Upload failed for ${CSV_FILE}. See ${OUTPUT_SCRIPT}." >&2
         exit 1
     fi

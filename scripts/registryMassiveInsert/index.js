@@ -42,8 +42,8 @@ const RegistryService = require('./services/registryService');
     process.exit(1);
   }
   // Il token può arrivare da --token <jwt> oppure, per non esporlo nella process
-  // list (ps), dalla variabile d'ambiente AUTO_TOKEN. L'argomento CLI ha priorità.
-  const directToken = tokenIndex !== -1 ? args[tokenIndex + 1] : (process.env.AUTO_TOKEN || null);
+  // list (ps), dalla variabile d'ambiente namespaced PN_RADD_ID_TOKEN. L'argomento CLI ha priorità.
+  const directToken = tokenIndex !== -1 ? args[tokenIndex + 1] : (process.env.PN_RADD_ID_TOKEN || null);
   const helpdeskUrlIndex = args.indexOf('--helpdesk-url');
   const helpdeskUrl = helpdeskUrlIndex !== -1 ? args[helpdeskUrlIndex + 1] : null;
   const browserIndex = args.indexOf('--browser');
