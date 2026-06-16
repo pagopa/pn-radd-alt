@@ -115,7 +115,9 @@ do
         exit 1
     fi
     echo "   Return code: 0."
-    mv "report-${TAX_ID}-"*.csv "${OUTPUT_FOLDER}"
+    shopt -s nullglob; REPORTS=(report-"${TAX_ID}-"*.csv); shopt -u nullglob
+    (( ${#REPORTS[@]} )) || { echo "   No report generated for ${CSV_FILE}." >&2; exit 1; }
+    mv -- "${REPORTS[@]}" "${OUTPUT_FOLDER}"
 done
 
 echo -e "\nReports and script output available into ./${OUTPUT_FOLDER} folder."
