@@ -48,9 +48,9 @@ else
     CSV_LIST=$(echo "$CSV_FILES" | tr ',' ' ')
     echo -e "\nChecking if provided files exists in $CSV_PATH folder...\n"
     for i in $CSV_LIST; do
-        if [ ! -f ${CSV_PATH}/$i ]; then
+        if [ ! -f "${CSV_PATH}/$i" ]; then
             echo -e " - ${i}: Not Available -> Exit.\n"
-            exit 0
+            exit 1
         else
             echo -e " - ${i}: Available"
         fi
