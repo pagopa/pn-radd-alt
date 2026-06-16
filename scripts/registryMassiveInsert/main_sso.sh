@@ -67,9 +67,8 @@ else
 fi
 
 echo ""
-export AWS_PROFILE=sso_pn-core-${ENV}
-aws sso login --profile $AWS_PROFILE
-
+export AWS_PROFILE="sso_pn-core-${ENV}"
+aws sso login --profile "$AWS_PROFILE" || exit 1
 # === LOGIN SSO UNA SOLA VOLTA - TOKEN SOLO IN MEMORIA (nessun file su disco) ===
 # Richiamo direttamente il modulo condiviso usato anche da index.js per recuperare
 # l'idToken dal portale Helpdesk (login Google una sola volta). Il token viene
