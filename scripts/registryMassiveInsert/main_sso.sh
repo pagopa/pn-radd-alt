@@ -34,8 +34,7 @@ CSV_PATH="${PN_CONF_PATH}/${ENV}/_conf/core/app_config/pn-radd-alt"
 
 if [ $# -eq 3 ]; then
     echo -e "\nThis command will upload all csv available into the ${CSV_PATH} folder:"
-    CSV_PATH_2=$(printf '%s' "$CSV_PATH" | sed -e 's|/|\\/|g')
-    CSV_LIST=$(ls -1 "${CSV_PATH}"/*.csv 2>/dev/null | sed -e "s/${CSV_PATH_2}\///g")
+    CSV_LIST=$(for f in "${CSV_PATH}"/*.csv; do [ -e "$f" ] || continue; basename "$f"; done)
     if [ -z "$CSV_LIST" ]; then
         echo -e "\nNo .csv files found in ${CSV_PATH}\n"
         exit 1
