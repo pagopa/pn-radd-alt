@@ -45,7 +45,7 @@ if [ $# -eq 3 ]; then
         fi
     done
 else
-    CSV_LIST=$(for i in $(echo $CSV_FILES | sed -r 's/,/ /g'); do echo $i; done)
+    CSV_LIST=$(echo "$CSV_FILES" | tr ',' ' ')
     echo -e "\nChecking if provided files exists in $CSV_PATH folder...\n"
     for i in $CSV_LIST; do
         if [ ! -f ${CSV_PATH}/$i ]; then
