@@ -107,7 +107,7 @@ do
     # Estrazione TAX_ID portabile (macOS/Linux), allineata a index.js: parte prima del '-'
     TAX_ID=$(basename "$CSV_FILE" .csv | cut -d'-' -f1)
     echo -e "\n - Uploading ${TAX_ID}.csv file..."
-    node index.js --token "$TOKEN" $ENV $CLIENTID ${CSV_PATH}/${CSV_FILE} >> ${OUTPUT_SCRIPT}
+    node "${SCRIPT_DIR}/index.js" --token "$TOKEN" "$ENV" "$CLIENTID" "${CSV_PATH}/${CSV_FILE}" >> "${OUTPUT_SCRIPT}"
     echo "   Return code: $?."
     mv report-${TAX_ID}-*.csv ${OUTPUT_FOlDER}
 done
