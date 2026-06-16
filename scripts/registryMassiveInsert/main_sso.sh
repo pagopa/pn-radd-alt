@@ -58,9 +58,9 @@ else
     echo -e "\nThis command will upload the following csv files:"
     echo -e "\n$CSV_LIST\n"
     echo -e "Do you agree?\n"
-    while [ "$ANSW" != "y" ] && [ "$ANSW" != "n" ]; do
-        read -p "[y/n]: " ANSW
-        if [ "$ANSW" == "n" ]; then
+    while [ "$ANSWER" != "y" ] && [ "$ANSWER" != "n" ]; do
+        read -r -p "[y/n]: " ANSWER
+        if [ "$ANSWER" == "n" ]; then
             exit 0
         fi
     done
