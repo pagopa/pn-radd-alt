@@ -23,6 +23,12 @@ cd scripts/capCoverage
 npm install
 ```
 
+> **Modalità SSO (`--sso`)**: usa automaticamente il browser di sistema (Chrome o Edge), quindi di norma **non serve installare altro**.
+> Solo se sul tuo computer non è presente né Chrome né Edge, installa il chromium di Playwright come fallback:
+> ```bash
+> npx playwright install chromium
+> ```
+
 ### Esempio `.env` — Login locale (utenti Cognito non federati)
 ```env
 API_BASE_URL=https://your-api-server.com
