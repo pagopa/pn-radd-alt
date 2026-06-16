@@ -97,10 +97,10 @@ fi
 echo "✅ Accesso SSO completato (token mantenuto solo in memoria)"
 
 RESULTS_NAME=${ENV}_$(date +%Y%m%d_%H%M%S)_radd
-OUTPUT_FOlDER=${RESULTS_NAME}_results
-OUTPUT_SCRIPT=./${OUTPUT_FOlDER}/${RESULTS_NAME}_output.txt
-echo -e "\nGenerating ${OUTPUT_FOlDER} folder..."
-mkdir ${OUTPUT_FOlDER}
+OUTPUT_FOLDER=${RESULTS_NAME}_results
+OUTPUT_SCRIPT=./${OUTPUT_FOLDER}/${RESULTS_NAME}_output.txt
+echo -e "\nGenerating ${OUTPUT_FOLDER} folder..."
+mkdir ${OUTPUT_FOLDER}
 
 for CSV_FILE in $CSV_LIST
 do
@@ -109,14 +109,14 @@ do
     echo -e "\n - Uploading ${TAX_ID}.csv file..."
     node "${SCRIPT_DIR}/index.js" --token "$TOKEN" "$ENV" "$CLIENTID" "${CSV_PATH}/${CSV_FILE}" >> "${OUTPUT_SCRIPT}"
     echo "   Return code: $?."
-    mv report-${TAX_ID}-*.csv ${OUTPUT_FOlDER}
+    mv report-${TAX_ID}-*.csv ${OUTPUT_FOLDER}
 done
 
-echo -e "\nReports and script output available into ./${OUTPUT_FOlDER} folder."
+echo -e "\nReports and script output available into ./${OUTPUT_FOLDER} folder."
 
 echo -e "\nCreating a .tar archive containing all generated reports..."
-cd ${OUTPUT_FOlDER}
-tar -cf ${OUTPUT_FOlDER}.tar *.csv
+cd ${OUTPUT_FOLDER}
+tar -cf ${OUTPUT_FOLDER}.tar *.csv
 echo -e "\nRemoving duplicated .csv files..."
 rm -f *.csv
 
