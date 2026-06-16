@@ -38,9 +38,9 @@ if [ $# -eq 3 ]; then
     CSV_LIST=$(ls -1 ${CSV_PATH}/*.csv | sed -e "s/${CSV_PATH_2}\///g")
     echo -e "\n${CSV_LIST}\n"
     echo -e "Do you agree?\n"
-    while [ "$ANSW" != "y" ] && [ "$ANSW" != "n" ]; do
-        read -p "[y/n]: " ANSW
-        if [ "$ANSW" == "n" ]; then
+    while [ "$ANSWER" != "y" ] && [ "$ANSWER" != "n" ]; do
+        read -r -p "[y/n]: " ANSWER
+        if [ "$ANSWER" == "n" ]; then
             exit 0
         fi
     done
