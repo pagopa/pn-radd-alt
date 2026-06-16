@@ -76,10 +76,12 @@ aws sso login --profile $AWS_PROFILE
 # stampato su stdout e catturato nella variabile TOKEN; i log del modulo sono
 # rediretti su stderr per non sporcare la cattura. index.js NON viene modificato.
 echo -e "\n🔐 Accesso SSO in corso (login una sola volta) su ${HELPDESK_URL}..."
-TOKEN=$(HELPDESK_URL="$HELPDESK_URL" node -e '
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOKEN=$(HELPDESK_URL="$HELPDESK_URL" SCRIPT_DIR="$SCRIPT_DIR" node -e '
   // I log del modulo vanno su stderr, sul terminale: solo il token finisce su stdout
   console.log = (...a) => process.stderr.write(a.join(" ") + "\n");
-  const { fetchHelpdeskIdToken } = require("../shared/helpdesk-token");
+  const path = require("path");
+  const { fetchHelpdeskIdToken } = require(path.resolve(process.env.SCRIPT_DIR, "../shared/helpdesk-token"));
   // playwright va caricato dalla node_modules locale e passato al modulo condiviso
   // (il modulo shared non ha playwright nella propria cartella)
   const playwright = require("playwright");
