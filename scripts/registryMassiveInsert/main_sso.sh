@@ -123,9 +123,13 @@ done
 echo -e "\nReports and script output available into ./${OUTPUT_FOLDER} folder."
 
 echo -e "\nCreating a .tar archive containing all generated reports..."
-cd ${OUTPUT_FOLDER}
-tar -cf ${OUTPUT_FOLDER}.tar *.csv
-echo -e "\nRemoving duplicated .csv files..."
-rm -f *.csv
+cd -- "${OUTPUT_FOLDER}" || exit 1
+if ls -1 ./*.csv >/dev/null 2>&1; then
+    tar -cf "${OUTPUT_FOLDER}.tar" ./*.csv || exit 1
+    echo -e "\nRemoving duplicated .csv files..."
+    rm -f -- ./*.csv
+else
+    echo -e "\nNo report .csv files found to archive."
+fi
 
 echo -e "\nDone.\n"
