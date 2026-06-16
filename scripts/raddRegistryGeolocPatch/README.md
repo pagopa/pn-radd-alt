@@ -18,6 +18,12 @@ cd scripts/raddRegistryGeolocPatch
 npm install
 ```
 
+> **Modalità SSO (`--sso`)**: usa automaticamente il browser di sistema (Chrome o Edge), quindi di norma **non serve installare altro**.
+> Solo se sul tuo computer non è presente né Chrome né Edge, installa il chromium di Playwright come fallback:
+> ```bash
+> npx playwright install chromium
+> ```
+
 ## Variabili Ambiente (`.env`)
 
 ### Login locale (utenti Cognito non federati)
@@ -56,8 +62,6 @@ CX_ID_AUTH_FLEET=operatore-001
 ```bash
 node index.js data.csv
 ```
-
-### Esecuzione con token (utenti SSO)
 
 ### Modalità SSO automatica (consigliata)
 Lo script può aprire automaticamente il portale Helpdesk, attendere il login SSO e recuperare l'idToken dal browser:
