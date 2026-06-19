@@ -2,6 +2,16 @@
 const path = require('path');
 const fs = require('fs');
 
+// Rende risolvibile la cartella node_modules locale di questo script anche per i
+// moduli condivisi in ../shared (che altrimenti cercherebbero le dipendenze a
+// partire dalla propria directory). Così è sufficiente `npm install` qui dentro.
+const Module = require('module');
+process.env.NODE_PATH = [
+  path.join(__dirname, 'node_modules'),
+  process.env.NODE_PATH || '',
+].filter(Boolean).join(path.delimiter);
+Module._initPaths();
+
 // Pre-scan argomenti per trovare --env-file
 let rawArgs = process.argv.slice(2);
 let envIdx = rawArgs.indexOf('--env-file');
@@ -109,6 +119,17 @@ async function main() {
     console.log('Nessun --cx-id fornito: lo script userà il valore della prima colonna del CSV come partnerId (x-pagopa-pn-cx-id)');
   }
 
+  // Se è stato indicato un ambiente con --sso e non è stato fornito un URL
+  // esplicito (né --api-url né API_BASE_URL), deriva l'URL base dell'API
+  // dall'ambiente, coerentemente con gli altri script.
+  const apiUrlExplicit = !!process.env.API_BASE_URL
+    || process.argv.includes('--api-url') || process.argv.includes('-u');
+  if (argv.sso && !apiUrlExplicit) {
+    argv.apiUrl = argv.sso === 'prod'
+      ? 'https://api.radd.notifichedigitali.it'
+      : `https://api.radd.${argv.sso}.notifichedigitali.it`;
+  }
+
   if (argv.sso) {
     const playwright = require('playwright');
     process.env.API_TOKEN = await fetchHelpdeskIdToken({
@@ -119,6 +140,8 @@ async function main() {
   }
 
   if (argv.token) process.env.API_TOKEN = argv.token;
+
+  console.log(`API URL: ${argv.apiUrl}`);
 
   const processor = new Processor(argv.apiUrl, argv.cxId || process.env.CX_ID_AUTH_FLEET || null, { useIdToken: argv.useIdToken, dryRun: argv.dryRun });
   try {

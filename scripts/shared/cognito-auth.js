@@ -108,6 +108,15 @@ class CognitoAuth {
     this._validate();
   }
 
+  /**
+   * Modalità di autenticazione corrente:
+   *  - 'static' se è disponibile un token statico (--token / --sso / API_TOKEN)
+   *  - 'local'  altrimenti (login Cognito username/password)
+   */
+  get authMode() {
+    return this.staticToken ? 'static' : 'local';
+  }
+
   _validate() {
     if (this.authMode === 'static') {
       console.log('Uso token statico (passato via --token o API_TOKEN).');
