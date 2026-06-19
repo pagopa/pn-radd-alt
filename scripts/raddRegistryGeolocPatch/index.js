@@ -6,10 +6,11 @@ const fs = require('fs');
 // moduli condivisi in ../shared (che altrimenti cercherebbero le dipendenze a
 // partire dalla propria directory). Così è sufficiente `npm install` qui dentro.
 const Module = require('module');
-const localNodeModules = path.join(__dirname, 'node_modules');
-if (!Module.globalPaths.includes(localNodeModules)) {
-  Module.globalPaths.unshift(localNodeModules);
-}
+process.env.NODE_PATH = [
+  path.join(__dirname, 'node_modules'),
+  process.env.NODE_PATH || '',
+].filter(Boolean).join(path.delimiter);
+Module._initPaths();
 
 // Pre-scan argomenti per trovare --env-file
 let rawArgs = process.argv.slice(2);
