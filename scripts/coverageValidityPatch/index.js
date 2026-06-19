@@ -111,8 +111,11 @@ async function main() {
   // Se è stato indicato un ambiente con --sso e non è stato fornito un URL
   // esplicito (né --api-url né API_BASE_URL), deriva l'URL base dell'API
   // dall'ambiente, coerentemente con gli altri script.
-  const apiUrlExplicit = !!process.env.API_BASE_URL
-    || process.argv.includes('--api-url') || process.argv.includes('-u');
+  const hasApiUrlFlag = process.argv.some(a =>
+    a === '--api-url' || a.startsWith('--api-url=') ||
+    a === '-u' || a.startsWith('-u=') || (a.startsWith('-u') && a.length > 2)
+  );
+  const apiUrlExplicit = !!process.env.API_BASE_URL || hasApiUrlFlag;
   if (argv.sso && !apiUrlExplicit) {
     argv.apiUrl = argv.sso === 'prod'
       ? 'https://api.radd.notifichedigitali.it'
