@@ -3,6 +3,16 @@
 const path = require('path');
 const fs = require('fs');
 
+// Rende risolvibile la cartella node_modules locale di questo script anche per i
+// moduli condivisi in ../shared (che altrimenti cercherebbero le dipendenze a
+// partire dalla propria directory). Così è sufficiente `npm install` qui dentro.
+const Module = require('module');
+process.env.NODE_PATH = [
+    path.join(__dirname, 'node_modules'),
+    process.env.NODE_PATH || '',
+].filter(Boolean).join(path.delimiter);
+Module._initPaths();
+
 // Pre-scan degli argomenti per individuare un eventuale --env-file <path>
 let rawArgs = process.argv.slice(2);
 let envFileIndex = rawArgs.indexOf('--env-file');
@@ -41,7 +51,9 @@ async function main() {
     }
 
     const csvFilePath = args[0];
-    let apiUrl = process.env.API_BASE_URL || 'https://api.example.com';
+    const DEFAULT_API_URL = 'https://api.example.com';
+    let apiUrl = process.env.API_BASE_URL || DEFAULT_API_URL;
+    let apiUrlExplicit = !!process.env.API_BASE_URL;
     let batchSize = 5;
     let delay = 1000;
     let ssoEnv = null;
@@ -54,6 +66,7 @@ async function main() {
         switch (opt) {
             case '--api-url':
                 apiUrl = args[i + 1];
+                apiUrlExplicit = true;
                 i++;
                 break;
             case '--batch-size':
@@ -96,6 +109,15 @@ async function main() {
     if (!fs.existsSync(csvFilePath)) {
         console.error(`CSV file not found: ${csvFilePath}`);
         process.exit(1);
+    }
+
+    // Se è stato indicato un ambiente con --sso e non è stato fornito un URL
+    // esplicito (né --api-url né API_BASE_URL), deriva l'URL base dell'API
+    // dall'ambiente, coerentemente con gli altri script.
+    if (ssoEnv && !apiUrlExplicit) {
+        apiUrl = ssoEnv === 'prod'
+            ? 'https://api.radd.notifichedigitali.it'
+            : `https://api.radd.${ssoEnv}.notifichedigitali.it`;
     }
 
     if (ssoEnv) {
