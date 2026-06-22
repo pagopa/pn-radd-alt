@@ -1,0 +1,10 @@
+{
+  "name": "scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dipendenze condivise usate dai moduli in scripts/shared (es. cognito-auth, helpdesk-token). Installandole qui, Node le risolve naturalmente risalendo da scripts/shared/, anche senza l'hack NODE_PATH nei singoli script.",
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "3.995.0",
+    "playwright": "^1.54.2"
+  }
+}
