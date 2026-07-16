@@ -35,14 +35,19 @@ manualmente l'idToken dal portale helpdesk:
 3. Passa il token allo script:
 
 ```bash
-node index.js --token <IL_TUO_ID_TOKEN> dev <clientId> ./input/data.csv
+node index.js --token <IL_TUO_ID_TOKEN> dev ./input/data.csv
 ```
 
 In alternativa puoi usare l'automatismo browser:
 
 ```bash
-node index.js --sso dev <clientId> ./input/data.csv
+node index.js --sso dev ./input/data.csv
 ```
+
+> In modalità `--sso` e `--token` il `<clientId>` **non è necessario** (il token
+> proviene dall'Helpdesk, non dal login Cognito). Per retrocompatibilità puoi
+> comunque passarlo (`node index.js --sso dev <clientId> ./input/data.csv`) e
+> verrà ignorato.
 
 Con `--sso` lo script apre automaticamente `https://helpdesk.<env>.notifichedigitali.it`,
 attende il login interattivo e legge l'idToken dal LocalStorage del browser.
@@ -50,7 +55,7 @@ Per compliance, prova prima browser di sistema (Chrome/Edge) e usa Chromium Play
 Se vuoi forzare una URL specifica:
 
 ```bash
-node index.js --sso dev <clientId> ./input/data.csv --helpdesk-url https://helpdesk.dev.notifichedigitali.it
+node index.js --sso dev ./input/data.csv --helpdesk-url https://helpdesk.dev.notifichedigitali.it
 ```
 
 La URL passata con `--helpdesk-url` deve essere coerente con `<env>`, altrimenti lo script termina con errore.
@@ -64,7 +69,7 @@ La URL passata con `--helpdesk-url` deve essere coerente con `<env>`, altrimenti
 Se vuoi forzare il browser:
 
 ```bash
-node index.js --sso dev <clientId> ./input/data.csv --browser edge
+node index.js --sso dev ./input/data.csv --browser edge
 ```
 
 Valori supportati per `--browser`: `chrome`, `edge`, `chromium`.
@@ -89,7 +94,7 @@ node index.js dev <username> <password> <clientId> ./input/data.csv
 | `--helpdesk-url <url>` | URL Helpdesk custom da usare con `--sso`                               |
 | `--browser <name>` | Browser da usare con `--sso`: `chrome`, `edge`, `chromium`                  |
 | `<env>`          | Ambiente: `dev`, `test`, `uat`, `hotfix`, `prod`                              |
-| `<clientId>`     | Client ID di Cognito (ApiClient)                                              |
+| `<clientId>`     | Client ID di Cognito (ApiClient). Obbligatorio in modalità locale; opzionale/ignorato con `--sso` e `--token` |
 | `<csvFilePath>`  | Percorso del file CSV. Il nome deve essere `<partnerId>-<descrizione>.csv`    |
 | `<username>`     | Username per autenticazione Cognito (solo modalità locale)                    |
 | `<password>`     | Password per autenticazione Cognito (solo modalità locale)                    |

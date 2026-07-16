@@ -31,11 +31,14 @@ const RegistryService = require('./services/registryService');
   }
 
   // Supporto modalità token (utenti SSO/Google):
-  //   node index.js --token <idToken> <env> <clientId> <csvFilePath>
+  //   node index.js --token <idToken> <env> [clientId] <csvFilePath>
   // Supporto modalità SSO automatica (utenti SSO/Google):
-  //   node index.js --sso <env> <clientId> <csvFilePath>
+  //   node index.js --sso <env> [clientId] <csvFilePath>
   // Supporto modalità locale (utenti Cognito non federati):
   //   node index.js <env> <username> <password> <clientId> <csvFilePath>
+  // In modalità SSO/token il clientId NON è usato per l'autenticazione (il token
+  // arriva dall'Helpdesk): è quindi opzionale e accettato solo per
+  // retrocompatibilità con i comandi esistenti.
   const tokenIndex = args.indexOf('--token');
   if (tokenIndex !== -1 && !args[tokenIndex + 1]) {
     console.error('Uso token:  node index.js --token <idToken> <env> <clientId> <csvFilePath>');
@@ -65,13 +68,27 @@ const RegistryService = require('./services/registryService');
       return true;
     });
     [env, clientId, ...csvPathParts] = filtered;
-    csvFilePath = csvPathParts.join(' ');
     username = null;
     password = null;
 
-    if (!env || !clientId || !csvFilePath) {
-      console.error('Uso token:  node index.js --token <idToken> <env> <clientId> <csvFilePath>');
-      console.error('Uso SSO:    node index.js --sso <env> <clientId> <csvFilePath> [--helpdesk-url <url>] [--browser chrome|edge|chromium]');
+    // clientId è opzionale in SSO/token. Il primo argomento dopo <env> è un
+    // clientId solo se ne ha la forma (stringa alfanumerica minuscola di almeno
+    // 20 caratteri, come i Client ID Cognito) ed è seguito da altri argomenti
+    // (il path CSV). Altrimenti fa già parte del path del file.
+    const rest = filtered.slice(1);
+    const looksLikeClientId = (s) => typeof s === 'string' && /^[a-z0-9]{20,}$/.test(s);
+    if (rest.length > 1 && looksLikeClientId(rest[0])) {
+      clientId = rest[0];
+      csvPathParts = rest.slice(1);
+    } else {
+      clientId = null;
+      csvPathParts = rest;
+    }
+    csvFilePath = csvPathParts.join(' ');
+
+    if (!env || !csvFilePath) {
+      console.error('Uso token:  node index.js --token <idToken> <env> [clientId] <csvFilePath>');
+      console.error('Uso SSO:    node index.js --sso <env> [clientId] <csvFilePath> [--helpdesk-url <url>] [--browser chrome|edge|chromium]');
       console.error('Uso locale: node index.js <env> <username> <password> <clientId> <csvFilePath>');
       process.exit(1);
     }
@@ -81,8 +98,8 @@ const RegistryService = require('./services/registryService');
     csvFilePath = csvPathParts.join(' ');
     if (!env || !username || !password || !clientId || !csvFilePath) {
       console.error('Uso locale: node index.js <env> <username> <password> <clientId> <csvFilePath>');
-      console.error('Uso token:  node index.js --token <idToken> <env> <clientId> <csvFilePath>');
-      console.error('Uso SSO:    node index.js --sso <env> <clientId> <csvFilePath> [--helpdesk-url <url>] [--browser chrome|edge|chromium]');
+      console.error('Uso token:  node index.js --token <idToken> <env> [clientId] <csvFilePath>');
+      console.error('Uso SSO:    node index.js --sso <env> [clientId] <csvFilePath> [--helpdesk-url <url>] [--browser chrome|edge|chromium]');
       process.exit(1);
     }
   }
