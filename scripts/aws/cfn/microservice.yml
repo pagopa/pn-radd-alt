@@ -612,6 +612,16 @@ Parameters:
     AllowedValues: ['true', 'false']
     Description: Whether the RADD private proxy backend 5xx alarm should trigger oncall
 
+  CpuArchitecture:
+    Type: String
+    Default: 'ARM'
+    Description: CPU architecture for the Fargate tasks
+
+  JavaToolOptions:
+    Type: String
+    Default: ''
+    Description: Java tool options for the Fargate tasks
+
 Conditions:
   IsImportLocationsBlocked: !Equals [!Ref BlockImportLocations, 'true']
   HasRaddPrivateProxyListenerPathPrefix: !Not [!Equals [!Ref RaddPrivateProxyListenerPathPrefix, '']]
@@ -699,6 +709,8 @@ Resources:
         TaskRoleManagedPolicyArn: !Ref RaddMicroserviceTaskManagedPolicy
         EcsLogGroup: !Ref EcsLogGroup
         LogAlarmStrategyV1: FATAL
+        CpuArchitecture: !Ref CpuArchitecture
+        JavaToolOptions: !Ref JavaToolOptions
 
   # Grant operational rights to PN-RADD microservice
   RaddMicroserviceTaskManagedPolicy:
