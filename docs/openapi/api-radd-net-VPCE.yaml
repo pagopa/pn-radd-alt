@@ -717,8 +717,8 @@ components:
       required: true
       schema:
         type: string
-        enum: ["aor", "act"]
-      example: aor
+        enum: ["AOR", "ACT"]
+      example: AOR
     attachmentId:
       name: attachmentId
       description: Identificativo file
