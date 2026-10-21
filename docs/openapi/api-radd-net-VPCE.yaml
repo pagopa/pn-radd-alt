@@ -30,8 +30,8 @@ info:
 
       Nelle API che richiedono il parametro *uid* questo deve essere valorizzato
       con un identificativo pseudo-anonimizzato dell'operatore dello sportello
-      rete RADD. Il valore deve essere composto da frazionario, pdl e timestamp, 
-      secondo il formato *frazionario-pdl-timestamp*.
+      rete RADD. Il valore deve essere composto da
+      'PNS' – ‘FRAZIONARIO (5 NUM)’ – ‘PDL (2 NUM)’ – ‘PROGRESSIVO OPERAZIONE’ – ‘TIMESTAMP UNIX’.
       Questo campo serve in caso di indagine per individuare l'operatore dello
       sportello che ha eseguito l'operazione. E' cura del software dello
       sportello valorizzarlo con un identificativo che non riporti dati personali
@@ -663,12 +663,12 @@ components:
   parameters:
     uid:
       name: uid
-      description: Identificativo pseudo-anonimizzato dell'operatore RADD nel formato frazionario-pdl-timestamp.
+      description: Identificativo pseudo-anonimizzato dell'operatore RADD nel formato 'PNS' – ‘FRAZIONARIO (5 NUM)’ – ‘PDL (2 NUM)’ – ‘PROGRESSIVO OPERAZIONE’ – ‘TIMESTAMP UNIX’.
       in: header
       required: true
       schema:
         type: string
-      example: "12345-PDL001-20240521103000"
+      example: "PNS664080211695110981203"
     recipientTaxId:
       name: recipientTaxId
       description: Codice Fiscale Destinatario
