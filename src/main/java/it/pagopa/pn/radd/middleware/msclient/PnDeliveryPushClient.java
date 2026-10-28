@@ -40,11 +40,10 @@ public class PnDeliveryPushClient extends BaseClient {
     private final PnRaddFsuConfig pnRaddFsuConfig;
 
 
-    public Flux<LegalFactListElementV20Dto> getNotificationLegalFacts(String recipientInternalId, String iun) {
+    public Flux<LegalFactListElementV20Dto> getNotificationLegalFacts(String recipientInternalId, String iun, String uid, String cxId, String cxType) {
         log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY_PUSH, "getNotificationLegalFacts");
         log.debug("getNotificationLegalFacts - iun: {}, recipientInternalId: {}", iun, recipientInternalId);
-        CxTypeAuthFleetDto cxType = null;
-        return this.legalFactsApi.getNotificationLegalFactsPrivate( recipientInternalId, iun, null, cxType, null)
+        return this.legalFactsApi.getNotificationLegalFactsPrivate(recipientInternalId, iun, null, cxType == null ? null : CxTypeAuthFleetDto.fromValue(cxType), null, uid, cxId)
                 .retryWhen(
                         Retry.backoff(2, Duration.ofMillis(250))
                                 .filter(throwable -> throwable instanceof TimeoutException || throwable instanceof ConnectException)
@@ -57,12 +56,11 @@ public class PnDeliveryPushClient extends BaseClient {
                 .onErrorResume(WebClientResponseException.class, ex -> Mono.error(new PnRaddException(ex)));
     }
 
-    public Mono<LegalFactDownloadMetadataWithContentTypeResponseDto> getLegalFact(String recipientInternalId, String iun, String legalFactId) {
+    public Mono<LegalFactDownloadMetadataWithContentTypeResponseDto> getLegalFact(String recipientInternalId, String iun, String legalFactId, String uid, String cxId, String cxType) {
         log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY_PUSH, "getLegalFact");
         log.debug("getLegalFact - iun: {}, legalFactId: {}, recipientInternalId: {}", iun, legalFactId, recipientInternalId);
         log.trace("GET LEGAL FACT TICK {}", new Date().getTime());
-        CxTypeAuthFleetDto cxType = null;
-        return this.legalFactsApi.getLegalFactByIdPrivate(recipientInternalId, iun, legalFactId, null, cxType, null)
+        return this.legalFactsApi.getLegalFactByIdPrivate(recipientInternalId, iun, legalFactId, null, cxType == null ? null : CxTypeAuthFleetDto.fromValue(cxType), null, uid, cxId)
                 .retryWhen(
                         Retry.backoff(2, Duration.ofMillis(250))
                                 .filter(throwable -> throwable instanceof TimeoutException || throwable instanceof ConnectException)
@@ -78,7 +76,7 @@ public class PnDeliveryPushClient extends BaseClient {
                 });
     }
 
-    public Mono<ResponseNotificationViewedDtoDto> notifyNotificationRaddRetrieved(RaddTransactionEntity entity, Date operationDate){
+    public Mono<ResponseNotificationViewedDtoDto> notifyNotificationRaddRetrieved(RaddTransactionEntity entity, Date operationDate, String uid, String cxId, String cxType){
         log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY_PUSH, "notifyNotificationRaddRetrieved");
         log.debug("notifyNotificationRaddRetrieved - iun: {}, operationId: {}", entity.getIun(), entity.getOperationId());
         RequestNotificationViewedDtoDto request = new RequestNotificationViewedDtoDto();
@@ -88,7 +86,7 @@ public class PnDeliveryPushClient extends BaseClient {
         request.setRaddBusinessTransactionId(entity.getOperationId());
         request.setRaddType(RADD_TYPE);
         log.trace("NOTIFICATION VIEWED TICK {}", new Date().getTime());
-        return this.eventComunicationApi.notifyNotificationRaddRetrieved(entity.getIun(), request)
+        return this.eventComunicationApi.notifyNotificationRaddRetrieved(entity.getIun(), request, uid, cxId, cxType == null ? null : CxTypeAuthFleetDto.fromValue(cxType))
                 .retryWhen(
                         Retry.backoff(2, Duration.ofMillis(500))
                                 .filter(throwable -> throwable instanceof TimeoutException || throwable instanceof ConnectException)

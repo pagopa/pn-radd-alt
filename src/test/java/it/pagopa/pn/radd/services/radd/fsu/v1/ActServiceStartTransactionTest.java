@@ -4,7 +4,10 @@ import de.neuland.assertj.logging.ExpectedLogging;
 import de.neuland.assertj.logging.ExpectedLoggingAssertions;
 import it.pagopa.pn.commons.log.PnAuditLog;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.*;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.*;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactCategoryV20Dto;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactDownloadMetadataWithContentTypeResponseDto;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactListElementV20Dto;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactsIdV20Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileDownloadResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.OperationResultCodeResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.*;
@@ -16,11 +19,7 @@ import it.pagopa.pn.radd.exception.RaddGenericException;
 import it.pagopa.pn.radd.mapper.TransactionDataMapper;
 import it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity;
 import it.pagopa.pn.radd.middleware.db.impl.RaddTransactionDAOImpl;
-import it.pagopa.pn.radd.middleware.msclient.PnDataVaultClient;
-import it.pagopa.pn.radd.middleware.msclient.PnDeliveryClient;
-import it.pagopa.pn.radd.middleware.msclient.PnDeliveryPushClient;
-import it.pagopa.pn.radd.middleware.msclient.PnSafeStorageClient;
-import it.pagopa.pn.radd.middleware.msclient.PnTimelineServiceClient;
+import it.pagopa.pn.radd.middleware.msclient.*;
 import it.pagopa.pn.radd.services.radd.fsu.v1.dto.DocumentInfoDto;
 import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
@@ -28,10 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
@@ -45,7 +41,6 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @Slf4j
@@ -117,7 +112,7 @@ class ActServiceStartTransactionTest {
         return fileDownloadResponseDto ;
     }
 
-    private SentNotificationV25Dto createSentNotificationDto(){
+    private SentNotificationV26Dto createSentNotificationDto(){
         NotificationPaymentItemDto notificationPaymentInfoDto = new NotificationPaymentItemDto();
         notificationPaymentInfoDto.setPagoPa(new PagoPaPaymentDto());
 
@@ -131,7 +126,7 @@ class ActServiceStartTransactionTest {
         ref.setKey("fileKey");
         notificationDocumentDto.setRef(ref);
 
-        SentNotificationV25Dto sentNotificationDto = new SentNotificationV25Dto ();
+        SentNotificationV26Dto sentNotificationDto = new SentNotificationV26Dto ();
         sentNotificationDto.setRecipients(List.of(notificationRecipientDto));
         sentNotificationDto.setDocuments(List.of(notificationDocumentDto));
         sentNotificationDto.setSenderPaId("senderPaId");
@@ -153,6 +148,70 @@ class ActServiceStartTransactionTest {
 
 
     @Test
+    void startTransactionPropagatesAuditIdentityToAllDownloads() {
+        ActStartTransactionRequest request = createActStartTransactionRequest();
+        RaddTransactionEntity entity = createRaddTransactionEntity();
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any(), any(), any(), any()))
+                .thenReturn(Mono.just(new ResponseCheckAarDtoDto().iun("testIun")));
+        Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getRecipientTaxId(), request.getRecipientType().getValue()))
+                .thenReturn(Mono.just("recipientTaxIdResult"));
+        Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF))
+                .thenReturn(Mono.just("delegateTaxIdResult"));
+        Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(0));
+        Mockito.when(raddTransactionDAOImpl.createRaddTransaction(any(), any())).thenReturn(Mono.just(entity));
+        Mockito.when(raddTransactionDAOImpl.getTransaction(anyString(), eq(OperationTypeEnum.ACT))).thenReturn(Mono.just(entity));
+        Mockito.when(raddTransactionDAOImpl.updateDocAttachments(any(), any())).thenReturn(Mono.just(entity));
+        Mockito.when(raddTransactionDAOImpl.updateZipAttachments(any(), any())).thenReturn(Mono.just(entity));
+        Mockito.when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
+        Mockito.when(safeStorage.getFile(any())).thenReturn(Mono.just(createFileDownloadResponseDto()));
+        Mockito.when(safeStorage.updateFileMetadata(any())).thenReturn(Mono.just(new OperationResultCodeResponseDto()));
+
+        SentNotificationV26Dto notification = createSentNotificationDto();
+        NotificationRecipientV24Dto recipient = notification.getRecipients().getFirst();
+        recipient.setInternalId("recipientTaxIdResult");
+        assertNotNull(recipient.getPayments());
+        NotificationPaymentItemDto payment = recipient.getPayments().getFirst();
+        assertNotNull(payment.getPagoPa());
+        payment.getPagoPa().setAttachment(new NotificationPaymentAttachmentDto()
+                .ref(new NotificationAttachmentBodyRefDto().key("pagopa-file")));
+        payment.setF24(new F24PaymentDto().metadataAttachment(new NotificationMetadataAttachmentDto()
+                .ref(new NotificationAttachmentBodyRefDto().key("f24-file"))));
+        Mockito.when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(notification));
+        Mockito.when(pnDeliveryClient.getPresignedUrlDocument(any(), any(), any(), any(), any(), any()))
+                .thenReturn(Mono.just(new NotificationAttachmentDownloadMetadataResponseDto()
+                        .url("http://safestorage/document").contentType("application/pdf")));
+        Mockito.when(pnDeliveryClient.getPresignedUrlPaymentDocument(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(Mono.just(new NotificationAttachmentDownloadMetadataResponseDto()
+                        .url("http://safestorage/payment").contentType("application/pdf")));
+        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any(), any(), any(), any()))
+                .thenReturn(Flux.fromStream(createLegalFactListElementDto()));
+        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any(), any(), any(), any()))
+                .thenReturn(Mono.just(new LegalFactDownloadMetadataWithContentTypeResponseDto()
+                        .url("http://safestorage/legal-fact").contentType("application/pdf")));
+
+        StartTransactionResponse response = actService.startTransaction(
+                "audit-uid", "audit-cx-id", CxTypeAuthFleet.RADD, "RADD_UPLOADER", null, "http://localhost", request).block();
+
+        assertNotNull(response);
+        assertNotNull(response.getStatus());
+        assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_0, response.getStatus().getCode());
+        ArgumentCaptor<String> uid = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> cxId = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> cxType = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(pnDeliveryClient).getCheckAar(any(), any(), any(), uid.capture(), cxId.capture(), cxType.capture());
+        Mockito.verify(pnDeliveryClient).getPresignedUrlDocument(any(), any(), any(), uid.capture(), cxId.capture(), cxType.capture());
+        Mockito.verify(pnDeliveryClient).getPresignedUrlPaymentDocument(
+                any(), eq("PAGOPA"), any(), eq(0), uid.capture(), cxId.capture(), cxType.capture());
+        Mockito.verify(pnDeliveryClient).getPresignedUrlPaymentDocument(
+                any(), eq("F24"), any(), eq(0), uid.capture(), cxId.capture(), cxType.capture());
+        Mockito.verify(pnDeliveryPushClient).getNotificationLegalFacts(any(), any(), uid.capture(), cxId.capture(), eq("RADD"));
+        Mockito.verify(pnDeliveryPushClient).getLegalFact(any(), any(), any(), uid.capture(), cxId.capture(), eq("RADD"));
+        assertEquals(java.util.Collections.nCopies(6, "audit-uid"), uid.getAllValues());
+        assertEquals(java.util.Collections.nCopies(6, "audit-cx-id"), cxId.getAllValues());
+        assertEquals(java.util.Collections.nCopies(4, "RADD"), cxType.getAllValues());
+    }
+
+    @Test
     void testStartTransactionWithEntity() {
 
         ActStartTransactionRequest request = createActStartTransactionRequest();
@@ -161,7 +220,7 @@ class ActServiceStartTransactionTest {
         responseCheckAarDtoDto.setIun("testIun");
 
 
-        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getRecipientTaxId(), request.getRecipientType().getValue())).thenReturn(Mono.just("recipientTaxIdResult"));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF)).thenReturn(Mono.just("delegateTaxIdResult"));
         Mockito.when(raddTransactionDAOImpl.getTransaction(anyString(), eq(OperationTypeEnum.ACT))).thenReturn(Mono.just(raddTransactionEntity));
@@ -172,27 +231,33 @@ class ActServiceStartTransactionTest {
 
         Mockito.when(safeStorage.getFile(any())).thenReturn(Mono.just(fileDownloadResponseDto));
         Mockito.when(safeStorage.updateFileMetadata(any())).thenReturn(Mono.just(new OperationResultCodeResponseDto()));
-        SentNotificationV25Dto sentNotificationDto = createSentNotificationDto();
+        SentNotificationV26Dto sentNotificationDto = createSentNotificationDto();
         Mockito.when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationDto));
         NotificationAttachmentDownloadMetadataResponseDto notificationAttachmentDownloadMetadataResponseDto = new NotificationAttachmentDownloadMetadataResponseDto();
         notificationAttachmentDownloadMetadataResponseDto.setUrl("http://safestorage/UrlDocument?");
-        Mockito.when(pnDeliveryClient.getPresignedUrlDocument(any(), any(), any())).thenReturn(Mono.just(notificationAttachmentDownloadMetadataResponseDto));
+        Mockito.when(pnDeliveryClient.getPresignedUrlDocument(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(notificationAttachmentDownloadMetadataResponseDto));
         NotificationAttachmentDownloadMetadataResponseDto notificationAttachmentDownloadMetadataResponseDto1 = new NotificationAttachmentDownloadMetadataResponseDto();
         notificationAttachmentDownloadMetadataResponseDto1.setUrl("http://safestorage/UrlPayment?");
-        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any())).thenReturn(Flux.fromStream(createLegalFactListElementDto()));
+        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any(), any(), any(), any())).thenReturn(Flux.fromStream(createLegalFactListElementDto()));
         LegalFactDownloadMetadataWithContentTypeResponseDto legalFactDownloadMetadataResponseDto = new LegalFactDownloadMetadataWithContentTypeResponseDto();
         legalFactDownloadMetadataResponseDto.setUrl("http://safestorage/UrlLegalFact?");
         legalFactDownloadMetadataResponseDto.setContentType("application/pdf");
         Mockito.when(raddTransactionDAOImpl.updateDocAttachments(any(), any()))
                .thenReturn(Mono.just(raddTransactionEntity));
-        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any())).thenReturn(Mono.just(legalFactDownloadMetadataResponseDto));
+        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(legalFactDownloadMetadataResponseDto));
         Mockito.when(raddTransactionDAOImpl.updateZipAttachments(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
         StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
         assertNotNull(startTransactionResponse);
+        assertNotNull(startTransactionResponse.getStatus());
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_0, startTransactionResponse.getStatus().getCode());
         assertEquals(Const.OK, startTransactionResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id iun=null");
-        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] SUCCESS - End ACT starTransaction - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id "+"transactionId=PG#cxId#Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=testIun " +"downloadedFilekeys=[ coverFileUrl, UrlDocument, UrlLegalFact ] status=class StartTransactionResponseStatus {\n"+"    code: 0\n"+"    message: OK\n"+"    retryAfter: null\n" +"}");
+        ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("""
+                [AUD_RADD_ACTTRAN] SUCCESS - End ACT starTransaction - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id transactionId=PG#cxId#Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=testIun downloadedFilekeys=[ coverFileUrl, UrlDocument, UrlLegalFact ] status=class StartTransactionResponseStatus {
+                    code: 0
+                    message: OK
+                    retryAfter: null
+                }""");
     }
 
     @Test
@@ -201,25 +266,25 @@ class ActServiceStartTransactionTest {
         RaddTransactionEntity raddTransactionEntity = createRaddTransactionEntity();
         ResponseCheckAarDtoDto responseCheckAarDtoDto = new ResponseCheckAarDtoDto();
         responseCheckAarDtoDto.setIun("testIun");
-        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getRecipientTaxId(), request.getRecipientType().getValue())).thenReturn(Mono.just("recipientTaxIdResult"));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF)).thenReturn(Mono.just("delegateTaxIdResult"));
         Mockito.when(raddTransactionDAOImpl.createRaddTransaction(any(), any())).thenReturn(Mono.just(raddTransactionEntity));
         FileDownloadResponseDto fileDownloadResponseDto = createFileDownloadResponseDto () ;
         Mockito.when(safeStorage.getFile (any())).thenReturn(Mono.just(fileDownloadResponseDto));
-        SentNotificationV25Dto sentNotificationDto = createSentNotificationDto();
+        SentNotificationV26Dto sentNotificationDto = createSentNotificationDto();
         Mockito.when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationDto));
         NotificationAttachmentDownloadMetadataResponseDto notificationAttachmentDownloadMetadataResponseDto = new NotificationAttachmentDownloadMetadataResponseDto();
         notificationAttachmentDownloadMetadataResponseDto.setUrl("UrlDocument");
-        Mockito.when(pnDeliveryClient.getPresignedUrlDocument (any(), any(), any())).thenReturn(Mono.just(notificationAttachmentDownloadMetadataResponseDto));
+        Mockito.when(pnDeliveryClient.getPresignedUrlDocument(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(notificationAttachmentDownloadMetadataResponseDto));
         NotificationAttachmentDownloadMetadataResponseDto notificationAttachmentDownloadMetadataResponseDto1 = new NotificationAttachmentDownloadMetadataResponseDto();
         notificationAttachmentDownloadMetadataResponseDto1.setUrl("UrlPayment");
-        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any())).thenReturn(Flux.fromStream(createLegalFactListElementDto()));
+        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any(), any(), any(), any())).thenReturn(Flux.fromStream(createLegalFactListElementDto()));
         LegalFactDownloadMetadataWithContentTypeResponseDto legalFactDownloadMetadataResponseDto = new LegalFactDownloadMetadataWithContentTypeResponseDto();
         legalFactDownloadMetadataResponseDto.setUrl("UrlLegalFact");
         legalFactDownloadMetadataResponseDto.setContentType("application/pdf");
         legalFactDownloadMetadataResponseDto.setRetryAfter(new BigDecimal(20));
-        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any()))
+        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any(), any(), any(), any()))
                .thenReturn(Mono.just(legalFactDownloadMetadataResponseDto));
 
         Mockito.when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(new RaddTransactionEntity()));
@@ -230,10 +295,16 @@ class ActServiceStartTransactionTest {
 
         StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
         assertNotNull(startTransactionResponse);
+        assertNotNull(startTransactionResponse.getStatus());
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_2, startTransactionResponse.getStatus().getCode());
         assertEquals(new BigDecimal(20), startTransactionResponse.getStatus().getRetryAfter());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id iun=null");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Documento non disponibile per il download - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id "+"transactionId=PG#cxId#Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=testIun status=class StartTransactionResponseStatus {\n" +"    code: 2\n"+"    message: Documento non disponibile per il download\n"+"    retryAfter: 20\n"+"}");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("""
+                [AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Documento non disponibile per il download - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id transactionId=PG#cxId#Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=testIun status=class StartTransactionResponseStatus {
+                    code: 2
+                    message: Documento non disponibile per il download
+                    retryAfter: 20
+                }""");
     }
 
     @Test
@@ -242,17 +313,23 @@ class ActServiceStartTransactionTest {
         ResponseCheckAarDtoDto responseCheckAarDtoDto = new ResponseCheckAarDtoDto();
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getRecipientTaxId(), request.getRecipientType().getValue())).thenReturn(Mono.just("recipientTaxIdResult"));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF)).thenReturn(Mono.just("delegateTaxIdResult"));
-        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
         Mockito.when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(new RaddTransactionEntity()));
         Mockito.when(raddTransactionDAOImpl.updateStatus(any(), any())).thenReturn(Mono.just(new RaddTransactionEntity()));
 
 
         StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
         assertNotNull(startTransactionResponse);
+        assertNotNull(startTransactionResponse.getStatus());
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_99, startTransactionResponse.getStatus().getCode());
         assertEquals(ExceptionTypeEnum.IUN_NOT_FOUND.getMessage(), startTransactionResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id iun=null");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Iun not found with params - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id "+"recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=null status=class StartTransactionResponseStatus {\n"+"    code: 99\n"+"    message: Iun not found with params\n"+"    retryAfter: null\n"+"}");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("""
+                [AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Iun not found with params - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=null status=class StartTransactionResponseStatus {
+                    code: 99
+                    message: Iun not found with params
+                    retryAfter: null
+                }""");
     }
 
     @Test
@@ -261,7 +338,7 @@ class ActServiceStartTransactionTest {
         WebClientResponseException exMock = new WebClientResponseException("Internal server Error", 500, "header", null, null, null);
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getRecipientTaxId(), request.getRecipientType().getValue())).thenReturn(Mono.just("recipientTaxIdResult"));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF)).thenReturn(Mono.just("delegateTaxIdResult"));
-        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any()))
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any(), any(), any(), any()))
                .thenReturn(Mono.error(new PnRaddException(exMock)));
         Mockito.when(raddTransactionDAOImpl.getTransaction(any(), any(), any(), any())).thenReturn(Mono.just(new RaddTransactionEntity()));
         Mockito.when(raddTransactionDAOImpl.updateStatus(any(), any())).thenReturn(Mono.just(new RaddTransactionEntity()));
@@ -281,7 +358,7 @@ class ActServiceStartTransactionTest {
         responseCheckAarDtoDto.setIun("testIun");
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getRecipientTaxId(), request.getRecipientType().getValue())).thenReturn(Mono.just("recipientTaxIdResult"));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF)).thenReturn(Mono.just("delegateTaxIdResult"));
-        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any()))
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any(), any(), any(), any()))
                .thenReturn(Mono.just(responseCheckAarDtoDto));
         Mockito.when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(createSentNotificationDto()));
         Mockito.when(raddTransactionDAOImpl.createRaddTransaction(any(), any())).thenThrow(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_ALREADY_EXIST));
@@ -295,10 +372,16 @@ class ActServiceStartTransactionTest {
 
         StartTransactionResponse startTransactionResponse = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
         assertNotNull(startTransactionResponse);
+        assertNotNull(startTransactionResponse.getStatus());
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_5, startTransactionResponse.getStatus().getCode());
         assertEquals(ExceptionTypeEnum.TRANSACTION_ALREADY_EXIST.getMessage(), startTransactionResponse.getStatus().getMessage());
         ExpectedLoggingAssertions.assertThat(logging).hasInfoMessage("[AUD_RADD_ACTTRAN] BEFORE - Start ACT startTransaction - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id iun=null");
-        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("[AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Transazione già esistente o con stato completed o aborted - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=null status=class StartTransactionResponseStatus {\n" + "    code: 5\n" + "    message: Transazione già esistente o con stato completed o aborted\n"+"    retryAfter: null\n" +"}");
+        ExpectedLoggingAssertions.assertThat(logging).hasErrorMessage("""
+                [AUD_RADD_ACTTRAN] FAILURE - End ACT startTransaction with error Transazione già esistente o con stato completed o aborted - uid=test cxId=cxId cxType=PG cxRole=RADD_UPLOADER operationId=Id recipientInternalId=recipientTaxIdResult delegateInternalId=delegateTaxIdResult iun=null status=class StartTransactionResponseStatus {
+                    code: 5
+                    message: Transazione già esistente o con stato completed o aborted
+                    retryAfter: null
+                }""");
     }
 
     @Test
@@ -318,24 +401,24 @@ class ActServiceStartTransactionTest {
         ResponseCheckAarDtoDto responseCheckAarDtoDto = new ResponseCheckAarDtoDto();
         responseCheckAarDtoDto.setIun("testIun");
 
-        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getRecipientTaxId(), request.getRecipientType().getValue())).thenReturn(Mono.just("recipientTaxIdResult"));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF)).thenReturn(Mono.just("delegateTaxIdResult"));
         Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(0));
         Mockito.when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
 
         // documentsAvailable=false → hasDocumentsAvailable lancia DOCUMENT_UNAVAILABLE
-        SentNotificationV25Dto sentNotificationDto = createSentNotificationDto();
+        SentNotificationV26Dto sentNotificationDto = createSentNotificationDto();
         sentNotificationDto.setDocumentsAvailable(false);
         Mockito.when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationDto));
 
         // legal facts disponibili — vengono chiamati tramite transactionData originale
-        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any()))
+        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any(), any(), any(), any()))
                 .thenReturn(Flux.fromStream(createLegalFactListElementDto()));
         LegalFactDownloadMetadataWithContentTypeResponseDto legalFactDto = new LegalFactDownloadMetadataWithContentTypeResponseDto();
         legalFactDto.setUrl("http://safestorage/UrlLegalFact?");
         legalFactDto.setContentType("application/pdf");
-        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any())).thenReturn(Mono.just(legalFactDto));
+        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(legalFactDto));
         Mockito.when(raddTransactionDAOImpl.getTransaction(anyString(), eq(OperationTypeEnum.ACT)))
                 .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)));
 
@@ -343,6 +426,7 @@ class ActServiceStartTransactionTest {
                 "test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
 
         assertNotNull(response);
+        assertNotNull(response.getStatus());
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_4, response.getStatus().getCode());
         assertEquals(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE.getMessage(), response.getStatus().getMessage());
         // ora la lista NON è vuota — contiene i legal facts
@@ -362,20 +446,20 @@ class ActServiceStartTransactionTest {
         ResponseCheckAarDtoDto responseCheckAarDtoDto = new ResponseCheckAarDtoDto();
         responseCheckAarDtoDto.setIun("testIun");
 
-        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getRecipientTaxId(), request.getRecipientType().getValue())).thenReturn(Mono.just("recipientTaxIdResult"));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF)).thenReturn(Mono.just("delegateTaxIdResult"));
         Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(0));
         Mockito.when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
 
-        SentNotificationV25Dto sentNotificationDto = createSentNotificationDto();
+        SentNotificationV26Dto sentNotificationDto = createSentNotificationDto();
         sentNotificationDto.setDocumentsAvailable(false);
         Mockito.when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationDto));
 
         // legal facts falliscono con 500
         WebClientResponseException webEx = new WebClientResponseException(
                 "Internal Server Error", 500, "header", null, null, null);
-        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any()))
+        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any(), any(), any(), any()))
                 .thenReturn(Flux.error(new PnRaddException(webEx)));
 
 
@@ -384,6 +468,7 @@ class ActServiceStartTransactionTest {
 
         assertNotNull(response);
         // code=4 perché documentsAvailable=false
+        assertNotNull(response.getStatus());
         assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_4, response.getStatus().getCode());
         assertEquals(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE.getMessage(), response.getStatus().getMessage());
         // lista vuota — legal facts falliti ma errore swallowed da buildLegalFactsOnlyResponse
@@ -401,24 +486,24 @@ class ActServiceStartTransactionTest {
 
         ResponseCheckAarDtoDto checkAarDto = new ResponseCheckAarDtoDto();
         checkAarDto.setIun("test-iun");
-        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any())).thenReturn(Mono.just(checkAarDto));
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(checkAarDto));
         Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(0));
         Mockito.when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(any(), any())).thenReturn(Mono.just("FISCALCODE123"));
 
-        SentNotificationV25Dto sentNotificationDto = createSentNotificationDto();
+        SentNotificationV26Dto sentNotificationDto = createSentNotificationDto();
         sentNotificationDto.setDocumentsAvailable(false);
         Mockito.when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationDto));
 
 
 
-        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any()))
+        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any(), any(), any(), any()))
                 .thenReturn(Flux.fromStream(createLegalFactListElementDto()));
 
         LegalFactDownloadMetadataWithContentTypeResponseDto legalFactDto = new LegalFactDownloadMetadataWithContentTypeResponseDto();
         legalFactDto.setUrl("http://safestorage/UrlLegalFact?");
         legalFactDto.setContentType("application/pdf");
-        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any())).thenReturn(Mono.just(legalFactDto));
+        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(legalFactDto));
         Mockito.when(raddTransactionDAOImpl.getTransaction(anyString(), eq(OperationTypeEnum.ACT)))
                 .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)));
 
@@ -440,7 +525,7 @@ class ActServiceStartTransactionTest {
         ResponseCheckAarDtoDto responseCheckAarDtoDto = new ResponseCheckAarDtoDto();
         responseCheckAarDtoDto.setIun("testIun");
 
-        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(responseCheckAarDtoDto));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getRecipientTaxId(), request.getRecipientType().getValue())).thenReturn(Mono.just("recipientTaxIdResult"));
         Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF)).thenReturn(Mono.just("delegateTaxIdResult"));
         Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(0));
@@ -450,15 +535,16 @@ class ActServiceStartTransactionTest {
         Mockito.when(safeStorage.getFile(any())).thenReturn(Mono.just(createFileDownloadResponseDto()));
         NotificationAttachmentDownloadMetadataResponseDto docResponse = new NotificationAttachmentDownloadMetadataResponseDto();
         docResponse.setUrl("http://safestorage/UrlDocument?");
-        Mockito.when(pnDeliveryClient.getPresignedUrlDocument(any(), any(), any())).thenReturn(Mono.just(docResponse));
-        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any())).thenReturn(Flux.fromStream(createLegalFactListElementDto()));
-        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any()))
+        Mockito.when(pnDeliveryClient.getPresignedUrlDocument(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(docResponse));
+        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any(), any(), any(), any())).thenReturn(Flux.fromStream(createLegalFactListElementDto()));
+        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), any(), any(), any(), any()))
                .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE)));
 
         StartTransactionResponse response = actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
 
         assertNotNull(response);
-        assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_4, response.getStatus().getCode());
+            assertNotNull(response.getStatus());
+            assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_4, response.getStatus().getCode());
         assertEquals(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE.getMessage(), response.getStatus().getMessage());
         assertNotNull(response.getDownloadUrlList());
         assertTrue(response.getDownloadUrlList().isEmpty());
