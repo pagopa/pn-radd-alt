@@ -3,7 +3,7 @@ package it.pagopa.pn.radd.services.radd.fsu.v1;
 import it.pagopa.pn.commons.log.PnAuditLogEventType;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.NotificationPaymentItemDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.ResponseCheckAarDtoDto;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.SentNotificationV25Dto;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.SentNotificationV26Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactCategoryV20Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactDownloadMetadataWithContentTypeResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndeliverypush.v1.dto.LegalFactListElementV20Dto;
@@ -86,7 +86,7 @@ public class ActService extends BaseService {
                 .doOnNext(isValid -> log.trace("ACT INQUIRY TICK {}", new Date().getTime()))
                 .flatMap(isValid -> getEnsureFiscalCode(recipientTaxId, recipientType))
                 .doOnNext(recipientInternalId -> raddAltAuditLog.getContext().addRecipientInternalId(recipientInternalId))
-                .flatMap(recCode -> checkQrCodeOrIun(recipientType, qrCode, iun, recCode))
+                .flatMap(recCode -> checkQrCodeOrIun(recipientType, qrCode, iun, recCode, uid, xPagopaPnCxId, xPagopaPnCxType.getValue()))
                 .doOnNext(usedIun -> raddAltAuditLog.getContext().addIun(usedIun))
                 .flatMap(this::hasNotificationsCancelled)
                 .flatMap(this::hasDocumentsAvailable)
@@ -107,9 +107,9 @@ public class ActService extends BaseService {
     }
 
     @NotNull
-    private Mono<String> checkQrCodeOrIun(String recipientType, String qrCode, String iun, String recipientId) {
+    private Mono<String> checkQrCodeOrIun(String recipientType, String qrCode, String iun, String recipientId, String uid, String cxId, String cxType) {
         if (hasText(qrCode)) {
-            return checkQrCode(recipientType, qrCode, recipientId);
+            return checkQrCode(recipientType, qrCode, recipientId, uid, cxId, cxType);
         } else {
             return checkIun(iun, recipientId, recipientId);
         }
@@ -123,8 +123,8 @@ public class ActService extends BaseService {
     }
 
     @NotNull
-    private Mono<String> checkQrCode(String recipientType, String qrCode, String recipientId) {
-        return controlAndCheckAar(recipientType, recipientId, qrCode)
+    private Mono<String> checkQrCode(String recipientType, String qrCode, String recipientId, String uid, String cxId, String cxType) {
+        return controlAndCheckAar(recipientType, recipientId, qrCode, uid, cxId, cxType)
                 .flatMap(responseCheckAarDtoDto -> checkIunIsAlreadyExistsInCompleted(responseCheckAarDtoDto.getIun(), recipientId)
                         .thenReturn(responseCheckAarDtoDto.getIun()));
     }
@@ -164,7 +164,7 @@ public class ActService extends BaseService {
                         pnRaddAltAuditLog.getContext().addDelegateInternalId(transactionData.getEnsureDelegateId());
                     }
                 })
-                .flatMap(transactionData -> checkQrCodeOrIun(request.getRecipientType().getValue(), request.getQrCode(), request.getIun(), transactionData.getEnsureRecipientId())
+                .flatMap(transactionData -> checkQrCodeOrIun(request.getRecipientType().getValue(), request.getQrCode(), request.getIun(), transactionData.getEnsureRecipientId(), transactionData.getUid(), transactionData.getCxId(), transactionData.getCxType())
                         .map(s -> setIun(transactionData, s)))
                 .flatMap( transactionData -> handleTransactionFlow( pnRaddAltAuditLog, transactionData, uid, request, xPagopaPnBaseUrl))
                 .map(response -> {
@@ -239,9 +239,9 @@ public class ActService extends BaseService {
                 });    }
 
 
-    private void enrichTransactionDataWithSenderPaId(Tuple2<TransactionData, SentNotificationV25Dto> tuple) {
+    private void enrichTransactionDataWithSenderPaId(Tuple2<TransactionData, SentNotificationV26Dto> tuple) {
         TransactionData transactionData = tuple.getT1();
-        SentNotificationV25Dto notification = tuple.getT2();
+        SentNotificationV26Dto notification = tuple.getT2();
         String senderPaId = notification.getSenderPaId();
         if (senderPaId != null)
             transactionData.setSenderPaIds(Collections.singleton(senderPaId));
@@ -250,7 +250,7 @@ public class ActService extends BaseService {
 
 
     @NotNull
-    private Mono<StartTransactionResponse> retrieveDocumentsAndAttachments(ActStartTransactionRequest request, Tuple2<TransactionData, SentNotificationV25Dto> transactionAndSentNotification, String xPagopaPnBaseUrl) {
+    private Mono<StartTransactionResponse> retrieveDocumentsAndAttachments(ActStartTransactionRequest request, Tuple2<TransactionData, SentNotificationV26Dto> transactionAndSentNotification, String xPagopaPnBaseUrl) {
         log.debug("Retrieving document and attachments");
         Flux<DocumentInfoDto> infoDocuments = getUrlDoc(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
         Flux<DocumentInfoDto> infoAttachments = getUrlsAttachments(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
@@ -291,7 +291,7 @@ public class ActService extends BaseService {
 
         return this.validateCompleteTransactionRequest(completeTransactionRequest)
                 .zipWhen(req -> getAndCheckStatusTransaction(req.getOperationId(), xPagopaPnCxType, xPagopaPnCxId))
-                .zipWhen(reqAndEntity -> this.pnDeliveryPushClient.notifyNotificationRaddRetrieved(reqAndEntity.getT2(), reqAndEntity.getT1().getOperationDate()), (reqAndEntity, response) -> reqAndEntity)
+                .zipWhen(reqAndEntity -> this.pnDeliveryPushClient.notifyNotificationRaddRetrieved(reqAndEntity.getT2(), reqAndEntity.getT1().getOperationDate(), uid, xPagopaPnCxId, xPagopaPnCxType.getValue()), (reqAndEntity, response) -> reqAndEntity)
                 .map(reqAndEntity -> {
                     RaddTransactionEntity entity = reqAndEntity.getT2();
                     entity.setOperationEndDate(DateUtils.formatDate(reqAndEntity.getT1().getOperationDate()));
@@ -364,12 +364,12 @@ public class ActService extends BaseService {
     }
 
     private Flux<DocumentInfoDto> legalFact(TransactionData transaction, String xPagopaPnBaseUrl) {
-        return pnDeliveryPushClient.getNotificationLegalFacts(transaction.getEnsureRecipientId(), transaction.getIun())
+        return pnDeliveryPushClient.getNotificationLegalFacts(transaction.getEnsureRecipientId(), transaction.getIun(), transaction.getUid(), transaction.getCxId(), transaction.getCxType())
                 .filter(filterLegalFacts(transaction))
                 .flatMap(item ->
                         pnDeliveryPushClient.getLegalFact(transaction.getEnsureRecipientId(),
                                         transaction.getIun(),
-                                        item.getLegalFactsId().getKey())
+                                        item.getLegalFactsId().getKey(), transaction.getUid(), transaction.getCxId(), transaction.getCxType())
                                 .filter(legalFact -> CONTENT_TYPE_PDF.equals(legalFact.getContentType()) ||
                                         CONTENT_TYPE_ZIP.equals(legalFact.getContentType()))
                                 .mapNotNull(legalFact -> getLegalFactInfo(item, legalFact)))
@@ -489,9 +489,9 @@ public class ActService extends BaseService {
         return downloadUrl;
     }
 
-    private Flux<DocumentInfoDto> getUrlDoc(TransactionData transaction, SentNotificationV25Dto sentDTO) {
+    private Flux<DocumentInfoDto> getUrlDoc(TransactionData transaction, SentNotificationV26Dto sentDTO) {
         return Flux.fromStream(sentDTO.getDocuments().stream())
-                .flatMap(doc -> this.pnDeliveryClient.getPresignedUrlDocument(transaction.getIun(), doc.getDocIdx(), transaction.getEnsureRecipientId())
+                .flatMap(doc -> this.pnDeliveryClient.getPresignedUrlDocument(transaction.getIun(), doc.getDocIdx(), transaction.getEnsureRecipientId(), transaction.getUid(), transaction.getCxId(), transaction.getCxType())
                         .map(notificationMetadata -> new NotificationAttachment(DOCUMENT, notificationMetadata, doc.getRef().getKey()))
                         .map(attachment ->{
                             Integer numberOfPages = attachment.getNotificationMetadata().getNumberOfPages();
@@ -524,7 +524,7 @@ public class ActService extends BaseService {
         }
     }
 
-    private Flux<DocumentInfoDto> getUrlsAttachments(TransactionData transactionData, SentNotificationV25Dto sentDTO) {
+    private Flux<DocumentInfoDto> getUrlsAttachments(TransactionData transactionData, SentNotificationV26Dto sentDTO) {
         if (sentDTO.getRecipients().isEmpty()) {
             return Flux.empty();
         }
@@ -579,7 +579,7 @@ public class ActService extends BaseService {
 
     private Mono<NotificationAttachment> getPagoPAAttachmentDownloadMetadataResponse(TransactionData transactionData, NotificationPaymentItemDto item, Integer attachmentIdx) {
         if (item.getPagoPa() != null && item.getPagoPa().getAttachment() != null) {
-            return pnDeliveryClient.getPresignedUrlPaymentDocument(transactionData.getIun(), "PAGOPA", transactionData.getEnsureRecipientId(), attachmentIdx)
+            return pnDeliveryClient.getPresignedUrlPaymentDocument(transactionData.getIun(), "PAGOPA", transactionData.getEnsureRecipientId(), attachmentIdx, transactionData.getUid(), transactionData.getCxId(), transactionData.getCxType())
                     .map(notificationMetadata -> new NotificationAttachment(PAGOPA, notificationMetadata, item.getPagoPa().getAttachment().getRef().getKey()));
         }
         return Mono.empty();
@@ -587,15 +587,15 @@ public class ActService extends BaseService {
 
     private Mono<NotificationAttachment> getF24AttachmentDownloadMetadataResponseDto(TransactionData transactionData, NotificationPaymentItemDto item, Integer attachmentIdx) {
         if (item.getF24() != null) {
-            return pnDeliveryClient.getPresignedUrlPaymentDocument(transactionData.getIun(), "F24", transactionData.getEnsureRecipientId(), attachmentIdx)
+            return pnDeliveryClient.getPresignedUrlPaymentDocument(transactionData.getIun(), "F24", transactionData.getEnsureRecipientId(), attachmentIdx, transactionData.getUid(), transactionData.getCxId(), transactionData.getCxType())
                     .map(notificationAttachmentDownloadMetadataResponseDto -> new NotificationAttachment(F24, notificationAttachmentDownloadMetadataResponseDto, item.getF24().getMetadataAttachment().getRef().getKey()));
         }
         return Mono.empty();
     }
 
     private Mono<ResponseCheckAarDtoDto> controlAndCheckAar(String recipientType, String recipientTaxId, String
-            qrCode) {
-        return this.pnDeliveryClient.getCheckAar(recipientType, recipientTaxId, qrCode)
+            qrCode, String uid, String cxId, String cxType) {
+        return this.pnDeliveryClient.getCheckAar(recipientType, recipientTaxId, qrCode, uid, cxId, cxType)
                 .map(response -> {
                     if (response == null || Strings.isBlank(response.getIun())) {
                         throw new RaddGenericException(IUN_NOT_FOUND);
@@ -640,7 +640,7 @@ public class ActService extends BaseService {
         return Mono.just(true);
     }
 
-    private Mono<SentNotificationV25Dto> hasDocumentsAvailable(String iun) {
+    private Mono<SentNotificationV26Dto> hasDocumentsAvailable(String iun) {
         return this.pnDeliveryClient.getNotifications(iun)
                 .flatMap(response -> {
                     if (response.getDocumentsAvailable() != null && Boolean.FALSE.equals(response.getDocumentsAvailable())) {

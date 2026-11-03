@@ -2,10 +2,11 @@ package it.pagopa.pn.radd.middleware.msclient;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.api.InternalOnlyApi;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.CxTypeAuthFleetDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.NotificationAttachmentDownloadMetadataResponseDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.RequestCheckAarDtoDto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.ResponseCheckAarDtoDto;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.SentNotificationV25Dto;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.SentNotificationV26Dto;
 import it.pagopa.pn.radd.config.PnRaddFsuConfig;
 import it.pagopa.pn.radd.exception.ExceptionTypeEnum;
 import it.pagopa.pn.radd.exception.PnRaddException;
@@ -31,8 +32,7 @@ public class PnDeliveryClient extends BaseClient {
     private final InternalOnlyApi deliveryApi;
     private final PnRaddFsuConfig pnRaddFsuConfig;
 
-
-    public Mono<ResponseCheckAarDtoDto> getCheckAar(String recipientType, String recipientInternalId, String qrCode) {
+    public Mono<ResponseCheckAarDtoDto> getCheckAar(String recipientType, String recipientInternalId, String qrCode, String uid, String cxId, String cxType) {
         log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY, "checkAarQrCode");
         log.debug("getCheckAar - recipientInternalId: {}", recipientInternalId);
         RequestCheckAarDtoDto request = new RequestCheckAarDtoDto();
@@ -43,7 +43,7 @@ public class PnDeliveryClient extends BaseClient {
         request.setRecipientType(recipientType);
         request.setRecipientInternalId(recipientInternalId);
         log.trace("CHECK AAR QRCODE TICK {}", new Date().getTime());
-        return this.deliveryApi.checkAarQrCode(request)
+        return this.deliveryApi.checkAarQrCode(request, uid, cxId, cxType == null ? null : CxTypeAuthFleetDto.fromValue(cxType))
                 .retryWhen(Retry.backoff(2, Duration.ofMillis(25))
                         .filter(throwable -> throwable instanceof TimeoutException || throwable instanceof ConnectException)
                 ).map(item -> {
@@ -52,12 +52,12 @@ public class PnDeliveryClient extends BaseClient {
                 }).onErrorResume(WebClientResponseException.class, ex -> {
                     log.error("Error : {}", ex.getResponseBodyAsString());
                     ExceptionTypeEnum message;
-                    if (ex.getRawStatusCode() == HttpResponseStatus.NOT_FOUND.code() ||
-                            ex.getRawStatusCode() == HttpResponseStatus.BAD_REQUEST.code()) {
+                    if (ex.getStatusCode().value() == HttpResponseStatus.NOT_FOUND.code()
+                            || ex.getStatusCode().value() == HttpResponseStatus.BAD_REQUEST.code()) {
                         message = ExceptionTypeEnum.INVALID_INPUT;
-                    } else if (ex.getRawStatusCode() == HttpResponseStatus.FORBIDDEN.code()) {
+                    } else if (ex.getStatusCode().value() == HttpResponseStatus.FORBIDDEN.code()) {
                         message = ExceptionTypeEnum.DOCUMENT_NOT_FOUND;
-                    } else if (ex.getRawStatusCode() == HttpResponseStatus.CONFLICT.code()) {
+                    } else if (ex.getStatusCode().value() == HttpResponseStatus.CONFLICT.code()) {
                         message = ExceptionTypeEnum.ALREADY_COMPLETE_PRINT;
                     } else {
                         return Mono.error(new PnRaddException(ex));
@@ -66,7 +66,7 @@ public class PnDeliveryClient extends BaseClient {
                 });
     }
 
-    public Mono<SentNotificationV25Dto> getNotifications(String iun) {
+    public Mono<SentNotificationV26Dto> getNotifications(String iun) {
         log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY, "getSentNotificationPrivate");
         log.debug("getNotifications - iun: {}", iun);
         log.trace("GET NOTIFICATIONS TICK {}", new Date().getTime());
@@ -82,12 +82,11 @@ public class PnDeliveryClient extends BaseClient {
                 .onErrorResume(WebClientResponseException.class, ex -> Mono.error(new PnRaddException(ex)));
     }
 
-
-    public Mono<NotificationAttachmentDownloadMetadataResponseDto> getPresignedUrlDocument(String iun, String docXid, String recipientTaxId) {
+    public Mono<NotificationAttachmentDownloadMetadataResponseDto> getPresignedUrlDocument(String iun, String docXid, String recipientTaxId, String uid, String cxId, String cxType) {
         log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY, "getReceivedNotificationDocumentPrivate");
         log.debug("getPresignedUrlDocument - iun: {}, docXid: {}", iun, docXid);
         log.trace("SINGLE PRESIGNED DOCUMENT TICK {}", new Date().getTime());
-        return this.deliveryApi.getReceivedNotificationDocumentPrivate(iun, Integer.valueOf(docXid), recipientTaxId, null)
+        return this.deliveryApi.getReceivedNotificationDocumentPrivate(iun, Integer.valueOf(docXid), recipientTaxId, null, uid, cxId, cxType == null ? null : CxTypeAuthFleetDto.fromValue(cxType))
                 .retryWhen(
                         Retry.backoff(2, Duration.ofMillis(500))
                                 .filter(throwable -> throwable instanceof TimeoutException || throwable instanceof ConnectException)
@@ -96,18 +95,18 @@ public class PnDeliveryClient extends BaseClient {
                     return item;
                 }).onErrorResume(WebClientResponseException.class, ex -> {
                     ExceptionTypeEnum message = ExceptionTypeEnum.DOCUMENT_UNAVAILABLE;
-                    if (ex.getRawStatusCode() == HttpResponseStatus.GONE.code()) {
+                    if (ex.getStatusCode().value() == HttpResponseStatus.GONE.code()) {
                         return Mono.error(new RaddGenericException(message));
                     }
                     return Mono.error(new PnRaddException(ex));
                 });
     }
 
-    public Mono<NotificationAttachmentDownloadMetadataResponseDto> getPresignedUrlPaymentDocument(String iun, String attachmentName, String recipientTaxId, Integer attachmentIdx) {
+    public Mono<NotificationAttachmentDownloadMetadataResponseDto> getPresignedUrlPaymentDocument(String iun, String attachmentName, String recipientTaxId, Integer attachmentIdx, String uid, String cxId, String cxType) {
         log.logInvokingExternalService(PnLogger.EXTERNAL_SERVICES.PN_DELIVERY, "getReceivedNotificationAttachmentPrivate");
         log.debug("getPresignedUrlPaymentDocument - iun: {}, attachmentName: {}", iun, attachmentName);
         log.trace("SINGLE PRESIGNED ATTACHEMENT TICK {}", new Date().getTime());
-        return this.deliveryApi.getReceivedNotificationAttachmentPrivate(iun, attachmentName, recipientTaxId, null, attachmentIdx)
+        return this.deliveryApi.getReceivedNotificationAttachmentPrivate(iun, attachmentName, recipientTaxId, null, attachmentIdx, uid, cxId, cxType == null ? null : CxTypeAuthFleetDto.fromValue(cxType))
                 .retryWhen(
                         Retry.backoff(2, Duration.ofMillis(500))
                                 .filter(throwable -> throwable instanceof TimeoutException || throwable instanceof ConnectException)
@@ -116,7 +115,7 @@ public class PnDeliveryClient extends BaseClient {
                     return item;
                 }).onErrorResume(WebClientResponseException.class, ex -> {
                     ExceptionTypeEnum message = ExceptionTypeEnum.DOCUMENT_UNAVAILABLE;
-                    if (ex.getRawStatusCode() == HttpResponseStatus.GONE.code()) {
+                    if (ex.getStatusCode().value() == HttpResponseStatus.GONE.code()) {
                         return Mono.error(new RaddGenericException(message));
                     }
                     return Mono.error(new PnRaddException(ex));
@@ -134,8 +133,8 @@ public class PnDeliveryClient extends BaseClient {
                 ).onErrorResume(WebClientResponseException.class, ex -> {
                     log.error("Error : {}", ex.getResponseBodyAsString());
                     ExceptionTypeEnum message;
-                    if (ex.getRawStatusCode() == HttpResponseStatus.NOT_FOUND.code()
-                            || ex.getRawStatusCode() == HttpResponseStatus.FORBIDDEN.code()) {
+                    if (ex.getStatusCode().value() == HttpResponseStatus.NOT_FOUND.code()
+                            || ex.getStatusCode().value() == HttpResponseStatus.FORBIDDEN.code()) {
                         message = ExceptionTypeEnum.INVALID_INPUT;
                     } else {
                         return Mono.error(new PnRaddException(ex));

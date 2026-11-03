@@ -54,6 +54,8 @@ public class TransactionDataMapper {
         TransactionData transactionData = new TransactionData();
         transactionData.setTransactionId(transactionIdBuilder(xPagopaPnCxType, xPagopaPnCxId, request.getOperationId()));
         transactionData.setUid(uid);
+        transactionData.setCxId(xPagopaPnCxId);
+        transactionData.setCxType(xPagopaPnCxType.getValue());
         transactionData.setRecipientType(request.getRecipientType().getValue());
         transactionData.setRecipientId(request.getRecipientTaxId());
         transactionData.setDelegateId(request.getDelegateTaxId());
@@ -72,6 +74,8 @@ public class TransactionDataMapper {
         TransactionData transactionData = new TransactionData();
         transactionData.setTransactionId(transactionIdBuilder(xPagopaPnCxType, xPagopaPnCxId, request.getOperationId()));
         transactionData.setUid(uid);
+        transactionData.setCxId(xPagopaPnCxId);
+        transactionData.setCxType(xPagopaPnCxType.getValue());
         transactionData.setOperationType(OperationTypeEnum.AOR);
         transactionData.setRecipientType(request.getRecipientType().getValue());
         transactionData.setRecipientId(request.getRecipientTaxId());
