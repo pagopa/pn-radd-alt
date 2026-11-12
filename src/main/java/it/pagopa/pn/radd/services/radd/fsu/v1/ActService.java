@@ -227,8 +227,7 @@ public class ActService extends BaseService {
             TransactionData transactionData,
             ActStartTransactionRequest request,
             String xPagopaPnBaseUrl) {
-        return legalFact(transactionData, xPagopaPnBaseUrl)
-                .collectList()
+        return filterAndMapDocumentType(legalFact(transactionData, xPagopaPnBaseUrl))
                 .map(list -> list.stream()
                         .map(DocumentInfoDto::getDownloadUrl)
                         .collect(Collectors.toCollection(ArrayList::new)))
@@ -256,17 +255,20 @@ public class ActService extends BaseService {
         Flux<DocumentInfoDto> infoAttachments = getUrlsAttachments(transactionAndSentNotification.getT1(), transactionAndSentNotification.getT2());
         Flux<DocumentInfoDto> infoLegalFacts = legalFact(transactionAndSentNotification.getT1(), xPagopaPnBaseUrl);
 
-        return ParallelFlux.from(infoDocuments, infoAttachments, infoLegalFacts)
-                           .sequential()
-                           .filter(documentInfoDto -> !pnRaddFsuConfig.getDocumentTypeEnumFilter().contains(DocumentTypeEnum.valueOf(documentInfoDto.getDownloadUrl().getDocumentType())))
-                           .map(documentInfoDto -> {
-                                    documentInfoDto.getDownloadUrl().setDocumentType(DocumentTypeEnum.valueOf(documentInfoDto.getDownloadUrl().getDocumentType()).getValue());
-                                    return documentInfoDto;
-                           })
-                           .collectList()
+        return filterAndMapDocumentType(ParallelFlux.from(infoDocuments, infoAttachments, infoLegalFacts).sequential())
                            .flatMap(resultList -> updateDocAttachments(transactionAndSentNotification.getT1(), resultList))
                            .map(documentInfoDtos -> documentInfoDtos.stream().map(DocumentInfoDto::getDownloadUrl).collect(Collectors.toCollection(ArrayList::new)))
                            .map(resultList -> StartTransactionResponseMapper.fromResult(resultList, OperationTypeEnum.ACT.name(), request.getOperationId(), xPagopaPnBaseUrl, pnRaddFsuConfig.getDocumentTypeEnumFilter()));
+    }
+
+    private Mono<List<DocumentInfoDto>> filterAndMapDocumentType(Flux<DocumentInfoDto> documents) {
+        return documents
+                .filter(documentInfoDto -> !pnRaddFsuConfig.getDocumentTypeEnumFilter().contains(DocumentTypeEnum.valueOf(documentInfoDto.getDownloadUrl().getDocumentType())))
+                .map(documentInfoDto -> {
+                    documentInfoDto.getDownloadUrl().setDocumentType(DocumentTypeEnum.valueOf(documentInfoDto.getDownloadUrl().getDocumentType()).getValue());
+                    return documentInfoDto;
+                })
+                .collectList();
     }
 
     @NotNull
