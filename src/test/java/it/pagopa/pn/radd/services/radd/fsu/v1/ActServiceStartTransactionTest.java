@@ -20,6 +20,7 @@ import it.pagopa.pn.radd.mapper.TransactionDataMapper;
 import it.pagopa.pn.radd.middleware.db.entities.RaddTransactionEntity;
 import it.pagopa.pn.radd.middleware.db.impl.RaddTransactionDAOImpl;
 import it.pagopa.pn.radd.middleware.msclient.*;
+import it.pagopa.pn.radd.pojo.DocumentTypeEnum;
 import it.pagopa.pn.radd.services.radd.fsu.v1.dto.DocumentInfoDto;
 import it.pagopa.pn.radd.utils.Const;
 import it.pagopa.pn.radd.utils.OperationTypeEnum;
@@ -39,6 +40,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static it.pagopa.pn.radd.utils.SafeStorageTestUtils.presignedUrl;
+import static it.pagopa.pn.radd.utils.SafeStorageTestUtils.safeStorageKey;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 
@@ -515,6 +518,96 @@ class ActServiceStartTransactionTest {
                     assertFalse(response.getDownloadUrlList().isEmpty());
                 })
                 .verifyComplete();
+    }
+
+    private static final String NOT_FILTERED_LEGAL_FACT_FILE_KEY = "PN_LEGAL_FACTS-11111111111111111111111111111111.pdf";
+    private static final String FILTERED_LEGAL_FACT_EXTERNAL_FILE_KEY = "PN_EXTERNAL_LEGAL_FACTS-22222222222222222222222222222222.pdf";
+    private static final String NOT_FILTERED_LEGAL_FACT_KEY = safeStorageKey(NOT_FILTERED_LEGAL_FACT_FILE_KEY);
+    private static final String FILTERED_LEGAL_FACT_EXTERNAL_KEY = safeStorageKey(FILTERED_LEGAL_FACT_EXTERNAL_FILE_KEY);
+    private static final String NOT_FILTERED_LEGAL_FACT_URL = presignedUrl(NOT_FILTERED_LEGAL_FACT_FILE_KEY);
+    private static final String FILTERED_LEGAL_FACT_EXTERNAL_URL = presignedUrl(FILTERED_LEGAL_FACT_EXTERNAL_FILE_KEY);
+
+    @Test
+    void testStartTransactionWhenDocumentsUnavailableThenFilteredDocumentTypesAreExcluded() {
+        ActStartTransactionRequest request = createActStartTransactionRequest();
+        mockDocumentsUnavailableWithLegalFacts(request);
+        Mockito.when(pnRaddFsuConfig.getDocumentTypeEnumFilter()).thenReturn(List.of(DocumentTypeEnum.LEGAL_FACT_EXTERNAL));
+
+        StartTransactionResponse response = startActTransaction(request);
+
+        assertNotNull(response);
+        assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_4, response.getStatus().getCode());
+        assertEquals(ExceptionTypeEnum.DOCUMENT_UNAVAILABLE.getMessage(), response.getStatus().getMessage());
+        assertEquals(2, response.getDownloadUrlList().size());
+        assertEquals(DocumentTypeEnum.COVER_FILE.name(), response.getDownloadUrlList().get(0).getDocumentType());
+        assertEquals(NOT_FILTERED_LEGAL_FACT_URL, response.getDownloadUrlList().get(1).getUrl());
+        assertEquals(Const.ATTESTAZIONE_OPPONIBILE_A_TERZI, response.getDownloadUrlList().get(1).getDocumentType());
+        assertTrue(response.getDownloadUrlList().stream()
+                .noneMatch(url -> FILTERED_LEGAL_FACT_EXTERNAL_URL.equals(url.getUrl())));
+    }
+
+    @Test
+    void testStartTransactionWhenDocumentsUnavailableAndAllLegalFactsFilteredThenReturnCode4WithEmptyList() {
+        ActStartTransactionRequest request = createActStartTransactionRequest();
+        mockDocumentsUnavailableWithLegalFacts(request);
+        Mockito.when(pnRaddFsuConfig.getDocumentTypeEnumFilter()).thenReturn(List.of(DocumentTypeEnum.LEGAL_FACT, DocumentTypeEnum.LEGAL_FACT_EXTERNAL));
+
+        StartTransactionResponse response = startActTransaction(request);
+
+        assertNotNull(response);
+        assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_4, response.getStatus().getCode());
+        assertNotNull(response.getDownloadUrlList());
+        assertTrue(response.getDownloadUrlList().isEmpty());
+    }
+
+    @Test
+    void testStartTransactionWhenDocumentsUnavailableThenLegalFactDocumentTypeIsMapped() {
+        ActStartTransactionRequest request = createActStartTransactionRequest();
+        mockDocumentsUnavailableWithLegalFacts(request);
+
+        StartTransactionResponse response = startActTransaction(request);
+
+        assertNotNull(response);
+        assertEquals(StartTransactionResponseStatus.CodeEnum.NUMBER_4, response.getStatus().getCode());
+        assertEquals(3, response.getDownloadUrlList().size());
+        assertTrue(response.getDownloadUrlList().stream()
+                .skip(1)
+                .allMatch(url -> Const.ATTESTAZIONE_OPPONIBILE_A_TERZI.equals(url.getDocumentType())));
+    }
+
+    private StartTransactionResponse startActTransaction(ActStartTransactionRequest request) {
+        return actService.startTransaction("test", "cxId", CxTypeAuthFleet.PG, "RADD_UPLOADER", null, "http://localhost", request).block();
+    }
+
+    private void mockDocumentsUnavailableWithLegalFacts(ActStartTransactionRequest request) {
+        Mockito.when(pnDeliveryClient.getCheckAar(any(), any(), any(), any(), any(), any())).thenReturn(Mono.just(new ResponseCheckAarDtoDto().iun("testIun")));
+        Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getRecipientTaxId(), request.getRecipientType().getValue())).thenReturn(Mono.just("recipientTaxIdResult"));
+        Mockito.when(pnDataVaultClient.getEnsureFiscalCode(request.getDelegateTaxId(), Const.PF)).thenReturn(Mono.just("delegateTaxIdResult"));
+        Mockito.when(raddTransactionDAOImpl.countFromIunAndStatus(any(), any())).thenReturn(Mono.just(0));
+        Mockito.when(pnTimelineServiceClient.getCancellationRequest(any())).thenReturn(Mono.empty());
+
+        SentNotificationV26Dto sentNotificationDto = createSentNotificationDto();
+        sentNotificationDto.setDocumentsAvailable(false);
+        Mockito.when(pnDeliveryClient.getNotifications(any())).thenReturn(Mono.just(sentNotificationDto));
+
+        Mockito.when(pnDeliveryPushClient.getNotificationLegalFacts(any(), any(), any(), any(), any()))
+                .thenReturn(Flux.just(legalFactElement(LegalFactCategoryV20Dto.SENDER_ACK, NOT_FILTERED_LEGAL_FACT_KEY),
+                        legalFactElement(LegalFactCategoryV20Dto.ANALOG_DELIVERY, FILTERED_LEGAL_FACT_EXTERNAL_KEY)));
+        mockLegalFactDownload(NOT_FILTERED_LEGAL_FACT_KEY, NOT_FILTERED_LEGAL_FACT_URL);
+        mockLegalFactDownload(FILTERED_LEGAL_FACT_EXTERNAL_KEY, FILTERED_LEGAL_FACT_EXTERNAL_URL);
+        Mockito.when(raddTransactionDAOImpl.getTransaction(anyString(), eq(OperationTypeEnum.ACT)))
+                .thenReturn(Mono.error(new RaddGenericException(ExceptionTypeEnum.TRANSACTION_NOT_EXIST)));
+    }
+
+    private static LegalFactListElementV20Dto legalFactElement(LegalFactCategoryV20Dto category, String key) {
+        return new LegalFactListElementV20Dto()
+                .legalFactsId(new LegalFactsIdV20Dto().category(category).key(key));
+    }
+
+    private void mockLegalFactDownload(String key, String url) {
+        Mockito.when(pnDeliveryPushClient.getLegalFact(any(), any(), eq(key), any(), any(), any()))
+                .thenReturn(Mono.just(new LegalFactDownloadMetadataWithContentTypeResponseDto()
+                        .url(url).contentType(Const.CONTENT_TYPE_PDF)));
     }
 
 
