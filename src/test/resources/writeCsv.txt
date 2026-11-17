@@ -1,0 +1,2 @@
+"descrizione";"citta";"via";"provincia";"cap";"telefono"
+"descrizione2";"citta2";"via2";"provincia2";"cap2";"telefono2"
