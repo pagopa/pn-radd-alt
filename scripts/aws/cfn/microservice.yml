@@ -617,6 +617,14 @@ Parameters:
     Default: ''
     Description: Java tool options for the Fargate tasks
 
+  CpuArchitecture:
+    Type: String
+    Default: 'ARM'
+    Description: CPU architecture for the Fargate tasks
+    AllowedValues:
+      - 'ARM'
+      - 'AMD'
+
 Conditions:
   IsImportLocationsBlocked: !Equals [!Ref BlockImportLocations, 'true']
   HasRaddPrivateProxyListenerPathPrefix: !Not [!Equals [!Ref RaddPrivateProxyListenerPathPrefix, '']]
@@ -650,6 +658,7 @@ Resources:
         ContainerImageURI: !Sub '${ContainerImageUri}'
         ContainerEnvEntry1: !Sub 'AWS_REGIONCODE=${AWS::Region}'
         ContainerEnvEntry2: !Sub 'CORS_ALLOWED_DOMAINS=${CorsAllowedDomains}'
+        CpuArchitecture: !Ref CpuArchitecture
         ContainerEnvEntry3: !Sub 'PN_RADD_DAO_RADDTRANSACTIONTABLE=${RaddTransactionDynamoTableName}'
         ContainerEnvEntry4: 'PN_RADD_CLIENT_DATAVAULT_BASEPATH=http://alb.confidential.pn.internal:8080'
         ContainerEnvEntry5: !Sub 'PN_RADD_CLIENT_DELIVERY_BASEPATH=http://${ApplicationLoadBalancerDomain}:8080'
