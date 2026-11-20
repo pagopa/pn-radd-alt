@@ -135,8 +135,11 @@ async function main() {
 
   if (argv.sso) {
     const playwright = require('playwright');
+    const defaultHelpdeskUrl = argv.sso === 'prod'
+      ? 'https://helpdesk.notifichedigitali.it'
+      : `https://helpdesk.${argv.sso}.notifichedigitali.it`;
     process.env.API_TOKEN = await fetchHelpdeskIdToken({
-      helpdeskUrl: argv.helpdeskUrl || `https://helpdesk.${argv.sso}.notifichedigitali.it`,
+      helpdeskUrl: argv.helpdeskUrl || defaultHelpdeskUrl,
       browser: argv.browser,
       playwright,
     });

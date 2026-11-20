@@ -8,7 +8,7 @@
     "SanitizeMode": "ESCAPING",
     "FreeMarkerTemplateLoaderPath": "documents_composition_templates",
     "FreeMarkerSuffix": ".html",
-    "DocumentTypeEnumFilter": "",
+    "DocumentTypeEnumFilter": "LEGAL_FACT_EXTERNAL",
     "RegistryDefaultEndValidity": "0",
     "RegistryDefaultDeleteRule": "DUPLICATE",
     "RegistryImportUploadFileTtl": "43200",

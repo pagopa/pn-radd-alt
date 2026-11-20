@@ -27,7 +27,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
     @Test
     void testGetNotificationLegalFacts() {
         String recipientInternalId = "854Bgs31a", iun = "LJLH-GNTJ-DVXR-202209-J-1";
-        Flux<LegalFactListElementV20Dto> fluxResponse = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun);
+        Flux<LegalFactListElementV20Dto> fluxResponse = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun, "audit-user", "audit-cx", "RADD");
         fluxResponse.collectList().map(response -> {
             assertNotEquals(0, response.size());
             response.forEach(element -> {
@@ -42,7 +42,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
     @Test
     void testGetNotificationLegalFactsWithDuplicates() {
         String recipientInternalId = "521Tvr56b", iun = "MDCA-BRSZ-UVTR-202412-G-2";
-        Flux<LegalFactListElementV20Dto> fluxResponse = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun);
+        Flux<LegalFactListElementV20Dto> fluxResponse = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun, "audit-user", "audit-cx", "RADD");
         fluxResponse.collectList().map(response -> {
             // The http mock for this scenario returns 2 elements, but they are duplicates so the method should return only one
             assertEquals(1, response.size());
@@ -58,7 +58,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
     @Test
     void testGetNotificationLegalFactsCode400() {
         String recipientInternalId = "", iun = "LJLH-GNTJ-DVXR-202209-J-1";
-        Flux<LegalFactListElementV20Dto> response = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun);
+        Flux<LegalFactListElementV20Dto> response = pnDeliveryPushClient.getNotificationLegalFacts(recipientInternalId, iun, "audit-user", "audit-cx", "RADD");
         response.onErrorResume(exception -> {
             if (exception instanceof PnRaddException){
                 assertEquals(400, ((PnRaddException) exception).getWebClientEx().getStatusCode().value());
@@ -73,7 +73,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
     @Test
     void testGetLegalFacts() {
         String recipientInternalId = "854Bgs31a", iun = "LJLH-GNTJ-DVXR-202209-J-1", legalFactId = "98765";
-        Mono<LegalFactDownloadMetadataWithContentTypeResponseDto> monoResponse = pnDeliveryPushClient.getLegalFact(recipientInternalId, iun, legalFactId);
+        Mono<LegalFactDownloadMetadataWithContentTypeResponseDto> monoResponse = pnDeliveryPushClient.getLegalFact(recipientInternalId, iun, legalFactId, "audit-user", "audit-cx", "RADD");
         monoResponse.map(response -> {
             assertEquals("document", response.getFilename());
             assertEquals(new BigDecimal(54092), response.getContentLength());
@@ -86,7 +86,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
     @Test
     void testGetLegalFactsCode400() {
         String recipientInternalId = "", iun = "LJLH-GNTJ-DVXR-202209-J-1", legalFactId = "98765";
-        Mono<LegalFactDownloadMetadataWithContentTypeResponseDto> monoResponse = pnDeliveryPushClient.getLegalFact(recipientInternalId, iun, legalFactId);
+        Mono<LegalFactDownloadMetadataWithContentTypeResponseDto> monoResponse = pnDeliveryPushClient.getLegalFact(recipientInternalId, iun, legalFactId, "audit-user", "audit-cx", "RADD");
         monoResponse.onErrorResume(exception -> {
             if (exception instanceof PnRaddException){
                 assertEquals(400, ((PnRaddException) exception).getWebClientEx().getStatusCode().value());
@@ -100,7 +100,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
     @Test
     void testGetLegalFactsFileGone() {
         String recipientInternalId = "gone_recipient", iun = "LJLH-GNTJ-DVXR-202209-J-1", legalFactId = "gone_fact";
-        Mono<LegalFactDownloadMetadataWithContentTypeResponseDto> monoResponse = pnDeliveryPushClient.getLegalFact(recipientInternalId, iun, legalFactId);
+        Mono<LegalFactDownloadMetadataWithContentTypeResponseDto> monoResponse = pnDeliveryPushClient.getLegalFact(recipientInternalId, iun, legalFactId, "audit-user", "audit-cx", "RADD");
         StepVerifier.create(monoResponse)
                 .expectErrorMatches(exception ->
                         exception instanceof RaddGenericException
@@ -115,7 +115,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
         entity.setRecipientType(RecipientTypeDto.PF.getValue());
         entity.setOperationStartDate("2022-09-30T13:57:00.000");
         entity.setRecipientId("1924814");
-        Mono<ResponseNotificationViewedDtoDto> monoResponse = pnDeliveryPushClient.notifyNotificationRaddRetrieved(entity, new Date());
+        Mono<ResponseNotificationViewedDtoDto> monoResponse = pnDeliveryPushClient.notifyNotificationRaddRetrieved(entity, new Date(), "audit-user", "audit-cx", "RADD");
         monoResponse.map(response -> {
             assertNotNull(entity);
             assertEquals(entity.getIun(), response.getIun());
@@ -130,7 +130,7 @@ class PnDeliveryPushClientTest extends BaseTest.WithMockServer {
         entity.setRecipientType(RecipientTypeDto.PF.getValue());
         entity.setOperationStartDate("2022-09-30T13:57:00.000");
         entity.setRecipientId("");
-        Mono<ResponseNotificationViewedDtoDto> response = pnDeliveryPushClient.notifyNotificationRaddRetrieved(entity, new Date());
+        Mono<ResponseNotificationViewedDtoDto> response = pnDeliveryPushClient.notifyNotificationRaddRetrieved(entity, new Date(), "audit-user", "audit-cx", "RADD");
 
         response.onErrorResume(exception -> {
             if (exception instanceof PnRaddException){

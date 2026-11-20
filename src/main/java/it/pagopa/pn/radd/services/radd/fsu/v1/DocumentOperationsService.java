@@ -1,7 +1,7 @@
 package it.pagopa.pn.radd.services.radd.fsu.v1;
 
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.NotificationRecipientV24Dto;
-import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.SentNotificationV25Dto;
+import it.pagopa.pn.radd.alt.generated.openapi.msclient.pndelivery.v1.dto.SentNotificationV26Dto;
 import it.pagopa.pn.radd.alt.generated.openapi.msclient.pnsafestorage.v1.dto.FileCreationRequestDto;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.CxTypeAuthFleet;
 import it.pagopa.pn.radd.alt.generated.openapi.server.v1.dto.DocumentUploadRequest;
@@ -97,7 +97,7 @@ public class DocumentOperationsService {
         throw new ZipAttachmentNotFoundException();
     }
 
-    private Mono<SentNotificationV25Dto> enrichSenderPaIds(String iun, RaddTransactionEntity raddTransactionEntity) {
+    private Mono<SentNotificationV26Dto> enrichSenderPaIds(String iun, RaddTransactionEntity raddTransactionEntity) {
         log.debug("Enriching senderPaId for iun: {} and transactionId: {}", iun, raddTransactionEntity.getTransactionId());
         return pnDeliveryClient.getNotifications(iun)
                 .flatMap(sentNotificationV25Dto -> {
@@ -108,7 +108,7 @@ public class DocumentOperationsService {
                 });
     }
 
-    private byte @NotNull [] checkRecipientIdAndCreatePdf(SentNotificationV25Dto sentNotificationV25Dto, RaddTransactionEntity entity) {
+    private byte @NotNull [] checkRecipientIdAndCreatePdf(SentNotificationV26Dto sentNotificationV25Dto, RaddTransactionEntity entity) {
         Optional<NotificationRecipientV24Dto> recipient = sentNotificationV25Dto.getRecipients().stream()
                 .filter(notificationRecipient -> entity.getRecipientId().equals(notificationRecipient.getInternalId()))
                 .findFirst();

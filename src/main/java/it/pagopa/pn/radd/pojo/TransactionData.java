@@ -17,6 +17,8 @@ import java.util.Set;
 public class TransactionData {
     private String transactionId;
     private String uid;
+    private String cxId;
+    private String cxType;
     private String iun;
     private String qrCode;
     private String operationId;
